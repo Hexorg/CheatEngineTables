@@ -1,0 +1,1051 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="16">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>41</ID>
+      <Description>"[X] &lt;== Age of Wonders III v1.00 Steam/RLD Script 3.0 AOB"</Description>
+      <Options moHideChildren="1"/>
+      <Color>FF0000</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>{
+===========================================
+ Game Title    : Age of Wonders III
+ Game Version  : 1.00 (10997)
+ Game Sponsor  : Fennix102
+ Process Name  : AoW3.exe
+ Script Version: 3.0 AOB
+ CE Version    : 6.3
+ Release date  : 06-Apr-2014
+ Author        : Recifense
+ History:
+ 01-Apr-14: First Release (RLD/Steam)
+ 02-Apr-14: Fixed GM (v1.1)
+ 03-Apr-14: Added Casting Features (v2.0)
+ 04-Apr-14: AOB version of the script (v2.0)
+ 06-Apr-14: Added XP features + fixes (v3.0)
+ Features:
+ - Minimum Resources:
+   - Money
+   - Mana
+ - Movement Points
+   - Strategic Map
+ - Action Points in Battle
+ - God Mode
+ - Research in 1 Turn
+ - City Minimum Pop
+ - Prod/Const in 1 Turn
+ - Unlimited Casting points
+ - Unlimited Casting per turn
+ - Quick Level Up
+===========================================
+}
+
+//=========================================
+// Definitions
+define(LUDO,"AoW3.exe")
+
+//=========================================
+// Constants used in the script (that can be changed)
+define(ctMMON,#6300)   // Minimum Money
+define(ctMMAN,#630)    // Minimum Mana
+define(ctMMCP,#5630)   // Minimum City Pop
+
+//=========================================
+[ENABLE]
+//=========================================
+//LuaCall(CheckVersion())
+//=========================================
+// Check if script is compatible to this game version
+// If false the script will not be loaded
+
+AOBScan(aobFHPR,8b 40 08 83 b8 40 01 00 00 00 5f 5b ?? ?? 8b 45 08 83 78 10 00)
+AOBScan(aobMOMP,29 86 00 04 00 00 8b 06 8b 90 2c 02 00 00 8b ce ff d2 80 7c fd)
+AOBScan(aobMORP,01 be 58 01 00 00 8b 86 5c 01 00 00 8b 8e 58 01 00 00 85 c0 ??)
+AOBScan(aobMMPB,8b 88 00 04 00 00 89 4d dc 8b 8a cc 00 00 00 8b 49 08 8b 89 bc)
+AOBScan(aobGDMD,3b 86 04 04 00 00 ?? ?? 0f b6 8e cc 03 00 00 8b 16 8b 82 28 02)
+AOBScan(aobMSCY,39 86 c0 06 00 00 ?? ?? 68 ?? ?? ?? ?? 8d 7d bc e8 ?? ?? ?? ??)
+AOBScan(aobMOPP,8b 46 28 5e 3b c1 ?? ?? 2b c1 5d c2 08 00 83 c8 ff 5d c2 08 00)
+AOBScan(aobMOCU,80 b8 c9 03 00 00 00 ?? ?? 8b 76 08 e8 ?? ?? ?? ?? 5f 84 c0 5e)
+AOBScan(aobMOUX,8d 44 24 40 50 e8 ?? ?? ?? ?? 8b 54 24 44 8b 7c 24 48 8d 42 04)
+
+//=========================================
+alloc(MyCode,4096,LUDO)
+//=========================================
+// Declaration section
+label(_FindHumanPlayer)
+label(_FindHP0)
+label(_BackFHP)
+label(_ExitFHP)
+label(_MonMovePoints)
+label(_MonMP00)
+label(_MonMP01)
+label(_BackMMP)
+label(_ExitMMP)
+label(_MonResearchProg)
+label(_BackMRP)
+label(_ExitMRP)
+label(_MonMovePointsB)
+label(_MonMPB0)
+label(_MonMPB1)
+label(_BackMPB)
+label(_ExitMPB)
+label(_GodMode)
+label(_BackGMD)
+label(_ExitGMD)
+label(_MonSelCity)
+label(_BackMSC)
+label(_ExitMSC)
+label(_MonProdProg)
+label(_BackMPP)
+label(_ExitMPP)
+label(_MonCastingUsed)
+label(_MonCU00)
+label(_BackMCU)
+label(_ExitMCU)
+label(_MonUnitXP)
+label(_BackMUX)
+label(_ExitMUX)
+label(iEnableMPR)
+label(iEnableMMP)
+label(iEnableGMD)
+label(iEnableMRP)
+label(iEnableMPB)
+label(iEnableMCP)
+label(iEnableMPP)
+label(iEnableMCC)
+label(iEnableMCU)
+label(iEnableMUX)
+label(iID)
+label(pPlayer)
+label(pCity)
+label(pUnit)
+
+//=========================================
+// Registering Symbols
+registersymbol(MyCode)
+registersymbol(iEnableMPR)
+registersymbol(iEnableMMP)
+registersymbol(iEnableGMD)
+registersymbol(iEnableMRP)
+registersymbol(iEnableMPB)
+registersymbol(iEnableMCP)
+registersymbol(iEnableMPP)
+registersymbol(iEnableMCC)
+registersymbol(iEnableMCU)
+registersymbol(iEnableMUX)
+registersymbol(iID)
+registersymbol(pPlayer)
+registersymbol(pCity)
+registersymbol(pUnit)
+
+registersymbol(aobFHPR)
+registersymbol(aobMOMP)
+registersymbol(aobMORP)
+registersymbol(aobMMPB)
+registersymbol(aobGDMD)
+registersymbol(aobMSCY)
+registersymbol(aobMOPP)
+registersymbol(aobMOCU)
+registersymbol(aobMOUX)
+
+//=========================================
+MyCode:
+//=========================================
+// Main game screen
+_FindHumanPlayer:
+ mov [pPlayer],eax
+ movzx ebx,byte ptr [eax+28]
+ mov [iID],ebx
+
+ cmp dword ptr [iEnableMPR],0
+ je _ExitFHP                       // Jump if feature is disabled
+
+ mov ebx,ctMMON
+ cmp ebx,[eax+00000484]
+ js _FindHP0
+
+ mov [eax+00000484],ebx
+
+_FindHP0:
+ mov ebx,ctMMAN
+ cmp ebx,[eax+00000488]
+ js _ExitFHP
+
+ mov [eax+00000488],ebx
+
+_ExitFHP:
+ mov eax,[eax+08]                  // Original code
+ cmp dword ptr [eax+00000140],00   // Original code
+ jmp _BackFHP                      // Back to main code
+
+//=========================================
+// When Moving
+_MonMovePoints:
+ mov edx,[esi+00000238]
+ cmp edx,[pPlayer]
+ jne _ExitMMP
+
+ cmp dword ptr [iEnableMMP],0
+ je _MonMP00                       // Jump if feature is disabled
+
+ mov edx,[esi+0000024c]
+ mov [esi+00000400],edx
+ xor eax,eax
+
+_MonMP00:
+ cmp dword ptr [iEnableGMD],0
+ je _MonMP01                       // Jump if feature is disabled
+
+ mov edx,[esi+00000250]
+ mov [esi+00000404],edx
+
+_MonMP01:
+ cmp dword ptr [iEnableMCU],0
+ je _ExitMMP                       // Jump if feature is disabled
+
+ mov edx,[esi+00000290]
+ mov [esi+00000478],edx
+
+_ExitMMP:
+ sub [esi+00000400],eax            // Original code (upd MP)
+ jmp _BackMMP                      // Back to main code
+
+//=========================================
+// During Turn
+_MonResearchProg:
+ cmp ebx,[pPlayer]
+ jne _ExitMRP
+
+ cmp dword ptr [iEnableMRP],0
+ je _ExitMRP                       // Jump if feature is disabled
+
+ mov ecx,[esi+00000150]
+ test ecx,ecx
+ jz _ExitMRP
+
+ add edi,[ecx+00000090]
+
+_ExitMRP:
+ add [esi+00000158],edi            // Original code (upd RP)
+ jmp _BackMRP                      // Back to main code
+
+//=========================================
+// On Selecting unit in Battle
+_MonMovePointsB:
+ push edx
+
+ mov ecx,eax
+
+ mov edx,[ecx+0000023c]
+ test edx,edx
+ jz _ExitMPB
+
+ mov edx,[edx+000003f4]
+ cmp edx,[pPlayer]
+ jne _ExitMPB
+
+ cmp dword ptr [iEnableMPB],0
+ je _MonMPB0                       // Jump if feature is disabled
+
+ mov edx,[ecx+0000024c]
+ mov [ecx+00000400],edx            // recover AC
+ mov byte ptr [ecx+000006a4],00    // Enable Act Again
+
+_MonMPB0:
+ cmp dword ptr [iEnableGMD],0
+ je _MonMPB1                       // Jump if feature is disabled
+
+ mov edx,[ecx+00000250]
+ mov [ecx+00000404],edx
+
+_MonMPB1:
+ cmp dword ptr [iEnableMCU],0
+ je _ExitMPB                       // Jump if feature is disabled
+
+ mov edx,[ecx+00000290]
+ mov [ecx+00000478],edx
+
+_ExitMPB:
+ pop edx
+
+ mov ecx,[eax+00000400]            // Original code (upd MP)
+ jmp _BackMPB                      // Back to main code
+
+//=========================================
+// When in battle
+_GodMode:
+ push edx
+
+ mov edx,[esi+0000023c]
+ test edx,edx
+ jz _ExitGMD
+
+ mov edx,[edx+000003f4]
+ cmp edx,[pPlayer]
+ jne _ExitGMD
+
+ cmp dword ptr [iEnableGMD],0
+ je _ExitGMD                       // Jump if feature is disabled
+
+ mov edx,[esi+00000250]
+ mov [esi+00000404],edx
+ xor eax,eax
+
+_ExitGMD:
+ pop edx
+
+ cmp eax,[esi+00000404]            // Original code (rd HP)
+ jmp _BackGMD                      // Back to main code
+
+//=========================================
+// When City is Selected
+_MonSelCity:
+ push edx
+
+ mov [pCity],esi
+
+ mov edx,[esi+0000027c]
+ test edx,edx
+ jz _ExitMSC
+
+ mov edx,[edx+0c]
+ cmp edx,[pPlayer]
+ jne _ExitMSC
+
+ cmp dword ptr [iEnableMCP],0
+ je _ExitMSC                       // Jump if feature is disabled
+
+ mov edx,ctMMCP
+ cmp edx,[esi+000006C0]
+ js _ExitMSC
+
+ mov [esi+000006C0],edx
+
+_ExitMSC:
+ pop edx
+
+ cmp [esi+000006C0],eax            // Original code (rd POP)
+ jmp _BackMSC                      // Back to main code
+
+//=========================================
+// During Turn
+_MonProdProg:
+ mov eax,[esi+08]
+ test eax,eax
+ jz _ExitMPP
+
+ mov eax,[eax+08]
+ test eax,eax
+ jz _ExitMPP
+
+ mov eax,[eax+0000027c]
+ test eax,eax
+ jz _ExitMPP
+
+ mov eax,[eax+0c]
+ cmp eax,[pPlayer]
+ jne _ExitMPP
+
+ cmp dword ptr [iEnableMPP],0
+ je _ExitMPP                       // Jump if feature is disabled
+
+ mov [esi+28],ecx
+
+_ExitMPP:
+ mov eax,[esi+28]                  // Original code (rd Prog)
+ pop esi                           // Original code
+ cmp eax,ecx                       // Original code
+ jmp _BackMPP                      // Back to main code
+
+//=========================================
+// When in battle
+_MonCastingUsed:
+ push edx
+
+ mov edx,[eax+000003f4]
+ cmp edx,[pPlayer]
+ jne _ExitMCU
+
+ cmp dword ptr [iEnableMCU],0
+ je _MonCU00                       // Jump if feature is disabled
+
+ mov edx,[eax+00000394]
+ cmp edx,[eax+00000390]
+ js _MonCU00
+
+ mov [eax+00000390],edx
+
+_MonCU00:
+ cmp dword ptr [iEnableMCC],0
+ je _ExitMCU                       // Jump if feature is disabled
+
+ mov byte ptr [eax+000003C8],00
+
+_ExitMCU:
+ pop edx
+
+ cmp byte ptr [eax+000003C9],00    // Original code (rd flag)
+ jmp _BackMCU                      // Back to main code
+
+//=========================================
+// When unit detail is displayed
+_MonUnitXP:
+ push ecx
+ push edx
+
+ mov edx,[ebx+10]                 // Get pXP
+
+ mov ecx,[edx+10]
+ cmp ecx,[pPlayer]
+ jne _ExitMUX
+
+ mov [pUnit],edx
+
+ cmp dword ptr [iEnableMUX],0
+ je _ExitMUX                       // Jump if feature is disabled
+
+ cmp eax,[edx+00000254]
+ jle _ExitMUX
+
+ dec eax
+ mov [edx+00000254],eax
+
+_ExitMUX:
+ pop edx
+ pop ecx
+
+ lea eax,[esp+40]                  // Original code
+ push eax                          // Original code
+ jmp _BackMUX                      // Back to main code
+
+//=========================================
+ db '=========================================&gt;'
+ db 'CE6.3 Script by Recifense 040614'
+//=========================================
+// Variables
+iEnableMPR:
+ dd 0
+iEnableMMP:
+ dd 0
+iEnableGMD:
+ dd 0
+iEnableMRP:
+ dd 0
+iEnableMPB:
+ dd 0
+iEnableMCP:
+ dd 0
+iEnableMPP:
+ dd 0
+iEnableMCC:
+ dd 0
+iEnableMCU:
+ dd 0
+iEnableMUX:
+ dd 0
+iID:
+ dd #99
+pPlayer:
+ dd MyCode
+pCity:
+ dd 0
+pUnit:
+ dd 0
+
+//=========================================
+// Hacking Points
+aobFHPR:
+ jmp _FindHumanPlayer
+ nop
+ nop
+ nop
+ nop
+ nop
+_BackFHP:
+
+aobMOMP:
+ jmp _MonMovePoints
+ nop
+_BackMMP:
+
+aobMORP:
+ jmp _MonResearchProg
+ nop
+_BackMRP:
+
+aobMMPB:
+ jmp _MonMovePointsB
+ nop
+_BackMPB:
+
+aobGDMD:
+ jmp _GodMode
+ nop
+_BackGMD:
+
+aobMSCY:
+ jmp _MonSelCity
+ nop
+_BackMSC:
+
+aobMOPP:
+ jmp _MonProdProg
+ nop
+_BackMPP:
+
+aobMOCU:
+ jmp _MonCastingUsed
+ nop
+ nop
+_BackMCU:
+
+aobMOUX:
+ jmp _MonUnitXP
+_BackMUX:
+
+//=========================================
+// Script for Restoring Original Codes
+[DISABLE]
+aobFHPR:
+// mov eax,[eax+08]
+// cmp dword ptr [eax+00000140],00
+ db 8b 40 08 83 b8 40 01 00 00 00
+
+aobMOMP:
+// sub [esi+00000400],eax
+ db 29 86 00 04 00 00
+
+aobMORP:
+// add [esi+00000158],edi
+ db 01 be 58 01 00 00
+
+aobMMPB:
+// mov ecx,[eax+00000400]
+ db 8b 88 00 04 00 00
+
+aobGDMD:
+// cmp eax,[esi+00000404]
+ db 3b 86 04 04 00 00
+
+aobMSCY:
+// cmp [esi+000006C0],eax
+ db 39 86 c0 06 00 00
+
+aobMOPP:
+// mov eax,[esi+28]
+// pop esi
+// cmp eax,ecx
+ db 8b 46 28 5e 3b c1
+
+aobMOCU:
+// cmp byte ptr [eax+000003C9],00
+ db 80 b8 c9 03 00 00 00
+
+aobMOUX:
+// lea eax,[esp+40]
+// push eax
+ db 8d 44 24 40 50
+
+//=========================================
+// Unregistering Symbols
+unregistersymbol(MyCode)
+unregistersymbol(iEnableMPR)
+unregistersymbol(iEnableMMP)
+unregistersymbol(iEnableGMD)
+unregistersymbol(iEnableMRP)
+unregistersymbol(iEnableMPB)
+unregistersymbol(iEnableMCP)
+unregistersymbol(iEnableMPP)
+unregistersymbol(iEnableMCC)
+unregistersymbol(iEnableMCU)
+unregistersymbol(iEnableMUX)
+unregistersymbol(iID)
+unregistersymbol(pPlayer)
+unregistersymbol(pCity)
+unregistersymbol(pUnit)
+
+unregistersymbol(aobFHPR)
+unregistersymbol(aobMOMP)
+unregistersymbol(aobMORP)
+unregistersymbol(aobMMPB)
+unregistersymbol(aobGDMD)
+unregistersymbol(aobMSCY)
+unregistersymbol(aobMOPP)
+unregistersymbol(aobMOCU)
+unregistersymbol(aobMOUX)
+
+//=========================================
+dealloc(MyCode)
+//============= Scripts End ===============
+
+// ****************************************
+// NOTES
+// ****************************************
+{
+}
+
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>8</ID>
+          <Description>"Enable/Disable Minimum Resourcea =&gt; (1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMPR</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>9</ID>
+          <Description>"Enable/Disable Movement Points on MAP =&gt; (1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMMP</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>10</ID>
+          <Description>"Enable/Disable God Mode =&gt; (1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableGMD</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>15</ID>
+          <Description>"Enable/Disable Research in 1 Turn =&gt; (1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMRP</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>24</ID>
+          <Description>"Enable/Disable Troop Can Act Again in Battle =&gt; (1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMPB</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>33</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>34</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>36</ID>
+          <Description>"Enable/Disable Minimum Population =&gt; (1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMCP</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>45</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>46</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>37</ID>
+          <Description>"Enable/Disable Prod/Const in 1 Turn =&gt; (1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMPP</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>48</ID>
+          <Description>"Enable/Disable Unlimited Castings in Battle =&gt; (1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMCC</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>33</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>34</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>49</ID>
+          <Description>"Enable/Disable Unlimited Casting Points in Battle =&gt; (1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMCU</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>33</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>34</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>54</ID>
+          <Description>"Enable/Disable Quick Level Up =&gt; (1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMUX</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>97</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>96</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>42</ID>
+          <Description>"================ Player Info ================"</Description>
+          <Color>000040</Color>
+          <VariableType>String</VariableType>
+          <Length>32</Length>
+          <Unicode>1</Unicode>
+          <ZeroTerminate>1</ZeroTerminate>
+          <Address>pPlayer</Address>
+          <Offsets>
+            <Offset>0</Offset>
+            <Offset>14</Offset>
+          </Offsets>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>43</ID>
+              <Description>"Current Money ==&gt;"</Description>
+              <Color>0000FF</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pPlayer</Address>
+              <Offsets>
+                <Offset>484</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>44</ID>
+              <Description>"Current Mana ==&gt;"</Description>
+              <Color>0000FF</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pPlayer</Address>
+              <Offsets>
+                <Offset>488</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>47</ID>
+              <Description>"Current Casting Points ==&gt;"</Description>
+              <Color>0000FF</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pPlayer</Address>
+              <Offsets>
+                <Offset>AD0</Offset>
+              </Offsets>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>45</ID>
+          <Description>"============== Selected City Info ============="</Description>
+          <Color>000040</Color>
+          <VariableType>String</VariableType>
+          <Length>32</Length>
+          <Unicode>1</Unicode>
+          <ZeroTerminate>1</ZeroTerminate>
+          <Address>pCity</Address>
+          <Offsets>
+            <Offset>0</Offset>
+            <Offset>6F4</Offset>
+          </Offsets>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>46</ID>
+              <Description>"Current Population ==&gt;"</Description>
+              <Color>0000FF</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pCity</Address>
+              <Offsets>
+                <Offset>6C0</Offset>
+              </Offsets>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>50</ID>
+          <Description>"============== Selected Unit Info ============="</Description>
+          <ShowAsHex>1</ShowAsHex>
+          <Color>000040</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>pUnit</Address>
+          <Offsets>
+            <Offset>0</Offset>
+          </Offsets>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>51</ID>
+              <Description>"Current Spent Points ==&gt;"</Description>
+              <Color>0000FF</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pUnit</Address>
+              <Offsets>
+                <Offset>458</Offset>
+                <Offset>18</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>52</ID>
+              <Description>"Current Accumulated Points ==&gt;"</Description>
+              <Color>0000FF</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pUnit</Address>
+              <Offsets>
+                <Offset>45C</Offset>
+                <Offset>18</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>53</ID>
+              <Description>"Current XP ==&gt;"</Description>
+              <Color>0000FF</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pUnit</Address>
+              <Offsets>
+                <Offset>47C</Offset>
+                <Offset>18</Offset>
+              </Offsets>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols/>
+  <Comments>===========================================
+ Game Title    : Age of Wonders III
+ Game Version  : 1.00 (10997)
+ Game Sponsor  : Fennix102
+ Process Name  : AoW3.exe
+ Script Version: 3.0 AOB
+ CE Version    : 6.3
+ Release date  : 06-Apr-2014
+ Author        : Recifense
+ History:
+ 01-Apr-14: First Release (RLD/Steam)
+ 02-Apr-14: Fixed GM (v1.1)
+ 03-Apr-14: Added Casting Features (v2.0)
+ 04-Apr-14: AOB version of the script (v2.0)
+ 06-Apr-14: Added XP features + fixes (v3.0)
+ Features:
+ - Minimum Resources:         [1]
+   - Money (6300)
+   - Mana  (630)
+ - Movement Points
+   - Strategic Map            [2]
+ - Action Points in Battle    [3]
+ - God Mode                   [4]
+ - Research in 1 Turn         [5]
+ - City Minimum Pop           [6]
+ - Prod/Const in 1 Turn       [7]
+ - Unlimited Casting points   [8]
+ - Unlimited Casting per turn [9]
+ - Quick Level Up             [A]
+===========================================
+[1] Minimum resources for human player only;
+[2] Player's army can move freely on strategic map;
+[3] Player's troops can Act Again during battle (selected);
+[4] For player's unit only;
+[5] That's it (Human player only)
+[6] When the a player's city is selected;
+[7] For human player only.
+[8] Casting Points will not decrease during battle;
+[9] Multiple castings by turn in battle
+[A] Player's selected unit XP = needed - 1;
+===========================================
+[USAGE]
+1) Run CE63;
+2) Run Game;
+3) Load the game process in CE;
+4) Change the value to 1 of each cheat you want to use;
+5) Game On;
+===========================================
+[HOTKEYS]
+CTRL+Home  = Enable  MR/MP/GM/R1T/PC1T cheats;
+CTRL+End   = Disable MR/MP/GM/R1T/PC1T cheats;
+-----------
+CTRL+PageUp   = Enable  MPB/UC/UCP cheat;
+CTRL+PageDown = Disable MPB/UC/UCP cheat;
+-----------
+CTRL+Insert = Enable  MPop cheat;
+CTRL+Delete = Disable MPop cheat;
+-----------
+CTRL+numeric 1 = Enable  QLU cheat;
+CTRL+numeric 0 = Disable QLU cheat;
+===========================================
+[ADVICE]
+When you can,save the game before starting using table/cheat. So you can always come back in case you don't like the result.
+===========================================
+[INFO]
+Tested on Win 7 64bits
+===========================================
+Cheers!
+ 
+</Comments>
+</CheatTable>

@@ -1,0 +1,295 @@
+<?xml version="1.0"?>
+<CheatTable CheatEngineTableVersion="11">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>14</ID>
+      <Description>"[X] &lt;== tLotR BfME 2 v16 Script"</Description>
+      <Options moHideChildren="1"/>
+      <Color>80000008</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>{
+===========================================
+ Game Title    : The Lord of the Rings - Battle for Middle-Earth 2
+ Game Version  : 1.6
+ Process Name  : Game.dat
+ Script Version: 1.0
+ CE Version    : 6.1
+ Release date  : 08-Apr-2012
+ Author        : Recifense
+ Features:
+ - God Mode
+ - Minimum Resource
+ - Minimum Power Points
+ - Unlimited Command Point,
+ - Some pointers
+===========================================
+}
+
+[ENABLE]
+//=========================================
+// Check if script is compatible to this game version
+// If false the script will not be loaded
+
+assert(game.dat+0031aa8b,8b 40 10 8b 40 24)
+assert(game.dat+004bf009,f3 0f 10 4d 08)
+assert(game.dat+00276192,8b b6 54 02 00 00)
+
+//=========================================
+alloc(MyCode,1024)
+//=========================================
+// Declaration section
+label(_MonPlayer)
+label(_MonP00)
+label(_MonP01)
+label(_BackMP)
+label(_ExitMP)
+label(_GodMode)
+label(_BackGM)
+label(_ExitGM)
+label(_MonSel)
+label(_BackMS)
+label(_ExitMS)
+label(pUnit)
+label(pSel)
+label(pPlayer)
+label(ppPlayer)
+label(iEnableMR)
+label(iEnableGM)
+label(iEnableMPP)
+label(iEnableMCP)
+label(iMinRes)
+label(iPlayerID)
+
+//=========================================
+// Registering Symbols
+registersymbol(MyCode)
+registersymbol(pUnit)
+registersymbol(pSel)
+registersymbol(pPlayer)
+registersymbol(ppPlayer)
+registersymbol(iEnableMR)
+registersymbol(iEnableGM)
+registersymbol(iEnableMPP)
+registersymbol(iEnableMCP)
+registersymbol(iMinRes)
+registersymbol(iPlayerID)
+
+//=========================================
+MyCode:
+//=========================================
+_MonPlayer:
+ push ecx
+
+ mov [ppPlayer],eax
+ mov eax,[eax+10]
+ mov [pPlayer],eax
+
+ mov ecx,[eax+000002ec]
+ mov [iPlayerID],ecx
+
+ cmp dword ptr [iEnableMR],0
+ je _MonP00                        // Jump if feature is disabled
+
+ mov ecx,[iMinRes]
+ cmp ecx,[eax+00000094]
+ jle _MonP00
+
+ mov [eax+00000094],ecx
+
+_MonP00:
+ cmp dword ptr [iEnableMPP],0
+ je _MonP01                        // Jump if feature is disabled
+
+ mov ecx,#150
+ cmp ecx,[eax+24]
+ jle _MonP01
+
+ mov [eax+24],ecx
+
+_MonP01:
+ cmp dword ptr [iEnableMCP],0
+ je _ExitMP                        // Jump if feature is disabled
+
+ xor ecx,ecx
+ mov [eax+68],ecx
+
+_ExitMP:
+ pop ecx
+
+ mov eax,[eax+24]                  // Original code (rds points)
+ jmp _BackMP                       // Back to main code
+
+//=========================================
+//
+_GodMode:
+ mov [pUnit],ecx
+
+ mov eax,(float)1.0
+ cmp eax,[ecx+10]
+ je _ExitGM
+
+ mov eax,[ebp+04]
+ cmp eax,game.dat+004c00c1
+ je _ExitGM
+
+ cmp dword ptr [iEnableGM],0
+ je _ExitGM                        // Jump if feature is disabled
+
+ lea eax,[ecx-10]
+ mov eax,[eax+08]
+ mov eax,[eax+00000304]
+
+ cmp eax,[iPlayerID]
+ jne _ExitGM
+
+ mov eax,[ebp+08]
+ test eax,eax
+ jns _ExitGM                       // jump if the value is positive
+
+ xor eax,eax
+ mov [ebp+08],eax                  // value2decrease = 0
+
+_ExitGM:
+ movss xmm1,[ebp+08]               // Original code
+ jmp _BackGM                       // Back to main code
+
+//=========================================
+_MonSel:
+ mov esi,[esi+00000254]            // Original code
+
+_ExitMS:
+ mov [pSel],esi
+ jmp _BackMS                       // Back to main code
+
+//=========================================
+ db '===================================&gt;'
+ db 'CE6.1 Script by Recifense 040812'
+//=========================================
+// Variables
+iEnableMR:
+ dd 1
+iEnableGM:
+ dd 1
+iEnableMPP:
+ dd 1
+iEnableMCP:
+ dd 1
+pUnit:
+ dd 0
+pSel:
+ dd 0
+pPlayer:
+ dd 0
+ppPlayer:
+ dd 0
+iPlayerID:
+ dd 0
+iMinRes:
+ dd #6100
+
+//=========================================
+// Hacking Points
+game.dat+0031aa8b:
+ jmp _MonPlayer
+ nop
+_BackMP:
+
+game.dat+004bf009:
+ jmp _GodMode
+_BackGM:
+
+game.dat+00276192:
+ jmp _MonSel
+ nop
+_BackMS:
+
+//=========================================
+// Script for Restoring Original Codes
+[DISABLE]
+game.dat+0031aa8b:
+// mov eax,[eax+10]
+// mov eax,[eax+24]
+ db 8b 40 10 8b 40 24
+
+game.dat+004bf009:
+// movss xmm1,[ebp+08]
+ db f3 0f 10 4d 08
+
+game.dat+00276192:
+// mov esi,[esi+00000254]
+ db 8b b6 54 02 00 00
+
+//=========================================
+// Unregistering Symbols
+unregistersymbol(MyCode)
+unregistersymbol(pUnit)
+unregistersymbol(pSel)
+unregistersymbol(iEnableMR)
+unregistersymbol(iEnableGM)
+unregistersymbol(iEnableMPP)
+unregistersymbol(iEnableMCP)
+unregistersymbol(pPlayer)
+unregistersymbol(ppPlayer)
+unregistersymbol(iMinRes)
+unregistersymbol(iPlayerID)
+
+//=========================================
+dealloc(MyCode)
+//============= Scripts End ===============
+
+// ****************************************
+// NOTES
+// ****************************************
+{
+}
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>3</ID>
+          <Description>"Enable/Disable Minimum Resource =&gt; (1/0)"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMR</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>4</ID>
+          <Description>"Enable/Disable God Mode =&gt; (1/0)"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableGM</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>11</ID>
+          <Description>"Enable/Disable Minimum Power Points =&gt; (1/0)"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMPP</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>12</ID>
+          <Description>"Enable/Disable Unlimited Command Points =&gt; (1/0)"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMCP</Address>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols/>
+  <Comments>===========================================
+ Game Title    : The Lord of the Rings - Battle for Middle-Earth 2
+ Game Version  : 1.6
+ Process Name  : Game.dat
+ Script Version: 1.0
+ CE Version    : 6.1
+ Release date  : 08-Apr-2012
+ Author        : Recifense
+ Features:
+ - God Mode
+ - Minimum Resource
+ - Minimum Power Points
+ - Unlimited Command Point,
+ - Some pointers
+===========================================
+</Comments>
+</CheatTable>

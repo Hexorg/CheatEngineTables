@@ -1,0 +1,410 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="16">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>35</ID>
+      <Description>"[X] &lt;== A Game of Thrones - Genesis v1.1.0.1 FLT Script 1.0"</Description>
+      <Options moHideChildren="1"/>
+      <Color>FF0000</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>{
+===========================================
+ Game Title    : A Game of Thrones - Genesis
+ Game Version  : 1.1.0.1
+ Game Sponsor  : FairLight
+ Proces Name   : Agot.exe
+ Script Version: 1.0
+ CE Version    : 6.3
+ Release date  : 28-Sep-2013
+ Author        : Recifense
+ History:
+ 28-Sep-13: First Release
+ Features:
+ - Minimum Resouces:
+   - Gold
+   - Food (when existing)
+ - God Mode
+ - Unit Ownership
+ - Some Pointers
+===========================================
+}
+
+//=========================================
+// Definitions
+define(LUDO,"Agot.exe")
+define(MHPR,Agot.exe+001042be)
+define(MSUB,Agot.exe+0027ab80)
+define(MSUU,Agot.exe+002baced)
+define(GDMD,Agot.exe+002b0260)
+define(MUOR,Agot.exe+002b7b48)
+
+//=========================================
+[ENABLE]
+//=========================================
+//LuaCall(CheckVersion())
+//=========================================
+// Check if script is compatible to this game version
+// If false the script will not be loaded
+
+assert(MHPR,8b 8f 00 01 00 00 e8 ?? ?? ?? ?? d9 7c 24 16 0f b7 44 24 16 0d)
+assert(MSUB,d9 85 9c 00 00 00 8d b4 24 90 02 00 00 d9 7c 24 18 0f b7 44 24)
+assert(MSUU,d9 83 9c 00 00 00 d9 5c 24 18 d9 44 24 18 e8 ?? ?? ?? ?? d9 83)
+assert(GDMD,d9 81 9c 00 00 00 8b 01 d8 64 24 04 8b 90 6c 01 00 00 51 d9 99)
+assert(MUOR,89 be a0 02 00 00 0f 84 ?? ?? ?? ?? 8d 4c 24 1c e8 ?? ?? ?? ??)
+
+//=========================================
+alloc(MyCode,4096,LUDO)
+//=========================================
+// Declaration section
+label(_MonHumanPlayer)
+label(_MonHP00)
+label(_BackMHP)
+label(_ExitMHP)
+label(_MonSelUnitB)
+label(_BackMSB)
+label(_ExitMSB)
+label(_MonSelUnitU)
+label(_BackMSU)
+label(_ExitMSU)
+label(_GodMode)
+label(_BackGMD)
+label(_ExitGMD)
+label(_MonUnitOwner)
+label(_BackMUO)
+label(_ExitMUO)
+label(pSelB)
+label(pSelU)
+label(pPlayer)
+label(iPlayerID)
+label(iEnableMMO)
+label(iEnableGMD)
+label(iEnableMUO)
+label(fMinMoney)
+
+//=========================================
+// Registering Symbols
+registersymbol(MyCode)
+registersymbol(iPlayerID)
+registersymbol(pPlayer)
+registersymbol(pSelB)
+registersymbol(pSelU)
+registersymbol(iEnableMMO)
+registersymbol(iEnableGMD)
+registersymbol(iEnableMUO)
+registersymbol(fMinMoney)
+
+//=========================================
+MyCode:
+//=========================================
+// Main game screen
+_MonHumanPlayer:
+ push ebx
+
+ mov [pPlayer],edi
+ movzx ebx,byte ptr [edi+000000a0]
+ mov [iPlayerID],ebx
+
+ cmp dword ptr [iEnableMMO],0
+ je _ExitMHP                       // Jump if feature is disabled
+
+ mov ebx,[edi+00000100]
+ test ebx,ebx
+ jz _ExitMHP
+
+ mov ecx,[fMinMoney]
+ cmp ecx,[ebx+08]
+ js _MonHP00
+
+ mov [ebx+08],ecx
+
+_MonHP00:
+ cmp dword ptr [ebx+10],00
+ je _ExitMHP
+
+ cmp ecx,[ebx+10]
+ js _ExitMHP
+
+ mov [ebx+10],ecx
+
+_ExitMHP:
+ pop ebx
+
+ mov ecx,[edi+00000100]            // Original code (rd pMoney)
+ jmp _BackMHP                      // Back to main code
+
+//=========================================
+// When selecting building
+_MonSelUnitB:
+ mov [pSelB],ebp
+
+_ExitMSB:
+ fld dword ptr [ebp+0000009C]      // Original code (rd HP)
+ jmp _BackMSB                      // Back to main code
+
+//=========================================
+// When selecting unit
+_MonSelUnitU:
+ mov [pSelU],ebx
+
+_ExitMSU:
+ fld dword ptr [ebx+0000009C]      // Original code (rd HP)
+ jmp _BackMSU                      // Back to main code
+
+//=========================================
+// During Combat
+_GodMode:
+ cmp dword ptr [iEnableGMD],0
+ je _ExitGMD                       // Jump if feature is disabled
+
+ movzx eax,byte ptr [ecx+000002a0]
+ cmp eax,[iPlayerID]
+ jne _ExitGMD
+
+ mov dword ptr [esp+04],00         // No One dies
+
+_ExitGMD:
+ fld dword ptr [ecx+0000009C]      // Original code (rds HP)
+ jmp _BackGMD                      // Back to main code
+
+//=========================================
+// During Combat
+_MonUnitOwner:
+ pushfd
+ push eax
+
+ cmp dword ptr [iEnableMUO],0
+ je _ExitMUO                       // Jump if feature is disabled
+
+ movzx eax,byte ptr [esi+000002a0]
+ cmp eax,[iPlayerID]
+ jne _ExitMUO
+
+ mov edi,eax
+
+_ExitMUO:
+ pop eax
+ popfd
+
+ mov [esi+000002A0],edi            // Original code (chg Owner)
+ jmp _BackMUO                      // Back to main code
+
+//=========================================
+ db '======================================&gt;'
+ db 'CE6.3 Script by Recifense 092813'
+//=========================================
+// Variables
+iEnableMMO:
+ dd 0
+iEnableGMD:
+ dd 0
+iEnableMUO:
+ dd 0
+iPlayerID:
+ dd #9999
+pPlayer:
+ dd 0
+pSelB:
+ dd 0
+pSelU:
+ dd 0
+fMinMoney:
+ dd (float)6300.0
+
+//=========================================
+// Hacking Points
+MHPR:
+ jmp _MonHumanPlayer
+ nop
+_BackMHP:
+
+MSUB:
+ jmp _MonSelUnitB
+ nop
+_BackMSB:
+
+MSUU:
+ jmp _MonSelUnitU
+ nop
+_BackMSU:
+
+GDMD:
+ jmp _GodMode
+ nop
+_BackGMD:
+
+MUOR:
+ jmp _MonUnitOwner
+ nop
+_BackMUO:
+
+//=========================================
+// Script for Restoring Original Codes
+[DISABLE]
+MHPR:
+// mov ecx,[edi+00000100]
+ db 8b 8f 00 01 00 00
+
+MSUB:
+// fld dword ptr [ebp+0000009C]
+ db d9 85 9c 00 00 00
+
+MSUU:
+// fld dword ptr [ebx+0000009C]
+ db d9 83 9c 00 00 00
+
+GDMD:
+// fld dword ptr [ecx+0000009C]
+ db d9 81 9c 00 00 00
+
+MUOR:
+// mov [esi+000002A0],edi
+ db 89 be a0 02 00 00
+
+//=========================================
+// Unregistering Symbols
+unregistersymbol(MyCode)
+unregistersymbol(iPlayerID)
+unregistersymbol(pPlayer)
+unregistersymbol(pSelB)
+unregistersymbol(pSelU)
+unregistersymbol(iEnableMMO)
+unregistersymbol(iEnableGMD)
+unregistersymbol(iEnableMUO)
+unregistersymbol(fMinMoney)
+
+//=========================================
+dealloc(MyCode)
+//============= Scripts End ===============
+
+// ****************************************
+// NOTES
+// ****************************************
+{
+}
+
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>9</ID>
+          <Description>"Enable/Disable Minimum Resources =&gt;(1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMMO</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>36</ID>
+              <Description>"Minimum Resources Value ==&gt;"</Description>
+              <Color>0080FF</Color>
+              <VariableType>Float</VariableType>
+              <Address>fMinMoney</Address>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>10</ID>
+          <Description>"Enable/Disable God Mode =&gt;(1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableGMD</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>34</ID>
+          <Description>"Enable/Disable Unit Owner =&gt;(1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMUO</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols/>
+  <Comments>===========================================
+ Game Title    : A Game of Thrones - Genesis
+ Game Version  : 1.1.0.1
+ Game Sponsor  : FairLight (#1014)
+ Proces Name   : Agot.exe
+ Script Version: 1.0
+ CE Version    : 6.3
+ Release date  : 28-Sep-2013
+ Author        : Recifense
+ History:
+ 28-Sep-13: First Release
+ Features:
+ - Minimum Resouces:      [1]
+   - Gold
+   - Food (when existing)
+ - God Mode               [2]
+ - Unit Ownership         [3]
+ - Some Pointers
+===========================================
+[1] Resources will not go under minimum value (default = 6300). Food will only be checked when it is different from 0;
+[2] For all human player's units;
+[3] Human player's units will not change side;
+===========================================
+HOTKEYS:
+CTRL+Home = Enable  all cheats;
+CTRL+End  = Disable all cheats;
+===========================================
+Cheers!
+</Comments>
+</CheatTable>

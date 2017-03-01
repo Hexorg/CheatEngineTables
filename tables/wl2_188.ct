@@ -1,0 +1,409 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="18">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>67802</ID>
+      <Description>"Wasteland 2 AOB script"</Description>
+      <Options moHideChildren="1"/>
+      <LastState Activated="0"/>
+      <Color>80000008</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>[ENABLE]
+aobscan(aobPartyGrabber,8B 8F B4 00 00 00 8B 05 * * * * 8B 49 14)
+aobscan(aobItemWeigher,8B 40 10 D9 40 38 C9 C3)
+aobscan(aobItemDragger,8B 57 18 8B 47 10 8B 40 48 89 45)
+aobscan(aobMinDamageReader,8B 98 9C 00 00 00 8B 45)
+aobscan(aobMaxDamageReader,8B 98 A0 00 00 00 8B 45)
+aobscan(aobCharacterSelector,8B 45 0C 89 46 60 83 EC 0C 53)
+
+alloc(newmem,4096)
+
+label(pParty)
+registersymbol(pParty)
+
+label(aobItemWeigher_r)
+registersymbol(aobItemWeigher_r)
+
+label(lblItemWeigher)
+label(lblItemWeigherSkip)
+label(lblItemWeigherRet)
+
+label(bEnableItemWeightMod)
+label(fItemWeightMod)
+registersymbol(bEnableItemWeightMod)
+registersymbol(fItemWeightMod)
+
+label(aobItemDragger_r)
+registersymbol(aobItemDragger_r)
+
+label(lblItemDragger)
+label(lblItemDraggerNoMaxRead)
+label(lblItemDraggerSkip)
+label(lblItemDraggerRet)
+
+label(bEnableItemDragger)
+label(iItemDraggerCount)
+registersymbol(bEnableItemDragger)
+registersymbol(iItemDraggerCount)
+
+label(aobMinDamageReader_r)
+registersymbol(aobMinDamageReader_r)
+
+label(lblMinDamageReader)
+label(lblMinDamageReaderRet)
+
+label(aobMaxDamageReader_r)
+registersymbol(aobMaxDamageReader_r)
+
+label(lblMaxDamageReader)
+label(lblMaxDamageReaderRet)
+
+label(lblDamageMod)
+label(lblDamageModSkip)
+
+label(bEnableDamageMod)
+label(fDamageMod)
+registersymbol(bEnableDamageMod)
+registersymbol(fDamageMod)
+
+label(fDamageTemp)
+registersymbol(fDamageTemp)
+
+label(aobCharacterSelector_r)
+registersymbol(aobCharacterSelector_r)
+
+label(lblCharacterSelector)
+label(lblCharacterSelectorRet)
+
+label(pLastCharacter)
+registersymbol(pLastCharacter)
+
+newmem:
+bEnableItemWeightMod:
+dd 1
+fItemWeightMod:
+dd (float)0.1
+bEnableItemDragger:
+dd 1
+iItemDraggerCount:
+dd (int)0
+bEnableDamageMod:
+dd 1
+fDamageMod:
+dd (float)2.0
+
+lblItemWeigher:
+//mov eax,[eax+10]       // Original code
+//fld dword ptr [eax+38] // Original code
+db 8B 40 10 D9 40 38
+cmp dword ptr [bEnableItemWeightMod],1
+jne short lblItemWeigherSkip
+fmul dword ptr [fItemWeightMod]
+lblItemWeigherSkip:
+jmp lblItemWeigherRet
+
+lblItemDragger:
+db 8B 57 18 8B 47 10
+// mov edx,[edi+18] // Original code
+// mov eax,[edi+10] // Original code
+cmp dword ptr [eax+48],0
+je short lblItemDraggerSkip
+cmp dword ptr [bEnableItemDragger],1
+jne short lblItemDraggerSkip
+pushad
+push 11 // CTRL key
+call GetAsyncKeyState
+shr ax,#15
+cmp ax,1
+popad
+jne short lblItemDraggerSkip
+mov ecx,[iItemDraggerCount]
+test ecx,ecx
+jnz short lblItemDraggerNoMaxRead
+mov ecx,[eax+48]
+lblItemDraggerNoMaxRead:
+mov edx,ecx
+mov dword ptr [edi+18],edx
+lblItemDraggerSkip:
+jmp lblItemDraggerRet
+
+lblMinDamageReader:
+//mov ebx,[eax+0000009C] // Original code
+db 8B 98 9C 00 00 00
+call lblDamageMod
+jmp lblMinDamageReaderRet
+
+lblMaxDamageReader:
+//mov ebx,[eax+000000A0] // Original code
+db 8B 98 A0 00 00 00
+call lblDamageMod
+jmp lblMaxDamageReaderRet
+
+fDamageTemp:
+dd 0
+lblDamageMod:
+cmp dword ptr [bEnableDamageMod],1
+jne short lblDamageModSkip
+mov dword ptr [fDamageTemp],ebx
+fild dword ptr [fDamageTemp]
+fmul dword ptr [fDamageMod]
+fistp dword ptr [fDamageTemp]
+mov ebx,[fDamageTemp]
+lblDamageModSkip:
+ret
+
+lblCharacterSelector:
+mov eax,[esi+60]
+mov dword ptr [pLastCharacter],eax
+//mov eax,[ebp+0C] // Original code
+//mov [esi+60],eax // Original code
+db 8B 45 0C 89 46 60
+jmp lblCharacterSelectorRet
+pLastCharacter:
+dd 0
+
+pParty:
+readmem(aobPartyGrabber+8, 4)
+
+aobCharacterSelector:
+aobCharacterSelector_r:
+jmp lblCharacterSelector
+nop
+lblCharacterSelectorRet:
+
+aobMinDamageReader:
+aobMinDamageReader_r:
+jmp lblMinDamageReader
+nop
+lblMinDamageReaderRet:
+
+aobMaxDamageReader:
+aobMaxDamageReader_r:
+jmp lblMaxDamageReader
+nop
+lblMaxDamageReaderRet:
+
+aobItemDragger:
+aobItemDragger_r:
+jmp lblItemDragger
+nop
+lblItemDraggerRet:
+
+aobItemWeigher:
+aobItemWeigher_r:
+jmp lblItemWeigher
+nop
+lblItemWeigherRet:
+
+[DISABLE]
+unregistersymbol(pParty)
+
+aobItemWeigher_r:
+//Alt: mov eax,[eax+10]
+//Alt: fld dword ptr [eax+38]
+db 8B 40 10 D9 40 38
+
+unregistersymbol(aobItemWeigher_r)
+
+unregistersymbol(bEnableItemWeightMod)
+unregistersymbol(fItemWeightMod)
+
+aobItemDragger_r:
+//Alt: mov edx,[edi+18]
+//Alt: mov eax,[edi+10]
+db 8B 57 18 8B 47 10
+
+unregistersymbol(aobItemDragger_r)
+
+unregistersymbol(bEnableItemDragger)
+unregistersymbol(iItemDraggerCount)
+
+aobMinDamageReader_r:
+//Alt: mov ebx,[eax+0000009C]
+db 8B 98 9C 00 00 00
+
+unregistersymbol(aobMinDamageReader_r)
+
+aobMaxDamageReader_r:
+//Alt: mov ebx,[eax+000000A0]
+db 8B 98 A0 00 00 00
+
+unregistersymbol(aobMaxDamageReader_r)
+
+unregistersymbol(bEnableDamageMod)
+unregistersymbol(fDamageMod)
+
+unregistersymbol(fDamageTemp)
+
+aobCharacterSelector_r:
+//Alt: mov eax,[ebp+0C]
+//Alt: mov [esi+60],eax
+db 8B 45 0C 89 46 60
+
+unregistersymbol(aobCharacterSelector_r)
+
+unregistersymbol(pLastCharacter)
+
+dealloc(newmem)
+
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>67804</ID>
+          <Description>"iScraps"</Description>
+          <LastState Value="??" Activated="0" RealAddress="00000000"/>
+          <Color>FF0000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>pParty</Address>
+          <Offsets>
+            <Offset>14</Offset>
+            <Offset>1C</Offset>
+            <Offset>0</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>67805</ID>
+          <Description>"iWater"</Description>
+          <LastState Value="??" Activated="0" RealAddress="00000000"/>
+          <Color>FF0000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>pParty</Address>
+          <Offsets>
+            <Offset>18</Offset>
+            <Offset>1C</Offset>
+            <Offset>0</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>67806</ID>
+          <Description>"iRequisitionPoints"</Description>
+          <LastState Value="??" Activated="0" RealAddress="00000000"/>
+          <Color>FF0000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>pParty</Address>
+          <Offsets>
+            <Offset>A4</Offset>
+            <Offset>1C</Offset>
+            <Offset>0</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>67807</ID>
+          <Description>"bEnableItemWeightMod"</Description>
+          <DropDownList ReadOnly="1" DescriptionOnly="1" DisplayValueAsItem="1">0:Disabled
+1:Enabled
+</DropDownList>
+          <LastState Value="??" Activated="0" RealAddress="00000000"/>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>bEnableItemWeightMod</Address>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>67808</ID>
+              <Description>"fItemWeightMod"</Description>
+              <LastState Value="??" Activated="0" RealAddress="00000000"/>
+              <Color>FF0000</Color>
+              <VariableType>Float</VariableType>
+              <Address>fItemWeightMod</Address>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>67809</ID>
+          <Description>"bEnableItemDragger"</Description>
+          <DropDownList ReadOnly="1" DescriptionOnly="1" DisplayValueAsItem="1">0:Disabled
+1:Enabled
+</DropDownList>
+          <LastState Value="??" Activated="0" RealAddress="00000000"/>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>bEnableItemDragger</Address>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>67810</ID>
+              <Description>"iItemDraggerCount"</Description>
+              <LastState Value="??" Activated="0" RealAddress="00000000"/>
+              <Color>FF0000</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>iItemDraggerCount</Address>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>67811</ID>
+          <Description>"bEnableDamageMod"</Description>
+          <DropDownList ReadOnly="1" DescriptionOnly="1" DisplayValueAsItem="1">0:Disabled
+1:Enabled
+</DropDownList>
+          <LastState Value="??" Activated="0" RealAddress="00000000"/>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>bEnableDamageMod</Address>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>67812</ID>
+              <Description>"fDamageMod"</Description>
+              <LastState Value="??" Activated="0" RealAddress="00000000"/>
+              <Color>FF0000</Color>
+              <VariableType>Float</VariableType>
+              <Address>fDamageMod</Address>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>67837</ID>
+          <Description>"Previously selected character (the one whose inventory page you've flipped away)"</Description>
+          <LastState Value="" Activated="0" RealAddress="00000000"/>
+          <Color>0080FF</Color>
+          <GroupHeader>1</GroupHeader>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>67836</ID>
+              <Description>"iXPLevel"</Description>
+              <LastState Value="??" Activated="0" RealAddress="00000000"/>
+              <Color>FF0000</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pLastCharacter</Address>
+              <Offsets>
+                <Offset>A8</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>67835</ID>
+              <Description>"iXP"</Description>
+              <LastState Value="??" Activated="0" RealAddress="00000000"/>
+              <Color>FF0000</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pLastCharacter</Address>
+              <Offsets>
+                <Offset>A4</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>67834</ID>
+              <Description>"iAttributePoints"</Description>
+              <LastState Value="??" Activated="0" RealAddress="00000000"/>
+              <Color>FF0000</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pLastCharacter</Address>
+              <Offsets>
+                <Offset>98</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>67833</ID>
+              <Description>"iSkillPoints"</Description>
+              <LastState Value="??" Activated="0" RealAddress="00000000"/>
+              <Color>FF0000</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pLastCharacter</Address>
+              <Offsets>
+                <Offset>9C</Offset>
+              </Offsets>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+  </CheatEntries>
+</CheatTable>

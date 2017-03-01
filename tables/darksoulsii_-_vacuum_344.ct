@@ -1,0 +1,232 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="18">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>12582</ID>
+      <Description>"Monster Vacuum"</Description>
+      <Options moHideChildren="1"/>
+      <LastState Activated="0"/>
+      <Color>80000008</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>[ENABLE]
+aobscanmodule(vacuum_inj, DarkSoulsII.exe, 48 8B 41 20 F3 0F 10 05 14 8A 93 00 0F 28 1A)
+aobscanmodule(vacuum_nodeath, DarkSoulsII.exe, E8 1d 04 00 00 EB 20)
+alloc(vacuum_mem, 2000)
+
+label(code)
+label(exit)
+label(return)
+label(tmp_data)
+label(distance)
+label(max_distance)
+label(offset)
+
+registersymbol(vacuum_inj)
+registersymbol(vacuum_nodeath)
+registersymbol(distance)
+registersymbol(max_distance)
+registersymbol(offset)
+
+
+vacuum_mem:
+tmp_data:
+  dd 0 0 0 0
+offset:
+  dd (float)3 (float)1 0 0
+distance:
+  dd 0
+max_distance:
+  dd (float)5
+code:
+  // based on code following on injection site the registers that are safe to use are:
+  // rax, rbx, rdi, xmm0, xmm1, xmm2, xmm3
+
+  // load player entity address
+  mov rbx, DarkSoulsII.exe+0160B8D0
+  mov rbx,[rbx]
+  mov rbx,[rbx+0D0]
+  mov rbx,[rbx+100]
+  mov rbx,[rbx+320]
+
+  // is current entity player?
+  cmp rbx, rcx
+  je exit
+
+  // if not see if it should be vacuumed
+  mov rax,[rcx+20]
+  mov rbx,[rbx+20]
+  // caculate distance
+  movaps xmm0,[rbx+1A0] // p = &lt;player position&gt;
+  movaps xmm1,[rax+1A0] // m = &lt;mob position&gt;
+  subps xmm1, xmm0      // d = m-p
+  mulps xmm1, xmm1
+  movaps [tmp_data],xmm1
+  xor edi, edi
+  mov [tmp_data+C],edi
+  movss xmm2,[tmp_data]
+  movss xmm3,[tmp_data+4]
+  movss xmm1,[tmp_data+8]
+  addss xmm2,xmm3
+  addss xmm2,xmm1       // nÂ² = &lt;d,d&gt;
+  sqrtss xmm2,xmm2
+  //movss [distance],xmm2
+  movss  xmm1,[max_distance]
+  comiss xmm2,xmm1
+  ja exit
+  addps  xmm0,[offset]
+  movaps [rax+1A0],xmm0
+  movaps [rax+1B0],xmm0
+  movaps [rax+1C0],xmm0
+
+exit:
+  // original code at injection site
+  mov rax,[rcx+20]
+  // CE won't assemble the original instruction directly
+  // because the offset doesn't fit into 4 bytes counting from our memory
+  // workaround using a register
+  mov rdi,DarkSoulsII.exe+10A4690
+  movss xmm0,[rdi]
+  // workaround end
+  movaps xmm3,[rdx]
+  jmp return
+
+
+vacuum_inj:
+  jmp code
+  nop
+return:
+
+vacuum_nodeath:
+  nop
+  nop
+  nop
+  nop
+  nop
+
+[DISABLE]
+
+
+vacuum_inj:
+  db 48 8B 41 20 F3 0F 10 05 14 8A 93 00 0F 28 1A
+
+vacuum_nodeath:
+  call vacuum_nodeath+422
+
+
+unregistersymbol(vacuum_inj)
+unregistersymbol(vacuum_nodeath)
+unregistersymbol(distance)
+unregistersymbol(max_distance)
+unregistersymbol(offset)
+
+dealloc(vacuum_mem)
+
+{ ===  original code  === (Ver.1.01 Calibrations 2.01 2015-04-11)
+DarkSoulsII.exe+76BC60 - 48 89 5C 24 10        - mov [rsp+10],rbx
+DarkSoulsII.exe+76BC65 - F3 0F11 54 24 18      - movss [rsp+18],xmm2
+DarkSoulsII.exe+76BC6B - 57                    - push rdi
+DarkSoulsII.exe+76BC6C - 48 83 EC 30           - sub rsp,30
+  === injection start ===
+DarkSoulsII.exe+76BC70 - 48 8B 41 20           - mov rax,[rcx+20]
+DarkSoulsII.exe+76BC74 - F3 0F10 05 148A9300   - movss xmm0,[DarkSoulsII.exe+10A4690]
+DarkSoulsII.exe+76BC7C - 0F28 1A               - movaps xmm3,[rdx]
+  ===  injection end  ===
+DarkSoulsII.exe+76BC7F - F3 0F11 44 24 40      - movss [rsp+40],xmm0
+DarkSoulsII.exe+76BC85 - F3 0F10 4C 24 40      - movss xmm1,[rsp+40]
+DarkSoulsII.exe+76BC8B - 48 8B FA              - mov rdi,rdx
+DarkSoulsII.exe+76BC8E - 48 8B D9              - mov rbx,rcx
+}
+
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>12584</ID>
+          <Description>"Vacuum distance"</Description>
+          <LastState Value="??" Activated="0" RealAddress="00000000"/>
+          <Color>80000008</Color>
+          <VariableType>Float</VariableType>
+          <Address>max_distance</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>12585</ID>
+          <Description>"Offset X"</Description>
+          <LastState Value="??" Activated="0" RealAddress="00000000"/>
+          <Color>80000008</Color>
+          <VariableType>Float</VariableType>
+          <Address>offset</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>12588</ID>
+          <Description>"Offset Y"</Description>
+          <LastState Value="??" Activated="0" RealAddress="00000000"/>
+          <Color>80000008</Color>
+          <VariableType>Float</VariableType>
+          <Address>offset+4</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>12587</ID>
+          <Description>"Offset Z"</Description>
+          <LastState Value="??" Activated="0" RealAddress="00000000"/>
+          <Color>80000008</Color>
+          <VariableType>Float</VariableType>
+          <Address>offset+8</Address>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+  </CheatEntries>
+  <CheatCodes>
+    <CodeEntry>
+      <Description>Injection Point vacuum</Description>
+      <Address>14008BC70</Address>
+      <ModuleName>DarkSoulsII.exe</ModuleName>
+      <ModuleNameOffset>76BC70</ModuleNameOffset>
+      <Before>
+        <Byte>57</Byte>
+        <Byte>48</Byte>
+        <Byte>83</Byte>
+        <Byte>EC</Byte>
+        <Byte>30</Byte>
+      </Before>
+      <Actual>
+        <Byte>48</Byte>
+        <Byte>8B</Byte>
+        <Byte>41</Byte>
+        <Byte>20</Byte>
+      </Actual>
+      <After>
+        <Byte>F3</Byte>
+        <Byte>0F</Byte>
+        <Byte>10</Byte>
+        <Byte>05</Byte>
+        <Byte>14</Byte>
+      </After>
+    </CodeEntry>
+    <CodeEntry>
+      <Description>Change of movaps [rbx+50],xmm0</Description>
+      <Address>140360894</Address>
+      <ModuleName>DarkSoulsII.exe</ModuleName>
+      <ModuleNameOffset>710894</ModuleNameOffset>
+      <Before>
+        <Byte>58</Byte>
+        <Byte>D1</Byte>
+        <Byte>0F</Byte>
+        <Byte>5C</Byte>
+        <Byte>C2</Byte>
+      </Before>
+      <Actual>
+        <Byte>0F</Byte>
+        <Byte>29</Byte>
+        <Byte>43</Byte>
+        <Byte>50</Byte>
+      </Actual>
+      <After>
+        <Byte>0F</Byte>
+        <Byte>B6</Byte>
+        <Byte>43</Byte>
+        <Byte>11</Byte>
+        <Byte>FF</Byte>
+      </After>
+    </CodeEntry>
+  </CheatCodes>
+  <UserdefinedSymbols/>
+</CheatTable>

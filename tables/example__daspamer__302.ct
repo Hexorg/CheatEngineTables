@@ -1,0 +1,168 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="14">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>2</ID>
+      <Description>"Instant Well"</Description>
+      <Options moHideChildren="1"/>
+      <Color>80000008</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>[ENABLE]
+label(welltimer)
+registersymbol(welltimer)
+aobscan(aobwelltimer,00 00 00 00 00 20 CC 40 00 00 00 00 00 00 24 40)
+
+aobwelltimer:
+welltimer:
+db 00 00 00 00 00 00 F0 3F 00 00 00 00 00 00 24 40
+
+[DISABLE]
+welltimer:
+db 00 00 00 00 00 20 CC 40 00 00 00 00 00 00 24 40
+unregistersymbol(welltimer)
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>3</ID>
+          <Description>"Timer"</Description>
+          <Color>80000008</Color>
+          <VariableType>Double</VariableType>
+          <Address>welltimer</Address>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>11</ID>
+      <Description>"Instant Hen House"</Description>
+      <Options moHideChildren="1"/>
+      <Color>80000008</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>[ENABLE]
+label(hentimer)
+registersymbol(hentimer)
+aobscan(aobhentimer,00 00 00 00 00 18 F5 40 0A D7 A3 70 3D 0A B7 3F)
+
+aobhentimer:
+hentimer:
+db 00 00 00 00 00 00 F0 3F 0A D7 A3 70 3D 0A B7 3F
+
+[DISABLE]
+hentimer:
+db 00 00 00 00 00 18 F5 40 0A D7 A3 70 3D 0A B7 3F
+unregistersymbol(hentimer)
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>12</ID>
+          <Description>"Timer"</Description>
+          <Color>80000008</Color>
+          <VariableType>Double</VariableType>
+          <Address>hentimer</Address>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>19</ID>
+      <Description>"Cash to Coins"</Description>
+      <Color>80000008</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>[ENABLE]
+label(cashbytes)
+label(coinbytes)
+registersymbol(cashbytes)
+registersymbol(coinbytes)
+aobscan(aobcashbytes,7B 00 00 00)
+aobscan(aobcoinbytes,7B 00 00 00)
+
+aobcashbytes:
+cashbytes:
+db 7B 00 00 00
+
+aobcoinbytes:
+coinbytes:
+db 7B 00 00 00
+
+[DISABLE]
+unregistersymbol(cashbytes)
+unregistersymbol(coinbytes)
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>20</ID>
+          <Description>"Cash Bytes"</Description>
+          <ShowAsHex>1</ShowAsHex>
+          <Color>80000008</Color>
+          <VariableType>Array of byte</VariableType>
+          <ByteLength>4</ByteLength>
+          <Address>cashbytes+C</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>21</ID>
+          <Description>"Coin Bytes"</Description>
+          <ShowAsHex>1</ShowAsHex>
+          <Color>80000008</Color>
+          <VariableType>Array of byte</VariableType>
+          <ByteLength>4</ByteLength>
+          <Address>coinbytes+C</Address>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>22</ID>
+      <Description>"Press here.."</Description>
+      <Color>0080FF</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>[ENABLE]
+LuaCall(Aobswap("Cash Bytes address","Coins Bytes address"))
+[DISABLE
+//I want to make this scan the value of Cash Bytes address which is changing all the time
+//and replace with coins bytes address.
+//If there a way to do it whenever you activate the Cash to Coins AA
+//Hope you can help me out Dark byte.
+</AssemblerScript>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols/>
+  <LuaScript>function DEC_HEX(IN)
+    local B,K,OUT,I,D=16,"0123456789ABCDEF","",0
+   if IN&lt;1 then
+      OUT=0
+      return OUT
+   end
+    while IN&gt;0 do
+        I=I+1
+        IN,D=math.floor(IN/B),math.mod(IN,B)+1
+        OUT=string.sub(K,D,D)..OUT
+    end
+    return OUT
+end
+
+function Aobswap(search, change)
+   aobs = AOBScan(search)
+   if(aobs ~= nil) then
+      j = stringlist_getCount(aobs)
+      --print("Found:",j);
+      for i = 1, j do
+         --print(stringlist_getString(aobs,i-1));
+            --66 ?? ?? d1 a1 68 ?? ?? d0 d0
+         address=stringlist_getString(aobs,i-1)
+                for i = 1, string.len(change), 3 do
+               z = string.sub(change, i, i+2)
+                    x, y = string.find(z, "%?+")
+                    if (x == nil) then
+                  script=[[
+                  ]]..address.."+"..(DEC_HEX((i-1)/3))..[[:
+                  db ]]..z..[[
+                  ]]
+                  autoAssemble(script)
+                  --print(z)
+                        --print(address.."+"..(DEC_HEX((i-1)/3)))
+                    end
+                end
+      end
+      object_destroy(aobs);
+      aobs=nil
+   end
+end
+</LuaScript>
+</CheatTable>

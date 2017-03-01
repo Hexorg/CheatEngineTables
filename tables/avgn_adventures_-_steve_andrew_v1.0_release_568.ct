@@ -1,0 +1,545 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="16">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>76</ID>
+      <Description>"Infinite Health / Beers [F3]"</Description>
+      <Color>80000008</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>//AVGN Adventures
+//Infinite Health / Infinite Beers
+//Steve Andrew
+[enable]
+alloc(InfiniteBeers,64)
+label(BeersPtr)
+label(BeersRet)
+registersymbol(BeersPtr)
+
+InfiniteBeers:
+mov esi,fffffffc //full health (-4) == 3 beers [(-1) == dead]
+mov eax,[edx+258]
+push ebx
+lea ebx,[eax+edi*4]
+mov [BeersPtr],ebx
+pop ebx
+mov [eax+edi*4],esi
+jmp BeersRet
+
+BeersPtr:
+dd 0
+
+avgn.exe+b3b8:
+jmp InfiniteBeers
+db 90 90 90 90
+BeersRet:
+
+[disable]
+
+avgn.exe+b3b8:
+mov eax,[edx+258]
+mov [eax+edi*4],esi
+
+dealloc(InfiniteBeers)
+unregistersymbol(BeersPtr)
+</AssemblerScript>
+      <Hotkeys>
+        <Hotkey>
+          <Action>Toggle Activation</Action>
+          <Keys>
+            <Key>114</Key>
+          </Keys>
+          <Description>Toggle Infinite Health/Beers</Description>
+          <ID>0</ID>
+        </Hotkey>
+      </Hotkeys>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>78</ID>
+      <Description>"Beers"</Description>
+      <Color>80000008</Color>
+      <VariableType>4 Bytes</VariableType>
+      <Address>BeersPtr</Address>
+      <Offsets>
+        <Offset>0</Offset>
+      </Offsets>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>29</ID>
+      <Description>"One Hit Kill Enemies+Bosses + Optional Blink Godmode"</Description>
+      <Color>80000008</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>//AVGN Adventures
+//Boss/Enemy One Hit Kill + Optional Blink Timer Godmode
+//Steve Andrew
+[enable]
+alloc(OneHitKillPlusBlink,128)
+label(BossHealth)
+label(BossHealthPtr)
+label(InstantKillBosses)
+label(BlinkTimerGodmodeEnabled)
+label(SkipBossKill)
+label(NotBlinkTimer)
+label(OneHitKillPlusBlinkRet)
+registersymbol(BossHealthPtr)
+registersymbol(InstantKillBosses)
+registersymbol(BlinkTimerGodmodeEnabled)
+
+OneHitKillPlusBlink:
+cmp ebx,20
+je BossHealth
+cmp ebx,50
+jne NotBlinkTimer
+cmp [BlinkTimerGodmodeEnabled],1
+jne NotBlinkTimer
+mov ecx,#35
+
+NotBlinkTimer:
+mov [eax+08],ecx
+pop edi
+pop esi
+jmp OneHitKillPlusBlinkRet
+
+BossHealth:
+lea edi,[eax+8]
+mov [BossHealthPtr],edi
+cmp [InstantKillBosses],1
+jne SkipBossKill
+
+xor ecx,ecx
+
+SkipBossKill:
+mov [edi],ecx
+pop edi
+pop esi
+jmp OneHitKillPlusBlinkRet
+
+BossHealthPtr:
+dd 0
+InstantKillBosses:
+dd 0
+BlinkTimerGodmodeEnabled:
+dd 0
+
+avgn.exe+13766:
+jmp OneHitKillPlusBlink
+OneHitKillPlusBlinkRet:
+
+[disable]
+
+avgn.exe+13766:
+mov [eax+08],ecx
+pop edi
+pop esi
+
+dealloc(BlinkGodmode)
+unregistersymbol(BossHealthPtr)
+unregistersymbol(InstantKillBosses)
+unregistersymbol(BlinkTimerGodmodeEnabled)
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>31</ID>
+          <Description>"Enable Instant Kill Bosses and Enemies [F4]"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>InstantKilLBosses</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>115</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>77</ID>
+          <Description>"Enable Blink Godmode"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>BlinkTimerGodmodeEnabled</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>32</ID>
+          <Description>"Last Attacked Boss/Enemy's Health"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>bosshealthptr</Address>
+          <Offsets>
+            <Offset>0</Offset>
+          </Offsets>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>35</Key>
+              </Keys>
+              <Value>0</Value>
+              <Description>Instant Kill Last Hit Enemy</Description>
+              <ID>0</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>54</ID>
+      <Description>"Multi-Script [Pointers]"</Description>
+      <Color>80000008</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>//MultiScript: While Providing Infinite Lives + Infinite Special Weapons Built In,
+//it also fills out various pointers on the CT based on offsets of the 'LivesPtr'
+//Steve Andrew
+[enable]
+alloc(MultiScript,128)
+label(MultiScriptRet)
+label(NotLives)
+label(Exit)
+label(LivesPtr)
+registersymbol(LivesPtr)
+
+MultiScript:
+cmp edi,0a
+jne NotLives
+cmp ebp,0e
+jne NotLives
+
+lea edi,[eax+8]
+mov [LivesPtr],edi
+mov ecx,#1000 //999 lives
+jmp Exit
+
+NotLives:
+cmp edi,7
+jne Exit
+
+lea edi,[eax+38]
+mov [LivesPtr],edi
+mov ecx,#99 //99 Special Weapons
+
+Exit:
+mov [eax+8],ecx
+pop edi
+pop esi
+jmp MultiScriptRet
+
+//+[0] == Lives; -[30] == Special Weapons; +[30] == Game Paused Variable; +[60] == NES Zapper Color; ; +[80] == Special Weapon Type
+LivesPtr:
+dd 0
+
+avgn.exe+c640:
+jmp MultiScript
+MultiScriptRet:
+
+[disable]
+
+avgn.exe+c640:
+mov [eax+8],ecx
+pop edi
+pop esi
+
+dealloc(MultiScript)
+unregistersymbol(LivesPtr)
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>55</ID>
+          <Description>"Lives"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>LivesPtr</Address>
+          <Offsets>
+            <Offset>0</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>58</ID>
+          <Description>"Game Paused Variable"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>LivesPtr</Address>
+          <Offsets>
+            <Offset>30</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>59</ID>
+          <Description>"NES Zapper Color [F5]"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>LivesPtr</Address>
+          <Offsets>
+            <Offset>60</Offset>
+          </Offsets>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>116</Key>
+              </Keys>
+              <Value>5</Value>
+              <Description>Rainbow Colored Zapper</Description>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Toggle Activation</Action>
+              <Keys>
+                <Key>116</Key>
+              </Keys>
+              <Description>Rainbow Colored Zapper</Description>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>56</ID>
+          <Description>"Special Weapons Amount [F6]"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>LivesPtr</Address>
+          <Offsets>
+            <Offset>FFFFFFD0</Offset>
+          </Offsets>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>117</Key>
+              </Keys>
+              <Value>99</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Toggle Activation</Action>
+              <Keys>
+                <Key>117</Key>
+              </Keys>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>57</ID>
+          <Description>"Special Weapon Type [F6]"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>LivesPtr</Address>
+          <Offsets>
+            <Offset>80</Offset>
+          </Offsets>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>117</Key>
+              </Keys>
+              <Value>3</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Toggle Activation</Action>
+              <Keys>
+                <Key>117</Key>
+              </Keys>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>46</ID>
+      <Description>"Low Gravity Enabler"</Description>
+      <Color>80000008</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>//Low Gravity Enabler
+//Steve Andrew
+[ENABLE]
+//code from here to '[DISABLE]' will be used to enable the cheat
+alloc(newmem,2048)
+label(returnhere)
+label(originalcode)
+label(exit)
+label(GravityPtr)
+registersymbol(GravityPtr)
+
+newmem: //this is allocated memory, you have read,write,execute access
+cmp ebx,120
+jne originalcode
+cmp ebp,1
+jne originalcode
+
+lea ebx,[eax+0c]
+mov [GravityPtr],ebx
+
+originalcode:
+mov [eax+0c],ecx
+pop ebx
+add esp,10
+
+exit:
+jmp returnhere
+
+GravityPtr:
+dd 0
+
+"avgn.exe"+1374B:
+jmp newmem
+nop
+nop
+returnhere:
+ 
+[DISABLE]
+//code from here till the end of the code will be used to disable the cheat
+dealloc(newmem)
+"avgn.exe"+1374B:
+mov [eax+0C],ecx
+pop ebx
+add esp,10
+//Alt: db 89 48 0C 5B 83 C4 10
+unregistersymbol(GravityPtr)
+</AssemblerScript>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>48</ID>
+      <Description>"Gravity"</Description>
+      <Color>80000008</Color>
+      <VariableType>Float</VariableType>
+      <Address>GravityPtr</Address>
+      <Offsets>
+        <Offset>0</Offset>
+      </Offsets>
+      <Hotkeys>
+        <Hotkey>
+          <Action>Set Value</Action>
+          <Keys>
+            <Key>123</Key>
+          </Keys>
+          <Value>-1.9</Value>
+          <ID>0</ID>
+        </Hotkey>
+        <Hotkey>
+          <Action>Toggle Activation</Action>
+          <Keys>
+            <Key>123</Key>
+          </Keys>
+          <ID>1</ID>
+        </Hotkey>
+      </Hotkeys>
+    </CheatEntry>
+  </CheatEntries>
+  <CheatCodes>
+    <CodeEntry>
+      <Description>Change of jne 046F0045</Description>
+      <Address>046F0031</Address>
+      <ModuleName/>
+      <ModuleNameOffset>0</ModuleNameOffset>
+      <Before>
+        <Byte>00</Byte>
+        <Byte>00</Byte>
+        <Byte>83</Byte>
+        <Byte>FD</Byte>
+        <Byte>03</Byte>
+      </Before>
+      <Actual>
+        <Byte>0F</Byte>
+        <Byte>85</Byte>
+        <Byte>0E</Byte>
+        <Byte>00</Byte>
+        <Byte>00</Byte>
+        <Byte>00</Byte>
+      </Actual>
+      <After>
+        <Byte>8D</Byte>
+        <Byte>78</Byte>
+        <Byte>38</Byte>
+        <Byte>89</Byte>
+        <Byte>3D</Byte>
+      </After>
+    </CodeEntry>
+  </CheatCodes>
+  <UserdefinedSymbols>
+    <SymbolEntry>
+      <Name>FlyThreadExit</Name>
+      <Address>00413752</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>FloatUpDownSpeed</Name>
+      <Address>00413756</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>SpecialWeaponType</Name>
+      <Address>0474002D</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>SpecialWeaponAmmo</Name>
+      <Address>04740031</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>BossHealthPtr</Name>
+      <Address>0477004F</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>InstantKillBosses</Name>
+      <Address>04770053</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>BlinkTimerGodmodeEnabled</Name>
+      <Address>04770057</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>LivesPtr</Name>
+      <Address>04780049</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>GravityPtr</Name>
+      <Address>04BA002A</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>BeersPtr</Name>
+      <Address>0475001E</Address>
+    </SymbolEntry>
+  </UserdefinedSymbols>
+  <Comments>Instructions
+=============================================
+At any time while attached press [F3] to enable/disable (toggle) infinite beers, which in this game somehow is like a true godmode the skull+crossbones boxes that blink godmode doesn't protect against, this does... Beers are stored as [4 byte] (-4) == 3 beers; (-3) == 2 beers, etc... (-1) beers == dead ;)
+
+Upon Enabling 'One Hit Kill Enemies+Bosses + Blink Godmode' script,
+[F4] Hotkey can be immediately used to set Instant Kill to 1 (On) and Blink Godmode has to be manually enabled by setting its value to 1 for it to be used... (Blink Godmode + Infinite Beers for a true full godmode) 
+*Even if you don't enable instant kill, the last hit enemy can be killed instantly by pressing 'End' hotkey, which will trigger the last hit enemy's health to go to 0
+
+The 'Multi-Script [Pointers]' script, once enabled will only be
+fully activated after either collecting a special weapon / powerup and using it at least once (while simultaneously giving you 99 of them) or dieing once (triggering your lives to go to 999) and either way it will allow the other pointers listed below it (which are based on offsets of the lives pointer)
+to become usable!
+
+Low Gravity Enabler:
+After enabling this, while not holding down the jump button press f12 to toggle low gravity mode by setting the gravity value to -1.9 some how a perfect number that creates a fly mode by the games built in conditions somehow... Press jump to fly up or let go to float down...Again, you can jump before enabling it but just don't be holding the jump button down when you then press f12...
+
+Beers: [4 byte]
+3 Beers: fffffffc (-4)
+2 Beers: fffffffd (-3)
+1 Beer:  fffffffe (-2)
+Dead:    ffffffff (-1)
+
+
+Special Weapons: [4 byte]
+Nothing: 0
+Metal Gear Solid Tank Thing: 1
+Rock: 2
+Game Glitcher: 3
+
+NES Zapper Colors: [4 byte]
+Pink: 0
+Orange: 1
+Gray: 2
+Black: 3
+Golden: 4
+Rainbow: 5+
+
+Game Paused: [4 byte boolean]
+Unpaused: 0 false
+Paused: 1 true
+</Comments>
+</CheatTable>

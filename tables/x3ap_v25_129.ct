@@ -1,0 +1,432 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="14">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>0</ID>
+      <Description>"[X]&lt;== X3 - AP v2.5 Script"</Description>
+      <Options moHideChildren="1"/>
+      <Color>80000008</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>{
+===========================================
+ Game Title    : X3 - Albion Prelude
+ Game Version  : 2.0
+ Process Name  : X3AP.exe
+ Script Version: 1.0
+ CE Version    : 6.1
+ Release date  : 18-Jan-2012 adapted from previous version
+ Author        : Recifense
+ Features:
+ - God Mode (including shields)
+ - Laserpower
+===========================================
+}
+
+//=========================================
+[ENABLE]
+//=========================================
+// Check if script is compatible to this game version
+// If false the script will not be loaded
+assert(X3AP.EXE+0606ED,8b 15 c0 24 60 00)    //ok
+assert(X3AP.EXE+04D025,29 8e ec 00 00 00)    //ok
+assert(X3AP.EXE+044A3E,01 90 34 01 00 00)    //ok
+assert(X3AP.EXE+0480D7,0f b7 41 48 53)       //ok
+assert(X3AP.EXE+048207,29 47 04 03 dd)       //ok
+assert(X3AP.EXE+481C7,03 d8 89 71 04)       //ok
+
+//=========================================
+alloc(MyCode,1024)
+//=========================================
+// Declaration section
+label(_MonPilot)
+label(_BackMP)
+label(_ExitMP)
+label(_GodMode)
+label(_BackGM)
+label(_ExitGM)
+label(_MonLaser)
+label(_BackML)
+label(_ExitML)
+label(_MonShip)
+label(_BackMSp)
+label(_MonShield)
+label(_BackMS)
+label(_ExitMS)
+label(_MonShield1)
+label(_BackMS1)
+label(_ExitMS1)
+label(pPilot)
+label(pShip)
+label(pShields)
+label(pLaser)
+label(pShipS)
+label(pShield)
+label(iEnableGM)
+label(iEnableML)
+
+//=========================================
+// Registering Symbols
+registersymbol(MyCode)
+registersymbol(pPilot)
+registersymbol(pShip)
+registersymbol(pShields)
+registersymbol(pShield)
+registersymbol(pLaser)
+registersymbol(iEnableGM)
+registersymbol(iEnableML)
+
+//=========================================
+MyCode:
+//========================================= ok
+// This code monitors the playerÂ´s pilot and current ship
+// Most of the info for debugging
+_MonPilot:
+ mov edx,[X3AP.exe+2024c0]         // Original code OK
+ mov [pPilot],edx                  // Save ptr for debugging
+ mov edi,[edx+38]                  // Get ptr to Ship
+ mov [pShip],edi                   // Save ptr for debugging
+ or edi,edi                        // Valid pointer?
+ jz _ExitMP                        // Jump if false
+
+ mov edx,[edi+50]                  // Get ptr to Laser
+ mov [pLaser],edx                  // Save ptr for debugging (otherinfo)
+ or edx,edx                        // Valid pointer?
+ jz _ExitMP                        // Jump if false
+
+ mov edi,[edx]                     // Get ptr to Shields
+ mov [pShields],edi                // Save ptr for debugging
+
+_ExitMP:
+ mov edx,[X3AP.exe+2024c0]         // Original code (OK)
+ jmp _BackMP                       // Back to main code
+
+//=========================================
+// God Mode for player's ship
+_GodMode:
+ cmp dword ptr [iEnableGM],0
+ je _ExitGM                        // Jump if feature is disabled
+
+ cmp esi,[pShip]                   // Get ptr to other info
+ jne _ExitGM                       // Jump if true
+
+ xor ecx,ecx                       // make value2decrease = 0
+
+_ExitGM:
+ sub [esi+000000EC],ecx            // Original code
+ jmp _BackGM                       // Back to main code
+
+//=========================================
+_MonLaser:
+ cmp dword ptr [iEnableML],0
+ je _ExitML                        // Jump if feature is disabled
+
+ cmp eax,[pLaser]                  // PlayerÂ´s ship's laser?
+ jne _ExitML                       // Jump if false
+
+ xor edx,edx                       // make value2decrease = 0
+
+_ExitML:
+ add [eax+00000134],edx            // Original code
+ jmp _BackML                       // Back to main code
+
+//=========================================
+// This code identifies the ship for _MonShield and
+// _MonShield1 scripts
+_MonShip:
+ mov [pShipS],ecx                  // Save ptr for further use
+
+ movzx eax,word ptr [ecx+48]       // Original code
+ push ebx                          // Original code
+ jmp _BackMSp                      // Back to main code
+
+//=========================================
+_MonShield:
+ push ecx
+
+ cmp dword ptr [iEnableGM],0
+ je _ExitMS                        // Jump if feature is disabled
+
+ mov ecx,[pShipS]                  // Get ship structure
+ cmp ecx,[pShip]                   // Is it the player's ship?
+ jne _ExitMS                       // Jump if true
+
+ xor eax,eax                       // make value2decrease = 0
+
+ mov [pShield],edi                 // Save ptr for debugging
+
+_ExitMS:
+ pop ecx
+
+ sub [edi+04],eax                  // Original code
+ add ebx,ebp                       // Original code
+ jmp _BackMS                       // Back to main code
+
+//=========================================
+_MonShield1:
+ push esi
+ push ecx
+
+ cmp dword ptr [iEnableGM],0
+ je _ExitMS1                       // Jump if feature is disabled
+
+ mov ecx,[pShipS]                  // Get ship structure
+ cmp ecx,[pShip]                   // Is it the player's ship?
+ jne _ExitMS1                      // Jump if true
+
+ mov esi,03e80000                  // 64K * 1000 = 100%
+
+_ExitMS1:
+ pop  ecx
+
+ add ebx,eax                       // Original code
+ mov [ecx+04],esi                  // Original code
+ pop esi
+ jmp _BackMS1                      // Back to main code
+
+//=========================================
+ db '=============================&gt;'
+ db 'CE6.1 Script by Recifense 011812'
+//=========================================
+// Variables
+iEnableGM:
+ dd 1
+iEnableML:
+ dd 1
+pPilot:
+ dd 0
+pShip:
+ dd MyCode
+pShipS:
+ dd MyCode
+pShields:
+ dd 0
+pShield:
+ dd 0
+pLaser:
+ dd MyCode
+
+//=========================================
+// Hacking Points
+
+//X3AP.EXE+06096d:
+//X3AP.EXE+0604cd:
+//X3AP.EXE+0606BD:
+X3AP.EXE+0606ED:
+ jmp _MonPilot
+ nop
+_BackMP:
+
+//X3AP.EXE+04d2e5:
+//X3AP.EXE+04ce05:
+//X3AP.EXE+04cfe5:
+X3AP.EXE+04D025:
+ jmp _GodMode
+ nop
+_BackGM:
+
+//X3AP.EXE+044d35:
+//X3AP.EXE+04481e:
+//X3AP.EXE+0449FE:
+X3AP.EXE+044A3E:
+ jmp _MonLaser
+ nop
+_BackML:
+
+//X3AP.EXE+0483b7:
+//X3AP.EXE+047eb7:
+//X3AP.EXE+048097:
+X3AP.EXE+0480D7:
+ jmp _MonShip
+_BackMSp:
+
+//X3AP.EXE+0484e7:
+//X3AP.EXE+047fe7:
+//X3AP.EXE+0481c7:
+X3AP.EXE+048207:
+ jmp _MonShield
+_BackMS:
+
+//X3AP.EXE+0484a7:
+//X3AP.EXE+047fa7:
+//X3AP.EXE+048187:
+X3AP.EXE+481C7:
+ jmp _MonShield1
+_BackMS1:
+
+//=========================================
+// Script for Restoring Original Codes
+[DISABLE]
+//X3AP.EXE+06096d:
+//X3AP.EXE+0604cd:
+//X3AP.EXE+0606BD:
+X3AP.EXE+0606ED:
+// mov edx,[X3AP.exe+2014c0]
+// mov edx,[X3AP.exe+2024c0]
+ db 8b 15 c0 24 60 00
+
+//X3AP.EXE+04d2e5:
+//X3AP.EXE+04ce05:
+//X3AP.EXE+04cfe5:
+X3AP.EXE+04D025:
+// sub [esi+000000EC],ecx
+ db 29 8e ec 00 00 00
+
+//X3AP.EXE+044d35:
+//X3AP.EXE+04481e:
+//X3AP.EXE+0449FE:
+X3AP.EXE+044A3E:
+// add [eax+00000134],edx
+ db 01 90 34 01 00 00
+
+//X3AP.EXE+0483b7:
+//X3AP.EXE+047eb7:
+//X3AP.EXE+048097:
+X3AP.EXE+0480D7:
+// movzx eax,word ptr [ecx+48]
+// push ebx
+ db 0f b7 41 48 53
+
+//X3AP.EXE+0484e7:
+//X3AP.EXE+047fe7:
+//X3AP.EXE+0481c7:
+X3AP.EXE+048207:
+// sub [edi+04],eax
+// add ebx,ebp
+ db 29 47 04 03 dd
+
+//X3AP.EXE+0484a7:
+//X3AP.EXE+047fa7:
+//X3AP.EXE+48187:
+X3AP.EXE+481C7:
+// add ebx,eax
+// mov [ecx+04],esi
+ db 03 d8 89 71 04
+
+//=========================================
+// Unregistering Symbols
+unregistersymbol(MyCode)
+unregistersymbol(pPilot)
+unregistersymbol(pShip)
+unregistersymbol(pShields)
+unregistersymbol(pShield)
+unregistersymbol(pLaser)
+unregistersymbol(iEnableGM)
+unregistersymbol(iEnableML)
+
+//=========================================
+dealloc(MyCode)
+//============= Scripts End ===============
+
+// ****************************************
+// NOTES
+// ****************************************
+{
+X3 Terran Conflict	V3.0
+
+Credits = integer (not aligned)	(no fast or hyper scan)
+
+static pPilot = [005fcbf4]
+
+struct PLAYER (PILOT):	(ok)
+0000 = i1
+0004 = i1
+0014 = 020a29b8
+0018 = 020a29d0
+0038 = pShip
+0040 = iTotalLaserShots
+0044 = iTotalMissileShots
+0048 = iLaserShots   (on target)
+004c = iMissileShots (on target)
+0054 = iKMsTraveled
+
+struct SHIP: (ok)
+000c = pTypeName
+0050 = pOtherInfo
+00ec = iHullHP
+
+struct OTHERINFO:
+0000 = pShields
+0124 = iLaserPower (Display*1000)
+
+struct SHIELDS:	 (ok)
+000c = pTypeName
+0050 = pShield
+0054 = pShip
+
+struct SHIELD:
+0000 = i0
+0004 = i%Shield (100% = 64Kb * 1000 = 65536000 = 0x03E80000)
+}
+
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>1</ID>
+          <Description>"Enable/Disable God Mode ==&gt; (1/0)"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableGM</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>2</ID>
+          <Description>"Enable/Disable Unlimited Laserpower ==&gt; (1/0)"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableML</Address>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols>
+    <SymbolEntry>
+      <Name>pPilot</Name>
+      <Address>03B50148</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>pShip</Name>
+      <Address>03B5014C</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>pShields</Name>
+      <Address>03B50154</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>pShield</Name>
+      <Address>03B50158</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>pLaser</Name>
+      <Address>03B5015C</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>iEnableGM</Name>
+      <Address>03B50140</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>iEnableML</Name>
+      <Address>03B50144</Address>
+    </SymbolEntry>
+  </UserdefinedSymbols>
+  <Comments>===========================================
+ Game Title    : X3 - Albion Prelude
+ Game Version  : 1.0
+ Process Name  : X3AP.exe
+ Script Version: 1.0
+ CE Version    : 6.1
+ Release date  : 16-Dec-2011 adapted from version X3TC 3.11
+ Author        : Recifense
+ Features:
+ - God Mode (including shields)
+ - Laserpower
+===========================================
+1) GOD MODE: It includes unlimited shield power for player's ship;
+2) LASERPOWER: Unlimited laser power for the player's ship;
+[TIP] Money is very easy to find (just follow these steps when buying or selling something). 
+a) Unckeck the "Fast Scan" mode option;
+b) Use FIRST SCAN to look for a 4 Bytes value;
+c) Make the value change and use NEXT SCAN to look for the new value;
+d) Repeat a) and b) until you find the maximum of 2 addresses;
+e) Change the money to 999000000 in both addresses;
+That's it.
+</Comments>
+</CheatTable>

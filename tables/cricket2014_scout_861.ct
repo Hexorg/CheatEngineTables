@@ -1,0 +1,900 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="18">
+  <Forms>
+    <UDF1 Class="TCEForm" Encoding="Ascii85">t6@YZ2nldAU:MM2b.}cxWeIh0Gi32eO*FvcXJqq8%{mcIVTxi7$uD4D$iNz(nNpI$e2szKIkBK5Ge3[Fteo9H(p9W+IF+,-I3vH?GcP2uINK=*h?GRj#4*Elv9g#uJTosPzdX1ku[Tq9yS((pGcPkYvnn-)fdK#</UDF1>
+  </Forms>
+  <CheatEntries/>
+  <UserdefinedSymbols/>
+  <LuaScript>getAutoAttachList().add('Cricket2014.exe')
+UDF1.show()
+UDF1.WindowState="wsFullScreen"
+offsets = {
+           StructStart    = 0x000,
+           PlayerName     = 0x068, -- pointer
+           PlayerSurname  = 0x06C, -- pointer
+           DOB            = 0x014, -- 4bytes
+           Nationality    = 0x01C, -- 4bytes (use Lua tables)
+
+           ContractTerm   = 0x028, -- 4bytes (use Lua tables)
+           ContractSalary = 0x02C, -- 4bytes
+
+           BatPreferences = 0x080, -- 4bytes (use Lua tables)
+           BatHandWK      = 0x091, -- 4bytes (use Lua tables)
+           BatPot         = 0x08d,
+           BatAbility     = 0x095, -- 2bytes
+           BowlPot        = 0xB95,
+           BowlAbility    = 0xB8D, -- 2bytes
+           BowlType       = 0xB90, -- 4bytes (use Lua tables)
+
+           Retirement     = 0x09B, -- 4bytes (use Lua tables)
+
+           PlayerType     = 0x0AC, -- 4bytes (use Lua tables)
+           Injury         = 0x0B8, -- 4bytes
+          }
+
+playerStructStart = "[[[Cricket2014.exe+003F8DCC]+29c]+74]"
+
+-- other global variables:
+results = {}
+ChosenPlayer = nil
+
+
+function num2HEX(num)
+  return string.format('%X',num)
+end
+
+function easyReading(address)
+  local T = {}
+  for k,v in pairs(offsets) do
+    T[k]=v+address
+  end
+  return T
+end
+
+
+function customScan()
+  local results = {} -- will contain found addresses (every address as string)
+
+  local ID= readInteger(playerStructStart)
+  local check1 = readString(  readInteger(playerStructStart..'+'..num2HEX(offsets.PlayerName))  )
+  local check2 = readString(  readInteger(playerStructStart..'+'..num2HEX(offsets.PlayerSurname))  )
+
+  if ID==nil or ID==0 or check1==nil or check2==nil then return results end
+  local value = num2HEX(ID)
+
+  local MS = createMemScan()
+  local FL = createFoundList(MS)
+
+  -- firstScan(scanoption, vartype, roundingtype, input1, input2,
+  --           startAddress, stopAddress, protectionflags,
+  --           alignmenttype, "alignmentparam",
+  --           isHexadecimalInput, isNotABinaryString, isunicodescan, iscasesensitive)
+
+  --    scanOption: soUnknownValue, soExactValue, soValueBetween, soBiggerThan, soSmallerThan
+  --    vartype: vtByte, vtWord, vtDword, vtQword, vtSingle, vtDouble, vtString,
+  --             vtByteArray, vtGrouped, vtBinary, vtAll
+  --    roundingtype: rtRounded, rtTruncated, rtExtremerounded
+  --    alignmenttype: fsmNotAligned, fsmAligned, fsmLastDigits
+
+  MS.firstScan(soExactValue, vtDword, rtTruncated, value, nil,
+               "0","7fffffff","+W*X-C",
+               fsmAligned,"8",          -- I used 8 byte alignment
+               true, false, false, false)
+  MS.waitTillDone(); FL.initialize()
+
+  if FL.Count~=0 then
+    for i=0,FL.Count-1 do
+
+      local addr = ( "0x"..FL.Address[i] ) + 0
+      local tab = easyReading(addr)
+      -- For nationality filter, simply replace the below line to this -- local PlayerName = readInteger(tab.Nationality) and use country codes like 44, 45 in the filter edit box)
+      --local PlayerName = readInteger(tab.Nationality)
+      local PlayerName = readString( readInteger(tab.PlayerName) )
+      local PlayerSurname = readString( readInteger(tab.PlayerSurname) )
+        if PlayerName and PlayerSurname then
+        local line = (PlayerName..' '..PlayerSurname):upper()
+        if line:match(edtFilter.Text:upper()) then
+         results[#results+1] = tab
+        end
+      edtNoP.Text = (#results)
+      end
+
+    end
+  end
+
+  sleep(50); FL.destroy()
+  sleep(50); MS.destroy()
+  return results
+end
+
+if calcCal~=nil then calcCal.destroy();calcCal=nil end
+calcCal = createCalendar(nil) -- calendar object for indirect calculations
+
+function diffDays(date1,date2)
+  calcCal.Date=date1; local DayNumber1 = calcCal.DateTime
+  calcCal.Date=date2; local DayNumber2 = calcCal.DateTime
+  return math.abs(DayNumber1-DayNumber2)
+end
+
+function dateOfBirthToCode(Date)
+ local epoch1 = '1944-11-8'
+ local epoch2 = '1989-9-17'
+ local epoch3 = '2079-6-5'
+
+ local diff = diffDays(epoch1,Date)
+ local mult=1
+ local startZ=208
+
+ if diff&gt;49152 then
+  diff = diffDays(epoch3,Date)
+  mult=4
+  startZ=240
+ elseif diff&gt;16384 then
+  diff = diffDays(epoch2,Date)
+  mult=2
+  startZ=224
+ end
+
+ local b0 = math.floor(diff%(4*mult))*math.floor(64/mult)
+ local b1 = math.floor(diff/(4*mult)) % 256
+ local b2 = math.floor(diff/(1024*mult)) + startZ
+
+ return b0+b1*256+b2*256*256+64*256*256*256
+end
+
+
+function codeToDateOfBirth(code)
+ local epoch1 = '1944-11-8'
+ local epoch2 = '1989-9-17'
+ local epoch3 = '2079-6-5'
+
+ local startDate=epoch1
+ local mult = 1
+ local startZ = 208
+
+ local b0 = math.fmod(code,256); code = math.floor(code/256)
+ local b1 = math.fmod(code,256); code = math.floor(code/256)
+ local b2 = math.fmod(code,256); code = math.floor(code/256)
+
+ if (b2 &gt;= 224) and (b2 &lt;= 239) then
+  startDate=epoch2
+  mult=2
+  startZ=224
+ end
+ if (b2 &gt;= 240) and (b2 &lt;= 255) then
+  startDate=epoch3
+  mult=4
+  startZ=240
+ end
+
+ local xOffset = math.floor(b0 / math.floor(64/mult))
+ local yOffset = b1*4*mult
+ local zOffset = (b2 - startZ) * 1024 * mult
+ local numDays = xOffset + yOffset + zOffset
+
+ calcCal.Date     = startDate
+ calcCal.DateTime = calcCal.DateTime + numDays
+
+ return calcCal.Date
+end
+
+
+
+if calendar~=nil
+then calendar.destroy();calendar=nil
+end
+calendar = createCalendar(UDF1.CalendarGroupBox)
+calendar.Top = 10
+calendar.Left = 20
+calendar.Visible = false
+
+function readDateOfBirth()
+ code = readInteger(edob)
+ if code~=nil then
+  calendar.Date = codeToDateOfBirth(code)
+  calendar.Visible = false
+ end
+end
+
+
+-- Function for adding items in listview
+function addItem(index,NameSurname,DOB,Nation,Retired,BattingPot,BattingAbility,BowlingPot,BowlingAbility,BatAgression,BatFoot,BatSpinPace)
+  local newListItem = myListView.Items.add()
+  local subItems    = newListItem.getSubItems()
+
+  --newListItem.Caption = index
+  subItems.add(index)
+  subItems.add(NameSurname)
+  subItems.add(DOB)
+  subItems.add(Nation)
+  subItems.add(Retired)
+  subItems.add(BattingPot)
+  subItems.add(BattingAbility)
+  subItems.add(BowlingPot)
+  subItems.add(BowlingAbility)
+  subItems.add(BatAgression)
+  subItems.add(BatFoot)
+  subItems.add(BatSpinPace)
+end
+
+
+
+
+function btnReloadClick(btn)
+  btn.Enabled = false
+
+  myListView.Items.clear()
+  results = customScan()
+  if #results==0 then btn.Enabled = true; return end
+
+  myProgressBar.initProgressBar(0,#results,0)
+  myListView.Columns[1].AutoSize = false -- to fasten things
+  myListView.Columns[2].AutoSize = false -- to fasten things
+  myListView.Columns[3].AutoSize = false -- to fasten things
+  myListView.Columns[4].AutoSize = false -- to fasten things
+  myListView.Columns[5].AutoSize = false
+  myListView.Columns[6].AutoSize = false
+  myListView.Columns[7].AutoSize = false
+  myListView.Columns[8].AutoSize = false
+  myListView.Columns[9].AutoSize = false
+  myListView.Columns[10].AutoSize = false
+  myListView.Columns[11].AutoSize = false
+  myListView.Columns[12].AutoSize = false
+    processMessages()
+
+  for index = 1,#results do
+    local PlayerName = readString( readInteger(results[index].PlayerName) )
+    local PlayerSurname = readString( readInteger(results[index].PlayerSurname) )
+    local code = readInteger(results[index].DOB)
+    local date = codeToDateOfBirth(code)
+    local country = Nationalities[ readInteger(results[index].Nationality) ]
+    local retired = Retirements[ readInteger(results[index].Retirement) ]
+    local BatPot  = readShortint(results[index].BatPot)
+    local BatAbility = readShortint(results[index].BatAbility)
+    local BowlPot = readShortint(results[index].BowlPot)
+    local BowlAbility = readShortint(results[index].BowlAbility)
+    local BatPreferences = readInteger(results[index].BatPreferences)
+    local Aggression = math.floor(BatPreferences/64) * 64
+    local tmp = math.fmod(BatPreferences,64)
+    local FootPref = math.floor(tmp/8) * 8
+    local SpinPace = math.fmod(tmp,8)
+
+    -- Aggression
+    local A = Aggressions[ Aggression ]
+    -- FootPref
+    local F = FootPrefs[ FootPref ]
+    -- SpinPace
+    local S = SpinPaces[ SpinPace ]
+
+
+      writeShortint(results[index].BatPot,1750)
+       writeShortint(results[index].BowlPot,540)
+    addItem(index,PlayerName..' '..PlayerSurname,date,country,retired,BatPot,BatAbility,BowlPot,BowlAbility,A,F,S)
+    myProgressBar.Position = index
+
+  end
+
+  myListView.Columns[1].AutoSize = true
+  myListView.Columns[2].AutoSize = true
+  myListView.Columns[3].AutoSize = true
+  myListView.Columns[4].AutoSize = true
+  myListView.Columns[5].AutoSize = true
+  myListView.Columns[6].AutoSize = true
+  myListView.Columns[7].AutoSize = true
+  myListView.Columns[8].AutoSize = true
+  myListView.Columns[9].AutoSize = true
+  myListView.Columns[10].AutoSize = true
+  myListView.Columns[11].AutoSize = true
+  myListView.Columns[12].AutoSize = true
+  btn.Enabled = true
+
+end
+
+function myListView_UserSelectedItem(lv)
+  if lv.ItemIndex &lt; 0 then return end
+  ChosenPlayer = results[lv.ItemIndex+1]
+  refresh()
+end
+
+
+
+
+
+
+
+
+
+
+
+-- GUI helper functions
+function destroyComponents(f)
+  while f.ComponentCount&gt;0 do local o=f.Component[0]
+    if o.destroy then o.destroy() end
+  end
+end
+
+-- Function for adding columns in listview
+function addColumn(lv,cap,minW,maxW,W)
+  local col=lv.getColumns().add()
+  col.Caption=cap
+  col.MinWidth=minW; col.MaxWidth=maxW; col.Width=W
+end
+
+function BelowSibling(control, sibling, leftSpacing, topSpacing)
+  control.Anchors = control.Anchors:gsub(  "]"  ,  ", akTop, akLeft]"  )
+  control.BorderSpacing.Left = leftSpacing or 0
+  control.BorderSpacing.Top = topSpacing or 0
+
+  control.AnchorSideLeft.Control = sibling
+  control.AnchorSideTop.Control = sibling
+
+  control.AnchorSideLeft.Side = 'asrTop'
+  if control.Parent == sibling then control.AnchorSideTop.Side = 'asrTop'
+  else                              control.AnchorSideTop.Side = 'asrBottom' end
+end
+
+function NextToSibling(control, sibling, leftSpacing, topSpacing)
+  control.Anchors = control.Anchors:gsub(  "]"  ,  ", akTop, akLeft]"  )
+  control.BorderSpacing.Left = leftSpacing or 0
+  control.BorderSpacing.Top = topSpacing or 0
+
+  control.AnchorSideLeft.Control = sibling
+  control.AnchorSideTop.Control = sibling
+
+  control.AnchorSideTop.Side = 'asrTop'
+  if control.Parent == sibling then control.AnchorSideLeft.Side = 'asrTop'
+  else                              control.AnchorSideLeft.Side = 'asrBottom' end
+end
+
+function NextToSiblingCenter(control, sibling, leftSpacing, topSpacing)
+  NextToSibling(control, sibling, leftSpacing, topSpacing)
+  control.AnchorSideTop.Side = 'asrCenter'
+end
+
+function BottomAnchor(control, sibling, bottomSpacing)
+  control.Anchors = control.Anchors:gsub(  "]"  ,  ", akBottom]"  )
+  control.BorderSpacing.Bottom = bottomSpacing or 0
+
+  control.AnchorSideBottom.Control = sibling
+  if control.Parent == sibling then control.AnchorSideBottom.Side = 'asrBottom'
+  else                              control.AnchorSideBottom.Side = 'asrTop' end
+end
+
+function RightAnchor(control, sibling, rightSpacing)
+  control.Anchors = control.Anchors:gsub(  "]"  ,  ", akRight]"  )
+  control.BorderSpacing.Right = rightSpacing or 0
+
+  control.AnchorSideRight.Control = sibling
+  if control.Parent == sibling then control.AnchorSideRight.Side = 'asrBottom'
+  else                              control.AnchorSideRight.Side = 'asrTop' end
+end
+
+function addEasyAnchoringFunctionsToObject(obj)
+  obj.BelowSibling = function (sibling, leftSpacing, topSpacing)
+                      BelowSibling(obj, sibling, leftSpacing, topSpacing)
+                    end
+
+  obj.NextToSibling = function (sibling, leftSpacing, topSpacing)
+                       NextToSibling(obj, sibling, leftSpacing, topSpacing)
+                     end
+
+  obj.NextToSiblingCenter = function (sibling, leftSpacing, topSpacing)
+                       NextToSiblingCenter(obj, sibling, leftSpacing, topSpacing)
+                     end
+
+  obj.BottomAnchor = function (sibling, bottomSpacing)
+                       BottomAnchor(obj, sibling, bottomSpacing)
+                     end
+
+  obj.RightAnchor = function (sibling, rightSpacing)
+                       RightAnchor(obj, sibling, rightSpacing)
+                     end
+end
+
+function createButtonEx(owner) local o=createButton(owner)
+  addEasyAnchoringFunctionsToObject(o)
+  return o
+end
+
+function createLabelEx(owner) local o=createLabel(owner)
+  addEasyAnchoringFunctionsToObject(o)
+  return o
+end
+
+function createEditEx(owner) local o=createEdit(owner)
+  addEasyAnchoringFunctionsToObject(o)
+  return o
+end
+
+function createComboBoxEx(owner) local o=createComboBox(owner)
+  addEasyAnchoringFunctionsToObject(o)
+  return o
+end
+
+function createPanelEx(owner) local o=createPanel(owner)
+  addEasyAnchoringFunctionsToObject(o)
+  return o
+end
+
+function createListViewEx(owner) local o=createListView(owner)
+  o.addColumn = function (cap,minW,maxW,W) addColumn(o,cap,minW,maxW,W) end
+  addEasyAnchoringFunctionsToObject(o)
+  return o
+end
+
+function createProgressBarEx(owner) local o=createProgressBar(owner)
+  o.initProgressBar = function (a,b,p) o.Min=a; o.Max=b; o.Position = p end
+  return o
+end
+
+
+
+
+-- INIT GUI
+destroyComponents(UDF1)
+
+reloadButton=createButtonEx(UDF1)
+ reloadButton.setPosition(10,10)
+ reloadButton.AutoSize = true
+ reloadButton.Caption = 'Reload Players'
+ reloadButton.OnClick = btnReloadClick
+
+ myListView = createListViewEx(UDF1)
+ myListView.ViewStyle = 'vsReport'
+ myListView.ReadOnly = true
+ myListView.RowSelect = true
+ myListView.Anchors = '[akRight]'
+ myListView.Width = 1500
+
+ myListView.BelowSibling(reloadButton,0,5) -- BelowSibling(sibling, leftSpacing, topSpacing)
+ myListView.BottomAnchor(UDF1,40)          -- BottomAnchor(sibling, bottomSpacing)
+
+ myListView.addColumn('', 0, 0, 0) -- addColumn(cap,minW,maxW,W)
+ myListView.addColumn('No', 30, 80, 30)
+ myListView.addColumn('Player name and surname', 140, 1000, 140)
+ myListView.addColumn('DOB', 90, 150, 90)
+ myListView.addColumn('Nationality', 90, 1000, 90)
+ myListView.addColumn('Retired Status', 90, 1000, 90)
+ myListView.addColumn('Bat Pot', 90, 150, 90)
+ myListView.addColumn('Bat Ab', 90, 150, 90)
+ myListView.addColumn('Bowl Pot', 90, 150, 90)
+ myListView.addColumn('Bowl Ab', 90, 150, 90)
+ myListView.addColumn('Agression', 90, 1500, 90)
+ myListView.addColumn('Foot Pref', 90, 1500, 90)
+ myListView.addColumn('Spin/Pace Pref', 90, 1000, 90)
+
+ myListView.Constraints.MinWidth = 250
+ myListView.Constraints.MinHeight = 250
+
+ myListView.OnSelectItem = myListView_UserSelectedItem
+
+lblFilter = createLabelEx(UDF1)
+lblFilter.NextToSibling(reloadButton,5,0)
+lblFilter.Caption = 'Name Filter:'
+
+edtFilter = createEditEx(UDF1)
+edtFilter.NextToSibling(lblFilter,5,-15) -- NextToSibling(control, sibling, leftSpacing, topSpacing)
+
+lblNoP = createLabelEx(UDF1)
+lblNoP.NextToSibling(edtFilter,5,0)
+lblNoP.Caption = 'Players found with/without name filter : '
+
+edtNoP = createEditEx(UDF1)
+edtNoP.ReadOnly = true
+edtNoP.NextToSiblingCenter(lblNoP,5,0)
+
+myProgressBar = createProgressBarEx(UDF1)
+myProgressBar.Align = alBottom
+myProgressBar.initProgressBar(0,0,0)
+
+
+
+
+
+
+-- functions from previous table
+function getControlText(control,b1,b2)
+  local number = tonumber(control.Text)
+  if number==nil then
+    control.Color = 0x9090ff   -- bright Red
+    control.Width = control.Width + 1  -- oddly, resizing is better than "repaint"
+    control.Width = control.Width - 1  --
+    return nil -- not a number, nothing more to do
+  else
+    control.Color = 0x20000000   -- clDefault
+    control.Width = control.Width + 1  -- oddly, .... (see above)
+    control.Width = control.Width - 1  --
+  end
+
+  if b1 then
+    b1,b2 = math.min(b1,b2),math.max(b1,b2)
+    if number &lt; b1 or number &gt; b2 then
+      control.Color = 0x90ffff   -- bright Yellow
+      return nil -- outside boundaries, nothing more to do
+    end
+  end
+
+  return number+0 -- return number (with +0 we are sure it is type=number)
+end
+
+--override CE Lua functions
+if oldwriteBytes==nil then oldwriteBytes = writeBytes end
+if oldwriteInteger==nil then oldwriteInteger = writeInteger end
+
+function writeBytes(a,v)
+  if v~=nil then oldwriteBytes(a,v) end
+end
+
+function writeInteger(a,v)
+  if v~=nil then oldwriteInteger(a,v) end
+end
+----------
+
+
+function readShortint(address)
+  local value = readInteger(address)
+  if value~=nil then
+    return bAnd(0xFFFF, value )
+  else
+    return nil
+  end
+end
+
+function writeShortint(a,v)
+  if v~=nil then
+     oldwriteBytes(a, v%256, v/256)
+  end
+end
+
+function createMirrorTable(T)
+ local Tprin = {}
+ for k,v in pairs(T) do
+   Tprin[v]=k
+ end
+ return Tprin
+end
+
+-- will fill combobox, items are sorted by key
+function fillCombobox(combobox,T)
+  if not combobox then return end
+
+  combobox.Items.clear()
+  tmp = {}
+  for k,v in pairs(T) do tmp[#tmp+1] = {k=k,v=v} end
+  table.sort(tmp,function (a,b) return a.k &lt; b.k end)
+  for _,v in pairs(tmp) do
+    combobox.Items.add(v.v)
+  end
+end
+
+
+
+
+panel = createPanelEx(UDF1)
+panel.NextToSibling(myListView,5,0)
+panel.BottomAnchor(UDF1,40)
+panel.RightAnchor(UDF1,5)
+
+-- place those controls inside "panel", not Form
+lblNation = createLabelEx(panel)
+lblNation.Caption = "Nationality"
+lblNation.BelowSibling(panel,0,10)
+
+lblPlayerType = createLabelEx(panel)
+lblPlayerType.Caption = "Player Type"
+lblPlayerType.BelowSibling(lblNation,0,15)
+
+lblBatH = createLabelEx(panel)
+lblBatH.Caption = "Bat Hand/WickedKeep"
+lblBatH.BelowSibling(lblPlayerType,0,15)
+
+lblContract = createLabelEx(panel)
+lblContract.Caption = "Contract Term"
+lblContract.BelowSibling(lblBatH,0,15)
+
+lblBowlType = createLabelEx(panel)
+lblBowlType.Caption = "Bowling Type"
+lblBowlType.BelowSibling(lblContract,0,15)
+
+lblBatAbility = createLabelEx(panel)
+lblBatAbility.Caption = "Batting Ability"
+lblBatAbility.BelowSibling(lblBowlType,0,15)
+
+lblBowlAbility = createLabelEx(panel)
+lblBowlAbility.Caption = "Bowling Ability"
+lblBowlAbility.BelowSibling(lblBatAbility,0,15)
+
+cNation = createComboBoxEx(panel)
+cNation.ReadOnly = true
+cNation.NextToSiblingCenter(lblNation,10,0)
+cNation.RightAnchor(panel,15)
+
+cPlayerType = createComboBoxEx(panel)
+cPlayerType.ReadOnly = true
+cPlayerType.NextToSiblingCenter(lblPlayerType,10,0)
+cPlayerType.RightAnchor(panel,15)
+
+cBatH = createComboBoxEx(panel)
+cBatH.ReadOnly = true
+cBatH.NextToSiblingCenter(lblBatH,10,0)
+cBatH.RightAnchor(panel,15)
+
+cConT = createComboBoxEx(panel)
+cConT.ReadOnly = true
+cConT.NextToSiblingCenter(lblContract,10,0)
+cConT.RightAnchor(panel,15)
+
+cBowlType = createComboBoxEx(panel)
+cBowlType.ReadOnly = true
+cBowlType.NextToSiblingCenter(lblBowlType,10,0)
+cBowlType.RightAnchor(panel,15)
+
+eBatAbility = createEditEx(panel)
+eBatAbility.ReadOnly = false
+eBatAbility.NextToSiblingCenter(lblBatAbility,10,0)
+eBatAbility.RightAnchor(panel,15)
+
+eBowlAbility = createEditEx(panel)
+eBowlAbility.ReadOnly = false
+eBowlAbility.NextToSiblingCenter(lblBowlAbility,10,0)
+eBowlAbility.RightAnchor(panel,15)
+
+saveButton = createButtonEx(UDF1)
+saveButton.setPosition(1600,350)
+saveButton.AutoSize = true
+saveButton.Caption = 'Save'
+saveButton.OnClick = btnsaveClick
+
+
+
+
+Nationalities = {
+  [43]='Australia',
+  [44]='England',
+  [45]='India',
+  [46]='New Zealand',
+  [47]='Pakistan',
+  [48]='South Africa',
+  [49]='Sri Lanka',
+  [50]='West Indies',
+  [51]='Bangladesh',
+  [52]='Zimbabwe',
+  [178]='Australia(K)',
+  [179]='New Zealand(K)',
+  [180]='South Africa(K)',
+  [181]='Zimbabwe(K)'
+}
+NationalitiesMirror = createMirrorTable(Nationalities)
+fillCombobox(cNation,Nationalities)
+
+PlayerTypes = {
+  [1]='Batsman',
+  [2]='All Rounder',
+  [3]='Bowler',
+  [4]='Opening All Rounder in one day and t20',
+  [8]='Opening Batsman in all formats',
+  [12]='Opening All Rounder in all formats',
+  [16]='Opening Batsman in one day and t20',
+  [24]='Opening Batsman in T20 only',
+  [28]='Opening All Rounder in t20 only'
+}
+PlayerTypesMirror = createMirrorTable(PlayerTypes)
+fillCombobox(cPlayerType,PlayerTypes)
+
+BatHs = {
+   [1]='Left Hand Batsman',
+   [2]='Right Hand Batsman',
+   [4]='LHB+WicketKeeper',
+   [6]='RHB+WicketKeeper',
+   [8]='LHB+Occasional WK',
+  [10]='RHB+Occasional WK'
+}
+BatHsMirror = createMirrorTable(BatHs)
+fillCombobox(cBatH,BatHs)
+
+ConTs = {
+  [1]='No contract',
+  [2]='1 year',
+  [3]='2 years',
+  [4]='3 years',
+  [5]='4 years',
+  [6]='5 years',
+  [7]='6 years'
+}
+ConTsMirror = createMirrorTable(ConTs)
+fillCombobox(cConT,ConTs)
+
+BowlTypes = {
+  [0] ='Slow Left Arm Bowler',
+  [4] ='Left Handed LS',
+  [8] ='Left Arm Medium',
+  [12]='Left Arm Fast Medium',
+  [16]='Left Arm Medium Fast',
+  [20]='Left Arm Fast',
+  [32]='Off Spinner ',
+  [36]='Right Handed LS',
+  [40]='Right Arm Medium',
+  [44]='Right Arm Fast Medium',
+  [48]='Right Arm Medium Fast',
+  [52]='Right Arm Fast',
+}
+BowlTypesMirror = createMirrorTable(BowlTypes)
+fillCombobox(cBowlType,BowlTypes)
+
+-- RETIREMENT TABLE
+-- create key-value table (country code is a key)
+Retirements = {
+  [0]='Play all forms',
+  [4]='Test',
+  [8]='ODI',
+  [12]='test, odi',
+  [16]='20int',
+  [20]='test, 20int',
+  [24]='20int, odi',
+  [28]='test,20int,odi',
+  [32]='fc',
+  [36]='FC, Test',
+  [40]='fc, odi',
+  [44]='fc, test, odi',
+  [48]='fc, 20int',
+  [52]='fc,test,20int',
+  [56]='fc,20int,odi',
+  [60]='fc,test,20int,odi',
+  [64]='1day',
+  [68]='1day, test',
+  [72]='1day,odi',
+  [76]='1day,test,odi',
+  [80]='1day,20int',
+  [84]='1day,test,20int',
+  [88]='1day,20int,odi',
+  [92]='1day,test,20int,odi',
+  [96]='fc,1day',
+  [100]='fc,1day,test',
+  [104]='fc,1day,odi',
+  [108]='fc,1day,test,odi',
+  [112]='fc,1day,20int',
+  [116]='fc,1day,test,20int',
+  [120]='fc,1day,20int,odi',
+  [124]='fc,1day,test,20int,odi',
+  [128]='20over',
+  [132]='20over, test',
+  [136]='20over, odi',
+  [140]='20over, test,odi',
+  [144]='20over, 20int',
+  [148]='20over,test,20int',
+  [152]='20over,20int,odi',
+  [156]='20over, test, 20int, odi',
+  [160]='fc, 20over',
+  [164]='fc, 20ver, test',
+  [168]='fc,20over, odi',
+  [172]='fc, 20over, test, odi',
+  [176]='fc, 20over, 20int',
+  [180]='fc, 20ver,test, 20int',
+  [184]='fc, 20over, 20int, odi',
+  [188]='fc, 20over, test,20int, odi',
+  [192]='20over, 1day',
+  [196]='20over, 1day, test',
+  [200]='20over, 1day, odi',
+  [204]='20over, 1day, test, odi',
+  [208]='20over, 1day, 20int',
+  [212]='20over, 1day, test, 20int',
+  [216]='20over, 1day, 20int, odi',
+  [220]='20over, 1day, test, 20int, odi',
+  [224]='fc, 20over, 1day',
+  [228]='fc, 20over, 1day, test',
+  [232]='fc, 20over, 1day, odi',
+  [236]='fc, 20over, 1day, test, odi',
+  [240]='fc, 2over, 1day, 20int',
+  [244]='fc, 20over, 1day, test, 20int',
+  [248]='fc,20over,1day,20int,odi',
+  [252]='Retired ALL forms'
+}
+
+-- create another key-value table (this time, country name is a key)
+RetirementsMirror = {}
+for k,v in pairs(Retirements) do
+  RetirementsMirror[v]=k
+end
+
+-- BATTING PREFERENCE
+-- Part1 Aggression table
+Aggressions = {
+  [0]='V. Def',
+  [64]='Def.',
+  [128]='Normal',
+  [192]='Agg.',
+  [256]='V. Agg.'
+}
+
+-- create another key-value table (this time, country name is a key)
+AggressionsMirror = {}
+for k,v in pairs(Aggressions) do
+  AggressionsMirror[v]=k
+end
+
+
+-- Part2 Pace/Foot Pref table
+FootPrefs = {
+  [0] =  'Strng Bk Ft pref',
+  [8] =  'Slight Bk Ft pref',
+  [16] = 'No Ft pref',
+  [24] = 'Slight Frnt Ft pref',
+  [32] = 'Strng Frnt Ft pref'
+}
+
+-- create another key-value table (this time, country name is a key)
+FootPrefsMirror = {}
+for k,v in pairs(FootPrefs) do
+  FootPrefsMirror[v]=k
+end
+
+
+SpinPaces = {
+  [0] =  'Spin Spec',
+  [1] =  'Slight Spin pref',
+  [2] =  'No pref',
+  [3] =  'Slight Pace pref',
+  [4] =  'Strong Pace pref'
+}
+
+-- create another key-value table (this time, country name is a key)
+SpinPacesMirror = {}
+for k,v in pairs(SpinPaces) do
+  SpinPacesMirror[v]=k
+end
+
+
+function refresh()
+  -- Nationality
+  --local country = Nationalities[ readInteger(ChosenPlayer.Nationality) ]
+ -- if country then cNation.Text = country else cNation.ItemIndex=-1
+   local country = readShortint(ChosenPlayer.Nationality)
+   writeInteger(country,45)
+
+
+  -- Player type
+  local PT = PlayerTypes[ readInteger(ChosenPlayer.PlayerType) ]
+  if PT then cPlayerType.Text = PT else cPlayerType.ItemIndex=-1
+  end
+
+  -- BatH/WK
+  local BatHand = BatHs[ readInteger(ChosenPlayer.BatHandWK) ]
+  if BatHand then cBatH.Text = BatHand else cBatH.ItemIndex=-1
+  end
+
+  -- Contract Term
+  local ConTerm = ConTs[ readInteger(ChosenPlayer.ContractTerm) ]
+  if ConTerm then cConT.Text = ConTerm else cConT.ItemIndex=-1
+  end
+
+  -- Bowling Type
+  local BType = readInteger(ChosenPlayer.BowlType)
+  if BType then
+    local BType2 = bAnd(BType,60)  -- %111100
+    cBowlType.Text = BowlTypes[ BType2 ]
+  else cBowlType.ItemIndex=-1
+  end
+
+  -- Batting Ability
+  eBatAbility.Text = readShortint(ChosenPlayer.BatAbility)
+
+  -- Bowling Ability
+  eBowlAbility.Text = readShortint(ChosenPlayer.BowlAbility)
+end
+
+function btnsaveClick(btn)
+-- Nationality
+  cNation.Text = India
+  cNation.ItemIndex=3
+  local country = readInteger(ChosenPlayer.Nationality)
+
+
+end
+
+UDF1.OnClose = function()
+                  destroyComponents(UDF1)
+                  return caHide
+                end
+
+</LuaScript>
+</CheatTable>

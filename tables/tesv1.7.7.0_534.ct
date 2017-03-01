@@ -1,0 +1,710 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="14">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>48</ID>
+      <Description>"Skyrim v1.7.7.0 + 32"</Description>
+      <Options moHideChildren="1"/>
+      <Color>80000008</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>[ENABLE]
+{---- Table +29 ----
+Game:
+   01.The Elder Scrolls V : Skyrim v1.7.7.0
+Options:
+   01.One Hit Kill (On=1, Off=0)
+   02.God Mode(Infinite Mana,HP,Stamina)  (On=1, Off=0)
+   03.Infinite Gold (Off=0, On=Set the value you want)
+   04.Infinite Lockpicks (same as 03)
+   05.Infinite Perks to increase (same as 03)
+   06.Physical Pointers.Lock the status items with value 0,
+      if you don't like the Realtime God Mode.
+   07.All Skills Pointers.Yeah, all items. Enjoy!
+
+Notes:
+   01.Use func. assert or aobscan to locate the hacking.
+      Func. assert is preferred, you may get yourown offsets.
+   02.Once Re-Activated this script,you have to re-activate
+      the children.
+
+Creator:
+   01.Alice0725
+
+Logs:
+   10/2/2012 ---- slfjsljfsljfdskiweir09ii _^_
+   29/9/2012 ---- aldjfisjflajsldjfsdjieur -V-
+}
+
+aobscan(aobPicks,8B 4E 08 03 C8 8B 44 24 2C 01 4C 24 10)
+//assert("TESV.exe"+79637,8B 4E 08 03 C8 8B 44 24 2C 01 4C 24 10)
+
+aobscan(aobGold,8B 50 08 03 11 03 EA EB ?? 8B 04 B3)
+//assert("TESV.exe"+78F1C,8B 50 08 03 11 03 EA EB 09 8B 04 B3)
+
+aobscan(aobGod,89 11 D9 40 08 D8 64 24 10 57 8B CE)
+//assert("TESV.exe"+2DCC2E,89 11 D9 40 08 D8 64 24 10 57 8B CE)
+
+aobscan(aobPerks,0F B6 81 D5 06 00 00 5E 5B 83 C4 30)
+//assert("TESV.exe"+4859DC,0F B6 81 D5 06 00 00 5E 5B 83 C4 30)
+
+aobscan(aobArrowEP,8B 8E 88 00 00 00 2B FB 57 E8)
+//assert("TESV.exe"+2DEA72,8B 8E 88 00 00 00 2B FB 57)
+
+aobscan(aobArrowIT,29 78 08 8B C5 2B C7 50)
+//assert("TESV.exe"+7E2C4,29 78 08 8B C5 2B C7 50)
+
+alloc(cheater,512)
+label(locGod)  //God,OHK
+label(retGod)
+label(chtGod)
+label(player)
+label(setGod)
+label(orgGod)
+label(iChtGod)
+label(setHealth)
+label(setMana)
+label(setStamina)
+label(ptrPlayer)
+label(valGold) //Gold
+label(locGold)
+label(retGold)
+label(chtGold)
+label(locPicks) //Lockpicks
+label(retPicks)
+label(chtPicks)
+label(valPicks)
+label(valPerks) //Perks
+label(locPerks)
+label(retPerks)
+label(chtPerks)
+registersymbol(valPicks) //--1--
+registersymbol(locPicks)
+registersymbol(locGold) //--2--
+registersymbol(valGold)
+registersymbol(locGod)  //--3--
+registersymbol(iChtGod)
+registersymbol(ptrPlayer)
+registersymbol(valPerks) //--4--
+registersymbol(locPerks)
+
+label(chtArrowEP)
+label(retArrowEP)  //Equipped
+//label(orgArrowEP)
+label(retArrowIT)  //Inventory
+label(orgArrowIT)
+label(chtArrowIT)
+label(locArrowEP)
+label(locArrowIT)
+registersymbol(locArrowEP)
+registersymbol(locArrowIT)
+
+//----Hacked----
+aobPicks:  //"TESV.exe"+79637:
+locPicks:
+ jmp chtPicks
+retPicks:
+
+aobGold:   //"TESV.exe"+78F1C
+locGold:
+ jmp chtGold
+retGold:
+
+aobGod:  //"TESV.exe"+2DCC2E
+locGod:
+ jmp chtGod
+retGod:
+
+aobPerks: //"TESV.exe"+4859DC
+locPerks:
+ jmp chtPerks
+ db 90 90
+retPerks:
+
+aobArrowEP:  //"TESV.exe"+2DEA72:
+locArrowEP:
+ jmp chtArrowEP
+ nop
+retArrowEP:
+
+aobArrowIT: //"TESV.exe"+7E2C4:
+locArrowIT:
+ jmp chtArrowIT
+retArrowIT:
+
+
+
+//----End Hacked-----
+
+//-----Injection----
+cheater:
+//--variable--
+iChtGod:
+ dd 00   //byte:OHK,Health,Mana,Stamina
+ dd 00   //byte:Arrow
+valGold:
+ dd 00
+valPicks:
+ dd 00
+valPerks:
+ dd 00
+ptrPlayer:
+ dd 00
+
+//--Minimum Lockpicks--
+chtPicks:
+ mov ecx,[esi+08] //original code
+ add ecx,eax
+ cmp ecx,[valPicks] //Let's cheat
+ jnl retPicks
+ mov ecx,[valPicks]
+ mov [esi+08],ecx
+ jmp retPicks
+
+//--Minimum Gold--
+chtGold:
+ mov edx,[eax+08] //original code
+ add edx,[ecx]
+ cmp edx,[valGold] //Let's cheat
+ jnl retGold
+ mov edx,[valGold]
+ mov [eax+08],edx
+ jmp retGold
+
+//--Get perks ptr.
+chtPerks:
+ //mov [ptrPerks],ecx
+ movzx eax,byte ptr [ecx+6D5] //original code
+ cmp eax,[valPerks]
+ jnl retPerks
+ movzx eax,byte ptr [valPerks]
+ mov [ecx+6D5],eax
+ jmp retPerks
+
+//--God Mode:Infinite Mana,HP,Stamina &amp; One Hit Kill--
+chtGod:
+ cmp [esi+4],0  //Is player ?
+ je player
+ cmp byte ptr [iChtGod],1
+ jne orgGod
+ mov edx,C7C35000 //OHK: -100k is enough to kill anyone.
+ jmp orgGod
+player:
+ mov [ptrPlayer],esi //Get pointer
+ cmp edi,18
+ je setHealth
+ cmp edi,19
+ je setMana
+ cmp edi,1A
+ je setStamina
+ jmp orgGod
+setHealth:
+ cmp byte ptr [iChtGod+2],1
+ jne orgGod
+ jmp setGod
+setMana:
+ cmp byte ptr [iChtGod+3],1
+ jne orgGod
+ jmp setGod
+setStamina:
+ cmp byte ptr [iChtGod+4],1
+ jne orgGod
+setGod:
+ mov edx,0
+orgGod:  //original code
+ mov [ecx],edx
+ fld dword ptr [eax+08]
+ jmp retGod
+
+ //--No Equipped Arrow Decrease--
+chtArrowEP:
+ mov ecx,[esi+00000088]  //orginal code
+ cmp byte ptr [iChtGod+1],1 //Lets' cheat
+ jne retArrowEP
+ cmp [esi+4],0  //is player?
+ jne retArrowEP
+ mov ebx,0
+ jmp retArrowEP
+
+//--No Inventory Arrow Decrease--
+chtArrowIT:
+ cmp byte ptr [iChtGod+1],1
+ jne orgArrowIT
+ mov edi,0
+orgArrowIT:
+ sub [eax+08],edi
+ mov eax,ebp
+ jmp retArrowIT
+
+//----End Injection-----
+
+
+
+[DISABLE]
+locPicks:
+ db 8B 4E 08 03 C8
+locGold:
+ db 8B 50 08 03 11
+locGod:
+ db 89 11 D9 40 08
+locPerks:
+ db 0F B6 81 D5 06 00 00
+locArrowEP:
+ db 8B 8E 88 00 00 00
+locArrowIT:
+ db 29 78 08 8B C5
+
+unregistersymbol(valPerks)
+unregistersymbol(locPerks)
+unregistersymbol(valPicks)
+unregistersymbol(locPicks)
+unregistersymbol(valGold)
+unregistersymbol(locGold)
+unregistersymbol(iChtGod)
+unregistersymbol(locGod)
+unregistersymbol(ptrPlayer)
+unregistersymbol(locArrowEP)
+unregistersymbol(locArrowIT)
+dealloc(cheater)
+
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>73</ID>
+          <Description>"Enable God Mode"</Description>
+          <Color>80000008</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[ENABLE]
+iChtGod:
+db 01 01 01 01 01
+
+[DISABLE]
+iChtGod:
+db 00 00 00 00 00
+</AssemblerScript>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Toggle Activation</Action>
+              <Keys>
+                <Key>113</Key>
+              </Keys>
+              <Description>God Mode</Description>
+              <ID>0</ID>
+            </Hotkey>
+          </Hotkeys>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>139</ID>
+              <Description>"One Hit Kill"</Description>
+              <Color>80000008</Color>
+              <VariableType>Byte</VariableType>
+              <Address>iChtGod</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>135</ID>
+              <Description>"Infinite Arrow"</Description>
+              <Color>80000008</Color>
+              <VariableType>Byte</VariableType>
+              <Address>iChtGod+1</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>138</ID>
+              <Description>"Infinite Health"</Description>
+              <Color>80000008</Color>
+              <VariableType>Byte</VariableType>
+              <Address>iChtGod+2</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>136</ID>
+              <Description>"Infinite Mana"</Description>
+              <Color>80000008</Color>
+              <VariableType>Byte</VariableType>
+              <Address>iChtGod+3</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>137</ID>
+              <Description>"Infinite Stamina"</Description>
+              <Color>80000008</Color>
+              <VariableType>Byte</VariableType>
+              <Address>iChtGod+4</Address>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>126</ID>
+          <Description>"Enable Infinite Gold"</Description>
+          <Color>80000008</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[ENABLE]
+//Once enabled the group script, you may change the gold value.
+
+valGold:
+dd #10000 //minimum Gold value.
+
+[DISABLE]
+valGold:
+dd 00
+</AssemblerScript>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>127</ID>
+          <Description>"Enable Infinite Lockpicks"</Description>
+          <Color>80000008</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[ENABLE]
+//Activate this entry before you pick a lock.
+//Once enabled the group script,you may change the minimum value.
+
+valPicks:
+dd #10 //minimum value
+
+[DISABLE]
+valPicks:
+dd 00
+</AssemblerScript>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>134</ID>
+          <Description>"Enable Infinite Perks To Increase"</Description>
+          <Color>000000</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[ENABLE]
+//Re-activate the main script will reset valPerks ,
+//you have to re-activate this script to make it work.
+
+valPerks:
+dd 05 //minimum perks value
+
+[DISABLE]
+valPerks:
+dd 00
+</AssemblerScript>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>121</ID>
+          <Description>"Show All Skills Points"</Description>
+          <Options moHideChildren="1"/>
+          <Color>000000</Color>
+          <GroupHeader>1</GroupHeader>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>108</ID>
+              <Description>"One-hand"</Description>
+              <Color>808080</Color>
+              <VariableType>Float</VariableType>
+              <Address>ptrPlayer</Address>
+              <Offsets>
+                <Offset>C</Offset>
+                <Offset>140</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>107</ID>
+              <Description>"Two-hand"</Description>
+              <Color>808080</Color>
+              <VariableType>Float</VariableType>
+              <Address>ptrPlayer</Address>
+              <Offsets>
+                <Offset>10</Offset>
+                <Offset>140</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>110</ID>
+              <Description>"Archery"</Description>
+              <Color>808080</Color>
+              <VariableType>Float</VariableType>
+              <Address>ptrPlayer</Address>
+              <Offsets>
+                <Offset>14</Offset>
+                <Offset>140</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>111</ID>
+              <Description>"Block"</Description>
+              <Color>808080</Color>
+              <VariableType>Float</VariableType>
+              <Address>ptrPlayer</Address>
+              <Offsets>
+                <Offset>18</Offset>
+                <Offset>140</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>112</ID>
+              <Description>"Smithing"</Description>
+              <Color>808080</Color>
+              <VariableType>Float</VariableType>
+              <Address>ptrPlayer</Address>
+              <Offsets>
+                <Offset>1C</Offset>
+                <Offset>140</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>113</ID>
+              <Description>"Heavy Armor"</Description>
+              <Color>808080</Color>
+              <VariableType>Float</VariableType>
+              <Address>ptrPlayer</Address>
+              <Offsets>
+                <Offset>20</Offset>
+                <Offset>140</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>114</ID>
+              <Description>"Light Armor"</Description>
+              <Color>808080</Color>
+              <VariableType>Float</VariableType>
+              <Address>ptrPlayer</Address>
+              <Offsets>
+                <Offset>24</Offset>
+                <Offset>140</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>115</ID>
+              <Description>"Pickpocket"</Description>
+              <Color>808080</Color>
+              <VariableType>Float</VariableType>
+              <Address>ptrPlayer</Address>
+              <Offsets>
+                <Offset>28</Offset>
+                <Offset>140</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>106</ID>
+              <Description>"Lockpicking"</Description>
+              <Color>808080</Color>
+              <VariableType>Float</VariableType>
+              <Address>ptrPlayer</Address>
+              <Offsets>
+                <Offset>2C</Offset>
+                <Offset>140</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>105</ID>
+              <Description>"Sneak"</Description>
+              <Color>808080</Color>
+              <VariableType>Float</VariableType>
+              <Address>ptrPlayer</Address>
+              <Offsets>
+                <Offset>30</Offset>
+                <Offset>140</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>104</ID>
+              <Description>"Alchemy"</Description>
+              <Color>808080</Color>
+              <VariableType>Float</VariableType>
+              <Address>ptrPlayer</Address>
+              <Offsets>
+                <Offset>34</Offset>
+                <Offset>140</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>103</ID>
+              <Description>"Speech"</Description>
+              <Color>808080</Color>
+              <VariableType>Float</VariableType>
+              <Address>ptrPlayer</Address>
+              <Offsets>
+                <Offset>38</Offset>
+                <Offset>140</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>102</ID>
+              <Description>"Alteration"</Description>
+              <Color>808080</Color>
+              <VariableType>Float</VariableType>
+              <Address>ptrPlayer</Address>
+              <Offsets>
+                <Offset>3C</Offset>
+                <Offset>140</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>101</ID>
+              <Description>"Conjuration"</Description>
+              <Color>808080</Color>
+              <VariableType>Float</VariableType>
+              <Address>ptrPlayer</Address>
+              <Offsets>
+                <Offset>40</Offset>
+                <Offset>140</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>100</ID>
+              <Description>"Destruction"</Description>
+              <Color>808080</Color>
+              <VariableType>Float</VariableType>
+              <Address>ptrPlayer</Address>
+              <Offsets>
+                <Offset>44</Offset>
+                <Offset>140</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>99</ID>
+              <Description>"Illusion"</Description>
+              <Color>808080</Color>
+              <VariableType>Float</VariableType>
+              <Address>ptrPlayer</Address>
+              <Offsets>
+                <Offset>48</Offset>
+                <Offset>140</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>96</ID>
+              <Description>"Restoration"</Description>
+              <Color>808080</Color>
+              <VariableType>Float</VariableType>
+              <Address>ptrPlayer</Address>
+              <Offsets>
+                <Offset>4C</Offset>
+                <Offset>140</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>95</ID>
+              <Description>"Enchanting"</Description>
+              <Color>808080</Color>
+              <VariableType>Float</VariableType>
+              <Address>ptrPlayer</Address>
+              <Offsets>
+                <Offset>50</Offset>
+                <Offset>140</Offset>
+              </Offsets>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>122</ID>
+          <Description>"Show Physical Items"</Description>
+          <Options moHideChildren="1"/>
+          <Color>80000008</Color>
+          <GroupHeader>1</GroupHeader>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>94</ID>
+              <Description>"Health"</Description>
+              <Color>808080</Color>
+              <VariableType>Float</VariableType>
+              <Address>ptrPlayer</Address>
+              <Offsets>
+                <Offset>54</Offset>
+                <Offset>140</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>97</ID>
+              <Description>"Magicka"</Description>
+              <Color>808080</Color>
+              <VariableType>Float</VariableType>
+              <Address>ptrPlayer</Address>
+              <Offsets>
+                <Offset>58</Offset>
+                <Offset>140</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>98</ID>
+              <Description>"Stamina"</Description>
+              <Color>808080</Color>
+              <VariableType>Float</VariableType>
+              <Address>ptrPlayer</Address>
+              <Offsets>
+                <Offset>5C</Offset>
+                <Offset>140</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>132</ID>
+              <Description>"Health Status"</Description>
+              <Color>000066</Color>
+              <VariableType>Float</VariableType>
+              <Address>ptrPlayer</Address>
+              <Offsets>
+                <Offset>158</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>130</ID>
+              <Description>"Mana Status"</Description>
+              <Color>804000</Color>
+              <VariableType>Float</VariableType>
+              <Address>ptrPlayer</Address>
+              <Offsets>
+                <Offset>164</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>131</ID>
+              <Description>"Stamina Status"</Description>
+              <Color>4E9B00</Color>
+              <VariableType>Float</VariableType>
+              <Address>ptrPlayer</Address>
+              <Offsets>
+                <Offset>170</Offset>
+              </Offsets>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols>
+    <SymbolEntry>
+      <Name>valPicks</Name>
+      <Address>0392000C</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>locPicks</Name>
+      <Address>00479637</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>locGold</Name>
+      <Address>00478F1C</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>valGold</Name>
+      <Address>03920008</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>locGod</Name>
+      <Address>006DCC2E</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>iChtGod</Name>
+      <Address>03920000</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>ptrPlayer</Name>
+      <Address>03920014</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>valPerks</Name>
+      <Address>03920010</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>locPerks</Name>
+      <Address>008859DC</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>locArrowEP</Name>
+      <Address>006DEA72</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>locArrowIT</Name>
+      <Address>0047E2C4</Address>
+    </SymbolEntry>
+  </UserdefinedSymbols>
+</CheatTable>

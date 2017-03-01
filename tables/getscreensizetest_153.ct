@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="19">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>0</ID>
+      <Description>"getScreenSize test"</Description>
+      <LastState/>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>{$lua}
+function getScreenSize()
+  local param = cheatEngineIs64Bit() and 'mov rcx,' or 'push '
+  local r = {string.format([[
+//  info : https://msdn.microsoft.com/en-us/library/windows/desktop/ms724385(v=vs.85).aspx
+globalalloc(_screenapi,$100)
+_screenapi:
+dd 0
+_screenapi+10:
+push rcx
+push rax
+%s1   // SM_CYSCREEN : The height of the screen of the primary display monitor
+call GetSystemMetrics
+mov [_screenapi+04],eax
+%s10  // SM_CXFULLSCREEN : The width of the client area for a full-screen window on the primary display monitor
+call GetSystemMetrics
+mov [_screenapi+08],eax
+%s11  // SM_CYFULLSCREEN : The height of the client area for a full-screen window on the primary display monitor
+call GetSystemMetrics
+mov [_screenapi+0c],eax
+%s0   // SM_CXSCREEN : The width of the screen of the primary display monitor
+call GetSystemMetrics
+mov [_screenapi+00],eax
+pop rax
+pop rcx
+ret
+]],param,param,param,param),"createThread(_screenapi+10)",[[
+
+]]}
+  local w = {}
+  if autoAssemble(r[1],true) then
+    if autoAssemble(r[2],true) then
+      for i=1,100 do
+        if readIntegerLocal('_screenapi') ~= 0 then break end
+        sleep(10) -- needed for the thread actually done and finished
+      end
+      local fmt = "_screenapi+%x"
+      for i=1,4 do w[i] = readIntegerLocal(fmt:format((i-1)*4))  end
+
+    end
+    autoAssemble(r[3],true)-- dummy
+  end
+  return unpack(w) -- screen x,y with taskbar &amp; x,y w/o taskbar
+end
+
+print("&gt;&gt;&gt;",getScreenSize()) -- CXSCREEN, CYSCREEN,CXFULLSCREEN,CYFULLSCREEN
+{$asm}
+
+[ENABLE]
+
+ 
+[DISABLE]
+
+</AssemblerScript>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols/>
+</CheatTable>

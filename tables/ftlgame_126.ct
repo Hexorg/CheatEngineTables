@@ -1,0 +1,1339 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="14">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>106</ID>
+      <Description>"====----&gt;&gt;&gt;&gt; README &lt;&lt;&lt;&lt;----===="</Description>
+      <Color>80000008</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>{==============================================================================
+ = Game           : FTL: Faster Than Light
+ = Game Version   : 1.0.6 (Steam + GOG.com)
+ = Trainer Version: 1.1.0
+ = Author         : Jason Goemaat
+ ==============================================================================
+
+------------------------------ QUICK START ------------------------------
+1) Load the table
+2) Open the FTLGame.exe process
+3) Check 'SCRIPT: Cheat Flags', this allocates memory for flags and injects
+   code into 5 places in the game, but they dont' do anything until the flags
+   are set.
+4) Check the table entries under 'Flags' that you wish to use or use the hotkey
+   to toggle them.  They (Except F8) basically change the value of the flag
+   in memory between 1 and 0, so the injected code knows whether it should
+   do soemthing or not
+5) Edit values under static pointers manually, check the box to freeze the
+   value so it will be changed back to the value you set if the game changes it.
+
+------------------------------ Most Useful ------------------------------
+F4 - No Enemy Fire keeps enemy ships from attacking with weapons
+F5 - Fast Weapons makes your weapons recharge fast
+F6 - God (Crew) keeps your crew alive
+F8 - Travel Anywhere lets you travel to any system on the map
+MISC - Ship Systems keeps your systems repaired
+
+Static Pointers:
+    Used Energy - Freeze at 0 and you can power everything you want
+    Rebellion Progress - Freeze at -999999999 (anything below -800) and
+        the rebels will never catch up with you
+    Hull - Freeze at 30 and you'll always have full hull health
+
+------------------------------ Detailed ------------------------------
+F2 - Oxygen: Fills every room in your ship (maybe enemy's too?) with oxygen,
+     except for rooms directly opened to space
+F3 - Health (tooltip heal): heals crew (player's and enemy's) when you
+     move the cursor over them or their names on the left
+F4 - No Enemy Fire: Continuously marks the enemies' weapons as uncharged
+F5 - Fast Weapons: Updates all of your weapons to require only 1 second charge
+F6 - God (Crew): Instead of taking damage, your crew members get set to full
+     health
+F7 - One-Hit-Kill (Crew): Whenever eny crew takes damage, the damage taken is
+     set to their maximum health so they die with one hit.
+F8 - Travel Anywhere: The only "Flag" that is actually an injected script, this
+     makes the game think you have the augment that lets you jump to any
+     system you visited, and makes it think you've visited every system
+F9 - Crew Skills: When moving the mouse over any crew member (player or enemy),
+     set their skills to the maximum level
+F10 - Powerless Enemy - currently bugged, but should disable all enemy systems
+MISC - Ship Systems - repairs all of the systems on your ship each frame, you
+     should never notice them damaged
+
+------------------------------ Static Pointers ------------------------------
+--Base--: Static pointer to structure with a lot of information and pointers
+     to other structures
+Scrap: Freeze at 999 to be able to buy anything
+Fuel: Freeze to not lose fuel when jumping
+FTL Charge: Freeze at 85 or higher to be able to jump immediately when entering
+     a new system
+Hull: Current hull health, normally 0-30
+Hull (Max): Maximum hull health, normally 30
+Drone Parts: Only able to be set if you have drone systems
+Missiles: Only able to be set if you have weapons
+Shields: 0-4, freeze to not worry about waiting for shields to recharge
+Super-Shields: "Extra" shields that recharge when jumping but not during a
+      fight, deflects missiles too
+Super-Shields (MAX): Maximum of those shields
+Cloak Recharge Step: Freeze at 0 to be able to re-cloak as soon as it wears off
+
+--Map--: 006B99B4 - Another static pointer to structures with other data
+Hover System (1): Last system you hovered over on the map that you could travel to
+Hover System (2): Current system cursor is over, only if you can travel to it
+Hover System (3): Current system cursor is over if you can travel there or not
+Rebellion Progress: Seems to start at -750, increases by 50 each time you jump,
+    becomes visible at -600.  Freezing this at a low number keeps the rebels at
+    bay and lets you explore to your heart's content.  If systems have already
+    been taken over by rebels this will not free them.
+
+--Energy--: 006BB588 - Another static pointer with energy data
+Used energy: Amount of energy you've taken from the pool to use in your systems,
+     this increases when you take power out of system and decreases when you
+     put power into a system.  It is the count of black bars on your reactor,
+     so freezing this at 0 makes the game think you have plenty of power
+     available, even if you're over capacity
+Max energy: Number of energy bars in your reactor, changed when you buy more
+     but not really necessary if you freeze Used energy since no energy
+     expenditures count.
+
+}
+[ENABLE]
+
+[DISABLE]
+
+</AssemblerScript>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>23</ID>
+      <Description>"SCRIPT: Cheat Flags"</Description>
+      <Options moHideChildren="1" moBindActivation="1"/>
+      <Color>80000008</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>{==============================================================================
+ = Cheat Flags - global variables used by other cheats
+ = Author: Jason Goemaat
+ = Version 1.0
+}
+
+globalalloc(CHEAT_FLAGS,$1000)
+
+[ENABLE]
+label(FLAG_Oxygen)
+label(FLAG_HealthOnTooltip)
+label(FLAG_NoEnemyFire)
+label(FLAG_OneSecondWeapons)
+label(FLAG_GodCrew)
+label(FLAG_OneHitCrewKill)
+label(FLAG_CrewSkills)
+label(FLAG_PowerlessEnemy)
+label(FLAG_PlayerSystems)
+label(ADDR_Tooltip)
+label(ADDR_Damage)
+
+registersymbol(FLAG_Oxygen)
+registersymbol(FLAG_HealthOnTooltip)
+registersymbol(FLAG_NoEnemyFire)
+registersymbol(FLAG_OneSecondWeapons)
+registersymbol(FLAG_GodCrew)
+registersymbol(FLAG_OneHitCrewKill)
+registersymbol(FLAG_CrewSkills)
+registersymbol(FLAG_PowerlessEnemy)
+registersymbol(FLAG_PlayerSystems)
+registersymbol(ADDR_Tooltip)
+registersymbol(ADDR_Damage)
+
+//-----------------------------------------------------------------------------
+// Flags
+//-----------------------------------------------------------------------------
+CHEAT_FLAGS:
+FLAG_Oxygen:
+    dd 0
+FLAG_HealthOnTooltip:
+    dd 0
+FLAG_NoEnemyFire:
+    dd 0
+FLAG_OneSecondWeapons:
+    dd 0
+FLAG_GodCrew:
+    dd 0
+FLAG_OneHitCrewKill:
+    dd 0
+FLAG_CrewSkills:
+    dd 0
+FLAG_PowerlessEnemy:
+    dd 0
+FLAG_PlayerSystems:
+    dd 0
+
+    dd 0
+    dd 0
+    dd 0
+    dd 0
+    dd 0
+
+//-----------------------------------------------------------------------------
+// Addresses
+//-----------------------------------------------------------------------------
+CHEAT_FLAGS+0f00:
+ADDR_Tooltip:
+    dd 0
+ADDR_Damage:
+    dd 0
+
+
+[DISABLE]
+// nothing to do when disabling
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>22</ID>
+          <Description>"INJECT: Weapon Speed"</Description>
+          <Color>80000008</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>{==============================================================================
+ = Cheat: Weapon Speed
+ = Author: Jason Goemaat
+ = Version 1.1
+
+ This code is called every frame for every weapon to charge it up, even for
+ enemies and even if the weapon is disabled.
+
+
+
+FTLGame.exe+1F110 - 55                    - push ebp
+FTLGame.exe+1F111 - 89 E5                 - mov ebp,esp
+FTLGame.exe+1F113 - 8B 45 08              - mov eax,[ebp+08]                    // loads base pointer in EAX
+FTLGame.exe+1F116 - D9 45 0C              - fld dword ptr [ebp+0C]
+FTLGame.exe+1F119 - D9 40 08              - fld dword ptr [eax+08]
+FTLGame.exe+1F11C - D8 70 0C              - fdiv dword ptr [eax+0C]
+FTLGame.exe+1F11F - D9C1                  - fld st(1)
+FTLGame.exe+1F121 - D8 48 18              - fmul dword ptr [eax+18]
+FTLGame.exe+1F124 - D9 50 0C              - fst dword ptr [eax+0C]
+FTLGame.exe+1F127 - DEC9                  - fmulp st(1),st(0)
+FTLGame.exe+1F129 - D9 58 08              - fstp dword ptr [eax+08]
+FTLGame.exe+1F12C - D9 98 04030000        - fstp dword ptr [eax+00000304]
+FTLGame.exe+1F132 - C9                    - leave
+FTLGame.exe+1F133 - C3                    - ret
+
+Structure:
+0000: "Weapon" Type (006B5528)
+0004: Enemy Flag (0 for player weapon, 1 for enemy weapon)
+0008: Current Charge (in seconds)
+000C: Max Charge (in seconds, modified by augments, crew)
+0018: Original Max Charge (before modifying with augments, crew)
+0084: BASE Max Charge, can set 0018 from this to reset
+0088: COULD be energy required, but changing doesn't work
+}
+
+define(INJECT_WeaponSpeed,FTLGame.exe+1F116)
+
+[ENABLE]
+alloc(CHEAT_WeaponSpeed,$1000)
+label(IsEnemy1)
+label(Done)
+label(Float1)
+label(TempFloat)
+label(NormalWeaponSpeed)
+
+CHEAT_WeaponSpeed:
+    // push registers and flags so we can change them
+    pushad
+    pushfd
+
+    mov ebx, dword ptr [eax+4]
+    cmp ebx, 1
+    je IsEnemy1
+    cmp ebx, 0
+    jne Done // not sure that it is player
+
+//-------------------- player --------------------
+    // make sure cheat flag is set
+    cmp dword ptr [FLAG_OneSecondWeapons], 00000001
+    jne NormalWeaponSpeed
+
+    // replace old max seconds to charge with 1.0
+    mov ebx, dword ptr [Float1]
+    mov dword ptr [eax+18], ebx
+    jmp Done
+
+NormalWeaponSpeed:
+    // restore old max seconds to charge in case we cheated them before
+    mov ebx, dword ptr [eax+84]
+    mov dword ptr [eax+18], ebx
+    jmp Done
+
+//-------------------- enemy --------------------
+IsEnemy1:
+    cmp dword ptr [FLAG_NoEnemyFire], 00000001
+    jne Done
+
+    mov ebx, 00000000
+    mov dword ptr [eax+00000008], ebx
+    jmp Done
+
+Done:
+    // pop stored registers and flags
+    popfd
+    popad
+    // original code and return
+    db D9 45 0C D9 40 08
+    ret
+
+CHEAT_WeaponSpeed+0f00:
+Float1:
+    dd (float)1.0
+TempFloat:
+    dd 0
+
+{
+FTLGame.exe+1F116 - D9 45 0C              - fld dword ptr [ebp+0C] // crew modifier
+FTLGame.exe+1F119 - D9 40 08              - fld dword ptr [eax+08]
+}
+
+INJECT_WeaponSpeed:
+    call CHEAT_WeaponSpeed
+    nop
+
+//-----------------------------------------------------------------------------
+// When disabling, replace injection with original code
+//-----------------------------------------------------------------------------
+[DISABLE]
+INJECT_WeaponSpeed:
+    db D9 45 0C D9 40 08
+dealloc(CHEAT_WeaponSpeed)
+
+</AssemblerScript>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>14</ID>
+          <Description>"INJECT: Oxygen"</Description>
+          <Color>80000008</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>{==============================================================================
+ = Cheat: Oxygen levels
+ = Author: Jason Goemaat
+ = Version 1.0
+
+// this code is what I replace, it is repeated for each room
+004DFEB6 - B8 00000000 - mov eax,00000000
+004DFEBB - 8D 14 82   - lea edx,[edx+eax*4]
+004DFEBE - D9 02  - fld dword ptr [edx] &lt;&lt;
+004DFEC0 - D8C1 - fadd st(0),st(1)
+004DFEC2 - D9 1A  - fstp dword ptr [edx]
+}
+
+define(INJECT_Oxygen,004DFEBE)
+
+[ENABLE]
+alloc(CHEAT_Oxygen,$1000)
+label(MaxOxygen)
+label(Done)
+
+CHEAT_Oxygen:
+    // make sure cheat flag is set
+    cmp dword ptr [FLAG_Oxygen], 1
+    jne Done
+
+    // load 100.0 and store it instead of adding/subtracting value
+    fld dword ptr [MaxOxygen]
+    fstp dword ptr [edx]
+    ret
+
+Done:
+    db d9 02 d8 c1 d9 1a // original code
+    ret
+
+CHEAT_Oxygen+0f00:
+MaxOxygen:
+    dd (float)100.0
+
+{
+004DFEB6 - B8 00000000 - mov eax,00000000
+004DFEBB - 8D 14 82   - lea edx,[edx+eax*4]
+004DFEBE - D9 02  - fld dword ptr [edx] &lt;&lt;
+004DFEC0 - D8C1 - fadd st(0),st(1)
+004DFEC2 - D9 1A  - fstp dword ptr [edx]
+}
+
+INJECT_Oxygen:
+    call CHEAT_Oxygen
+    nop
+
+//-----------------------------------------------------------------------------
+// When disabling, replace injection with original code
+//-----------------------------------------------------------------------------
+[DISABLE]
+INJECT_Oxygen:
+    db d9 02 d8 c1 d9 1a
+dealloc(CHEAT_Oxygen)
+</AssemblerScript>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>16</ID>
+          <Description>"INJECT: Health on tooltip"</Description>
+          <Color>80000008</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>{==============================================================================
+ = Cheat: Tooltip Health
+ = Author: Jason Goemaat
+ = Version 1.0
+
+//  gives 100% health when you hover over someone
+FTLGame.exe+91280 - 55                    - push ebp
+FTLGame.exe+91281 - 89 E5                 - mov ebp,esp
+FTLGame.exe+91283 - 83 EC 08              - sub esp,08
+FTLGame.exe+91286 - 8B 45 08              - mov eax,[ebp+08]
+FTLGame.exe+91289 - 80 B8 24010000 00     - cmp byte ptr [eax+00000124],00
+FTLGame.exe+91290 - 74 07                 - je FTLGame.exe+91299
+FTLGame.exe+91292 - B8 00000000           - mov eax,00000000
+FTLGame.exe+91297 - EB 25                 - jmp FTLGame.exe+912BE
+FTLGame.exe+91299 - D9 40 28              - fld dword ptr [eax+28]
+FTLGame.exe+9129C - D9 7D FE              - fnstcw [ebp-02]
+FTLGame.exe+9129F - 66 8B 45 FE           - mov ax,[ebp-02]
+FTLGame.exe+912A3 - B4 0C                 - mov ah,0C
+FTLGame.exe+912A5 - 66 89 45 FC           - mov [ebp-04],ax
+FTLGame.exe+912A9 - D9 6D FC              - fldcw [ebp-04]
+FTLGame.exe+912AC - DB 5D F8              - fistp dword ptr [ebp-08]
+FTLGame.exe+912AF - D9 6D FE              - fldcw [ebp-02]
+FTLGame.exe+912B2 - 8B 45 F8              - mov eax,[ebp-08]
+FTLGame.exe+912B5 - 85 C0                 - test eax,eax
+FTLGame.exe+912B7 - 7F 05                 - jg FTLGame.exe+912BE
+FTLGame.exe+912B9 - B8 01000000           - mov eax,00000001
+FTLGame.exe+912BE - C9                    - leave
+FTLGame.exe+912BF - C3                    - ret
+
+}
+
+define(INJECT_TooltipHealth,FTLGame.exe+91299)
+
+[ENABLE]
+alloc(CHEAT_TooltipHealth,$1000)
+label(SkipHealth)
+label(SkipCrewSkills)
+label(Done)
+
+CHEAT_TooltipHealth:
+    pushfd // save flags
+    pushad // and registers
+
+    // store tooltip address for possible use later
+    mov dword ptr [ADDR_Tooltip], eax
+
+    // skip health cheat if flag not set
+    cmp dword ptr [FLAG_HealthOnTooltip], 1
+    jne SkipHealth
+
+    // load max health and store it as current health (popped), then do normal
+    fld dword ptr [eax+2c]
+    fstp dword ptr [eax+28]
+
+SkipHealth:
+    cmp dword ptr [FLAG_CrewSkills], 1 // cheat flag set?
+    jne SkipCrewSkills
+
+    cmp dword ptr [eax+4], 0 // player crew?
+    jne SkipCrewSkills
+
+    mov esi, dword ptr [eax+180]
+    mov ebx, dword ptr [esi+4] // piloting
+    mov dword ptr[esi], ebx
+    add esi, 8
+
+    mov ebx, dword ptr [esi+4] // engines
+    mov dword ptr[esi], ebx
+    add esi, 8
+
+    mov ebx, dword ptr [esi+4] // shields
+    mov dword ptr[esi], ebx
+    add esi, 8
+
+    mov ebx, dword ptr [esi+4] // weapons
+    mov dword ptr[esi], ebx
+    add esi, 8
+
+    mov ebx, dword ptr [esi+4] // repair
+    mov dword ptr[esi], ebx
+    add esi, 8
+
+    mov ebx, dword ptr [esi+4] // combat
+    mov dword ptr[esi], ebx
+
+SkipCrewSkills:
+Done:
+    // pop saved flags and registers
+    popad
+    popfd
+
+    // original code and return
+    db D9 40 28 D9 7D FE
+    ret
+
+{
+004DFEB6 - B8 00000000 - mov eax,00000000
+004DFEBB - 8D 14 82   - lea edx,[edx+eax*4]
+004DFEBE - D9 02  - fld dword ptr [edx] &lt;&lt;
+004DFEC0 - D8C1 - fadd st(0),st(1)
+004DFEC2 - D9 1A  - fstp dword ptr [edx]
+}
+
+INJECT_TooltipHealth:
+    call CHEAT_TooltipHealth
+    nop
+
+//-----------------------------------------------------------------------------
+// When disabling, replace injection with original code
+//-----------------------------------------------------------------------------
+[DISABLE]
+INJECT_TooltipHealth:
+    db D9 40 28 D9 7D FE
+dealloc(CHEAT_TooltipHealth)
+</AssemblerScript>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>56</ID>
+          <Description>"INJECT: Health on Damage"</Description>
+          <Color>80000008</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>{==============================================================================
+ = Cheat: Damage Health
+ = Author: Jason Goemaat
+ = Version 1.0
+
+//  both invulnerability and 1-hit-kills
+004924E2 - 55                    - push ebp
+004924E3 - 89 E5                 - mov ebp,esp
+004924E5 - 81 EC 88000000        - sub esp,00000088
+004924EB - C7 45 BC 48095A00     - mov [ebp-44],005A0948 : [57E58955]
+004924F2 - C7 45 C0 D47C6900     - mov [ebp-40],00697CD4 : [0801FFFF]
+004924F9 - 8D 45 C4              - lea eax,[ebp-3C] // replace this
+004924FC - 8D 55 F8              - lea edx,[ebp-08] // and this
+004924FF - 89 10                 - mov [eax],edx
+00492501 - C7 40 04 59274900     - mov [eax+04],00492759 : [8B086D8D]
+00492508 - 89 60 08              - mov [eax+08],esp
+
+[EBP+8] is address of crew member base (health is +28, max health is +2c, enemy flag is +4)
+[EBP+C] is (float) health change (-5.29 means taking 5.29 damage)'
+
+// Actual storage locations:
+00492541 - D9 58 28              - fstp dword ptr [eax+28] &lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;---------- Store Health
+00492575 - D9 50 28              - fst dword ptr [eax+28] &lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;---------- Store Health
+
+}
+
+define(INJECT_DamageHealth,FTLGame.exe+924F9)
+
+[ENABLE]
+alloc(CHEAT_DamageHealth,$1000)
+label(IsEnemy)
+label(IsFriendly)
+label(Done)
+
+CHEAT_DamageHealth:
+    // store Damage address for possible use later
+    mov eax, dword ptr [ebp+08]
+    mov dword ptr [ADDR_Damage], eax
+    cmp dword ptr [eax+4], 00000001
+    je IsEnemy
+
+    cmp dword ptr [eax+4], 00000000
+    je IsFriendly
+
+    jmp Done
+
+IsEnemy:
+    // if one-hit-kill cheat, set damage to be max health if it is smaller
+    cmp dword ptr [FLAG_OneHitCrewKill], 00000001
+    jne Done
+
+    mov edx, dword ptr [eax+2c]
+    or edx, 80000000 // make negative
+    mov dword ptr [ebp+0c], edx
+    jmp Done
+
+IsFriendly:
+    // if one-hit-kill cheat, set damage to be max health if it is smaller
+    cmp dword ptr [FLAG_GodCrew], 00000001
+    jne Done
+
+    mov edx, dword ptr [eax+2c]
+    mov dword ptr [eax+28], edx
+    mov edx, 00000000
+    mov dword ptr [ebp+0c], edx
+    jmp Done
+
+Done:
+    // original code and return
+    db 8D 45 C4 8D 55 F8 // sets eax and edx, so I can use them
+    ret
+
+//-----------------------------------------------------------------------------
+// Inject call to my code into game
+//-----------------------------------------------------------------------------
+INJECT_DamageHealth:
+    call CHEAT_DamageHealth
+    nop
+
+//-----------------------------------------------------------------------------
+// When disabling, replace injection with original code
+//-----------------------------------------------------------------------------
+[DISABLE]
+INJECT_DamageHealth:
+    db 8D 45 C4 8D 55 F8
+
+dealloc(CHEAT_DamageHealth)
+</AssemblerScript>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>99</ID>
+          <Description>"INJECT: System Each Frame"</Description>
+          <Color>80000008</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>{==============================================================================
+ = Cheat: System Constant
+ = Author: Jason Goemaat
+ = Version 1.0
+ ==============================================================================
+
+This injection happens each frame and gives you access to the base pointer
+for each system in play, the player's ship's and the enemy ship's systems.
+
+004E6C9C - 89 95 0CFFFFFF  - mov [ebp-000000F4],edx
+004E6CA2 - 8B 5D 08  - mov ebx,[ebp+08] &lt;&lt; load base system pointer
+004E6CA5 - 8B 5B 3C  - mov ebx,[ebx+3C] &lt;&lt; load current energy (max at 40)
+004E6CA8 - 89 9D E8FEFFFF  - mov [ebp-00000118],ebx
+004E6CAE - 8B 55 08  - mov edx,[ebp+08]
+
+db 8B 5D 08 // replaced instruction 1: mov ebx,[ebp+08]
+db 8B 5B 3C // replaced instruction 2: mov ebx,[ebx+3C]
+}
+
+define(INJECT_SystemContant,FTLGame.exe+E6CA2)
+define(CONST_SHIELDTYPE,006B5C28)
+
+[ENABLE]
+alloc(CHEAT_SystemContant,$1000)
+label(IsEnemy)
+label(IsFriendly)
+label(Done)
+label(EnemyTypeGood)
+
+CHEAT_SystemContant:
+    // do first replaced instruction to get system base in EBX then
+    // save registers and flags
+    db 8B 5D 08 // replaced instruction 1: mov ebx,[ebp+08]
+    pushfd
+    pushad
+
+    // enemy?
+    cmp dword ptr [ebx+0000000c], 1
+    je IsEnemy
+
+    // player?
+    cmp dword ptr [ebx+0000000c], 0
+    je IsFriendly
+    jmp Done
+
+IsEnemy:
+    // skip for now in case it's causing trouble
+    //jmp Done
+
+    cmp dword ptr [FLAG_PowerlessEnemy], 1
+    jne Done
+
+//---------- SKIP FOR NOW, IT IS PRETTY BUGGY ----------
+    jmp Done // SKIP for now, it isn't working well
+
+    // must be a good type
+    cmp dword ptr [ebx], 006b5C28 // shields
+    je EnemyTypeGood
+
+    cmp dword ptr [ebx], 006B4568 // engines
+    je EnemyTypeGood
+
+    cmp dword ptr [ebx], 006b4788 // oxygen
+    je EnemyTypeGood
+
+    cmp dword ptr [ebx], 006b46C8 // medbay
+    je EnemyTypeGood
+
+    cmp dword ptr [ebx], 006b4e08 // teleporter
+    je EnemyTypeGood
+
+    cmp dword ptr [ebx], 006b4ce8 // cloaking
+    je EnemyTypeGood
+
+// for some reason, breakign the weapon system cuases a problem with energy
+// it can be fixed by later manually filling the energy value of teh weapon
+// system which then gets taken back down to zero
+//    cmp dword ptr [ebx], 006b48e8 // weapons
+//    je EnemyTypeGood
+    cmp dword ptr [ebx], 006b33e8 // piloting/sensors/doors
+    je EnemyTypeGood
+
+    // not a good type (weapons), skip it
+    jmp Done
+
+EnemyTypeGood:
+    mov eax, 00000000
+    //mov dword ptr [ebx+3c], eax // set to zero power (CHANGING THIS FREEZES GAME UNTIL CHANGED BACK)
+    mov dword ptr [ebx+88], eax // set to zero health
+    //mov dword ptr [ebx+94], eax // set to zero repair percent (float, but 0 is 0.0 also) // this might be causign crash too
+    jmp Done
+
+    // take shields down too
+    cmp dword ptr [ebx], CONST_SHIELDTYPE
+    jne Done
+    mov dword ptr [ebx+170], 00000000 // 0 shields
+    jmp Done
+
+IsFriendly:
+    cmp dword ptr [FLAG_PlayerSystems], 1
+    jne Done
+
+    //mov eax, dword ptr [ebx+40] // load max power
+    //mov dword ptr [ebx+3c], eax // store in current power
+
+    mov eax, dword ptr [ebx+8c] // load max health
+    mov dword ptr [ebx+88], eax // store in current health
+
+    // full shields too
+    cmp dword ptr [ebx], CONST_SHIELDTYPE
+    jne Done
+    mov eax, dword ptr [ebx+174] // load max shields
+    mov dword ptr [ebx+170], eax // store as current shields
+    jmp Done
+
+Done:
+    // pop saved registers and flags
+    popad
+    popfd
+
+    // finish with second half of the replaced instructions and return
+    db 8B 5B 3C // replaced instruction 2: mov ebx,[ebx+3C]
+    ret
+
+//-----------------------------------------------------------------------------
+// Inject call to my code into game
+//-----------------------------------------------------------------------------
+INJECT_SystemContant:
+    call CHEAT_SystemContant
+    nop
+
+//-----------------------------------------------------------------------------
+// When disabling, replace injection with original code
+//-----------------------------------------------------------------------------
+[DISABLE]
+INJECT_SystemContant:
+    db 8B 5D 08 // replaced instruction 1: mov ebx,[ebp+08]
+    db 8B 5B 3C // replaced instruction 2: mov ebx,[ebx+3C]
+
+dealloc(CHEAT_SystemContant)
+</AssemblerScript>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>24</ID>
+          <Description>"Flags"</Description>
+          <Options moHideChildren="1"/>
+          <Color>80000008</Color>
+          <GroupHeader>1</GroupHeader>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>29</ID>
+              <Description>"F2 -  Oxygen"</Description>
+              <Color>80000008</Color>
+              <VariableType>Auto Assembler Script</VariableType>
+              <AssemblerScript>[ENABLE]
+FLAG_Oxygen:
+    dd 1
+
+
+[DISABLE]
+FLAG_Oxygen:
+    dd 0
+
+</AssemblerScript>
+              <Hotkeys>
+                <Hotkey>
+                  <Action>Toggle Activation</Action>
+                  <Keys>
+                    <Key>113</Key>
+                  </Keys>
+                  <ID>0</ID>
+                </Hotkey>
+              </Hotkeys>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>32</ID>
+              <Description>"F3 -  Health (tooltip heal)"</Description>
+              <Color>80000008</Color>
+              <VariableType>Auto Assembler Script</VariableType>
+              <AssemblerScript>[ENABLE]
+FLAG_HealthOnTooltip:
+    dd 1
+
+
+[DISABLE]
+FLAG_HealthOnTooltip:
+    dd 0
+
+</AssemblerScript>
+              <Hotkeys>
+                <Hotkey>
+                  <Action>Toggle Activation</Action>
+                  <Keys>
+                    <Key>114</Key>
+                  </Keys>
+                  <ID>0</ID>
+                </Hotkey>
+              </Hotkeys>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>31</ID>
+              <Description>"F4 -  No Enemy Fire"</Description>
+              <Color>80000008</Color>
+              <VariableType>Auto Assembler Script</VariableType>
+              <AssemblerScript>[ENABLE]
+FLAG_NoEnemyFire:
+    dd 1
+
+
+[DISABLE]
+FLAG_NoEnemyFire:
+    dd 0
+
+</AssemblerScript>
+              <Hotkeys>
+                <Hotkey>
+                  <Action>Toggle Activation</Action>
+                  <Keys>
+                    <Key>115</Key>
+                  </Keys>
+                  <ID>0</ID>
+                </Hotkey>
+              </Hotkeys>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>30</ID>
+              <Description>"F5 -  Fast Weapons"</Description>
+              <Color>80000008</Color>
+              <VariableType>Auto Assembler Script</VariableType>
+              <AssemblerScript>[ENABLE]
+FLAG_OneSecondWeapons:
+    dd 1
+
+
+[DISABLE]
+FLAG_OneSecondWeapons:
+    dd 0
+
+</AssemblerScript>
+              <Hotkeys>
+                <Hotkey>
+                  <Action>Toggle Activation</Action>
+                  <Keys>
+                    <Key>116</Key>
+                  </Keys>
+                  <ID>0</ID>
+                </Hotkey>
+              </Hotkeys>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>58</ID>
+              <Description>"F6 -  God (Crew)"</Description>
+              <Color>80000008</Color>
+              <VariableType>Auto Assembler Script</VariableType>
+              <AssemblerScript>[ENABLE]
+FLAG_GodCrew:
+    dd 1
+
+
+[DISABLE]
+FLAG_GodCrew:
+    dd 0
+
+</AssemblerScript>
+              <Hotkeys>
+                <Hotkey>
+                  <Action>Toggle Activation</Action>
+                  <Keys>
+                    <Key>117</Key>
+                  </Keys>
+                  <ID>0</ID>
+                </Hotkey>
+              </Hotkeys>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>57</ID>
+              <Description>"F7 -  One-Hit-Kill (Crew)"</Description>
+              <Color>80000008</Color>
+              <VariableType>Auto Assembler Script</VariableType>
+              <AssemblerScript>[ENABLE]
+FLAG_OneHitCrewKill:
+    dd 1
+
+
+[DISABLE]
+FLAG_OneHitCrewKill:
+    dd 0
+
+</AssemblerScript>
+              <Hotkeys>
+                <Hotkey>
+                  <Action>Toggle Activation</Action>
+                  <Keys>
+                    <Key>118</Key>
+                  </Keys>
+                  <ID>0</ID>
+                </Hotkey>
+              </Hotkeys>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>88</ID>
+              <Description>"F8 - Travel Anywhere"</Description>
+              <Color>80000008</Color>
+              <VariableType>Auto Assembler Script</VariableType>
+              <AssemblerScript>{
+-- eax is hover pointer, +16 is flag, 01 if visited, 00 if not
+FTLGame.exe+794CA - 80 78 16 00           - cmp byte ptr [eax+16],00 			-- NOT VISITED?
+FTLGame.exe+794CE - 0F84 B1000000         - je FTLGame.exe+79585                -- NOP this to treat non-visited like visited
+FTLGame.exe+794D4 - 8D 85 7BFFFFFF        - lea eax,[ebp-00000085]
+FTLGame.exe+794DA - 89 44 24 08           - mov [esp+08],eax
+FTLGame.exe+794DE - C7 44 24 04 105B6A00  - mov [esp+04],FTLGame.exe+2A5B10     -- (STRING) "FTL_JUMPER" - check for presence of augment?
+FTLGame.exe+794E6 - 8D 85 74FFFFFF        - lea eax,[ebp-0000008C]
+FTLGame.exe+794EC - 89 04 24              - mov [esp],eax
+FTLGame.exe+794EF - C7 85 28FFFFFF 05000000 mov [ebp-000000D8],00000005
+FTLGame.exe+794F9 - E8 46821B00           - call FTLGame.exe+231744
+FTLGame.exe+794FE - C6 85 F7FEFFFF 01     - mov byte ptr [ebp-00000109],01
+FTLGame.exe+79505 - 8D 85 74FFFFFF        - lea eax,[ebp-0000008C]
+FTLGame.exe+7950B - 89 44 24 04           - mov [esp+04],eax
+FTLGame.exe+7950F - 8B 4D 08              - mov ecx,[ebp+08]
+FTLGame.exe+79512 - 8B 81 70020000        - mov eax,[ecx+00000270] 				&lt;-- only if visited
+FTLGame.exe+79518 - 89 04 24              - mov [esp],eax
+FTLGame.exe+7951B - E8 321B0600           - call FTLGame.exe+DB052
+FTLGame.exe+79520 - 85 C0                 - test eax,eax
+FTLGame.exe+79522 - 0F95 85 18FFFFFF      - setnc [ebp-000000E8]
+FTLGame.exe+79529 - 8D 85 74FFFFFF        - lea eax,[ebp-0000008C]
+FTLGame.exe+7952F - 89 04 24              - mov [esp],eax
+FTLGame.exe+79532 - C7 85 28FFFFFF 06000000 mov [ebp-000000D8],00000006
+FTLGame.exe+7953C - E8 2B8A1B00           - call FTLGame.exe+231F6C
+FTLGame.exe+79541 - EB 39                 - jmp FTLGame.exe+7957C
+FTLGame.exe+79543 - 80 BD F7FEFFFF 00     - cmp byte ptr [ebp-00000109],00
+FTLGame.exe+7954A - 74 18                 - je FTLGame.exe+79564
+FTLGame.exe+7954C - 8D 85 74FFFFFF        - lea eax,[ebp-0000008C]
+FTLGame.exe+79552 - 89 04 24              - mov [esp],eax
+FTLGame.exe+79555 - C7 85 28FFFFFF 00000000 mov [ebp-000000D8],00000000
+FTLGame.exe+7955F - E8 088A1B00           - call FTLGame.exe+231F6C
+FTLGame.exe+79564 - 8B 9D 14FFFFFF        - mov ebx,[ebp-000000EC]
+FTLGame.exe+7956A - 89 1C 24              - mov [esp],ebx
+FTLGame.exe+7956D - C7 85 28FFFFFF FFFFFFFF mov [ebp-000000D8],FFFFFFFF
+FTLGame.exe+79577 - E8 549C1300           - call FTLGame.exe+1B31D0
+FTLGame.exe+7957C - 80 BD 18FFFFFF 00     - cmp byte ptr [ebp-000000E8],00
+FTLGame.exe+79583 - 75 16                 - jne FTLGame.exe+7959B               -- jumps if you have the FTL drive
+
+Hover pointer known fields:
+0000: X (float)
+0004: Y (float)
+0008-0010: Pointers
+0014: Flag_Exit (byte) - set this and green 'Exit' icon will appear
+0015: Flag_Link (byte) - shows travel line, would crash?
+0016: Flag_Visited (byte) - if you've been there, used for checking FTL_JUMPER among others
+0017: Flag_Rebels (byte) - if rebels control and it is dangerous, probably fleet when you get there
+0018: Flag_?? (byte)
+0019: Flag_Nebula (byte) - is a nebula system
+001A: (byte)
+001B: (byte)
+}
+
+define(INJECT_TravelAnywhere_A,FTLGame.exe+794CA)
+define(INJECT_TravelAnywhere_B,FTLGame.exe+79583)
+
+[ENABLE]
+INJECT_TravelAnywhere_A:
+    cmp byte ptr [eax+16],7f // should always be non-equal, as in YES visited
+
+INJECT_TravelAnywhere_B:
+//FTLGame.exe+79583 - EB 16                 - jmp FTLGame.exe+7959B
+    db EB 16 // change conditional jump to always jump
+
+[DISABLE]
+INJECT_TravelAnywhere_A:
+    cmp byte ptr [eax+16],00 // should always be non-equal, as in YES visited
+
+INJECT_TravelAnywhere_B:
+//FTLGame.exe+79583 - EB 16                 - jmp FTLGame.exe+7959B
+    db 75 16 // change conditional jump to always jump
+
+</AssemblerScript>
+              <Hotkeys>
+                <Hotkey>
+                  <Action>Toggle Activation</Action>
+                  <Keys>
+                    <Key>119</Key>
+                  </Keys>
+                  <ID>0</ID>
+                </Hotkey>
+              </Hotkeys>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>93</ID>
+              <Description>"F9 - Crew Skills"</Description>
+              <Color>80000008</Color>
+              <VariableType>Auto Assembler Script</VariableType>
+              <AssemblerScript>[ENABLE]
+FLAG_CrewSkills:
+    dd 1
+
+[DISABLE]
+FLAG_CrewSkills:
+    dd 0
+
+</AssemblerScript>
+              <Hotkeys>
+                <Hotkey>
+                  <Action>Toggle Activation</Action>
+                  <Keys>
+                    <Key>120</Key>
+                  </Keys>
+                  <ID>0</ID>
+                </Hotkey>
+              </Hotkeys>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>98</ID>
+              <Description>"F10 - Powerless Enemy"</Description>
+              <Color>80000008</Color>
+              <VariableType>Auto Assembler Script</VariableType>
+              <AssemblerScript>[ENABLE]
+FLAG_PowerlessEnemy:
+    dd 1
+
+[DISABLE]
+FLAG_PowerlessEnemy:
+    dd 0
+
+</AssemblerScript>
+              <Hotkeys>
+                <Hotkey>
+                  <Action>Toggle Activation</Action>
+                  <Keys>
+                    <Key>121</Key>
+                  </Keys>
+                  <ID>0</ID>
+                </Hotkey>
+              </Hotkeys>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>100</ID>
+              <Description>"MISC - Ship Systems"</Description>
+              <Color>80000008</Color>
+              <VariableType>Auto Assembler Script</VariableType>
+              <AssemblerScript>[ENABLE]
+FLAG_PlayerSystems:
+    dd 1
+
+[DISABLE]
+FLAG_PlayerSystems:
+    dd 0
+
+</AssemblerScript>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>34</ID>
+          <Description>"Addresses"</Description>
+          <Options moHideChildren="1"/>
+          <Color>80000008</Color>
+          <GroupHeader>1</GroupHeader>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>35</ID>
+              <Description>"Tooltip Crewmember"</Description>
+              <ShowAsHex>1</ShowAsHex>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>ADDR_Tooltip</Address>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>33</ID>
+      <Description>"Static Pointers"</Description>
+      <Color>80000008</Color>
+      <GroupHeader>1</GroupHeader>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>9</ID>
+          <Description>"--Base--"</Description>
+          <ShowAsHex>1</ShowAsHex>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>006B99AC</Address>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>3</ID>
+              <Description>"Scrap"</Description>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>006B99AC</Address>
+              <Offsets>
+                <Offset>370</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>6</ID>
+              <Description>"Fuel"</Description>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>006B99AC</Address>
+              <Offsets>
+                <Offset>330</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>49</ID>
+              <Description>"FTL Charge"</Description>
+              <Color>80000008</Color>
+              <VariableType>Float</VariableType>
+              <Address>006B99AC</Address>
+              <Offsets>
+                <Offset>328</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>38</ID>
+              <Description>"Hull"</Description>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>006B99AC</Address>
+              <Offsets>
+                <Offset>DC</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>50</ID>
+              <Description>"Hull (Max)"</Description>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>006B99AC</Address>
+              <Offsets>
+                <Offset>E0</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>40</ID>
+              <Description>"Drone Parts"</Description>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>006B99AC</Address>
+              <Offsets>
+                <Offset>11C</Offset>
+                <Offset>38</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>10</ID>
+              <Description>"Missiles"</Description>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>006B99AC</Address>
+              <Offsets>
+                <Offset>138</Offset>
+                <Offset>34</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>63</ID>
+              <Description>"Shields"</Description>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>6b99ac</Address>
+              <Offsets>
+                <Offset>170</Offset>
+                <Offset>30</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>104</ID>
+              <Description>"Super-Shields"</Description>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>6b99ac</Address>
+              <Offsets>
+                <Offset>178</Offset>
+                <Offset>30</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>105</ID>
+              <Description>"Super-Shields (MAX)"</Description>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>6b99ac</Address>
+              <Offsets>
+                <Offset>17C</Offset>
+                <Offset>30</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>68</ID>
+              <Description>"Cloak Recharge Step"</Description>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>6b99ac</Address>
+              <Offsets>
+                <Offset>B0</Offset>
+                <Offset>2C</Offset>
+              </Offsets>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>79</ID>
+          <Description>"--Map--"</Description>
+          <ShowAsHex>1</ShowAsHex>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>006B99B4</Address>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>80</ID>
+              <Description>"Hover System"</Description>
+              <ShowAsHex>1</ShowAsHex>
+              <ShowAsSigned>1</ShowAsSigned>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>6b99B4</Address>
+              <Offsets>
+                <Offset>4</Offset>
+                <Offset>44</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>86</ID>
+              <Description>"Hover System"</Description>
+              <ShowAsHex>1</ShowAsHex>
+              <ShowAsSigned>1</ShowAsSigned>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>6b99B4</Address>
+              <Offsets>
+                <Offset>54</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>87</ID>
+              <Description>"Hover System"</Description>
+              <ShowAsHex>1</ShowAsHex>
+              <ShowAsSigned>1</ShowAsSigned>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>6b99B4</Address>
+              <Offsets>
+                <Offset>58</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>84</ID>
+              <Description>"Rebellion Progress"</Description>
+              <ShowAsSigned>1</ShowAsSigned>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>6b99B4</Address>
+              <Offsets>
+                <Offset>80</Offset>
+              </Offsets>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>60</ID>
+          <Description>"--Energy--"</Description>
+          <ShowAsHex>1</ShowAsHex>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>006BB588</Address>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>61</ID>
+              <Description>"Used energy"</Description>
+              <ShowAsSigned>1</ShowAsSigned>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>006BB588</Address>
+              <Offsets>
+                <Offset>0</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>85</ID>
+              <Description>"Max energy"</Description>
+              <ShowAsSigned>1</ShowAsSigned>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>006BB588</Address>
+              <Offsets>
+                <Offset>4</Offset>
+              </Offsets>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols>
+    <SymbolEntry>
+      <Name>CHEAT_FLAGS</Name>
+      <Address>008D0000</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>test</Name>
+      <Address>02C80000</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>FLAG_Oxygen</Name>
+      <Address>008D0000</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>FLAG_HealthOnTooltip</Name>
+      <Address>008D0004</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>FLAG_NoEnemyFire</Name>
+      <Address>008D0008</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>FLAG_OneSecondWeapons</Name>
+      <Address>008D000C</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>FLAG_GodCrew</Name>
+      <Address>008D0010</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>FLAG_OneHitCrewKill</Name>
+      <Address>008D0014</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>FLAG_CrewSkills</Name>
+      <Address>008D0018</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>FLAG_PowerlessEnemy</Name>
+      <Address>008D001C</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>FLAG_PlayerSystems</Name>
+      <Address>008D0020</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>ADDR_Tooltip</Name>
+      <Address>008D0F00</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>ADDR_Damage</Name>
+      <Address>008D0F04</Address>
+    </SymbolEntry>
+  </UserdefinedSymbols>
+</CheatTable>

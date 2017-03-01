@@ -1,0 +1,140 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="14">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>0</ID>
+      <Description>"Health Regeneration"</Description>
+      <Color>80000008</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>// USER DEFINED VALUES
+// (you can edit those)
+define(healingDelay,50) // how many seconds we have to wait (the player must avoids taking damage for XX seconds)
+
+// first range is  (0;limit1)
+// second range is (limit1;limit2)
+define(limit1,0.4) // limit is 40%
+define(limit2,1.0) // limit is 100%
+
+// regenrate1 - how many health will be restored per second, if current health is in first range
+// regenrate2 - how many health will be restored per second, if current health is in second range
+define(regenrate1,0.01)  // 1% per second
+define(regenrate2,0.05)  // 5% per second
+
+// note1: do not use spaces after comma (i.e. ","). For example this "define(interval2, 1.0)" is wrong
+// note2: limit1, limit2, restore1, restore2 values are single-precision floating-point
+//        and decimal separator is "."
+
+
+// code starts here, do not touch if you don't know what you are doing...
+[ENABLE]
+aobscan(playerhealthcodeAOB,e8 xx xx xx xx D9 80 F8 00 00 00 c3 cc)
+label(playerhealthcodeREGISTERED)
+registersymbol(playerhealthcodeREGISTERED)
+
+alloc(newmem,2048)
+label(returnhere)
+label(originalcode)
+label(countSeconds)
+
+label(updateHealth)
+
+label(Delay)
+label(previousHealthValue)
+label(secondsWithoutDamage)
+label(regenrate)
+label(limit_1)
+label(limit_2)
+
+define(maximumHealth,eax+000000F4)
+define(currentHealth,eax+000000F8)
+define(OSDH,eax+000000FC)
+
+
+newmem:
+// skip other 59 calls
+inc [Delay]
+cmp [Delay],#60
+jb originalcode
+mov [Delay],0
+
+// check if XX seconds without damage (checking currentHealth)
+movss xmm0,[currentHealth]
+comiss xmm0,[previousHealthValue]
+movss [previousHealthValue],xmm0
+jae countSeconds
+
+// damage taken, skip
+mov [secondsWithoutDamage],0
+jmp originalcode
+
+countSeconds:
+inc [secondsWithoutDamage]
+cmp [secondsWithoutDamage],(int)healingDelay
+jb originalcode
+dec [secondsWithoutDamage]
+
+
+// get current health (percent)
+movss xmm0,[currentHealth] // get current health        \
+divss xmm0,[maximumHealth] // divide by maximum health  /  get percent
+
+// check range1
+movss xmm1,[limit_1]
+comiss xmm0,xmm1            // compare with first limit
+je originalcode
+mov [regenrate],(float)regenrate1
+jb updateHealth
+
+// check range2
+movss xmm1,[limit_2]
+comiss xmm0,xmm1            // compare with second limit
+je originalcode
+mov [regenrate],(float)regenrate2
+
+
+updateHealth:
+addss xmm0,[regenrate]  // add a bit of health
+minss xmm0,xmm1         // not bigger than limit
+movss [OSDH],xmm0       // overwrite OSDH (on screen display health)
+
+//calculate&amp;update current health value
+mulss xmm0,[maximumHealth]    // multiply by maximumHealth
+movss [currentHealth],xmm0    // overwrite current health
+
+originalcode:
+fld dword ptr [currentHealth]
+jmp returnhere
+
+Delay:
+dd 00
+previousHealthValue:
+dd 00
+secondsWithoutDamage:
+dd 00
+regenrate:
+dd 00
+limit_1:
+dd (float)limit1
+limit_2:
+dd (float)limit2
+
+playerhealthcodeAOB+5:
+playerhealthcodeREGISTERED:
+jmp newmem
+nop
+returnhere:
+
+[DISABLE]
+playerhealthcodeREGISTERED:
+//Alt: fld dword ptr [eax+000000F8]
+db D9 80 F8 00 00 00
+
+dealloc(newmem)
+
+unregistersymbol(playerhealthcodeREGISTERED)
+
+</AssemblerScript>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols/>
+</CheatTable>

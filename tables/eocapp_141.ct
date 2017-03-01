@@ -1,0 +1,950 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="18">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>26</ID>
+      <Description>"[X} &lt;== Divinity Original Sin v1.0.57.0 Steam Script v2.0 AOB"</Description>
+      <Options moHideChildren="1"/>
+      <LastState Activated="0"/>
+      <Color>FF0000</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>{
+===========================================
+ Game Title    : Divinity Original Sin
+ Game Version  : 1.0.53.0 (steam)
+ Game Sponsor  : Fennix102
+ Process Name  : EoCApp.exe
+ Script Version: 2.0 (aob)
+ CE Version    : 6.4
+ Release date  : 06-Jul-2014
+ Author        : Recifense
+ History:
+ 30-Jun-14: First Release
+ 30-Jun-14: Release for version 1.0.37.0
+ 01-Jul-14: Release for version 1.0.40.0
+ 01-Jul-14: Release for version 1.0.41.0
+ 02-Jul-14: Release for version 1.0.46.0
+ 02-Jul-14: Release for version 1.0.47.0
+ 03-Jul-14: Release for version 1.0.51.0 (AOB)
+ 06-Jul-14: Release for version 1.0.53.0 (AOB) (added Cooldown)
+ Features:
+ - God Mode
+ - Action Points
+ - Item Durability
+ - Gold
+ - Fast Cooldown
+ - Some Pointers
+===========================================
+}
+
+//=========================================
+// Definitions
+define(LUDO,"EoCApp.exe")
+
+//=========================================
+// Constants used in the script (that can be changed)
+define(ctCE64,(float)6.4)
+define(ctMMON,#6400)   // Minimum Money
+
+//=========================================
+[ENABLE]
+//=========================================
+//LuaCall(CheckVersion())
+//=========================================
+// Check if script is compatible to this game version
+// If false the script will not be loaded
+
+AOBScan(aobGMDR,39 8b d4 00 00 00 8d b3 d4 00 00 00 ?? ?? 89 0e 83 bf 1c 01 00 00)
+AOBScan(aobMAPR,89 98 dc 00 00 00 0f b6 8f e1 00 00 00 51 8b ce e8 ?? ?? ?? ?? b0)
+AOBScan(aobMIDY,29 96 00 01 00 00 ?? ?? c7 86 00 01 00 00 00 00 00 00 c6 86 fc 00)
+AOBScan(aobFHUS,8b 0c 08 8b 11 8b 52 20 03 f0 8d 84 24 ac 00 00 00 50 ff d2 8b 00)
+AOBScan(aobMLIM,8b 86 98 00 00 00 8b 16 8b 52 10 89 44 24 24 8d 44 24 18 50 8b ce)
+AOBScan(aobMHGD,8b 83 98 00 00 00 39 45 50 ?? ?? 83 4c 24 50 04 89 44 24 68 89 45)
+AOBScan(aobMSUT,89 97 f8 00 00 00 e8 ?? ?? ?? ?? 8b 0b 8b 7d 08 89 08 8b 55 10 53)
+AOBScan(aobMOCD,d9 5c 24 10 d9 ee d9 44 24 10 d8 d1 df e0 dd d9 f6 c4 41 ?? ?? d9)
+
+//=========================================
+alloc(MyCode,4096,LUDO)
+//=========================================
+// Declaration section
+label(_GodModeReal)
+label(_BackGMR)
+label(_ExitGMR)
+label(_ActionPointsReal)
+label(_BackAPR)
+label(_ExitAPR)
+label(_MonItemDurability)
+label(_BackMID)
+label(_ExitMID)
+label(_FindHumanUnits)
+label(_BackFHU)
+label(_ExitFHU)
+label(_MonLastItem)
+label(_BackMLI)
+label(_ExitMLI)
+label(_MonHumanGold)
+label(_MonHG00)
+label(_MonHG01)
+label(_BackMHG)
+label(_ExitMHG)
+label(_MonSelUnit)
+label(_BackMSU)
+label(_ExitMSU)
+label(_MonCooldown)
+label(_BackMCD)
+label(_ExitMCD)
+label(iEnableGMD)
+label(iEnableMAP)
+label(iEnableMID)
+label(iEnableMHG)
+label(iEnableMCD)
+label(iID)
+label(pHero)
+label(pSel)
+label(pItem)
+label(pLastR)
+label(pLastR1)
+label(pWeapon)
+
+//=========================================
+// Registering Symbols
+registersymbol(MyCode)
+registersymbol(iEnableGMD)
+registersymbol(iEnableMAP)
+registersymbol(iEnableMID)
+registersymbol(iEnableMHG)
+registersymbol(iEnableMCD)
+registersymbol(iID)
+registersymbol(pHero)
+registersymbol(pSel)
+registersymbol(pItem)
+registersymbol(pLastR)
+registersymbol(pLastR1)
+registersymbol(pWeapon)
+
+registersymbol(aobGMDR)
+registersymbol(aobMAPR)
+registersymbol(aobMIDY)
+registersymbol(aobFHUS)
+registersymbol(aobMLIM)
+registersymbol(aobMHGD)
+registersymbol(aobMSUT)
+registersymbol(aobMOCD)
+
+//=========================================
+MyCode:
+//========================================= 51
+// During Combat
+_GodModeReal:
+ mov [pLastR],edi
+
+ cmp dword ptr [ebx+0000011c],1
+ jne _ExitGMR
+
+ cmp dword ptr [iEnableGMD],0
+ je _ExitGMR                       // Jump if feature is disabled
+
+ cmp eax,ecx
+ js _ExitGMR
+
+ mov ecx,eax
+
+_ExitGMR:
+ cmp [ebx+000000D4],ecx            // Original code (rd cHP)
+ jmp _BackGMR                      // Back to main code
+
+//========================================= 51
+// During Combat
+_ActionPointsReal:
+ mov [pLastR1],edi
+
+ cmp dword ptr [eax+0000011c],1
+ jne _ExitAPR
+
+ cmp dword ptr [iEnableMAP],0
+ je _ExitAPR                       // Jump if feature is disabled
+
+ cmp ebx,[eax+000000dc]
+ jns _ExitAPR
+
+ mov ebx,[eax+000000dc]
+
+_ExitAPR:
+ mov [eax+000000DC],ebx            // Original code (upd AP)
+ jmp _BackAPR                      // Back to main code
+
+//========================================= 51
+// When Decreasing (player's and foe's)
+_MonItemDurability:
+ mov [pWeapon],esi
+
+ cmp dword ptr [iEnableMID],0
+ je _ExitMID                       // Jump if feature is disabled
+
+ xor edx,edx
+
+_ExitMID:
+ sub [esi+00000100],edx            // Original code (upd DUR)
+ jmp _BackMID                      // Back to main code
+
+//========================================= 51 NHP
+// Main Game Screen (Real_HP)
+// EBX = Index
+_FindHumanUnits:
+ mov [pHero],ecx
+
+ mov ecx,[eax+ecx]                 // Original code (rd pHero)
+
+ cmp ebx,#4
+ jns _ExitFHU
+
+ movzx edx,word ptr [ecx+0000008c]
+ and edx,00007fff
+
+ mov [iID+ebx*4],edx
+
+_ExitFHU:
+ mov edx,[ecx]                     // Original code
+ jmp _BackFHU                      // Back to main code
+
+//========================================= 51
+// When moved in inventory (even to the same place)
+_MonLastItem:
+ mov [pItem],esi
+
+_ExitMLI:
+ mov eax,[esi+00000098]            // Original code (upd #)
+ jmp _BackMLI                      // Back to main code
+
+//========================================= 51
+// Main Game Screen
+_MonHumanGold:
+ push ecx
+
+ cmp dword ptr [iEnableMHG],0
+ je _ExitMHG                       // Jump if feature is disabled
+
+ mov eax,[ebx+7c]
+ test eax,eax
+ jz _ExitMHG
+
+ mov eax,[eax+06]
+ cmp eax,'Gold'
+ jne _ExitMHG
+
+ mov eax,[ebx+000000cc]
+ and eax,00007fff
+
+ mov ecx,#4
+
+_MonHG00:
+ cmp eax,[iID+ecx*4-00000004]
+ je _MonHG01
+ loop _MonHG00
+
+ jmp _ExitMHG
+//==
+_MonHG01:
+ mov ecx,ctMMON
+ cmp ecx,[ebx+00000098]
+ js _ExitMHG
+
+ mov [ebx+00000098],ecx
+
+_ExitMHG:
+ pop ecx
+
+ mov eax,[ebx+00000098]            // Original code (rd #)
+ jmp _BackMHG                      // Back to main code
+
+//========================================= 53
+// When a unit is selected
+_MonSelUnit:
+ mov [pSel],edi
+
+_ExitMSU:
+ mov [edi+000000F8],edx            // Original code (set flag)
+ jmp _BackMSU                      // Back to main code
+
+//========================================= 53
+// When setting a cooldown
+_MonCooldown:
+ fstp dword ptr [esp+10]           // Original code
+
+ cmp dword ptr [iEnableMCD],0
+ je _ExitMCD                       // Jump if feature is disabled
+
+ cmp ebx,[pSel]
+ jne _ExitMCD
+
+ mov eax,[esp+10]
+ test eax,eax
+ js _ExitMCD
+
+ mov eax,(float)0.0
+ mov [esp+10],eax
+
+_ExitMCD:
+ fldz                              // Original code
+ jmp _BackMCD                      // Back to main code
+
+//=========================================
+ db '=======================================&gt;'
+ db 'CE6.4 Script by Recifense 070614'
+//=========================================
+// Variables
+iEnableGMD:
+ dd 0
+iEnableMAP:
+ dd 0
+iEnableMID:
+ dd 0
+iEnableMHG:
+ dd 0
+iEnableMCD:
+ dd 0
+iID:
+ dd 55555555
+ dd aaaaaaaa
+ dd 5555aaaa
+ dd aaaa5555
+pHero:
+ dd 0
+pSel:
+ dd MyCode
+pItem:
+ dd 0
+pLastR:
+ dd 0
+pLastR1:
+ dd 0
+pWeapon:
+ dd 0
+
+//=========================================
+// Hacking Points
+aobGMDR:
+ jmp _GodModeReal
+ nop
+_BackGMR:
+
+aobMAPR:
+ jmp _ActionPointsReal
+ nop
+_BackAPR:
+
+aobMIDY:
+ jmp _MonItemDurability
+ nop
+_BackMID:
+
+aobFHUS:
+ jmp _FindHumanUnits
+_BackFHU:
+
+aobMLIM:
+ jmp _MonLastItem
+ nop
+_BackMLI:
+
+aobMHGD:
+ jmp _MonHumanGold
+ nop
+_BackMHG:
+
+aobMSUT:
+ jmp _MonSelUnit
+ nop
+_BackMSU:
+
+aobMOCD:
+ jmp _MonCooldown
+ nop
+_BackMCD:
+
+//=========================================
+// Script for Restoring Original Codes
+[DISABLE]
+aobGMDR:
+// cmp [ebx+000000D4],ecx
+ db 39 8b d4 00 00 00
+
+aobMAPR:
+// mov [eax+000000DC],ebx
+ db 89 98 dc 00 00 00
+
+aobMIDY:
+// sub [esi+00000100],edx
+ db 29 96 00 01 00 00
+
+aobFHUS:
+// mov ecx,[eax+ecx]
+// mov edx,[ecx]
+ db 8b 0c 08 8b 11
+
+aobMLIM:
+// mov eax,[esi+00000098]
+ db 8b 86 98 00 00 00
+
+aobMHGD:
+// mov eax,[ebx+00000098]
+ db 8b 83 98 00 00 00
+
+aobMSUT:
+// mov [edi+000000F8],edx
+ db 89 97 f8 00 00 00
+
+aobMOCD:
+// fstp dword ptr [esp+10]
+// fldz
+ db d9 5c 24 10 d9 ee
+
+//=========================================
+// Unregistering Symbols
+unregistersymbol(MyCode)
+unregistersymbol(iEnableGMD)
+unregistersymbol(iEnableMAP)
+unregistersymbol(iEnableMID)
+unregistersymbol(iEnableMHG)
+unregistersymbol(iEnableMCD)
+unregistersymbol(iID)
+unregistersymbol(pHero)
+unregistersymbol(pSel)
+unregistersymbol(pItem)
+unregistersymbol(pLastR)
+unregistersymbol(pLastR1)
+unregistersymbol(pWeapon)
+
+unregistersymbol(aobGMDR)
+unregistersymbol(aobMAPR)
+unregistersymbol(aobMIDY)
+unregistersymbol(aobFHUS)
+unregistersymbol(aobMLIM)
+unregistersymbol(aobMHGD)
+unregistersymbol(aobMSUT)
+unregistersymbol(aobMOCD)
+
+//=========================================
+dealloc(MyCode)
+//============= Scripts End ===============
+
+// ****************************************
+// NOTES
+// ****************************************
+{
+
+}
+
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>9</ID>
+          <Description>"Enable/Disable God Mode =====================&gt;"</Description>
+          <DropDownList DescriptionOnly="1" DisplayValueAsItem="1">0:Disabled
+1:Enabled
+</DropDownList>
+          <LastState Value="??" Activated="0" RealAddress="00000000"/>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableGMD</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>10</ID>
+          <Description>"Enable/Disable Unlimited Action Points ===========&gt;"</Description>
+          <DropDownList DescriptionOnly="1" DisplayValueAsItem="1">0:Disabled
+1:Enabled
+</DropDownList>
+          <LastState Value="??" Activated="0" RealAddress="00000000"/>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMAP</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>33</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>34</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>20</ID>
+          <Description>"Enable/Disable Item Durability ==================&gt;"</Description>
+          <DropDownList DescriptionOnly="1" DisplayValueAsItem="1">0:Disabled
+1:Enabled
+</DropDownList>
+          <LastState Value="??" Activated="0" RealAddress="00000000"/>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMID</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>45</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>46</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>27</ID>
+          <Description>"Enable/Disable Minimum Gold ==================&gt;"</Description>
+          <DropDownList DescriptionOnly="1" DisplayValueAsItem="1">0:Disabled
+1:Enabled
+</DropDownList>
+          <LastState Value="??" Activated="0" RealAddress="00000000"/>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMHG</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>97</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>96</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>44</ID>
+          <Description>"Enable/Disable Fast Cooldown  =================&gt;"</Description>
+          <DropDownList DescriptionOnly="1" DisplayValueAsItem="1">0:Disabled
+1:Enabled
+</DropDownList>
+          <LastState Value="??" Activated="0" RealAddress="00000000"/>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMCD</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>33</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>34</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>32</ID>
+          <Description>"=============== Selected Hero Info =============== "</Description>
+          <LastState Activated="0" RealAddress="00000000"/>
+          <ShowAsHex>1</ShowAsHex>
+          <Color>404080</Color>
+          <VariableType>String</VariableType>
+          <Length>16</Length>
+          <Unicode>0</Unicode>
+          <ZeroTerminate>1</ZeroTerminate>
+          <Address>pSel</Address>
+          <Offsets>
+            <Offset>14</Offset>
+            <Offset>60</Offset>
+          </Offsets>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>33</ID>
+              <Description>"Current XP ==&gt;"</Description>
+              <LastState Value="??" Activated="0" RealAddress="00000000"/>
+              <Color>0000FF</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pHero+04</Address>
+              <Offsets>
+                <Offset>E4</Offset>
+                <Offset>88</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>34</ID>
+              <Description>"Available Attribute Points ==&gt;"</Description>
+              <LastState Value="??" Activated="0" RealAddress="00000000"/>
+              <Color>0000FF</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pHero+04</Address>
+              <Offsets>
+                <Offset>14</Offset>
+                <Offset>138</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>35</ID>
+              <Description>"Available Ability Points ==&gt;"</Description>
+              <LastState Value="??" Activated="0" RealAddress="00000000"/>
+              <Color>0000FF</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pHero+04</Address>
+              <Offsets>
+                <Offset>18</Offset>
+                <Offset>138</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>36</ID>
+              <Description>"Available Talent Points ==&gt;"</Description>
+              <LastState Value="??" Activated="0" RealAddress="00000000"/>
+              <Color>0000FF</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pHero+04</Address>
+              <Offsets>
+                <Offset>1C</Offset>
+                <Offset>138</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>58</ID>
+              <Description>"Current Strength ==&gt;"</Description>
+              <LastState Value="??" Activated="0" RealAddress="00000000"/>
+              <Color>FF0080</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pHero+04</Address>
+              <Offsets>
+                <Offset>0</Offset>
+                <Offset>24</Offset>
+                <Offset>138</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>59</ID>
+              <Description>"Current Dexterity ==&gt;"</Description>
+              <LastState Value="??" Activated="0" RealAddress="00000000"/>
+              <Color>FF0080</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pHero+04</Address>
+              <Offsets>
+                <Offset>4</Offset>
+                <Offset>24</Offset>
+                <Offset>138</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>60</ID>
+              <Description>"Current Intelligence ==&gt;"</Description>
+              <LastState Value="??" Activated="0" RealAddress="00000000"/>
+              <Color>FF0080</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pHero+04</Address>
+              <Offsets>
+                <Offset>8</Offset>
+                <Offset>24</Offset>
+                <Offset>138</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>61</ID>
+              <Description>"Current Constitution ==&gt;"</Description>
+              <LastState Value="??" Activated="0" RealAddress="00000000"/>
+              <Color>FF0080</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pHero+04</Address>
+              <Offsets>
+                <Offset>C</Offset>
+                <Offset>24</Offset>
+                <Offset>138</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>62</ID>
+              <Description>"Current Speed ==&gt;"</Description>
+              <LastState Value="??" Activated="0" RealAddress="00000000"/>
+              <Color>FF0080</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pHero+04</Address>
+              <Offsets>
+                <Offset>10</Offset>
+                <Offset>24</Offset>
+                <Offset>138</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>63</ID>
+              <Description>"Current Perception ==&gt;"</Description>
+              <LastState Value="??" Activated="0" RealAddress="00000000"/>
+              <Color>FF0080</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pHero+04</Address>
+              <Offsets>
+                <Offset>14</Offset>
+                <Offset>24</Offset>
+                <Offset>138</Offset>
+              </Offsets>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>42</ID>
+          <Description>"========== Last Moved Item In Inventory =========== "</Description>
+          <LastState Activated="0" RealAddress="00000000"/>
+          <ShowAsHex>1</ShowAsHex>
+          <Color>404080</Color>
+          <VariableType>String</VariableType>
+          <Length>16</Length>
+          <Unicode>0</Unicode>
+          <ZeroTerminate>1</ZeroTerminate>
+          <Address>pItem</Address>
+          <Offsets>
+            <Offset>0</Offset>
+            <Offset>7C</Offset>
+          </Offsets>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>43</ID>
+              <Description>"Current Amount ==&gt;"</Description>
+              <LastState Value="??" Activated="0" RealAddress="00000000"/>
+              <Color>0000FF</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pItem</Address>
+              <Offsets>
+                <Offset>98</Offset>
+              </Offsets>
+              <Hotkeys>
+                <Hotkey>
+                  <Action>Increase Value</Action>
+                  <Keys>
+                    <Key>17</Key>
+                    <Key>107</Key>
+                  </Keys>
+                  <Value>2</Value>
+                  <ID>0</ID>
+                </Hotkey>
+              </Hotkeys>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>64</ID>
+      <Description>"Instant Cooldown"</Description>
+      <LastState Activated="0"/>
+      <Color>80000008</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>[ENABLE]
+//code from here to '[DISABLE]' will be used to enable the cheat
+aobscan(cooldowntimerreadAOB,D9 41 1C D9 5C 24 10 D9 EE)
+registersymbol(cooldowntimerreadAOB)
+
+alloc(newmem,2048)
+label(returnhere)
+label(originalcode)
+label(exit)
+
+newmem: //this is allocated memory, you have read,write,execute access
+//place your code here
+mov dword ptr [ecx+1C],0
+
+originalcode:
+fld dword ptr [ecx+1C]
+fstp dword ptr [esp+10]
+
+exit:
+jmp returnhere
+
+///
+
+cooldowntimerreadAOB: //"EoCApp.exe"+12317E:
+jmp newmem
+nop
+nop
+returnhere:
+
+
+
+
+[DISABLE]
+//code from here till the end of the code will be used to disable the cheat
+dealloc(newmem)
+cooldowntimerreadAOB: //"EoCApp.exe"+12317E:
+db D9 41 1C D9 5C 24 10
+//Alt: fld dword ptr [ecx+1C]
+//Alt: fstp dword ptr [esp+10]
+unregistersymbol(cooldowntimerreadAOB)
+</AssemblerScript>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>65</ID>
+      <Description>"Infinite Item Usage"</Description>
+      <LastState Activated="0"/>
+      <Color>80000008</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>[ENABLE]
+//code from here to '[DISABLE]' will be used to enable the cheat
+aobscan(itemquantityreadonuseAOB,89 88 98 00 00 00 E8 ** ** ** ** 85 C0 74 ** E8)
+registersymbol(itemquantityreadonuseAOB)
+
+alloc(newmem,2048)
+label(returnhere)
+label(originalcode)
+label(exit)
+
+newmem: //this is allocated memory, you have read,write,execute access
+//place your code here
+jnz originalcode
+//xor ecx,ecx
+//mov [esp+14],ecx
+inc ecx
+
+originalcode:
+mov [eax+00000098],ecx
+
+exit:
+jmp returnhere
+
+itemquantityreadonuseAOB: //"EoCApp.exe"+353D20:
+jmp newmem
+nop
+returnhere:
+
+itemquantityreadonuseAOB-2:
+db 90 90
+
+
+
+
+[DISABLE]
+//code from here till the end of the code will be used to disable the cheat
+dealloc(newmem)
+itemquantityreadonuseAOB: //"EoCApp.exe"+353D20:
+db 89 88 98 00 00 00
+//Alt: mov [eax+00000098],ecx
+itemquantityreadonuseAOB-2:
+db 7E 1A
+unregistersymbol(itemquantityreadonuseAOB)
+</AssemblerScript>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols/>
+  <Comments>===========================================
+ Game Title    : Divinity Original Sin
+ Game Version  : 1.0.57.0 (steam)
+ Game Sponsor  : Fennix102
+ Process Name  : EoCApp.exe
+ Script Version: 2.0 (aob)
+ CE Version    : 6.4
+ Release date  : 07-Jul-2014
+ Author        : Recifense
+ History:
+ 30-Jun-14: First Release
+ 30-Jun-14: Release for version 1.0.37.0
+ 01-Jul-14: Release for version 1.0.40.0
+ 01-Jul-14: Release for version 1.0.41.0
+ 02-Jul-14: Release for version 1.0.46.0
+ 02-Jul-14: Release for version 1.0.47.0
+ 03-Jul-14: Release for version 1.0.51.0 (AOB)
+ 07-Jul-14: Release for version 1.0.57.0 (AOB) (added Cooldown)
+ Features:
+ - God Mode        [1]
+ - Action Points   [2]
+ - Item Durability [3]
+ - Minimum Gold    [4]
+ - Fast Cooldown   [5]
+ - Some Pointers   [6]
+===========================================
+[1] For player's heroes;
+[2] For player's heroes;
+[3] Durability of Weapons will not decrease (for all players);
+[4] For player's heroes;
+[5] For Selected player's hero;
+[6] Used in the table;
+===========================================
+[USAGE]
+1) Run CE64;
+2) Run Game;
+3) Load the game process "EoCApp.exe" in CE;
+4) Load this table and activate it;
+5) Change the value to "Enabled" of each cheat you want to use;
+6) Game On;
+-------------------------------------------
+[HEROES INFO]
+- You can change those values (with care). The displayed value may not change immediately. A way to quick it up is to save and then load the game.
+-------------------------------------------
+[INVENTORY ITEM]
+- Just click on the item and move it a bit then release it back. Now you can change its ammount (be prudent)
+===========================================
+[HOTKEYS]
+CTRL+Home      = Enable  GM cheat;
+CTRL+End       = Disable GM cheat;
+-----------
+CTRL+PageUp    = Enable  AP/CD cheats;
+CTRL+PageDown  = Disable AP/CD cheats;
+-----------
+CTRL+Insert    = Enable  ID cheat;
+CTRL+Delete    = Disable ID cheat;
+-----------
+CTRL+Numeric 1 = Enable  MG cheat;
+CTRL+Numeric 0 = Disable MG cheat;
+===========================================
+[ADVICE]
+When you can,save the game before starting using table/cheat. So you can always come back in case you don't like the result.
+===========================================
+[INFO]
+Tested on Win 7 64bits
+===========================================
+Cheers!
+</Comments>
+</CheatTable>

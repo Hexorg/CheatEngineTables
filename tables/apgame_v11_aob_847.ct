@@ -1,0 +1,555 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="14">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>31</ID>
+      <Description>"[X] &lt;== Alpha Protocol v1.1 Script AOB"</Description>
+      <Options moHideChildren="1"/>
+      <Color>FF0000</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>{
+===========================================
+ Game Title    : Alpha Protocol
+ Game Version  : 1.1
+ Proces Name   : APGame.exe
+ Script Version: 1.0 (AOB)
+ CE Version    : 6.2
+ Release date  : 12-Jun-2012
+ Author        : Recifense
+ History:
+ 10-Jun-12: First Release
+ Features:
+ - God Mode
+   - Armor
+   - HP
+ - Unlimited Ammo (No reload)
+ - Unlimited Time (to solve the puzzles)
+ - Minimum Gadgets
+ - Pointer
+===========================================
+}
+
+//=========================================
+// Definitions
+//define(LUDO,"game.exe")
+
+//=========================================
+[ENABLE]
+//=========================================
+//LuaCall(CheckVersion())
+//=========================================
+// Check if script is compatible to this game version
+// If false the script will not be loaded
+
+AOBScan(aobMonArmor,f3 0f 2c 8f 40 06 00 00 89 44 24 70 8b 87)
+AOBScan(aobMonAmmoC,0f b6 88 ac 03 00 00 8b 55 08 8b 84 8a 5c 06 00 00) //+0a
+AOBScan(aobMonAmmoL,8b 8f 0c 05 00 00 8b f7 89 8c 24 90 00 00 00)
+AOBScan(aobMonTimer,8d 74 24 48 f3 0f 11 83 88 05 00 00) //+04
+AOBScan(aobGodMode,8b 44 24 10 29 03 8b 1b 8b 4c 24 14 5e 89 19)
+AOBScan(aobMonGadgets,8b 90 14 02 00 00 89 94 24 a8 00 00 00)
+AOBScan(aobMonTimer2,d9 1c 24 8d 74 24 48 f3 0f 11 83 18 06 00 00) //+07
+AOBScan(aobMonTimer3,f3 0f 11 87 90 05 00 00 ?? ?? f3 0f 11 8f 90 05 00 00)
+
+//=========================================
+alloc(MyCode,2048,APGame.exe)
+//=========================================
+// Declaration section
+label(pMonArmor)
+label(pMonAmmoC)
+label(pMonAmmoL)
+label(pMonTimer)
+label(pGodMode)
+label(pMonGadgets)
+label(pMonTimer2)
+label(pMonTimer3)
+label(_MonArmor)
+label(_BackMAr)
+label(_ExitMAr)
+label(_MonAmmoC)
+label(_BackMAC)
+label(_ExitMAC)
+label(_MonAmmoL)
+label(_BackMAL)
+label(_ExitMAL)
+label(_MonTimer)
+label(_BackMT)
+label(_ExitMT)
+label(_GodMode)
+label(_BackGM)
+label(_ExitGM)
+label(_MonGadgets)
+label(_BackMG)
+label(_ExitMG)
+label(_MonTimer2)
+label(_BackMT2)
+label(_ExitMT2)
+label(_MonTimer3)
+label(_BackMT3)
+label(_ExitMT3)
+label(pPlayer)
+label(iEnableGM)
+label(iEnableMA)
+label(iEnableMT)
+label(iEnableMG)
+
+//=========================================
+// Registering Symbols
+registersymbol(MyCode)
+registersymbol(pPlayer)
+registersymbol(iEnableGM)
+registersymbol(iEnableMA)
+registersymbol(iEnableMT)
+registersymbol(iEnableMG)
+registersymbol(pMonArmor)
+registersymbol(pMonAmmoC)
+registersymbol(pMonAmmoL)
+registersymbol(pMonTimer)
+registersymbol(pGodMode)
+registersymbol(pMonGadgets)
+registersymbol(pMonTimer2)
+registersymbol(pMonTimer3)
+
+//=========================================
+MyCode:
+//=========================================
+_MonArmor:
+ cmp dword ptr [iEnableGM],0
+ je _ExitMAr                       // Jump if feature is disabled
+
+ mov ecx,[edi+00000644]            // Armor
+ mov [edi+00000640],ecx
+
+ mov ecx,[edi+00000638]            // HP
+ mov [edi+000002cc],ecx
+
+ mov [pPlayer],edi
+
+_ExitMAr:
+ cvttss2si ecx,[edi+00000640]      // Original code
+ jmp _BackMAr                      // Back to main code
+
+//=========================================
+_MonAmmoC:
+ cmp dword ptr [iEnableMA],0
+ je _ExitMAC                       // Jump if feature is disabled
+
+ cmp edx,[pPlayer]
+ jne _ExitMAC
+
+ mov eax,#100
+ cmp eax,[edx+ecx*4+0000065C]
+ jle _ExitMAC
+
+ mov [edx+ecx*4+0000065C],eax
+
+_ExitMAC:
+ mov eax,[edx+ecx*4+0000065C]      // Original code
+ jmp _BackMAC                      // Back to main code
+
+//=========================================
+_MonAmmoL:
+ cmp dword ptr [iEnableMA],0
+ je _ExitMAL                       // Jump if feature is disabled
+
+ mov ecx,[edi+74]
+ cmp ecx,[pPlayer]
+ jne _ExitMAL
+
+ mov ecx,[edi+00000510]
+ mov [edi+0000050C],ecx
+
+_ExitMAL:
+ mov ecx,[edi+0000050C]            // Original code
+ jmp _BackMAL                      // Back to main code
+
+//=========================================
+_MonTimer:
+ cmp dword ptr [iEnableMT],0
+ je _ExitMT                        // Jump if feature is disabled
+
+ movss xmm0,[ebx+00000584]
+
+_ExitMT:
+ movss [ebx+00000588],xmm0         // Original code
+ jmp _BackMT                       // Back to main code
+
+//=========================================
+_GodMode:
+ cmp dword ptr [iEnableGM],0
+ je _ExitGM                        // Jump if feature is disabled
+
+ cmp edi,[pPlayer]
+ jne _ExitGM
+
+ mov eax,[edi+00000644]            // Armor
+ mov [edi+00000640],eax
+
+ mov eax,[edi+00000638]            // HP
+ mov [edi+000002cc],eax
+
+ lea eax,[edi+000002cc]
+ cmp eax,ebx
+ jne _ExitGM
+
+ xor eax,eax
+ mov [esp+10],eax                  // value2decrease = 0
+
+_ExitGM:
+ mov eax,[esp+10]                  // Original code
+ sub [ebx],eax                     // Original code (HP)
+ jmp _BackGM                       // Back to main code
+
+//=========================================
+_MonGadgets:
+ cmp dword ptr [iEnableMG],0
+ je _ExitMG                        // Jump if feature is disabled
+
+ mov edx,[eax+74]
+ cmp edx,[pPlayer]
+ jne _ExitMG
+
+ mov edx,#10
+ cmp edx,[eax+00000214]
+ jle _ExitMG
+
+ mov [eax+00000214],edx
+
+_ExitMG:
+ mov edx,[eax+00000214]            // Original code
+ jmp _BackMG                       // Back to main code
+
+//=========================================
+_MonTimer2:
+ cmp dword ptr [iEnableMT],0
+ je _ExitMT2                       // Jump if feature is disabled
+
+ movss xmm0,[ebx+00000614]
+
+_ExitMT2:
+ movss [ebx+00000618],xmm0         // Original code
+ jmp _BackMT2                      // Back to main code
+
+//=========================================
+_MonTimer3:
+ pushfd
+
+ cmp dword ptr [iEnableMT],0
+ je _ExitMT3                       // Jump if feature is disabled
+
+ movss xmm0,[edi+0000058c]
+
+_ExitMT3:
+ popfd
+
+ movss [edi+00000590],xmm0         // Original code
+ jmp _BackMT3                      // Back to main code
+
+//=========================================
+ db '================================&gt;'
+ db 'CE6.2 Script by Recifense 061212'
+//=========================================
+// Variables
+iEnableGM:
+ dd 1
+iEnableMA:
+ dd 1
+iEnableMT:
+ dd 1
+iEnableMG:
+ dd 1
+pPlayer:
+ dd MyCode
+
+//=========================================
+// Hacking Points
+//APGame.exe+0080976c:
+aobMonArmor:
+pMonArmor:
+ jmp _MonArmor
+ nop
+ nop
+ nop
+_BackMAr:
+
+//APGame.exe+0080be33:
+aobMonAmmoC+0a:
+pMonAmmoC:
+ jmp _MonAmmoC
+ nop
+ nop
+_BackMAC:
+
+//APGame.exe+0080B8C1:
+aobMonAmmoL:
+pMonAmmoL:
+ jmp _MonAmmoL
+ nop
+_BackMAL:
+
+//APGame.exe+007c1f07:
+aobMonTimer+04:
+pMonTimer:
+ jmp _MonTimer
+ nop
+ nop
+ nop
+_BackMT:
+
+//APGame.exe+000695c4:
+aobGodMode:
+pGodMode:
+ jmp _GodMode
+ nop
+_BackGM:
+
+//APGame.exe+00809791:
+aobMonGadgets:
+pMonGadgets:
+ jmp _MonGadgets
+ nop
+_BackMG:
+
+//APGame.exe+007c1185:
+aobMonTimer2+07:
+pMonTimer2:
+ jmp _MonTimer2
+ nop
+ nop
+ nop
+_BackMT2:
+
+//APGame.exe+007c3fcc:
+aobMonTimer3:
+pMonTimer3:
+ jmp _MonTimer3
+ nop
+ nop
+ nop
+_BackMT3:
+
+//=========================================
+// Script for Restoring Original Codes
+[DISABLE]
+//APGame.exe+0080976c:
+pMonArmor:
+// cvttss2si ecx,[edi+00000640]
+ db f3 0f 2c 8f 40 06 00 00
+
+//APGame.exe+0080be33:
+pMonAmmoC:
+// mov eax,[edx+ecx*4+0000065C]
+ db 8b 84 8a 5c 06 00 00
+
+//APGame.exe+0080B8C1:
+pMonAmmoL:
+// mov ecx,[edi+0000050C]
+ db 8b 8f 0c 05 00 00
+
+//APGame.exe+007c1f07:
+pMonTimer:
+// movss [ebx+00000588],xmm0
+ db f3 0f 11 83 88 05 00 00
+
+//APGame.exe+000695c4:
+pGodMode:
+// mov eax,[esp+10]
+// sub [ebx],eax
+ db 8b 44 24 10 29 03
+
+//APGame.exe+00809791:
+pMonGadgets:
+// mov edx,[eax+00000214]
+ db 8b 90 14 02 00 00
+
+//APGame.exe+007c1185:
+pMonTimer2:
+// movss [ebx+00000618],xmm0
+ db f3 0f 11 83 18 06 00 00
+
+//APGame.exe+007c3fcc:
+pMonTimer3:
+// movss [edi+00000590],xmm0
+ db f3 0f 11 87 90 05 00 00
+
+//=========================================
+// Unregistering Symbols
+unregistersymbol(MyCode)
+unregistersymbol(iEnableGM)
+unregistersymbol(iEnableMA)
+unregistersymbol(iEnableMT)
+unregistersymbol(iEnableMG)
+unregistersymbol(pPlayer)
+unregistersymbol(pMonArmor)
+unregistersymbol(pMonAmmoC)
+unregistersymbol(pMonAmmoL)
+unregistersymbol(pMonTimer)
+unregistersymbol(pGodMode)
+unregistersymbol(pMonGadgets)
+unregistersymbol(pMonTimer2)
+unregistersymbol(pMonTimer3)
+
+//=========================================
+dealloc(MyCode)
+//============= Scripts End ===============
+
+// ****************************************
+// NOTES
+// ****************************************
+{
+}
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>14</ID>
+          <Description>"Enable/Disable God Mode =&gt; (1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableGM</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>15</ID>
+          <Description>"Enable/Disable Unlimited Ammo =&gt; (1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMA</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>16</ID>
+          <Description>"Enable/Disable Unlimited Time =&gt; (1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMT</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>21</ID>
+          <Description>"Enable/Disable Minimum Gadgets =&gt; (1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMG</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>32</ID>
+          <Description>"========= Hero's Info ========="</Description>
+          <ShowAsHex>1</ShowAsHex>
+          <Color>0000FF</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>pPlayer</Address>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>18</ID>
+              <Description>"Hero's current Attribute Points"</Description>
+              <Color>0000FF</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pPlayer</Address>
+              <Offsets>
+                <Offset>98</Offset>
+                <Offset>FC8</Offset>
+              </Offsets>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols/>
+  <Comments>===========================================
+ Game Title    : Alpha Protocol
+ Game Version  : 1.1
+ Proces Name   : APGame.exe
+ Script Version: 1.0 (AOB)
+ CE Version    : 6.2
+ Release date  : 12-Jun-2012
+ Author        : Recifense
+ History:
+ 12-Jun-12: First Release
+ Features:
+ - God Mode
+   - Armor
+   - HP
+ - Unlimited Ammo (No reload)
+ - Unlimited Time (to solve the puzzles)
+ - Minimum Gadgets
+ - Pointer
+===========================================
+</Comments>
+</CheatTable>

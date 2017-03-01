@@ -1,0 +1,1840 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="18">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>188</ID>
+      <Description>"noclip"</Description>
+      <Options moHideChildren="1"/>
+      <LastState Activated="1"/>
+      <Color>FF0000</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>[ENABLE]
+//code from here to '[DISABLE]' will be used to enable the cheat
+aobscan(pCharCoord1ReadAOB,F3 0F 7E 46 60 C1 E9 13)
+registersymbol(pCharCoord1ReadAOB)
+aobscan(someCamValuesReadAOB,F3 0F 7E 47 68 8B 77 70)
+registersymbol(someCamValuesReadAOB)
+aobscan(camInfoBaseReadAOB,BF ** ** ** ** F3 A5 F3)
+registersymbol(camInfoBaseReadAOB)
+aobscan(charCoordWriteOnMoveAOB,F3 0F 10 44 24 3C F3 0F 58 43 60 8B 45 10 F3 0F 11 43 60 F3 0F 10 43 64)
+registersymbol(charCoordWriteOnMoveAOB)
+
+///
+
+label(pCharCoord)
+registersymbol(pCharCoord)
+
+label(pSomeCamBehaviour)
+registersymbol(pSomeCamBehaviour)
+
+label(pCamInfoBase)
+registersymbol(pCamInfoBase)
+
+
+label(bModKey)
+registersymbol(bModKey)
+label(fCharMovSpeed)
+registersymbol(fCharMovSpeed)
+
+///
+
+alloc(newmem,2048)
+label(returnhere)
+label(originalcode)
+label(exit)
+
+label(newmem01)
+label(returnhere01)
+label(originalcode01)
+label(exit01)
+
+label(newmem02)
+label(returnhere02)
+label(originalcode02)
+label(exit02)
+
+label(cmovechar)
+
+///
+
+newmem: //this is allocated memory, you have read,write,execute access
+//place your code here
+mov [pCharCoord],esi
+
+originalcode:
+movq xmm0,[esi+60]
+
+exit:
+jmp returnhere
+
+///
+
+newmem01:
+mov [pSomeCamBehaviour],edi
+
+originalcode01:
+movq xmm0,[edi+68]
+
+exit01:
+jmp returnhere01
+
+///
+
+newmem02:
+cmp [pCharCoord],ebx
+jne originalcode02
+
+cmp byte ptr [bModKey],1
+jne @f
+
+pushad
+push 12 //Alt
+call GetAsyncKeyState
+shr ax,#15
+cmp ax,1
+popad
+jne originalcode02
+
+//testing shufps
+/*push (float)-1
+push 0
+push 0
+movq [esp],xmm0
+mulss xmm0,[esp+8]
+shufps xmm0,xmm0,01
+movq xmm0,[esp]
+add esp,c*/
+
+@@:
+//freeze char
+mov [esp+3c],0
+mov [esp+40],0
+mov [esp+44],0
+
+//key check starts
+pushad
+push 'W'
+call GetAsyncKeyState
+shr ax,#15
+cmp ax,1
+popad
+jne @f
+mov eax,[pCamInfoBase]
+push [eax+28]
+mov eax,[pSomeCamBehaviour]
+push [eax+94]
+push [eax+90]
+push [fCharMovSpeed]
+call cmovechar
+
+@@:
+pushad
+push 'S'
+call GetAsyncKeyState
+shr ax,#15
+cmp ax,1
+popad
+jne @f
+mov eax,[pCamInfoBase]
+push [eax+28]
+mov eax,[pSomeCamBehaviour]
+push [eax+94]
+push [eax+90]
+push (float)-1.0
+fld dword ptr [esp]
+fmul dword ptr [fCharMovSpeed]
+fstp dword ptr [esp]
+call cmovechar
+
+@@:
+pushad
+push 'D'
+call GetAsyncKeyState
+shr ax,#15
+cmp ax,1
+popad
+jne @f
+push 0
+mov eax,[pSomeCamBehaviour]
+push [eax+90]
+push [eax+94]
+push (float)-1
+fld dword ptr [esp]
+fmul dword ptr [esp+4]
+fstp dword ptr [esp+4]
+fld dword ptr [fCharMovSpeed]
+fstp dword ptr [esp]
+call cmovechar
+
+@@:
+pushad
+push 'A'
+call GetAsyncKeyState
+shr ax,#15
+cmp ax,1
+popad
+jne @f
+push 0
+mov eax,[pSomeCamBehaviour]
+push [eax+90]
+push [eax+94]
+push (float)-1
+fld dword ptr [esp]
+fmul dword ptr [esp+8]
+fstp dword ptr [esp+8]
+fld dword ptr [fCharMovSpeed]
+fstp dword ptr [esp]
+call cmovechar
+
+@@:
+pushad
+push 'R'
+call GetAsyncKeyState
+shr ax,#15
+cmp ax,1
+popad
+jne @f
+push (float)1
+push 0
+push 0
+push [fCharMovSpeed]
+call cmovechar
+
+@@:
+pushad
+push 'F'
+call GetAsyncKeyState
+shr ax,#15
+cmp ax,1
+popad
+jne @f
+push (float)-1
+push 0
+push 0
+push [fCharMovSpeed]
+call cmovechar
+
+@@:
+
+originalcode02:
+movss xmm0,[esp+3C]
+
+exit02:
+jmp returnhere02
+
+///
+//function - move char
+cmovechar:
+fld dword ptr [esp+4]
+fmul dword ptr [esp+8]
+fadd dword ptr [ebx+60]
+fstp dword ptr [ebx+60]
+fld dword ptr [esp+4]
+fmul dword ptr [esp+c]
+fadd dword ptr [ebx+64]
+fstp dword ptr [ebx+64]
+
+fld dword ptr [esp+4]
+fmul dword ptr [esp+10]
+fadd dword ptr [ebx+68]
+fstp dword ptr [ebx+68]
+ret 10
+///
+
+///
+pCharCoord:
+dd 0
+pSomeCamBehaviour:
+dd 0
+bModKey:
+db 0
+fCharMovSpeed:
+dd (float)8
+///
+
+pCharCoord1ReadAOB: //"AstronautsGame-Win32-Shipping.exe"+57E601:
+jmp newmem
+returnhere:
+
+someCamValuesReadAOB: //"AstronautsGame-Win32-Shipping.exe"+46C87B:
+jmp newmem01
+returnhere01:
+
+camInfoBaseReadAOB+1:
+pCamInfoBase:
+
+charCoordWriteOnMoveAOB: //"AstronautsGame-Win32-Shipping.exe"+47CF78:
+jmp newmem02
+nop
+returnhere02:
+
+
+
+
+[DISABLE]
+//code from here till the end of the code will be used to disable the cheat
+dealloc(newmem)
+pCharCoord1ReadAOB: //"AstronautsGame-Win32-Shipping.exe"+57E601:
+db F3 0F 7E 46 60
+//Alt: movq xmm0,[esi+60]
+unregistersymbol(pCharCoord1ReadAOB)
+someCamValuesReadAOB: //"AstronautsGame-Win32-Shipping.exe"+46C87B:
+db F3 0F 7E 47 68
+//Alt: movq xmm0,[edi+68]
+unregistersymbol(someCamValuesReadAOB)
+unregistersymbol(camInfoBaseReadAOB)
+charCoordWriteOnMoveAOB: //"AstronautsGame-Win32-Shipping.exe"+47CF78:
+db F3 0F 10 44 24 3C
+//Alt: movss xmm0,[esp+3C]
+unregistersymbol(charCoordWriteOnMoveAOB)
+
+unregistersymbol(pCharCoord)
+
+unregistersymbol(pSomeCamBehaviour)
+
+unregistersymbol(pCamInfoBase)
+
+unregistersymbol(bModKey)
+unregistersymbol(fCharMovSpeed)
+</AssemblerScript>
+      <Hotkeys>
+        <Hotkey>
+          <Action>Activate</Action>
+          <Keys>
+            <Key>36</Key>
+          </Keys>
+          <ID>0</ID>
+        </Hotkey>
+        <Hotkey>
+          <Action>Deactivate</Action>
+          <Keys>
+            <Key>35</Key>
+          </Keys>
+          <ID>1</ID>
+        </Hotkey>
+      </Hotkeys>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>189</ID>
+          <Description>"use mod key? (Alt)"</Description>
+          <DropDownList ReadOnly="1" DescriptionOnly="1" DisplayValueAsItem="1">0:no
+1:yes
+</DropDownList>
+          <LastState Value="1" Activated="0" RealAddress="23F6020F"/>
+          <Color>C08000</Color>
+          <VariableType>Byte</VariableType>
+          <Address>bModKey</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>33</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>34</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>190</ID>
+          <Description>"no clip moving speed"</Description>
+          <LastState Value="8" Activated="0" RealAddress="23F60210"/>
+          <Color>C08000</Color>
+          <VariableType>Float</VariableType>
+          <Address>fCharMovSpeed</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>195</ID>
+          <Description>"character coordination"</Description>
+          <LastState Value="" Activated="0" RealAddress="00000000"/>
+          <Color>000080</Color>
+          <GroupHeader>1</GroupHeader>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>191</ID>
+              <Description>"x"</Description>
+              <LastState Value="??" Activated="0" RealAddress="00000000"/>
+              <Color>0000FF</Color>
+              <VariableType>Float</VariableType>
+              <Address>pCharCord</Address>
+              <Offsets>
+                <Offset>60</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>193</ID>
+              <Description>"y"</Description>
+              <LastState Value="??" Activated="0" RealAddress="00000000"/>
+              <Color>0000FF</Color>
+              <VariableType>Float</VariableType>
+              <Address>pCharCord</Address>
+              <Offsets>
+                <Offset>64</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>194</ID>
+              <Description>"z"</Description>
+              <LastState Value="??" Activated="0" RealAddress="00000000"/>
+              <Color>0000FF</Color>
+              <VariableType>Float</VariableType>
+              <Address>pCharCord</Address>
+              <Offsets>
+                <Offset>68</Offset>
+              </Offsets>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>196</ID>
+      <Description>""</Description>
+      <Options moHideChildren="1"/>
+      <LastState Value="" Activated="0" RealAddress="00000000"/>
+      <Color>80000008</Color>
+      <GroupHeader>1</GroupHeader>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>0</ID>
+          <Description>"No description"</Description>
+          <LastState Value="97" Activated="0" RealAddress="01ED7718"/>
+          <Color>80000008</Color>
+          <VariableType>Float</VariableType>
+          <Address>"AstronautsGame-Win32-Shipping.exe"+F07718</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>1</ID>
+          <Description>"No description"</Description>
+          <LastState Value="97" Activated="0" RealAddress="01FBBBCC"/>
+          <Color>80000008</Color>
+          <VariableType>Float</VariableType>
+          <Address>"AstronautsGame-Win32-Shipping.exe"+FEBBCC</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>2</ID>
+          <Description>"No description"</Description>
+          <LastState Value="0" Activated="0" RealAddress="0698C7B8"/>
+          <Color>80000008</Color>
+          <VariableType>Float</VariableType>
+          <Address>0698C7B8</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>3</ID>
+          <Description>"No description"</Description>
+          <LastState Value="0" Activated="0" RealAddress="0698C7D8"/>
+          <Color>80000008</Color>
+          <VariableType>Float</VariableType>
+          <Address>0698C7D8</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>4</ID>
+          <Description>"No description"</Description>
+          <LastState Value="0" Activated="0" RealAddress="0698C7FC"/>
+          <Color>80000008</Color>
+          <VariableType>Float</VariableType>
+          <Address>0698C7FC</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>5</ID>
+          <Description>"No description"</Description>
+          <LastState Value="0" Activated="0" RealAddress="0698C994"/>
+          <Color>80000008</Color>
+          <VariableType>Float</VariableType>
+          <Address>0698C994</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>6</ID>
+          <Description>"No description"</Description>
+          <LastState Value="0" Activated="0" RealAddress="15243CBC"/>
+          <Color>80000008</Color>
+          <VariableType>Float</VariableType>
+          <Address>15243CBC</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>7</ID>
+          <Description>"No description"</Description>
+          <LastState Value="-214.6835632" Activated="0" RealAddress="1D151A6C"/>
+          <Color>80000008</Color>
+          <VariableType>Float</VariableType>
+          <Address>1D151A6C</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>8</ID>
+          <Description>"No description"</Description>
+          <LastState Value="8.407790786E-45" Activated="0" RealAddress="1D1524EC"/>
+          <Color>80000008</Color>
+          <VariableType>Float</VariableType>
+          <Address>1D1524EC</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>9</ID>
+          <Description>"No description"</Description>
+          <LastState Value="0" Activated="0" RealAddress="26D5F3A8"/>
+          <Color>80000008</Color>
+          <VariableType>Float</VariableType>
+          <Address>26D5F3A8</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>10</ID>
+          <Description>"No description"</Description>
+          <LastState Value="0" Activated="0" RealAddress="26D5F694"/>
+          <Color>80000008</Color>
+          <VariableType>Float</VariableType>
+          <Address>26D5F694</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>11</ID>
+          <Description>"No Description"</Description>
+          <LastState Value="0" Activated="0" RealAddress="26D5F3A4"/>
+          <Color>80000008</Color>
+          <VariableType>Float</VariableType>
+          <Address>26D5F3A4</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>12</ID>
+          <Description>"No Description"</Description>
+          <LastState Value="0" Activated="0" RealAddress="26D5F3A8"/>
+          <Color>80000008</Color>
+          <VariableType>Float</VariableType>
+          <Address>26D5F3A8</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>13</ID>
+          <Description>"Auto Assemble script"</Description>
+          <LastState Activated="0"/>
+          <Color>80000008</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[ENABLE]
+//code from here to '[DISABLE]' will be used to enable the cheat
+alloc(newmem,2048)
+label(returnhere)
+label(originalcode)
+label(exit)
+
+newmem: //this is allocated memory, you have read,write,execute access
+//place your code here
+cmp eax,26D5F3A8
+jne originalcode
+fld dword ptr [eax]
+mov ecx,[esp+04]
+jmp exit
+
+originalcode:
+fld dword ptr [eax]
+mov ecx,[esp+04]
+
+exit:
+jmp returnhere
+
+///
+
+"AstronautsGame-Win32-Shipping.exe"+CD53C:
+jmp newmem
+nop
+returnhere:
+
+
+ 
+ 
+[DISABLE]
+//code from here till the end of the code will be used to disable the cheat
+dealloc(newmem)
+"AstronautsGame-Win32-Shipping.exe"+CD53C:
+db D9 00 8B 4C 24 04
+//Alt: fld dword ptr [eax]
+//Alt: mov ecx,[esp+04]
+</AssemblerScript>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>14</ID>
+          <Description>"No description"</Description>
+          <LastState Value="00000000" Activated="0" RealAddress="26D5F398"/>
+          <ShowAsHex>1</ShowAsHex>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>26D5F398</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>15</ID>
+          <Description>"pCamBaseReadAOB"</Description>
+          <LastState Activated="0"/>
+          <Color>80000008</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[ENABLE]
+//code from here to '[DISABLE]' will be used to enable the cheat
+aobscan(pCamBaseReadAOB,89 91 98 03 00 00)
+registersymbol(pCamBaseReadAOB)
+
+label(pCamBase)
+registersymbol(pCamBase)
+
+alloc(newmem,2048)
+label(returnhere)
+label(originalcode)
+label(exit)
+
+newmem: //this is allocated memory, you have read,write,execute access
+//place your code here
+mov [pCamBase],ecx
+
+originalcode:
+mov [ecx+00000398],edx
+
+exit:
+jmp returnhere
+
+///
+pCamBase:
+dd 0
+///
+
+pCamBaseReadAOB: //"AstronautsGame-Win32-Shipping.exe"+34AC1F:
+jmp newmem
+nop
+returnhere:
+
+
+ 
+ 
+[DISABLE]
+//code from here till the end of the code will be used to disable the cheat
+dealloc(newmem)
+pCamBaseReadAOB: //"AstronautsGame-Win32-Shipping.exe"+34AC1F:
+db 89 91 98 03 00 00
+//Alt: mov [ecx+00000398],edx
+unregistersymbol(pCamBaseReadAOB)
+
+unregistersymbol(pCamBase)
+</AssemblerScript>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>23</ID>
+              <Description>"zoom 1"</Description>
+              <LastState Value="??" Activated="0" RealAddress="00000000"/>
+              <Color>80000008</Color>
+              <VariableType>Float</VariableType>
+              <Address>pCamBase</Address>
+              <Offsets>
+                <Offset>37C</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>24</ID>
+              <Description>"zoom 2"</Description>
+              <LastState Value="??" Activated="0" RealAddress="00000000"/>
+              <Color>80000008</Color>
+              <VariableType>Float</VariableType>
+              <Address>pCamBase</Address>
+              <Offsets>
+                <Offset>3B0</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>16</ID>
+              <Description>"FOV"</Description>
+              <LastState Value="??" Activated="0" RealAddress="00000000"/>
+              <Color>80000008</Color>
+              <VariableType>Float</VariableType>
+              <Address>pCamBase</Address>
+              <Offsets>
+                <Offset>3A8</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>19</ID>
+              <Description>"1"</Description>
+              <LastState Value="??" Activated="0" RealAddress="00000000"/>
+              <Color>80000008</Color>
+              <VariableType>Float</VariableType>
+              <Address>pCamBase</Address>
+              <Offsets>
+                <Offset>684</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>20</ID>
+              <Description>"2"</Description>
+              <LastState Value="??" Activated="0" RealAddress="00000000"/>
+              <Color>80000008</Color>
+              <VariableType>Float</VariableType>
+              <Address>pCamBase</Address>
+              <Offsets>
+                <Offset>688</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>21</ID>
+              <Description>"3"</Description>
+              <LastState Value="??" Activated="0" RealAddress="00000000"/>
+              <Color>80000008</Color>
+              <VariableType>Float</VariableType>
+              <Address>pCamBase</Address>
+              <Offsets>
+                <Offset>68C</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>22</ID>
+              <Description>"zoom FOV"</Description>
+              <LastState Value="??" Activated="0" RealAddress="00000000"/>
+              <Color>80000008</Color>
+              <VariableType>Float</VariableType>
+              <Address>pCamBase</Address>
+              <Offsets>
+                <Offset>694</Offset>
+              </Offsets>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>17</ID>
+          <Description>"No description"</Description>
+          <LastState Value="0" Activated="0" RealAddress="26D5F684"/>
+          <Color>80000008</Color>
+          <VariableType>Float</VariableType>
+          <Address>26D5F684</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>18</ID>
+          <Description>"No description"</Description>
+          <LastState Value="00000000" Activated="0" RealAddress="26D5F654"/>
+          <ShowAsHex>1</ShowAsHex>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>26D5F654</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>25</ID>
+          <Description>"Auto Assemble script"</Description>
+          <LastState Activated="0"/>
+          <Color>80000008</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[ENABLE]
+//code from here to '[DISABLE]' will be used to enable the cheat
+alloc(newmem,2048)
+label(returnhere)
+label(originalcode)
+label(exit)
+
+newmem: //this is allocated memory, you have read,write,execute access
+//place your code here
+mov [eax+3b0],0
+
+originalcode:
+//movss [eax+000003B0],xmm1
+
+exit:
+jmp returnhere
+
+///
+
+"AstronautsGame-Win32-Shipping.exe"+584D3F:
+jmp newmem
+nop
+nop
+nop
+returnhere:
+
+
+ 
+ 
+[DISABLE]
+//code from here till the end of the code will be used to disable the cheat
+dealloc(newmem)
+"AstronautsGame-Win32-Shipping.exe"+584D3F:
+db F3 0F 11 88 B0 03 00 00
+//Alt: movss [eax+000003B0],xmm1
+</AssemblerScript>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>26</ID>
+          <Description>"No Description"</Description>
+          <LastState Value="??" Activated="0" RealAddress="14D3CD60"/>
+          <Color>80000008</Color>
+          <VariableType>Float</VariableType>
+          <Address>14D3CD60</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>27</ID>
+          <Description>"Char Coord"</Description>
+          <LastState Activated="0"/>
+          <Color>80000008</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[ENABLE]
+//code from here to '[DISABLE]' will be used to enable the cheat
+aobscan(pCharCoord1ReadAOB,F3 0F 7E 46 60 C1 E9 13)
+registersymbol(pCharCoord1ReadAOB)
+
+label(pCharCoord)
+registersymbol(pCharCoord)
+
+alloc(newmem,2048)
+label(returnhere)
+label(originalcode)
+label(exit)
+
+newmem: //this is allocated memory, you have read,write,execute access
+//place your code here
+//push eax
+//lea eax,[esi+60]
+mov [pCharCoord],esi
+//pop eax
+
+originalcode:
+movq xmm0,[esi+60]
+
+exit:
+jmp returnhere
+
+///
+pCharCoord:
+dd 0
+///
+
+pCharCoord1ReadAOB: //"AstronautsGame-Win32-Shipping.exe"+57E601:
+jmp newmem
+returnhere:
+
+
+ 
+ 
+[DISABLE]
+//code from here till the end of the code will be used to disable the cheat
+dealloc(newmem)
+pCharCoord1ReadAOB: //"AstronautsGame-Win32-Shipping.exe"+57E601:
+db F3 0F 7E 46 60
+//Alt: movq xmm0,[esi+60]
+unregistersymbol(pCharCoord1ReadAOB)
+
+unregistersymbol(pCharCoord)
+</AssemblerScript>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>167</ID>
+              <Description>"get vector base?"</Description>
+              <LastState Activated="0"/>
+              <Color>80000008</Color>
+              <VariableType>Auto Assembler Script</VariableType>
+              <AssemblerScript>[ENABLE]
+//code from here to '[DISABLE]' will be used to enable the cheat
+aobscan(someCamValuesReadAOB,F3 0F 7E 47 68 8B 77 70)
+registersymbol(someCamValuesReadAOB)
+
+label(pSomeCamBehaviour)
+registersymbol(pSomeCamBehaviour)
+
+alloc(newmem01,2048)
+label(returnhere01)
+label(originalcode01)
+label(exit01)
+
+newmem01: //this is allocated memory, you have read,write,execute access
+//place your code here
+mov [pSomeCamBehaviour],edi
+
+originalcode01:
+movq xmm0,[edi+68]
+
+exit01:
+jmp returnhere01
+
+///
+pSomeCamBehaviour:
+dd 0
+///
+
+someCamValuesReadAOB: //"AstronautsGame-Win32-Shipping.exe"+46C87B:
+jmp newmem01
+returnhere01:
+
+
+ 
+ 
+[DISABLE]
+//code from here till the end of the code will be used to disable the cheat
+dealloc(newmem01)
+someCamValuesReadAOB: //"AstronautsGame-Win32-Shipping.exe"+46C87B:
+db F3 0F 7E 47 68
+//Alt: movq xmm0,[edi+68]
+unregistersymbol(someCamValuesReadAOB)
+
+unregistersymbol(pSomeCamBehaviour)
+</AssemblerScript>
+              <CheatEntries>
+                <CheatEntry>
+                  <ID>184</ID>
+                  <Description>"pSomeCamBehaviour"</Description>
+                  <LastState Value="3F26C600" Activated="0" RealAddress="23F6020B"/>
+                  <ShowAsHex>1</ShowAsHex>
+                  <Color>80000008</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pSomeCamBehaviour</Address>
+                </CheatEntry>
+              </CheatEntries>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>185</ID>
+              <Description>"get cam info base"</Description>
+              <LastState Activated="0"/>
+              <Color>80000008</Color>
+              <VariableType>Auto Assembler Script</VariableType>
+              <AssemblerScript>[ENABLE]
+//code from here to '[DISABLE]' will be used to enable the cheat
+aobscan(camInfoBaseReadAOB,BF ** ** ** ** F3 A5 F3)
+registersymbol(camInfoBaseReadAOB)
+
+label(pCamInfoBase)
+registersymbol(pCamInfoBase)
+
+camInfoBaseReadAOB+1:
+pCamInfoBase:
+
+
+ 
+ 
+[DISABLE]
+//code from here till the end of the code will be used to disable the cheat
+unregistersymbol(camInfoBaseReadAOB)
+
+unregistersymbol(pCamInfoBase)
+</AssemblerScript>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>34</ID>
+              <Description>"freeze + mov char .3"</Description>
+              <LastState Activated="0"/>
+              <Color>80000008</Color>
+              <VariableType>Auto Assembler Script</VariableType>
+              <AssemblerScript>[ENABLE]
+//code from here to '[DISABLE]' will be used to enable the cheat
+aobscan(charCoordWriteOnMoveAOB,F3 0F 10 44 24 3C F3 0F 58 43 60 8B 45 10 F3 0F 11 43 60 F3 0F 10 43 64)
+registersymbol(charCoordWriteOnMoveAOB)
+
+label(bModKey)
+registersymbol(bModKey)
+label(fCharMovSpeed)
+registersymbol(fCharMovSpeed)
+
+alloc(newmem02,2048)
+label(returnhere02)
+label(originalcode02)
+label(exit02)
+
+label(cmovechar)
+
+newmem02: //this is allocated memory, you have read,write,execute access
+//place your code here
+cmp [pCharCoord],ebx
+jne originalcode02
+
+cmp byte ptr [bModKey],1
+jne @f
+
+pushad
+push 12 //Alt
+call GetAsyncKeyState
+shr ax,#15
+cmp ax,1
+popad
+jne originalcode02
+
+@@:
+push (float)-1
+push 0
+push 0
+movq [esp],xmm0
+mulss xmm0,[esp+8]
+shufps xmm0,xmm0,01
+movq xmm0,[esp]
+add esp,c
+
+mov [esp+3c],0
+mov [esp+40],0
+mov [esp+44],0
+
+mov eax,[pSomeCamBehaviour]
+
+pushad
+push 'W'
+call GetAsyncKeyState
+shr ax,#15
+cmp ax,1
+popad
+jne @f
+push [fCharMovSpeed]
+push [eax+94]
+push [eax+90]
+push [fCharMovSpeed]
+call cmovechar
+
+@@:
+pushad
+push 'S'
+call GetAsyncKeyState
+shr ax,#15
+cmp ax,1
+popad
+jne @f
+push [fCharMovSpeed]
+push [eax+94]
+push [eax+90]
+push (float)-1.0
+fld dword ptr [esp]
+fmul dword ptr [fCharMovSpeed]
+fst dword ptr [esp+c]
+fstp dword ptr [esp]
+call cmovechar
+
+@@:
+pushad
+push 'D'
+call GetAsyncKeyState
+shr ax,#15
+cmp ax,1
+popad
+jne @f
+push 0
+push [eax+90]
+push [eax+94]
+push (float)-1
+fld dword ptr [esp]
+fmul dword ptr [esp+4]
+fstp dword ptr [esp+4]
+fld dword ptr [fCharMovSpeed]
+fstp dword ptr [esp]
+call cmovechar
+
+@@:
+pushad
+push 'A'
+call GetAsyncKeyState
+shr ax,#15
+cmp ax,1
+popad
+jne originalcode02
+push 0
+push [eax+90]
+push [eax+94]
+push (float)-1
+fld dword ptr [esp]
+fmul dword ptr [esp+8]
+fstp dword ptr [esp+8]
+fld dword ptr [fCharMovSpeed]
+fstp dword ptr [esp]
+call cmovechar
+
+originalcode02:
+movss xmm0,[esp+3C]
+
+exit02:
+jmp returnhere02
+
+///
+cmovechar:
+fld dword ptr [esp+4]
+fmul dword ptr [esp+8]
+fadd dword ptr [ebx+60]
+fstp dword ptr [ebx+60]
+fld dword ptr [esp+4]
+fmul dword ptr [esp+c]
+fadd dword ptr [ebx+64]
+fstp dword ptr [ebx+64]
+mov eax,[pCamInfoBase]
+fld dword ptr [esp+10]
+fmul dword ptr [eax+28]
+fadd dword ptr [ebx+68]
+fstp dword ptr [ebx+68]
+ret 10
+///
+
+///
+bModKey:
+db 1
+fCharMovSpeed:
+dd (float)8
+///
+
+charCoordWriteOnMoveAOB: //"AstronautsGame-Win32-Shipping.exe"+47CF78:
+jmp newmem02
+nop
+returnhere02:
+
+
+ 
+ 
+[DISABLE]
+//code from here till the end of the code will be used to disable the cheat
+dealloc(newmem02)
+charCoordWriteOnMoveAOB: //"AstronautsGame-Win32-Shipping.exe"+47CF78:
+db F3 0F 10 44 24 3C
+//Alt: movss xmm0,[esp+3C]
+unregistersymbol(charCoordWriteOnMoveAOB)
+
+unregistersymbol(bModKey)
+unregistersymbol(fCharMovSpeed)
+</AssemblerScript>
+              <CheatEntries>
+                <CheatEntry>
+                  <ID>187</ID>
+                  <Description>"bModKey"</Description>
+                  <LastState Value="1" Activated="0" RealAddress="23F6020F"/>
+                  <Color>80000008</Color>
+                  <VariableType>Byte</VariableType>
+                  <Address>bModKey</Address>
+                </CheatEntry>
+              </CheatEntries>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>186</ID>
+              <Description>"freeze + mov char .2"</Description>
+              <LastState Activated="0"/>
+              <Color>80000008</Color>
+              <VariableType>Auto Assembler Script</VariableType>
+              <AssemblerScript>[ENABLE]
+//code from here to '[DISABLE]' will be used to enable the cheat
+aobscan(charCoordWriteOnMoveAOB,F3 0F 10 44 24 3C F3 0F 58 43 60 8B 45 10 F3 0F 11 43 60 F3 0F 10 43 64)
+registersymbol(charCoordWriteOnMoveAOB)
+
+label(fCharMovSpeed)
+registersymbol(fCharMovSpeed)
+
+alloc(newmem02,2048)
+label(returnhere02)
+label(originalcode02)
+label(exit02)
+
+label(cmovechar)
+
+newmem02: //this is allocated memory, you have read,write,execute access
+//place your code here
+cmp [pCharCoord],ebx
+jne originalcode02
+push (float)-1
+push 0
+push 0
+movq [esp],xmm0
+mulss xmm0,[esp+8]
+shufps xmm0,xmm0,01
+movq xmm0,[esp]
+add esp,c
+
+mov [esp+3c],0
+mov [esp+40],0
+mov [esp+44],0
+
+mov eax,[pSomeCamBehaviour]
+
+pushad
+push 'W'
+call GetAsyncKeyState
+shr ax,#15
+cmp ax,1
+popad
+jne @f
+push [eax+94]
+push [eax+90]
+push [fCharMovSpeed]
+call cmovechar
+
+@@:
+pushad
+push 'S'
+call GetAsyncKeyState
+shr ax,#15
+cmp ax,1
+popad
+jne @f
+push [eax+94]
+push [eax+90]
+push (float)-1.0
+fld dword ptr [esp]
+fmul dword ptr [fCharMovSpeed]
+fstp dword ptr [esp]
+call cmovechar
+
+@@:
+pushad
+push 'D'
+call GetAsyncKeyState
+shr ax,#15
+cmp ax,1
+popad
+jne @f
+push [eax+90]
+push [eax+94]
+push (float)-1
+fld dword ptr [esp]
+fmul dword ptr [esp+4]
+fstp dword ptr [esp+4]
+fld dword ptr [fCharMovSpeed]
+fstp dword ptr [esp]
+call cmovechar
+
+@@:
+pushad
+push 'A'
+call GetAsyncKeyState
+shr ax,#15
+cmp ax,1
+popad
+jne originalcode02
+push [eax+90]
+push [eax+94]
+push (float)-1
+fld dword ptr [esp]
+fmul dword ptr [esp+8]
+fstp dword ptr [esp+8]
+fld dword ptr [fCharMovSpeed]
+fstp dword ptr [esp]
+call cmovechar
+
+originalcode02:
+movss xmm0,[esp+3C]
+
+exit02:
+jmp returnhere02
+
+///
+cmovechar:
+fld dword ptr [esp+4]
+fmul dword ptr [esp+8]
+fadd dword ptr [ebx+60]
+fstp dword ptr [ebx+60]
+fld dword ptr [esp+4]
+fmul dword ptr [esp+c]
+fadd dword ptr [ebx+64]
+fstp dword ptr [ebx+64]
+ret c
+///
+
+///
+fCharMovSpeed:
+dd (float)8
+///
+
+charCoordWriteOnMoveAOB: //"AstronautsGame-Win32-Shipping.exe"+47CF78:
+jmp newmem02
+nop
+returnhere02:
+
+
+ 
+ 
+[DISABLE]
+//code from here till the end of the code will be used to disable the cheat
+dealloc(newmem02)
+charCoordWriteOnMoveAOB: //"AstronautsGame-Win32-Shipping.exe"+47CF78:
+db F3 0F 10 44 24 3C
+//Alt: movss xmm0,[esp+3C]
+unregistersymbol(charCoordWriteOnMoveAOB)
+
+unregistersymbol(fCharMovSpeed)
+</AssemblerScript>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>170</ID>
+              <Description>"freeze + mov char .1"</Description>
+              <LastState Activated="0"/>
+              <Color>80000008</Color>
+              <VariableType>Auto Assembler Script</VariableType>
+              <AssemblerScript>[ENABLE]
+//code from here to '[DISABLE]' will be used to enable the cheat
+label(fCamMovSpeed)
+registersymbol(fCamMovSpeed)
+
+alloc(newmem,2048)
+label(returnhere)
+label(originalcode)
+label(exit)
+
+label(movechar)
+
+newmem: //this is allocated memory, you have read,write,execute access
+//place your code here
+cmp [pCharCoord],ebx
+jne originalcode
+push (float)-1
+push 0
+push 0
+movq [esp],xmm0
+mulss xmm0,[esp+8]
+shufps xmm0,xmm0,1
+movq xmm0,[esp]
+add esp,c
+
+mov [esp+3c],0
+mov [esp+40],0
+mov [esp+44],0
+
+mov eax,[pSomeCamBehaviour]
+
+pushad
+push 'W'
+call GetAsyncKeyState
+shr ax,#15
+cmp ax,1
+popad
+jne @f
+push [eax+94]
+push [eax+90]
+push [fCamMovSpeed]
+call movechar
+
+@@:
+pushad
+push 'S'
+call GetAsyncKeyState
+shr ax,#15
+cmp ax,1
+popad
+jne originalcode
+push [eax+94]
+push [eax+90]
+push (float)-1.0
+fld dword ptr [esp]
+fmul dword ptr [fCamMovSpeed]
+fstp dword ptr [esp]
+call movechar
+
+originalcode:
+movss xmm0,[esp+3C]
+
+exit:
+jmp returnhere
+
+///
+movechar:
+fld dword ptr [esp+4]
+fmul dword ptr [esp+8] //[eax+90]
+fadd dword ptr [ebx+60]
+fstp dword ptr [ebx+60]
+fld dword ptr [esp+4]
+fmul dword ptr [esp+c] //[eax+94]
+fadd dword ptr [ebx+64]
+fstp dword ptr [ebx+64]
+ret c
+///
+
+///
+fCamMovSpeed:
+dd (float)8
+///
+
+"AstronautsGame-Win32-Shipping.exe"+47CF78:
+jmp newmem
+nop
+returnhere:
+
+
+ 
+ 
+[DISABLE]
+//code from here till the end of the code will be used to disable the cheat
+dealloc(newmem)
+"AstronautsGame-Win32-Shipping.exe"+47CF78:
+db F3 0F 10 44 24 3C
+//Alt: movss xmm0,[esp+3C]
+
+unregistersymbol(fCamMovSpeed)
+</AssemblerScript>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>169</ID>
+              <Description>"freeze char"</Description>
+              <LastState Activated="0"/>
+              <Color>80000008</Color>
+              <VariableType>Auto Assembler Script</VariableType>
+              <AssemblerScript>[ENABLE]
+//code from here to '[DISABLE]' will be used to enable the cheat
+alloc(newmem,2048)
+label(returnhere)
+label(originalcode)
+label(exit)
+
+newmem: //this is allocated memory, you have read,write,execute access
+//place your code here
+cmp [pCharCord],ebx
+jne originalcode
+mov [esp+3c],0
+mov [esp+40],0
+mov [esp+44],0
+
+
+
+originalcode:
+movss xmm0,[esp+3C]
+
+exit:
+jmp returnhere
+
+///
+
+"AstronautsGame-Win32-Shipping.exe"+47CF78:
+jmp newmem
+nop
+returnhere:
+
+
+ 
+ 
+[DISABLE]
+//code from here till the end of the code will be used to disable the cheat
+dealloc(newmem)
+"AstronautsGame-Win32-Shipping.exe"+47CF78:
+db F3 0F 10 44 24 3C
+//Alt: movss xmm0,[esp+3C]
+</AssemblerScript>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>168</ID>
+              <Description>"mov char"</Description>
+              <LastState Activated="0"/>
+              <Color>80000008</Color>
+              <VariableType>Auto Assembler Script</VariableType>
+              <AssemblerScript>[ENABLE]
+//code from here to '[DISABLE]' will be used to enable the cheat
+label(fCamMovSpeed)
+registersymbol(fCamMovSpeed)
+
+alloc(newmem,2048)
+label(returnhere)
+label(originalcode)
+label(exit)
+
+label(movechar)
+
+newmem: //this is allocated memory, you have read,write,execute access
+//place your code here
+pushad
+push 'W'
+call GetAsyncKeyState
+shr ax,#15
+cmp ax,1
+popad
+jne @f
+push [fCamMovSpeed]
+call movechar
+
+@@:
+pushad
+push 'W'
+call GetAsyncKeyState
+shr ax,#15
+cmp ax,1
+popad
+jne originalcode
+push (float)-1.0
+fld dword ptr [esp]
+fmul dword ptr [fCamMovSpeed]
+fstp dword ptr [esp]
+call movechar
+
+originalcode:
+mov ecx,eax
+mulss xmm2,xmm1
+
+exit:
+jmp returnhere
+
+///
+
+movechar:
+push eax
+push ebx
+push 0
+mov eax,[pSomeCamBehaviour]
+mov ebx,[pCharCord]
+fld dword ptr [esp+10]
+fmul dword ptr [eax+90]
+fadd dword ptr [ebx+60]
+fstp dword ptr [ebx+60]
+fld dword ptr [esp+10]
+fmul dword ptr [eax+94]
+fadd dword ptr [ebx+64]
+fstp dword ptr [ebx+64]
+add esp,4
+pop ebx
+pop eax
+ret 4
+
+///
+fCamMovSpeed:
+dd (float)8
+///
+
+"AstronautsGame-Win32-Shipping.exe"+57E5F5:
+jmp newmem
+nop
+returnhere:
+
+
+ 
+ 
+[DISABLE]
+//code from here till the end of the code will be used to disable the cheat
+dealloc(newmem)
+"AstronautsGame-Win32-Shipping.exe"+57E5F5:
+db 8B C8 F3 0F 59 D1
+//Alt: mov ecx,eax
+//Alt: mulss xmm2,xmm1
+
+unregistersymbol(fCamMovSpeed)
+</AssemblerScript>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>30</ID>
+              <Description>"1"</Description>
+              <LastState Value="??" Activated="0" RealAddress="00000000"/>
+              <Color>80000008</Color>
+              <VariableType>Float</VariableType>
+              <Address>pCharCord</Address>
+              <Offsets>
+                <Offset>60</Offset>
+              </Offsets>
+              <CheatEntries>
+                <CheatEntry>
+                  <ID>163</ID>
+                  <Description>"1"</Description>
+                  <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                  <ShowAsHex>1</ShowAsHex>
+                  <Color>80000008</Color>
+                  <VariableType>Float</VariableType>
+                  <Address>pCharCord</Address>
+                  <Offsets>
+                    <Offset>60</Offset>
+                  </Offsets>
+                </CheatEntry>
+              </CheatEntries>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>31</ID>
+              <Description>"2"</Description>
+              <LastState Value="??" Activated="0" RealAddress="00000000"/>
+              <Color>80000008</Color>
+              <VariableType>Float</VariableType>
+              <Address>pCharCord</Address>
+              <Offsets>
+                <Offset>64</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>32</ID>
+              <Description>"3"</Description>
+              <LastState Value="??" Activated="0" RealAddress="00000000"/>
+              <Color>80000008</Color>
+              <VariableType>Float</VariableType>
+              <Address>pCharCord</Address>
+              <Offsets>
+                <Offset>68</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>36</ID>
+              <Description>"facing"</Description>
+              <LastState Value="??" Activated="0" RealAddress="00000000"/>
+              <Color>80000008</Color>
+              <VariableType>2 Bytes</VariableType>
+              <Address>pCharCord</Address>
+              <Offsets>
+                <Offset>70</Offset>
+              </Offsets>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>28</ID>
+          <Description>"No description"</Description>
+          <LastState Value="??" Activated="0" RealAddress="00000000"/>
+          <ShowAsHex>1</ShowAsHex>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>pCamCord</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>29</ID>
+          <Description>"Auto Assemble script"</Description>
+          <LastState Activated="0"/>
+          <Color>80000008</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[ENABLE]
+//code from here to '[DISABLE]' will be used to enable the cheat
+alloc(newmem,2048)
+label(returnhere)
+label(originalcode)
+label(exit)
+
+newmem: //this is allocated memory, you have read,write,execute access
+//place your code here
+cmp [pCamCord],esi
+jne originalcode
+mov eax,[esi+ecx*4-0C]
+
+originalcode:
+mov eax,[esi+ecx*4-0C]
+mov [edi+ecx*4-0C],eax
+
+exit:
+jmp returnhere
+
+///
+
+"MSVCR100.dll"+1FC4:
+jmp newmem
+nop
+nop
+nop
+returnhere:
+
+
+ 
+ 
+[DISABLE]
+//code from here till the end of the code will be used to disable the cheat
+dealloc(newmem)
+"MSVCR100.dll"+1FC4:
+db 8B 44 8E F4 89 44 8F F4
+//Alt: mov eax,[esi+ecx*4-0C]
+//Alt: mov [edi+ecx*4-0C],eax
+</AssemblerScript>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>33</ID>
+          <Description>"No Description"</Description>
+          <LastState Value="0" Activated="0" RealAddress="0698C468"/>
+          <Color>80000008</Color>
+          <VariableType>Float</VariableType>
+          <Address>0698C468</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>162</ID>
+          <Description>"faster"</Description>
+          <LastState Activated="0"/>
+          <Color>80000008</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[ENABLE]
+//code from here to '[DISABLE]' will be used to enable the cheat
+label(haha)
+
+alloc(newmem,2048)
+label(returnhere)
+label(originalcode)
+label(exit)
+
+newmem: //this is allocated memory, you have read,write,execute access
+//place your code here
+movss xmm0,[haha]
+
+originalcode:
+//movss xmm0,[edx+20]
+
+exit:
+jmp returnhere
+
+///
+haha:
+dd (float)2.0
+///
+
+"AstronautsGame-Win32-Shipping.exe"+47CF33:
+jmp newmem
+returnhere:
+
+
+ 
+ 
+[DISABLE]
+//code from here till the end of the code will be used to disable the cheat
+dealloc(newmem)
+"AstronautsGame-Win32-Shipping.exe"+47CF33:
+db F3 0F 10 42 20
+//Alt: movss xmm0,[edx+20]
+</AssemblerScript>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>164</ID>
+          <Description>"No description"</Description>
+          <LastState Value="-2.534445534E-33" Activated="0" RealAddress="0747BC90"/>
+          <Color>80000008</Color>
+          <VariableType>Float</VariableType>
+          <Address>0747BC90</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>165</ID>
+          <Description>"No description"</Description>
+          <LastState Value="-1.151196318E-30" Activated="0" RealAddress="0747BC94"/>
+          <Color>80000008</Color>
+          <VariableType>Float</VariableType>
+          <Address>0747BC94</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>166</ID>
+          <Description>"No Description"</Description>
+          <LastState Value="-0.00001010522556" Activated="0" RealAddress="0747BC68"/>
+          <Color>80000008</Color>
+          <VariableType>Float</VariableType>
+          <Address>0747BC68</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>171</ID>
+          <Description>"No description"</Description>
+          <LastState Value="??" Activated="0" RealAddress="0753D898"/>
+          <Color>80000008</Color>
+          <VariableType>Float</VariableType>
+          <Address>0753D898</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>172</ID>
+          <Description>"No description"</Description>
+          <LastState Value="??" Activated="0" RealAddress="0753D8B0"/>
+          <Color>80000008</Color>
+          <VariableType>Float</VariableType>
+          <Address>0753D8B0</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>173</ID>
+          <Description>"No description"</Description>
+          <LastState Value="??" Activated="0" RealAddress="0753D8B4"/>
+          <Color>80000008</Color>
+          <VariableType>Float</VariableType>
+          <Address>0753D8B4</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>174</ID>
+          <Description>"No description"</Description>
+          <LastState Value="??" Activated="0" RealAddress="0753D968"/>
+          <Color>80000008</Color>
+          <VariableType>Float</VariableType>
+          <Address>0753D968</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>175</ID>
+          <Description>"No description"</Description>
+          <LastState Value="??" Activated="0" RealAddress="0753D980"/>
+          <Color>80000008</Color>
+          <VariableType>Float</VariableType>
+          <Address>0753D980</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>176</ID>
+          <Description>"No description"</Description>
+          <LastState Value="??" Activated="0" RealAddress="0753D984"/>
+          <Color>80000008</Color>
+          <VariableType>Float</VariableType>
+          <Address>0753D984</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>177</ID>
+          <Description>"No description"</Description>
+          <LastState Value="??" Activated="0" RealAddress="0753D800"/>
+          <ShowAsHex>1</ShowAsHex>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>0753D800</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>178</ID>
+          <Description>"No description"</Description>
+          <LastState Value="??" Activated="0" RealAddress="0753D828"/>
+          <ShowAsHex>1</ShowAsHex>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>0753D800+28</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>179</ID>
+          <Description>"No description"</Description>
+          <LastState Value="??" Activated="0" RealAddress="22A5F8E8"/>
+          <Color>80000008</Color>
+          <VariableType>Float</VariableType>
+          <Address>22A5F8E8</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>180</ID>
+          <Description>"No description"</Description>
+          <LastState Value="1.444131332E34" Activated="0" RealAddress="243B6938"/>
+          <Color>80000008</Color>
+          <VariableType>Float</VariableType>
+          <Address>243B6938</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>181</ID>
+          <Description>"No description"</Description>
+          <LastState Value="0" Activated="0" RealAddress="08653EC8"/>
+          <Color>80000008</Color>
+          <VariableType>Float</VariableType>
+          <Address>08653EC8</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>182</ID>
+          <Description>"No description"</Description>
+          <LastState Value="-0.1817270219" Activated="0" RealAddress="01FAED68"/>
+          <Color>80000008</Color>
+          <VariableType>Float</VariableType>
+          <Address>"AstronautsGame-Win32-Shipping.exe"+FDED68</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>183</ID>
+          <Description>"No description"</Description>
+          <LastState Value="-0.1819089353" Activated="0" RealAddress="01FAED6C"/>
+          <Color>80000008</Color>
+          <VariableType>Float</VariableType>
+          <Address>"AstronautsGame-Win32-Shipping.exe"+FDED6C</Address>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols>
+    <SymbolEntry>
+      <Name>pCharCoord1ReadAOB</Name>
+      <Address> 0154E601</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>someCamValuesReadAOB</Name>
+      <Address> 0143C87B</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>camInfoBaseReadAOB</Name>
+      <Address> 0127BAE0</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>charCoordWriteOnMoveAOB</Name>
+      <Address> 0144CF78</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>pCharCoord</Name>
+      <Address>23F60207</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>pSomeCamBehaviour</Name>
+      <Address>23F6020B</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>pCamInfoBase</Name>
+      <Address>0127BAE1</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>bModKey</Name>
+      <Address>23F6020F</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>fCharMovSpeed</Name>
+      <Address>23F60210</Address>
+    </SymbolEntry>
+  </UserdefinedSymbols>
+  <Comments>http://forum.cheatengine.org/viewtopic.php?p=5590126#5590126
+///
+0.99999994
+3f7fffff
+-0.9724057317
+bf78ef95
+</Comments>
+</CheatTable>

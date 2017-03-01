@@ -1,0 +1,459 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="16">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>22</ID>
+      <Description>"[X] &lt;== APOX v120ct18A Script"</Description>
+      <Options moHideChildren="1"/>
+      <Color>FF0000</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>{
+===========================================
+ Game Title    : APOX
+ Game Version  : 120ct18A
+ Game Sponsor  : PROPHET
+ Proces Name   : APOX.exe
+ Script Version: 1.0
+ CE Version    : 6.2
+ Release date  : 13-Jun-2013
+ Author        : Recifense
+ History:
+ 12-Jun-13: First Release
+ Features:
+ - God Mode
+ - Unlimited Ammo
+ - Unlimited Fuel
+ - Minimum Resources:
+   - Salvage
+   - Survivors
+   - Gas
+   - Ammo
+ - Useful Pointers
+===========================================
+}
+
+//=========================================
+// Definitions
+define(LUDO,"APOX.exe")
+define(GDMD,game.dll+00075600)
+define(MSUN,game.dll+000501d0)
+define(MAFL,game.dll+0000de75)
+define(MPRS,game.dll+0016d3b0)
+
+define(PCON,game.dll+002b04b8)
+
+//=========================================
+[ENABLE]
+//=========================================
+//LuaCall(CheckVersion())
+//=========================================
+// Check if script is compatible to this game version
+// If false the script will not be loaded
+
+assert(GDMD,d9 41 14 d8 64 24 04 d9 59 14 d9 41 14 d9 ee de d9 df e0 f6 c4 41)
+assert(MSUN,d9 81 7c fe ff ff c3 ?? ?? ?? ?? ??)
+assert(MAFL,8b 4c 24 10 89 0c be 5f 5e c2 08 00)
+assert(MPRS,8b 41 24 c3 ?? ?? ?? ?? ?? ?? ?? ??)
+
+//=========================================
+alloc(MyCode,4096,LUDO)
+//=========================================
+// Declaration section
+label(_GodMode)
+label(_GodMD00)
+label(_BackGMD)
+label(_ExitGMD)
+label(_MonSelUnit)
+label(_BackMSU)
+label(_ExitMSU)
+label(_MonAmmoFuel)
+label(_MonAF00)
+label(_BackMAF)
+label(_ExitMAF)
+label(_MonPlayerRes)
+label(_BackMPR)
+label(_ExitMPR)
+label(pUnit)
+label(pRes)
+label(iEnableGMD)
+label(iEnableMAF)
+label(iEnableMPR)
+
+//=========================================
+// Registering Symbols
+registersymbol(MyCode)
+registersymbol(pUnit)
+registersymbol(pRes)
+registersymbol(iEnableGMD)
+registersymbol(iEnableMAF)
+registersymbol(iEnableMPR)
+
+//=========================================
+MyCode:
+//=========================================
+// When attacked
+_GodMode:
+ push eax
+
+ cmp dword ptr [iEnableGMD],0
+ je _ExitGMD                       // Jump if feature is disabled
+
+ mov eax,[ecx+000001e0]            // Units/Buildings
+ test eax,eax
+ jz _ExitGMD
+
+ mov eax,[eax+14]
+ cmp eax,[PCON]
+ jne _ExitGMD
+
+_GodMD00:
+ xor eax,eax
+ mov [esp+08],eax                  // value2decrease = 0
+
+_ExitGMD:
+ pop eax
+
+ fld dword ptr [ecx+14]            // Original code
+ fsub dword ptr [esp+04]           // Original code
+ jmp _BackGMD                      // Back to main code
+
+//=========================================
+// Selected unit or Under Cursor
+_MonSelUnit:
+ push eax
+
+ lea eax,[ecx-00000198]
+ mov [pUnit],eax
+
+_ExitMSU:
+ pop eax
+
+ fld dword ptr [ecx-00000184]      // Original code
+ jmp _BackMSU                      // Back to main code
+
+//=========================================
+_MonAmmoFuel:
+ cmp dword ptr [iEnableMAF],0
+ je _ExitMAF                       // Jump if feature is disabled
+
+ mov ecx,[esi-08]
+ test ecx,ecx
+ jz _ExitMAF
+
+ mov ecx,[ecx+14]
+ cmp ecx,[PCON]
+ jne _ExitMAF
+
+_MonAF00:
+ mov ecx,[esi+edi*4]
+ cmp ecx,[esp+10]
+ jle _ExitMAF
+
+ mov [esp+10],ecx
+
+_ExitMAF:
+ mov ecx,[esp+10]                  // Original code
+ mov [esi+edi*4],ecx               // Original code
+ jmp _BackMAF                      // Back to main code
+
+//=========================================
+// When ALT is presssed
+_MonPlayerRes:
+ push ebx
+
+ mov eax,[ecx+24]
+ cmp eax,[PCON]
+ jne _ExitMPR
+
+ mov [pRes],ecx
+
+ cmp dword ptr [iEnableMPR],0
+ je _ExitMPR                       // Jump if feature is disabled
+
+ mov ebx,(float)620.0
+
+ mov eax,[ecx+30]
+ cmp eax,ebx
+ cmovl eax,ebx
+ mov [ecx+30],eax
+
+ mov eax,[ecx+38]
+ cmp eax,ebx
+ cmovl eax,ebx
+ mov [ecx+38],eax
+
+ mov eax,[ecx+3C]
+ cmp eax,ebx
+ cmovl eax,ebx
+ mov [ecx+3C],eax
+
+ mov ebx,(float)10.0
+
+ mov eax,[ecx+34]
+ cmp eax,ebx
+ cmovl eax,ebx
+ mov [ecx+34],eax
+
+_ExitMPR:
+ pop ebx
+
+ mov eax,[ecx+24]                  // Original code
+ ret                               // Original code
+ jmp _BackMPR                      // Back to main code (template)
+
+//=========================================
+ db '=================================&gt;'
+ db 'CE6.2 Script by Recifense 061313'
+//=========================================
+// Variables
+iEnableGMD:
+ dd 0
+iEnableMAF:
+ dd 0
+iEnableMPR:
+ dd 0
+pUnit:
+ dd 0
+pRes:
+ dd 0
+
+//=========================================
+// Hacking Points
+GDMD:
+ jmp _GodMode
+ nop
+ nop
+_BackGMD:
+
+MSUN:
+ jmp _MonSelUnit
+ nop
+_BackMSU:
+
+MAFL:
+ jmp _MonAmmoFuel
+ nop
+ nop
+_BackMAF:
+
+MPRS:
+ jmp _MonPlayerRes
+_BackMPR:
+
+//=========================================
+// Script for Restoring Original Codes
+[DISABLE]
+GDMD:
+// fld dword ptr [ecx+14]
+// fsub dword ptr [esp+04]
+ db d9 41 14 d8 64 24 04
+
+MSUN:
+// fld dword ptr [ecx-00000184]
+ db d9 81 7c fe ff ff
+
+MAFL:
+// mov ecx,[esp+10]
+// mov [esi+edi*4],ecx
+ db 8b 4c 24 10 89 0c be
+
+MPRS:
+// mov eax,[ecx+24]
+// ret
+ db 8b 41 24 c3 90
+
+//=========================================
+// Unregistering Symbols
+unregistersymbol(MyCode)
+unregistersymbol(pUnit)
+unregistersymbol(pRes)
+unregistersymbol(iEnableGMD)
+unregistersymbol(iEnableMAF)
+unregistersymbol(iEnableMPR)
+
+//=========================================
+dealloc(MyCode)
+//============= Scripts End ===============
+
+// ****************************************
+// NOTES
+// ****************************************
+{
+ Find Common Pointer
+ sl = AOBScan("8b 90 84 04 00 00 57 89 74 24 24 ff d2 3b 05")
+}
+
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>6</ID>
+          <Description>"Enable/Disable God Mode =&gt;(1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableGMD</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>8</ID>
+          <Description>"Enable/Disable Unlimited Ammo/Fuel =&gt;(1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMAF</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>20</ID>
+          <Description>"Enable/Disable Minimum Resources =&gt;(1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMPR</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>21</ID>
+          <Description>"========= Player's Resources ========="</Description>
+          <ShowAsHex>1</ShowAsHex>
+          <Color>000080</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>pRes</Address>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>23</ID>
+              <Description>"Salvage ==&gt;"</Description>
+              <Color>0000FF</Color>
+              <VariableType>Float</VariableType>
+              <Address>pRes</Address>
+              <Offsets>
+                <Offset>30</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>24</ID>
+              <Description>"Survivors ==&gt;"</Description>
+              <Color>0000FF</Color>
+              <VariableType>Float</VariableType>
+              <Address>pRes</Address>
+              <Offsets>
+                <Offset>34</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>25</ID>
+              <Description>"Gas ==&gt;"</Description>
+              <Color>0000FF</Color>
+              <VariableType>Float</VariableType>
+              <Address>pRes</Address>
+              <Offsets>
+                <Offset>38</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>26</ID>
+              <Description>"Ammo ==&gt;"</Description>
+              <Color>0000FF</Color>
+              <VariableType>Float</VariableType>
+              <Address>pRes</Address>
+              <Offsets>
+                <Offset>3C</Offset>
+              </Offsets>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols/>
+  <Comments>===========================================
+ Game Title    : APOX
+ Game Version  : 120ct18A
+ Game Sponsor  : PROPHET
+ Proces Name   : APOX.exe
+ Script Version: 1.0
+ CE Version    : 6.2
+ Release date  : 13-Jun-2013
+ Author        : Recifense
+ History:
+ 12-Jun-13: First Release
+ Features:
+ - God Mode            [1]
+ - Unlimited Ammo      [2]
+ - Unlimited Fuel      [3]
+ - Minimum Resources:  [4]
+   - Salvage   (620)
+   - Survivors (10)
+   - Gas       (620)
+   - Ammo      (620)
+ - Useful Pointers     [5]
+===========================================
+[1] For player's units and buildings;
+[2] For player's units;
+[3] For player's units;
+[4] You need to press ALT once in a while;
+[5] Used on the table 
+===========================================
+HOTKEYS:
+CTRL+Home = Enable  all cheats;
+CTRL+End  = Disable all cheats;
+===========================================
+[IMPORTANT] You have to load the table everytime you start a new game or scenario. The game is a DLL that is loaded everytime a scenario is started.
+===========================================
+Cheers!
+ </Comments>
+</CheatTable>

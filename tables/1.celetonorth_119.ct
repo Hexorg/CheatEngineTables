@@ -1,0 +1,713 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="18">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>27</ID>
+      <Description>"BYTECODE - cheat (apply as soon as possible)"</Description>
+      <LastState Value="" Activated="0" RealAddress="00000000"/>
+      <Color>80000008</Color>
+      <GroupHeader>1</GroupHeader>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>28</ID>
+          <Description>"100% loot ?"</Description>
+          <LastState Activated="1"/>
+          <Color>80000008</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>{$lua}
+
+function run(onoff,skip)
+  if skip==true then return '' end
+--                     00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F 10 11 12 13 14 15 16 17 18 19 1A 1B 1C 1D 1E 1F 20 21 22 23 24 25 26 27 28 29 2A 2B 2C 2D 2E 2F 30 31 32 33 34 35 36 37 38 39 3A 3B 3C 3D 3E 3F 40 41 42 43 44 45 46 47 48 49 4A 4B 4C 4D 4E 4F 50 51 52 53 54 55 56 57 58 59 5A 5B 5C 5D 5E 5F 60 61 62 63 64 65 66 67 68 69 6A 6B 6C 6D 6E 6F 70 71 72 73 74 75 76 77 78 79 7A 7B 7C 7D 7E 7F
+
+  local aob = AOBScan('17 1F 64 28 ?? ?? ?? ?? 6B 11 ?? 7C ?? ?? ?? ?? 7B ?? ?? ?? ?? 42')
+  local script = {}
+  if aob~=nil then
+    for i=1,aob.Count do
+      script[i]=aob[i-1]..[[+16:
+      db 00 00
+      ]]
+    end
+    aob.Destroy()
+  end
+  return assert(#script&gt;0) and table.concat(script,"\n")
+end
+
+{$asm}
+
+
+
+[ENABLE]
+{$lua}
+return run(true,syntaxcheck)
+{$asm}
+[DISABLE]
+
+</AssemblerScript>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>31</ID>
+          <Description>"stat +10%(base &amp; hp/atk) "</Description>
+          <LastState Activated="1"/>
+          <Color>80000008</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>{$lua}
+stat_multipier = 1.1 -- =&gt; +10%, 0.9 etc. for ascetic mode ;)
+function run(onoff,skip)
+  if skip==true then return '' end
+--                     00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F 10 11 12 13 14 15 16 17 18 19 1A 1B 1C 1D 1E 1F 20 21 22 23 24 25 26 27 28 29 2A 2B 2C 2D 2E 2F 30 31 32 33 34 35 36 37 38 39 3A 3B 3C 3D 3E 3F 40 41 42 43 44 45 46 47 48 49 4A 4B 4C 4D 4E 4F 50 51 52 53 54 55 56 57 58 59 5A 5B 5C 5D 5E 5F 60 61 62 63 64 65 66 67 68 69 6A 6B 6C 6D 6E 6F 70 71 72 73 74 75 76 77 78 79 7A 7B 7C 7D 7E 7F
+
+  local tt = floatToByteTable(stat_multipier or 1.1)
+  local cnt = 0
+  local aob = AOBScan('22 00 00 80 3f ?? 22 00 00 80 3f ?? 22 00 00 80 3f ?? 16')
+  if aob~=nil then
+    for i=1,aob.Count do
+      writeBytes(aob[i-1]..'+01',tt)
+      writeBytes(aob[i-1]..'+07',tt)
+      writeBytes(aob[i-1]..'+0d',tt)
+      cnt = cnt + 1
+    end
+    aob.Destroy()
+  end
+
+        aob = AOBScan('22 00 00 80 3f ?? 22 00 00 80 3f ?? 22 00 00 80 3f 13 ?? 22 00 00 80 3f')
+  if aob~=nil then
+    for i=1,aob.Count do
+      writeBytes(aob[i-1]..'+01',tt)
+      writeBytes(aob[i-1]..'+07',tt)
+      writeBytes(aob[i-1]..'+0d',tt)
+      writeBytes(aob[i-1]..'+14',tt)
+      cnt = cnt + 1
+    end
+    aob.Destroy()
+  end
+
+  return assert(cnt&gt;0) and ''
+end
+
+{$asm}
+
+
+
+[ENABLE]
+{$lua}
+return run(true,syntaxcheck)
+{$asm}
+[DISABLE]
+
+</AssemblerScript>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>25</ID>
+      <Description>"walkrun x 2 (lua/runtime data mod)"</Description>
+      <LastState Activated="1"/>
+      <Color>80000008</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>{$lua}
+speed_multipier = 1.5 -- more than this, higher chance to hit into the wall/boundary
+
+function run(onoff,skip)
+  if skip==true then return '' end
+  local function ft(f,...)
+    local t = floatToByteTable(f)
+    if select('#',...)==0 then
+      return t
+    else
+      local s = ft(...)
+      for i=1,#s do t[1+#t]=s[i] end
+      return t
+    end
+  end
+  local pid = getOpenedProcessID()
+  if pid==nil or pid &lt;= 0 then return assert(false) end
+
+  _G.walkrun_aob = _G.walkrun_aob or {}
+  -- check "constant" static contructor
+  local a,b,c,d,e,m = 1.6,2.1,1.9,2.7,1, speed_multipier or 2
+  local f,t = ft(a,b,c,d,e),ft(a,b,c*m,d*m,e*m)
+  if onoff==false then
+    if _G.walkrun_aob[pid] ~= nil then
+      f,t = t,f
+    else
+      return '' -- let activated cheat to be disabled
+    end
+  end
+  _G.walkrun_aob[pid] = _G.walkrun_aob[pid] or AOBScan(unpack(f))
+  local aob = _G.walkrun_aob[pid]
+  if aob~=nil then
+    for i=1,aob.Count do
+      writeBytes(aob[i-1],t)
+    end
+--    aob.Destroy()
+  end
+  return ''
+end
+
+{$asm}
+
+
+
+[ENABLE]
+{$lua}
+return run(true,syntaxcheck)
+{$asm}
+[DISABLE]
+{$lua}
+return run(false,syntaxcheck)
+{$asm}
+
+</AssemblerScript>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>0</ID>
+      <Description>"CeleTONorth (click)"</Description>
+      <Options moHideChildren="1"/>
+      <LastState Activated="1"/>
+      <Color>80000008</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>{$lua}
+function hx(n) return ('%02X'):format(n) end
+function getMonoOffset(struct,field)
+
+  local c,namespace,classname = struct:find(":")
+  if c~=nil then
+    namespace = struct:sub(1,c-1)
+    classname = struct:sub(c+1,-1)
+  else
+    namespace = ''
+    classname = struct
+  end
+
+  if classname~=nil and classname:len()&gt;0 then
+
+    LaunchMonoDataCollector()
+    local class=mono_findClass(namespace,classname)
+    if (class==0) then
+      return nil,"The class "..namespace..":"..classname.." could not be found"
+    end
+    local fields=mono_class_enumFields(class)
+    if (fields==nil) or (#fields==0) then
+      return nil,namespace..":"..classname.." has no fields"
+    end
+
+    for i=1,#fields do
+      if fields[i].name == field then return fields[i].offset end
+    end
+
+  end
+  return nil,"can't obtain the offset "..field..' of '..struct
+end
+function bitness()
+  if getOpenedProcessID()&lt;=0 then return nil end
+  return targetIs64Bit() and '1' or '2'
+end
+{$asm}
+
+[ENABLE]
+// 00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F 10 11 12 13 14 15 16 17 18 19 1A 1B 1C 1D 1E 1F 20 21 22 23 24 25 26 27 28 29 2A 2B 2C 2D 2E 2F 30 31 32 33 34 35 36 37 38 39 3A 3B 3C 3D 3E 3F 40 41 42 43 44 45 46 47 48 49 4A 4B 4C 4D 4E 4F 50 51 52 53 54 55 56 57 58 59 5A 5B 5C 5D 5E 5F 60 61 62 63 64 65 66 67 68 69 6A 6B 6C 6D 6E 6F 70 71 72 73 74 75 76 77 78 79 7A 7B 7C 7D 7E 7F
+globalalloc(__,$4000)
+__:
+dq __
+
+usemono()
+
+__+10:
+{$lua}
+return 'dq '..bitness()
+{$asm}
+__+20:
+{$lua}
+return 'dq '..hx(getMonoOffset('CharacterBattleScript','Stamina'))
+{$asm}
+
+
+getmonostruct(ONCharacterController)
+//getmonostruct(vp_HealthPickup)
+//getmonostruct(vp_PlayerEventHandler)
+//getmonostruct(vp_WeaponReloader)
+//getmonostruct(InventoryManager)
+//getmonostruct(CharacterAttributes)
+//getmonostruct(CraftingPanel)
+//getmonostruct(UpgradePanel)
+
+__+40:
+dq "ONCharacterController:ApplyMovementVelocity"
+//dd "vp_HealthPickup:TryGive"
+//dd "vp_WeaponReloader:OnStop_Reload"
+//dd "vp_PlayerEventHandler.Health"
+//dd "vp_PlayerEventHandler.MaxHealth"
+//dd "FamilySpawner:CharacterAttributes:RandomizeStats"
+
+
+//dd "InventoryManager:GetNumItemsOfType"
+//dd "CraftingPanel:UpdateSelection"
+//dd "UpgradePanel:UpdateSelection"
+//dd __+InventoryManager.m_storageCapacity
+
+[DISABLE]
+//
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>44</ID>
+          <Description>"32bit"</Description>
+          <Options moHideChildren="1"/>
+          <LastState Activated="0"/>
+          <Color>80000008</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[ENABLE]
+assert(__+10,2)
+[DISABLE]
+
+</AssemblerScript>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>32</ID>
+              <Description>"x2 equiment bonus 32bit (activate after enter a game)"</Description>
+              <LastState Activated="0"/>
+              <Color>80000008</Color>
+              <VariableType>Auto Assembler Script</VariableType>
+              <AssemblerScript>usemono()
+getmonostruct(Character)
+define(equ,"Character:CalculateStatus")
+
+[ENABLE]
+//           00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F 10 11 12 13 14 15 16 17 18 19 1A 1B 1C 1D 1E 1F 20 21 22 23 24 25 26 27 28 29 2A 2B 2C 2D 2E 2F 30 31 32 33 34 35 36 37 38 39 3A 3B 3C 3D 3E 3F 40 41 42 43 44 45 46 47 48 49 4A 4B 4C 4D 4E 4F 50 51 52 53 54 55 56 57 58 59 5A 5B 5C 5D 5E 5F 60 61 62 63 64 65 66 67 68 69 6A 6B 6C 6D 6E 6F 70 71 72 73 74 75 76 77 78 79 7A 7B 7C 7D 7E 7F
+aobscan(calc,8b 46 ?? 83 ec 0c 50 39 00 e8 ?? ?? ?? ?? 83 c4 10 83 ec 0c 56 e8 ?? ?? ?? ?? 83 c4 10 83)
+alloc(_eq,$400,calc)
+_eq:
+dq _eq
+_eq+08:
+dq calc
+
+_eq+10: // hook point
+dq calc+15
+
+_eq+18: // return
+dq calc+1a
+
+_eq+20: // address for listEquipmentBonus
+//readmem(calc+28,8)
+_eq+28: // hack point save
+readmem(calc+15,5)
+
+_eq+40:
+reassemble(calc+15)  // or +22,21?
+mov byte ptr[_eq+3e],-1
+add esp,10
+sub esp,8
+push esi
+reassemble(calc+15)
+mov byte ptr[_eq+3f],-1
+jmp calc+1a
+
+calc+15:
+jmp _eq+40
+
+registersymbol(_eq)
+
+[DISABLE]
+[_eq+10]:
+readmem(_eq+28,5)
+
+
+dealloc(_eq)
+unregistersymbol(_eq)
+</AssemblerScript>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>37</ID>
+              <Description>"player's stamina full - 32bit"</Description>
+              <LastState Activated="0"/>
+              <Color>80000008</Color>
+              <VariableType>Auto Assembler Script</VariableType>
+              <AssemblerScript>usemono()
+getmonostruct(CharacterBattleScript)
+define(stm,"CharacterBattleScript:UpdateStatusStamina")
+
+[ENABLE]
+//         00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F 10 11 12 13 14 15 16 17 18 19 1A 1B 1C 1D 1E 1F 20 21 22 23 24 25 26 27 28 29 2A 2B 2C 2D 2E 2F 30 31 32 33 34 35 36 37 38 39 3A 3B 3C 3D 3E 3F 40 41 42 43 44 45 46 47 48 49 4A 4B 4C 4D 4E 4F 50 51 52 53 54 55 56 57 58 59 5A 5B 5C 5D 5E 5F 60 61 62 63 64 65 66 67 68 69 6A 6B 6C 6D 6E 6F 70 71 72 73 74 75 76 77 78 79 7A 7B 7C 7D 7E 7F
+
+assert(stm,55 8b ec 83 ec 08 8b 45 08)
+
+alloc(_stm,$400,stm)
+
+_stm:
+dq _stm
+
+
+
+_stm+20:
+readmem(stm+03,6)
+push ebx
+push eax
+add  eax,[__+20] // stamina
+mov  ebx,[eax+4]
+mov  [eax],ebx
+pop  eax
+pop  ebx
+jmp stm+09
+
+stm+03:
+jmp _stm+20
+nop
+
+registersymbol(_stm)
+
+
+[DISABLE]
+stm:
+db 55 8b ec 83 ec 08 8b 45 08
+
+dealloc(_stm)
+unregistersymbol(_stm)
+
+</AssemblerScript>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>34</ID>
+              <Description>"decrease item - 32bit"</Description>
+              <LastState Activated="0"/>
+              <Color>80000008</Color>
+              <VariableType>Auto Assembler Script</VariableType>
+              <AssemblerScript>usemono()
+getmonostruct(Inventory)
+define(itm,"Inventory:DecreaseItem")
+
+[ENABLE]
+alloc(_itm,$400,itm)
+
+assert(itm,55 8b ec 53 57 56)
+
+_itm:
+dq _itm
+
+_itm+08: // hack point
+dq itm
+_itm+10: // return
+dq itm+06
+_itm+18: // hack point save
+readmem(itm,6)
+
+_itm+20: // enable mode, 0 == off, 1 = effetive with ctrl, 2 = effective w/o ctrl
+dd 1
+
+
+label(_notmod)
+label(_domod)
+
+_itm+40:// free eax
+mov   byte ptr[_itm+3f],-1
+cmp   byte ptr[_itm+20],0
+jle   _notmod
+push  0a2
+call  GetAsyncKeyState
+mov   [_itm+38],eax
+shr   eax,0f
+test  eax,1
+je    @f
+// pressing
+cmp   byte ptr[_itm+20],1
+je    _domod
+jmp   _notmod
+@@:
+// not pressing
+cmp   byte ptr[_itm+20],2
+jne   _notmod
+_domod:
+xor eax,eax
+inc eax
+ret
+_notmod:
+readmem(itm,6)
+jmp itm+6
+
+
+itm:
+jmp _itm+40
+nop
+
+
+registersymbol(_itm)
+
+
+[DISABLE]
+[_itm+08]:
+readmem(_itm+18,6)
+
+dealloc(_itm)
+unregistersymbol(_itm)
+
+</AssemblerScript>
+              <CheatEntries>
+                <CheatEntry>
+                  <ID>35</ID>
+                  <Description>"mode"</Description>
+                  <DropDownList ReadOnly="1" DescriptionOnly="1" DisplayValueAsItem="1">0:off
+1:normal (-ve) w/o ctrl
+2:normal (-ve) with ctrl
+</DropDownList>
+                  <LastState Value="1" Activated="0" RealAddress="04390020"/>
+                  <Color>80000008</Color>
+                  <VariableType>Byte</VariableType>
+                  <Address>_itm</Address>
+                  <Offsets>
+                    <Offset>20</Offset>
+                  </Offsets>
+                </CheatEntry>
+              </CheatEntries>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>45</ID>
+          <Description>"64bit"</Description>
+          <Options moHideChildren="1"/>
+          <LastState Activated="1"/>
+          <Color>80000008</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[ENABLE]
+assert(__+10,1)
+[DISABLE]
+
+</AssemblerScript>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>39</ID>
+              <Description>"x2 equiment bonus 64bit (activate after enter a game)"</Description>
+              <LastState Activated="1"/>
+              <Color>80000008</Color>
+              <VariableType>Auto Assembler Script</VariableType>
+              <AssemblerScript>usemono()
+getmonostruct(Character)
+define(equ,"Character:CalculateStatus")
+
+[ENABLE]
+//           00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F 10 11 12 13 14 15 16 17 18 19 1A 1B 1C 1D 1E 1F 20 21 22 23 24 25 26 27 28 29 2A 2B 2C 2D 2E 2F 30 31 32 33 34 35 36 37 38 39 3A 3B 3C 3D 3E 3F 40 41 42 43 44 45 46 47 48 49 4A 4B 4C 4D 4E 4F 50 51 52 53 54 55 56 57 58 59 5A 5B 5C 5D 5E 5F 60 61 62 63 64 65 66 67 68 69 6A 6B 6C 6D 6E 6F 70 71 72 73 74 75 76 77 78 79 7A 7B 7C 7D 7E 7F
+aobscan(calc,48 8b 47 ?? 48 8b c8 48 83 ec 20 83 38 00 49 bb ?? ?? ?? ?? ?? ?? ?? ?? 41 ff d3 48 83 c4 20 48 8b cf 48 83 ec 20 49 bb ?? ?? ?? ?? ?? ?? ?? ?? 41 ff d3 48 83 c4 20)
+alloc(_eq,$400,calc)
+_eq:
+dq _eq
+_eq+08:
+dq calc
+
+_eq+10: // hook point
+dq calc+26
+
+_eq+18: // return
+dq calc+33
+
+_eq+20: // address for listEquipmentBonus
+//readmem(calc+28,8)
+_eq+28: // hack point save
+readmem(calc+26,13)
+
+_eq+40:
+readmem(calc+26,13)
+mov rcx,rdi
+readmem(calc+26,13)
+//mov r11,calc+33
+jmp calc+33
+
+calc+26:
+//mov r11,_eq+40
+//jmp r11d
+jmp _eq+40
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+
+registersymbol(_eq)
+
+[DISABLE]
+[_eq+10]:
+readmem(_eq+28,13)
+
+
+dealloc(_eq)
+unregistersymbol(_eq)
+</AssemblerScript>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>40</ID>
+              <Description>"player's stamina full - 64bit"</Description>
+              <LastState Activated="1"/>
+              <Color>80000008</Color>
+              <VariableType>Auto Assembler Script</VariableType>
+              <AssemblerScript>usemono()
+getmonostruct(CharacterBattleScript)
+define(stm,"CharacterBattleScript:UpdateStatusStamina")
+
+[ENABLE]
+//         00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F 10 11 12 13 14 15 16 17 18 19 1A 1B 1C 1D 1E 1F 20 21 22 23 24 25 26 27 28 29 2A 2B 2C 2D 2E 2F 30 31 32 33 34 35 36 37 38 39 3A 3B 3C 3D 3E 3F 40 41 42 43 44 45 46 47 48 49 4A 4B 4C 4D 4E 4F 50 51 52 53 54 55 56 57 58 59 5A 5B 5C 5D 5E 5F 60 61 62 63 64 65 66 67 68 69 6A 6B 6C 6D 6E 6F 70 71 72 73 74 75 76 77 78 79 7A 7B 7C 7D 7E 7F
+
+assert(stm,55 48 8b ec 56 48)
+
+alloc(_stm,$400,stm)
+
+_stm:
+dq _stm
+
+_stm+20:// free esi
+readmem(stm,5)
+push rcx
+add  rcx,[__+20]// stamina
+mov esi,[rcx+4]
+mov [rcx],esi
+pop  rcx
+jmp stm+05
+
+stm:
+jmp _stm+20
+
+
+registersymbol(_stm)
+
+
+[DISABLE]
+stm:
+db 55 48 8b ec 56 48
+
+dealloc(_stm)
+unregistersymbol(_stm)
+
+</AssemblerScript>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>41</ID>
+              <Description>"decrease item - 64bit &lt;not work for ctrl-key...&gt;"</Description>
+              <LastState Activated="1"/>
+              <Color>80000008</Color>
+              <VariableType>Auto Assembler Script</VariableType>
+              <AssemblerScript>usemono()
+getmonostruct(Inventory)
+define(itm,"Inventory:DecreaseItem")
+
+[ENABLE]
+alloc(_itm,$400,itm)
+
+assert(itm,55 48 8b ec 56 57)
+
+_itm:
+dq _itm
+
+_itm+08: // hack point
+dq itm
+_itm+10: // return
+dq itm+05
+_itm+18: // hack point save
+readmem(itm,5)
+
+_itm+20: // enable mode, 0 == off, 1 = effetive with ctrl, 2 = effective w/o ctrl
+dd 1
+
+
+label(_notmod)
+label(_domod)
+
+_itm+40:// free eax
+push  rcx
+mov   byte ptr[_itm+2f],-1
+cmp   byte ptr[_itm+20],0
+jle   _notmod
+mov   rcx,0a2
+mov   [_itm+34],eax
+call  GetAsyncKeyState
+mov   [_itm+38],eax
+and   eax,8000
+mov   [_itm+34],eax
+test  eax,eax
+je    @f
+// pressing
+cmp   byte ptr[_itm+20],1
+je    _domod
+jmp   _notmod
+@@:
+// not pressing
+cmp   byte ptr[_itm+20],2
+jne   _notmod
+_domod:
+pop rcx
+xor rax,rax
+inc rax
+ret
+_notmod:
+pop rcx
+readmem(itm,5)
+jmp itm+5
+
+
+itm:
+jmp _itm+40
+
+
+registersymbol(_itm)
+
+
+[DISABLE]
+itm:
+db 55 48 8b ec 56 57
+
+dealloc(_itm)
+unregistersymbol(_itm)
+
+</AssemblerScript>
+              <CheatEntries>
+                <CheatEntry>
+                  <ID>42</ID>
+                  <Description>"mode"</Description>
+                  <DropDownList ReadOnly="1" DescriptionOnly="1" DisplayValueAsItem="1">0:off
+1:normal (-ve) w/o ctrl
+2:normal (-ve) with ctrl
+</DropDownList>
+                  <LastState Value="1" Activated="0" RealAddress="04390020"/>
+                  <Color>80000008</Color>
+                  <VariableType>Byte</VariableType>
+                  <Address>_itm</Address>
+                  <Offsets>
+                    <Offset>20</Offset>
+                  </Offsets>
+                  <Hotkeys>
+                    <Hotkey>
+                      <Action>Set Value</Action>
+                      <Keys>
+                        <Key>17</Key>
+                        <Key>49</Key>
+                      </Keys>
+                      <Value>0</Value>
+                      <Description>off</Description>
+                      <ID>0</ID>
+                    </Hotkey>
+                    <Hotkey>
+                      <Action>Set Value</Action>
+                      <Keys>
+                        <Key>17</Key>
+                        <Key>50</Key>
+                      </Keys>
+                      <Value>1</Value>
+                      <Description>on-&gt;ctrl for non decreasing (bug...)</Description>
+                      <ID>1</ID>
+                    </Hotkey>
+                  </Hotkeys>
+                </CheatEntry>
+              </CheatEntries>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols>
+    <SymbolEntry>
+      <Name>__</Name>
+      <Address>03024000</Address>
+    </SymbolEntry>
+  </UserdefinedSymbols>
+</CheatTable>

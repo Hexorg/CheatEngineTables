@@ -1,0 +1,1948 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="19">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>40</ID>
+      <Description>"Activate (Numpad 0)"</Description>
+      <Options moHideChildren="1" moActivateChildrenAsWell="1" moDeactivateChildrenAsWell="1"/>
+      <LastState/>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>[ENABLE]
+globalalloc(cameraBase, 4)
+alloc(newmem,$1000)
+aobscan(cameraBaseHook, D9 83 08 02 00 00 DA E9 89 85 18 FF FF FF DF E0 F6 C4 44 7B 4B) // should be unique
+
+label(return)
+
+registersymbol(cameraBaseHook)
+
+newmem:
+  mov [cameraBase], ebx
+  fld dword ptr [ebx+00000208]
+  jmp return
+
+cameraBase:
+
+cameraBaseHook:
+  jmp newmem
+  nop
+return:
+
+[DISABLE]
+cameraBaseHook:
+  db D9 83 08 02 00 00
+
+dealloc(newmem)
+unregistersymbol(cameraBaseHook)
+</AssemblerScript>
+      <Hotkeys>
+        <Hotkey>
+          <Action>Toggle Activation</Action>
+          <Keys>
+            <Key>96</Key>
+          </Keys>
+          <ID>0</ID>
+        </Hotkey>
+      </Hotkeys>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>77</ID>
+          <Description>"Free Fly Camera (Numpad: 8, 4, 5, 6, 9, 3)"</Description>
+          <Options moDeactivateChildrenAsWell="1"/>
+          <LastState/>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[ENABLE]
+alloc(flyMode, 2048)
+alloc(flyEnabled, 1)
+createthread(flyMode)
+
+label(loopStart)
+label(skipAll)
+
+label(moveForward)
+label(skipForward)
+
+label(moveLeft)
+label(skipLeft)
+
+label(moveRight)
+label(skipRight)
+
+label(moveBackward)
+label(skipBackward)
+
+label(incZ)
+label(skipIncZ)
+
+label(decZ)
+label(skipDecZ)
+
+label(modifier)
+
+registersymbol(flyMode)
+registersymbol(flyEnabled)
+registersymbol(modifier)
+
+flyEnabled:
+  db 01
+
+flyMode:
+
+  //Loop until cheat is disabled
+  loopStart:
+
+    //Create input delay
+    push 05
+    call kernel32.Sleep
+
+    //Grab Camera Base
+    mov edi, [cameraBase]
+    //mov esi, [cameraBase2]
+
+    cmp edi, 0
+    je skipAll
+
+    //VK_NUMPAD8
+    push 68
+    call GetAsyncKeyState
+    shr ax,#15
+    cmp ax,1
+    jne skipForward
+        call moveForward
+    skipForward:
+
+    //VK_NUMPAD4
+    push 64
+    call GetAsyncKeyState
+    shr ax,#15
+    cmp ax,1
+    jne skipLeft
+        call moveLeft
+    skipLeft:
+
+    //VK_NUMPAD6
+    push 66
+    call GetAsyncKeyState
+    shr ax,#15
+    cmp ax,1
+    jne skipRight
+        call moveRight
+    skipRight:
+
+    //VK_NUMPAD5
+    push 65
+    call GetAsyncKeyState
+    shr ax,#15
+    cmp ax,1
+    jne skipBackward
+        call moveBackward
+    skipBackward:
+
+    //VK_NUMPAD9
+    push 69
+    call GetAsyncKeyState
+    shr ax,#15
+    cmp ax,1
+    jne skipIncZ
+        call incZ
+    skipIncZ:
+
+    //VK_NUMPAD3
+    push 63
+    call GetAsyncKeyState
+    shr ax,#15
+    cmp ax,1
+    jne skipDecZ
+        call decZ
+    skipDecZ:
+
+    skipAll:
+
+    //Clear Registers
+    xorps xmm0,xmm0
+    xorps xmm1,xmm1
+    xorps xmm2,xmm2
+    xorps xmm3,xmm3
+    xorps xmm4,xmm4
+    xorps xmm5,xmm5
+  cmp [flyEnabled], 1
+  je loopStart
+
+  dealloc(flyEnabled)
+
+  //Terminate thread
+  push 0                      //dwExitCode = 0
+  call GetCurrentThread
+  push eax                    //hThread = GetCurrentThread()
+  push 0                      //return address = NULL
+
+  push 8000                   //dwFreeType = MEM_RELEASE
+  push 0                      //dwSize = 0
+  push flyMode                //dwAddress = mythread
+  push TerminateThread        //return address = TerminateThread
+  jmp VirtualFree
+
+moveForward:
+    movss xmm0,[edi-218]   // Cosine Value
+    movss xmm1,[edi-1F8]   // Sine Value
+    mulss xmm0,[modifier]  // Multiply Cosine by Speed
+    mulss xmm1,[modifier]  // Multiply Sine by Speed
+
+    //Load XYZ
+    movss xmm2, [edi+184] // Load X
+    movss xmm3, [edi+1A4] // Load Y
+    movss xmm4, [edi+194] // Load Z
+
+    subss xmm3,xmm0
+    addss xmm2,xmm1
+
+    movss xmm5,[edi+204]  // Load Z Pitch
+    mulss xmm5,[modifier]// Multiply pitch by modifier
+
+    addss xmm4,xmm5      // Add result to Z
+
+    //Store XYZ
+    movss [edi+184], xmm2 //Store X
+    movss [edi+1A4], xmm3 //Store Y
+    movss [edi+194], xmm4 //Store Z
+ret
+
+moveLeft:
+    movss xmm0,[edi-218]   // Cosine Value
+    movss xmm1,[edi-1F8]   // Sine Value
+    mulss xmm0,[modifier]  // Multiply Cosine by Speed
+    mulss xmm1,[modifier]  // Multiply Sine by Speed
+
+    //Load XYZ
+    movss xmm2, [edi+184] // Load X
+    movss xmm3, [edi+1A4] // Load Y
+
+    subss xmm2,xmm0
+    subss xmm3,xmm1
+
+    //Store XYZ
+    movss [edi+184], xmm2 //Store X
+    movss [edi+1A4], xmm3 //Store Y
+ret
+
+moveRight:
+    movss xmm0,[edi-218]   // Cosine Value
+    movss xmm1,[edi-1F8]   // Sine Value
+    mulss xmm0,[modifier]  // Multiply Cosine by Speed
+    mulss xmm1,[modifier]  // Multiply Sine by Speed
+
+    //Load XYZ
+    movss xmm2, [edi+184] // Load X
+    movss xmm3, [edi+1A4] // Load Y
+
+    addss xmm2,xmm0
+    addss xmm3,xmm1
+
+    //Store XYZ
+    movss [edi+184], xmm2 //Store X
+    movss [edi+1A4], xmm3 //Store Y
+ret
+
+moveBackward:
+    movss xmm0,[edi-218]   // Cosine Value
+    movss xmm1,[edi-1F8]   // Sine Value
+    mulss xmm0,[modifier]  // Multiply Cosine by Speed
+    mulss xmm1,[modifier]  // Multiply Sine by Speed
+
+    //Load XYZ
+    movss xmm2, [edi+184] // Load X
+    movss xmm3, [edi+1A4] // Load Y
+    movss xmm4, [edi+194] // Load Z
+
+    addss xmm3,xmm0
+    subss xmm2,xmm1
+
+    movss xmm5,[edi+204]  // Load Z Pitch
+    mulss xmm5,[modifier]// Multiply pitch by modifier
+
+    subss xmm4,xmm5      // Add result to Z
+
+    //Store XYZ
+    movss [edi+184], xmm2 //Store X
+    movss [edi+1A4], xmm3 //Store Y
+    movss [edi+194], xmm4 //Store Z
+ret
+
+//Change Z
+incZ:
+  fld dword ptr [edi+194]     // Load Z
+  fadd dword ptr [modifier] // Add Modifier
+  fstp dword ptr [edi+194]    // Store Z
+ret
+
+decZ:
+  fld dword ptr [edi+194]     // Load Z
+  fsub dword ptr [modifier] // Subtract Modifier
+  fstp dword ptr [edi+194]    // Store Z
+ret
+
+modifier:
+  dd (float)40.00
+
+[DISABLE]
+flyEnabled:
+  db 00
+
+unregistersymbol(flyMode)
+unregistersymbol(flyEnabled)
+unregistersymbol(modifier)
+</AssemblerScript>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>85</ID>
+              <Description>"Fly Speed"</Description>
+              <VariableType>Float</VariableType>
+              <Address>modifier</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>41</ID>
+              <Description>"Base Address"</Description>
+              <VariableType>4 Bytes</VariableType>
+              <Address>cameraBase</Address>
+              <Offsets>
+                <Offset>0</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>42</ID>
+              <Description>"X Coord"</Description>
+              <VariableType>Float</VariableType>
+              <Address>cameraBase</Address>
+              <Offsets>
+                <Offset>184</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>44</ID>
+              <Description>"Y Coord"</Description>
+              <VariableType>Float</VariableType>
+              <Address>cameraBase</Address>
+              <Offsets>
+                <Offset>1A4</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>43</ID>
+              <Description>"Z Coord"</Description>
+              <VariableType>Float</VariableType>
+              <Address>cameraBase</Address>
+              <Offsets>
+                <Offset>194</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>82</ID>
+              <Description>"Cosine"</Description>
+              <VariableType>Float</VariableType>
+              <Address>cameraBase</Address>
+              <Offsets>
+                <Offset>FFFFFDE8</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>83</ID>
+              <Description>"Sine"</Description>
+              <VariableType>Float</VariableType>
+              <Address>cameraBase</Address>
+              <Offsets>
+                <Offset>FFFFFE08</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>84</ID>
+              <Description>"Pitch"</Description>
+              <VariableType>Float</VariableType>
+              <Address>cameraBase</Address>
+              <Offsets>
+                <Offset>204</Offset>
+              </Offsets>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+  </CheatEntries>
+  <CheatCodes>
+    <CodeEntry>
+      <Description>Change of je 00F18E49</Description>
+      <Address>00F18E02</Address>
+      <ModuleName>bio4.exe</ModuleName>
+      <ModuleNameOffset>568E02</ModuleNameOffset>
+      <Before>
+        <Byte>00</Byte>
+        <Byte>00</Byte>
+        <Byte>90</Byte>
+        <Byte>85</Byte>
+        <Byte>1E</Byte>
+      </Before>
+      <Actual>
+        <Byte>74</Byte>
+        <Byte>45</Byte>
+      </Actual>
+      <After>
+        <Byte>85</Byte>
+        <Byte>5E</Byte>
+        <Byte>04</Byte>
+        <Byte>74</Byte>
+        <Byte>17</Byte>
+      </After>
+    </CodeEntry>
+    <CodeEntry>
+      <Description>Change of je 00F18E20</Description>
+      <Address>00F18E07</Address>
+      <ModuleName>bio4.exe</ModuleName>
+      <ModuleNameOffset>568E07</ModuleNameOffset>
+      <Before>
+        <Byte>90</Byte>
+        <Byte>90</Byte>
+        <Byte>85</Byte>
+        <Byte>5E</Byte>
+        <Byte>04</Byte>
+      </Before>
+      <Actual>
+        <Byte>74</Byte>
+        <Byte>17</Byte>
+      </Actual>
+      <After>
+        <Byte>09</Byte>
+        <Byte>5E</Byte>
+        <Byte>0C</Byte>
+        <Byte>09</Byte>
+        <Byte>5E</Byte>
+      </After>
+    </CodeEntry>
+    <CodeEntry>
+      <Description>Change of je 00F18F8E</Description>
+      <Address>00F18F1D</Address>
+      <ModuleName>bio4.exe</ModuleName>
+      <ModuleNameOffset>568F1D</ModuleNameOffset>
+      <Before>
+        <Byte>FF</Byte>
+        <Byte>8B</Byte>
+        <Byte>1E</Byte>
+        <Byte>3B</Byte>
+        <Byte>DA</Byte>
+      </Before>
+      <Actual>
+        <Byte>74</Byte>
+        <Byte>6F</Byte>
+      </Actual>
+      <After>
+        <Byte>8B</Byte>
+        <Byte>15</Byte>
+        <Byte>9C</Byte>
+        <Byte>F7</Byte>
+        <Byte>20</Byte>
+      </After>
+    </CodeEntry>
+    <CodeEntry>
+      <Description>Change of je 00F16004</Description>
+      <Address>00F15FF2</Address>
+      <ModuleName>bio4.exe</ModuleName>
+      <ModuleNameOffset>565FF2</ModuleNameOffset>
+      <Before>
+        <Byte>00</Byte>
+        <Byte>00</Byte>
+        <Byte>00</Byte>
+        <Byte>01</Byte>
+        <Byte>00</Byte>
+      </Before>
+      <Actual>
+        <Byte>74</Byte>
+        <Byte>10</Byte>
+      </Actual>
+      <After>
+        <Byte>C6</Byte>
+        <Byte>85</Byte>
+        <Byte>FF</Byte>
+        <Byte>FA</Byte>
+        <Byte>FF</Byte>
+      </After>
+    </CodeEntry>
+    <CodeEntry>
+      <Description>Change of je 00F194E0</Description>
+      <Address>00F16032</Address>
+      <ModuleName>bio4.exe</ModuleName>
+      <ModuleNameOffset>566032</ModuleNameOffset>
+      <Before>
+        <Byte>83</Byte>
+        <Byte>C4</Byte>
+        <Byte>04</Byte>
+        <Byte>85</Byte>
+        <Byte>C0</Byte>
+      </Before>
+      <Actual>
+        <Byte>0F</Byte>
+        <Byte>84</Byte>
+        <Byte>A8</Byte>
+        <Byte>34</Byte>
+        <Byte>00</Byte>
+        <Byte>00</Byte>
+      </Actual>
+      <After>
+        <Byte>E8</Byte>
+        <Byte>E9</Byte>
+        <Byte>06</Byte>
+        <Byte>AA</Byte>
+        <Byte>FF</Byte>
+      </After>
+    </CodeEntry>
+    <CodeEntry>
+      <Description>Change of jne 00F1799B</Description>
+      <Address>00F17857</Address>
+      <ModuleName>bio4.exe</ModuleName>
+      <ModuleNameOffset>567857</ModuleNameOffset>
+      <Before>
+        <Byte>DD</Byte>
+        <Byte>D8</Byte>
+        <Byte>83</Byte>
+        <Byte>FE</Byte>
+        <Byte>02</Byte>
+      </Before>
+      <Actual>
+        <Byte>0F</Byte>
+        <Byte>85</Byte>
+        <Byte>3E</Byte>
+        <Byte>01</Byte>
+        <Byte>00</Byte>
+        <Byte>00</Byte>
+      </Actual>
+      <After>
+        <Byte>09</Byte>
+        <Byte>1D</Byte>
+        <Byte>88</Byte>
+        <Byte>F6</Byte>
+        <Byte>20</Byte>
+      </After>
+    </CodeEntry>
+    <CodeEntry>
+      <Description>Change of jne 00F17854</Description>
+      <Address>00F1783D</Address>
+      <ModuleName>bio4.exe</ModuleName>
+      <ModuleNameOffset>56783D</ModuleNameOffset>
+      <Before>
+        <Byte>00</Byte>
+        <Byte>75</Byte>
+        <Byte>19</Byte>
+        <Byte>3B</Byte>
+        <Byte>F9</Byte>
+      </Before>
+      <Actual>
+        <Byte>75</Byte>
+        <Byte>15</Byte>
+      </Actual>
+      <After>
+        <Byte>83</Byte>
+        <Byte>0D</Byte>
+        <Byte>88</Byte>
+        <Byte>F6</Byte>
+        <Byte>20</Byte>
+      </After>
+    </CodeEntry>
+    <CodeEntry>
+      <Description>Change of jne 00F17854</Description>
+      <Address>00F17839</Address>
+      <ModuleName>bio4.exe</ModuleName>
+      <ModuleNameOffset>567839</ModuleNameOffset>
+      <Before>
+        <Byte>FB</Byte>
+        <Byte>00</Byte>
+        <Byte>01</Byte>
+        <Byte>00</Byte>
+        <Byte>00</Byte>
+      </Before>
+      <Actual>
+        <Byte>75</Byte>
+        <Byte>19</Byte>
+      </Actual>
+      <After>
+        <Byte>3B</Byte>
+        <Byte>F9</Byte>
+        <Byte>90</Byte>
+        <Byte>90</Byte>
+        <Byte>83</Byte>
+      </After>
+    </CodeEntry>
+    <CodeEntry>
+      <Description>Change of jne 00F17833</Description>
+      <Address>00F17812</Address>
+      <ModuleName>bio4.exe</ModuleName>
+      <ModuleNameOffset>567812</ModuleNameOffset>
+      <Before>
+        <Byte>10</Byte>
+        <Byte>75</Byte>
+        <Byte>23</Byte>
+        <Byte>3B</Byte>
+        <Byte>F9</Byte>
+      </Before>
+      <Actual>
+        <Byte>75</Byte>
+        <Byte>1F</Byte>
+      </Actual>
+      <After>
+        <Byte>81</Byte>
+        <Byte>0D</Byte>
+        <Byte>88</Byte>
+        <Byte>F6</Byte>
+        <Byte>20</Byte>
+      </After>
+    </CodeEntry>
+    <CodeEntry>
+      <Description>Change of je 00F18144</Description>
+      <Address>00F1812A</Address>
+      <ModuleName>bio4.exe</ModuleName>
+      <ModuleNameOffset>56812A</ModuleNameOffset>
+      <Before>
+        <Byte>20</Byte>
+        <Byte>33</Byte>
+        <Byte>C9</Byte>
+        <Byte>0B</Byte>
+        <Byte>C1</Byte>
+      </Before>
+      <Actual>
+        <Byte>74</Byte>
+        <Byte>18</Byte>
+      </Actual>
+      <After>
+        <Byte>8B</Byte>
+        <Byte>0D</Byte>
+        <Byte>8C</Byte>
+        <Byte>F6</Byte>
+        <Byte>20</Byte>
+      </After>
+    </CodeEntry>
+    <CodeEntry>
+      <Description>Change of je 009D890C</Description>
+      <Address>009D8906</Address>
+      <ModuleName>bio4.exe</ModuleName>
+      <ModuleNameOffset>28906</ModuleNameOffset>
+      <Before>
+        <Byte>23</Byte>
+        <Byte>4D</Byte>
+        <Byte>0C</Byte>
+        <Byte>0B</Byte>
+        <Byte>C1</Byte>
+      </Before>
+      <Actual>
+        <Byte>74</Byte>
+        <Byte>04</Byte>
+      </Actual>
+      <After>
+        <Byte>B0</Byte>
+        <Byte>01</Byte>
+        <Byte>5D</Byte>
+        <Byte>C3</Byte>
+        <Byte>32</Byte>
+      </After>
+    </CodeEntry>
+    <CodeEntry>
+      <Description>Change of je 00C2D0B4</Description>
+      <Address>00C2D09D</Address>
+      <ModuleName>bio4.exe</ModuleName>
+      <ModuleNameOffset>27D09D</ModuleNameOffset>
+      <Before>
+        <Byte>83</Byte>
+        <Byte>C4</Byte>
+        <Byte>08</Byte>
+        <Byte>84</Byte>
+        <Byte>C0</Byte>
+      </Before>
+      <Actual>
+        <Byte>74</Byte>
+        <Byte>15</Byte>
+      </Actual>
+      <After>
+        <Byte>C7</Byte>
+        <Byte>86</Byte>
+        <Byte>FC</Byte>
+        <Byte>00</Byte>
+        <Byte>00</Byte>
+      </After>
+    </CodeEntry>
+    <CodeEntry>
+      <Description>Change of je 00C2D0D8</Description>
+      <Address>00C2D0C1</Address>
+      <ModuleName>bio4.exe</ModuleName>
+      <ModuleNameOffset>27D0C1</ModuleNameOffset>
+      <Before>
+        <Byte>83</Byte>
+        <Byte>C4</Byte>
+        <Byte>08</Byte>
+        <Byte>84</Byte>
+        <Byte>C0</Byte>
+      </Before>
+      <Actual>
+        <Byte>74</Byte>
+        <Byte>15</Byte>
+      </Actual>
+      <After>
+        <Byte>C7</Byte>
+        <Byte>86</Byte>
+        <Byte>FC</Byte>
+        <Byte>00</Byte>
+        <Byte>00</Byte>
+      </After>
+    </CodeEntry>
+    <CodeEntry>
+      <Description>Change of je 00C2D212</Description>
+      <Address>00C2D1F7</Address>
+      <ModuleName>bio4.exe</ModuleName>
+      <ModuleNameOffset>27D1F7</ModuleNameOffset>
+      <Before>
+        <Byte>E4</Byte>
+        <Byte>FF</Byte>
+        <Byte>FF</Byte>
+        <Byte>85</Byte>
+        <Byte>C0</Byte>
+      </Before>
+      <Actual>
+        <Byte>74</Byte>
+        <Byte>19</Byte>
+      </Actual>
+      <After>
+        <Byte>53</Byte>
+        <Byte>53</Byte>
+        <Byte>6A</Byte>
+        <Byte>01</Byte>
+        <Byte>53</Byte>
+      </After>
+    </CodeEntry>
+    <CodeEntry>
+      <Description>Change of je 00C2D291</Description>
+      <Address>00C2D225</Address>
+      <ModuleName>bio4.exe</ModuleName>
+      <ModuleNameOffset>27D225</ModuleNameOffset>
+      <Before>
+        <Byte>83</Byte>
+        <Byte>C4</Byte>
+        <Byte>04</Byte>
+        <Byte>85</Byte>
+        <Byte>C0</Byte>
+      </Before>
+      <Actual>
+        <Byte>74</Byte>
+        <Byte>6A</Byte>
+      </Actual>
+      <After>
+        <Byte>57</Byte>
+        <Byte>8B</Byte>
+        <Byte>7D</Byte>
+        <Byte>F8</Byte>
+        <Byte>8B</Byte>
+      </After>
+    </CodeEntry>
+    <CodeEntry>
+      <Description>Change of je 00C2D252</Description>
+      <Address>00C2D234</Address>
+      <ModuleName>bio4.exe</ModuleName>
+      <ModuleNameOffset>27D234</ModuleNameOffset>
+      <Before>
+        <Byte>D9</Byte>
+        <Byte>D8</Byte>
+        <Byte>FF</Byte>
+        <Byte>A8</Byte>
+        <Byte>01</Byte>
+      </Before>
+      <Actual>
+        <Byte>74</Byte>
+        <Byte>1C</Byte>
+      </Actual>
+      <After>
+        <Byte>80</Byte>
+        <Byte>7D</Byte>
+        <Byte>FF</Byte>
+        <Byte>02</Byte>
+        <Byte>53</Byte>
+      </After>
+    </CodeEntry>
+    <CodeEntry>
+      <Description>Change of je 00C2D2A5</Description>
+      <Address>00C2D29C</Address>
+      <ModuleName>bio4.exe</ModuleName>
+      <ModuleNameOffset>27D29C</ModuleNameOffset>
+      <Before>
+        <Byte>A9</Byte>
+        <Byte>00</Byte>
+        <Byte>00</Byte>
+        <Byte>20</Byte>
+        <Byte>00</Byte>
+      </Before>
+      <Actual>
+        <Byte>74</Byte>
+        <Byte>07</Byte>
+      </Actual>
+      <After>
+        <Byte>B8</Byte>
+        <Byte>01</Byte>
+        <Byte>00</Byte>
+        <Byte>00</Byte>
+        <Byte>00</Byte>
+      </After>
+    </CodeEntry>
+    <CodeEntry>
+      <Description>Change of je 00C2D2B3</Description>
+      <Address>00C2D2AA</Address>
+      <ModuleName>bio4.exe</ModuleName>
+      <ModuleNameOffset>27D2AA</ModuleNameOffset>
+      <Before>
+        <Byte>A9</Byte>
+        <Byte>00</Byte>
+        <Byte>20</Byte>
+        <Byte>00</Byte>
+        <Byte>00</Byte>
+      </Before>
+      <Actual>
+        <Byte>74</Byte>
+        <Byte>07</Byte>
+      </Actual>
+      <After>
+        <Byte>B8</Byte>
+        <Byte>02</Byte>
+        <Byte>00</Byte>
+        <Byte>00</Byte>
+        <Byte>00</Byte>
+      </After>
+    </CodeEntry>
+    <CodeEntry>
+      <Description>Change of ja 00C2D318</Description>
+      <Address>00C2D2C3</Address>
+      <ModuleName>bio4.exe</ModuleName>
+      <ModuleNameOffset>27D2C3</ModuleNameOffset>
+      <Before>
+        <Byte>03</Byte>
+        <Byte>48</Byte>
+        <Byte>83</Byte>
+        <Byte>F8</Byte>
+        <Byte>03</Byte>
+      </Before>
+      <Actual>
+        <Byte>77</Byte>
+        <Byte>53</Byte>
+      </Actual>
+      <After>
+        <Byte>FF</Byte>
+        <Byte>24</Byte>
+        <Byte>85</Byte>
+        <Byte>2C</Byte>
+        <Byte>D3</Byte>
+      </After>
+    </CodeEntry>
+    <CodeEntry>
+      <Description>Change of jne 00C968FB</Description>
+      <Address>00C968EF</Address>
+      <ModuleName>bio4.exe</ModuleName>
+      <ModuleNameOffset>3068EF</ModuleNameOffset>
+      <Before>
+        <Byte>08</Byte>
+        <Byte>8B</Byte>
+        <Byte>D9</Byte>
+        <Byte>85</Byte>
+        <Byte>FF</Byte>
+      </Before>
+      <Actual>
+        <Byte>75</Byte>
+        <Byte>0A</Byte>
+      </Actual>
+      <After>
+        <Byte>5F</Byte>
+        <Byte>33</Byte>
+        <Byte>C0</Byte>
+        <Byte>5B</Byte>
+        <Byte>8B</Byte>
+      </After>
+    </CodeEntry>
+    <CodeEntry>
+      <Description>Change of je 00BCE61F</Description>
+      <Address>00BCE616</Address>
+      <ModuleName>bio4.exe</ModuleName>
+      <ModuleNameOffset>23E616</ModuleNameOffset>
+      <Before>
+        <Byte>A9</Byte>
+        <Byte>00</Byte>
+        <Byte>08</Byte>
+        <Byte>00</Byte>
+        <Byte>00</Byte>
+      </Before>
+      <Actual>
+        <Byte>74</Byte>
+        <Byte>07</Byte>
+      </Actual>
+      <After>
+        <Byte>8B</Byte>
+        <Byte>11</Byte>
+        <Byte>8B</Byte>
+        <Byte>42</Byte>
+        <Byte>10</Byte>
+      </After>
+    </CodeEntry>
+    <CodeEntry>
+      <Description>Change of je 00BCE618</Description>
+      <Address>00BCE60F</Address>
+      <ModuleName>bio4.exe</ModuleName>
+      <ModuleNameOffset>23E60F</ModuleNameOffset>
+      <Before>
+        <Byte>96</Byte>
+        <Byte>20</Byte>
+        <Byte>50</Byte>
+        <Byte>00</Byte>
+        <Byte>00</Byte>
+      </Before>
+      <Actual>
+        <Byte>74</Byte>
+        <Byte>07</Byte>
+      </Actual>
+      <After>
+        <Byte>A9</Byte>
+        <Byte>00</Byte>
+        <Byte>08</Byte>
+        <Byte>00</Byte>
+        <Byte>00</Byte>
+      </After>
+    </CodeEntry>
+    <CodeEntry>
+      <Description>Change of je 00BCE61F</Description>
+      <Address>00BCE607</Address>
+      <ModuleName>bio4.exe</ModuleName>
+      <ModuleNameOffset>23E607</ModuleNameOffset>
+      <Before>
+        <Byte>8B</Byte>
+        <Byte>41</Byte>
+        <Byte>04</Byte>
+        <Byte>A8</Byte>
+        <Byte>20</Byte>
+      </Before>
+      <Actual>
+        <Byte>74</Byte>
+        <Byte>16</Byte>
+      </Actual>
+      <After>
+        <Byte>85</Byte>
+        <Byte>96</Byte>
+        <Byte>20</Byte>
+        <Byte>50</Byte>
+        <Byte>00</Byte>
+      </After>
+    </CodeEntry>
+    <CodeEntry>
+      <Description>Change of jne 00BCE61F</Description>
+      <Address>00BCE5FA</Address>
+      <ModuleName>bio4.exe</ModuleName>
+      <ModuleNameOffset>23E5FA</ModuleNameOffset>
+      <Before>
+        <Byte>96</Byte>
+        <Byte>70</Byte>
+        <Byte>01</Byte>
+        <Byte>00</Byte>
+        <Byte>00</Byte>
+      </Before>
+      <Actual>
+        <Byte>75</Byte>
+        <Byte>23</Byte>
+      </Actual>
+      <After>
+        <Byte>8B</Byte>
+        <Byte>0D</Byte>
+        <Byte>D4</Byte>
+        <Byte>37</Byte>
+        <Byte>1E</Byte>
+      </After>
+    </CodeEntry>
+    <CodeEntry>
+      <Description>Change of jne 00BCE5EF</Description>
+      <Address>00BCE5BA</Address>
+      <ModuleName>bio4.exe</ModuleName>
+      <ModuleNameOffset>23E5BA</ModuleNameOffset>
+      <Before>
+        <Byte>59</Byte>
+        <Byte>19</Byte>
+        <Byte>01</Byte>
+        <Byte>85</Byte>
+        <Byte>D2</Byte>
+      </Before>
+      <Actual>
+        <Byte>75</Byte>
+        <Byte>33</Byte>
+      </Actual>
+      <After>
+        <Byte>B9</Byte>
+        <Byte>04</Byte>
+        <Byte>CB</Byte>
+        <Byte>18</Byte>
+        <Byte>01</Byte>
+      </After>
+    </CodeEntry>
+    <CodeEntry>
+      <Description>Change of je 00BCE5BC</Description>
+      <Address>00BCE5A8</Address>
+      <ModuleName>bio4.exe</ModuleName>
+      <ModuleNameOffset>23E5A8</ModuleNameOffset>
+      <Before>
+        <Byte>BE</Byte>
+        <Byte>28</Byte>
+        <Byte>50</Byte>
+        <Byte>00</Byte>
+        <Byte>00</Byte>
+      </Before>
+      <Actual>
+        <Byte>74</Byte>
+        <Byte>12</Byte>
+      </Actual>
+      <After>
+        <Byte>8B</Byte>
+        <Byte>86</Byte>
+        <Byte>0C</Byte>
+        <Byte>53</Byte>
+        <Byte>00</Byte>
+      </After>
+    </CodeEntry>
+    <CodeEntry>
+      <Description>Change of jne 00BCE531</Description>
+      <Address>00BCE52A</Address>
+      <ModuleName>bio4.exe</ModuleName>
+      <ModuleNameOffset>23E52A</ModuleNameOffset>
+      <Before>
+        <Byte>00</Byte>
+        <Byte>00</Byte>
+        <Byte>00</Byte>
+        <Byte>80</Byte>
+        <Byte>00</Byte>
+      </Before>
+      <Actual>
+        <Byte>75</Byte>
+        <Byte>05</Byte>
+      </Actual>
+      <After>
+        <Byte>E8</Byte>
+        <Byte>36</Byte>
+        <Byte>D7</Byte>
+        <Byte>DC</Byte>
+        <Byte>FF</Byte>
+      </After>
+    </CodeEntry>
+    <CodeEntry>
+      <Description>Change of je 00BCE57C</Description>
+      <Address>00BCE553</Address>
+      <ModuleName>bio4.exe</ModuleName>
+      <ModuleNameOffset>23E553</ModuleNameOffset>
+      <Before>
+        <Byte>BE</Byte>
+        <Byte>28</Byte>
+        <Byte>50</Byte>
+        <Byte>00</Byte>
+        <Byte>00</Byte>
+      </Before>
+      <Actual>
+        <Byte>74</Byte>
+        <Byte>27</Byte>
+      </Actual>
+      <After>
+        <Byte>D9</Byte>
+        <Byte>05</Byte>
+        <Byte>2C</Byte>
+        <Byte>59</Byte>
+        <Byte>19</Byte>
+      </After>
+    </CodeEntry>
+    <CodeEntry>
+      <Description>Change of je 00BCE64E</Description>
+      <Address>00BCE63A</Address>
+      <ModuleName>bio4.exe</ModuleName>
+      <ModuleNameOffset>23E63A</ModuleNameOffset>
+      <Before>
+        <Byte>B9</Byte>
+        <Byte>28</Byte>
+        <Byte>50</Byte>
+        <Byte>00</Byte>
+        <Byte>00</Byte>
+      </Before>
+      <Actual>
+        <Byte>74</Byte>
+        <Byte>12</Byte>
+      </Actual>
+      <After>
+        <Byte>8B</Byte>
+        <Byte>81</Byte>
+        <Byte>0C</Byte>
+        <Byte>53</Byte>
+        <Byte>00</Byte>
+      </After>
+    </CodeEntry>
+    <CodeEntry>
+      <Description>Change of je 00BCE6C7</Description>
+      <Address>00BCE6AF</Address>
+      <ModuleName>bio4.exe</ModuleName>
+      <ModuleNameOffset>23E6AF</ModuleNameOffset>
+      <Before>
+        <Byte>B9</Byte>
+        <Byte>28</Byte>
+        <Byte>50</Byte>
+        <Byte>00</Byte>
+        <Byte>00</Byte>
+      </Before>
+      <Actual>
+        <Byte>74</Byte>
+        <Byte>16</Byte>
+      </Actual>
+      <After>
+        <Byte>8B</Byte>
+        <Byte>81</Byte>
+        <Byte>0C</Byte>
+        <Byte>53</Byte>
+        <Byte>00</Byte>
+      </After>
+    </CodeEntry>
+    <CodeEntry>
+      <Description>Change of jne 00BCE77C</Description>
+      <Address>00BCE6C1</Address>
+      <ModuleName>bio4.exe</ModuleName>
+      <ModuleNameOffset>23E6C1</ModuleNameOffset>
+      <Before>
+        <Byte>59</Byte>
+        <Byte>19</Byte>
+        <Byte>01</Byte>
+        <Byte>85</Byte>
+        <Byte>D2</Byte>
+      </Before>
+      <Actual>
+        <Byte>0F</Byte>
+        <Byte>85</Byte>
+        <Byte>B5</Byte>
+        <Byte>00</Byte>
+        <Byte>00</Byte>
+        <Byte>00</Byte>
+      </Actual>
+      <After>
+        <Byte>85</Byte>
+        <Byte>B9</Byte>
+        <Byte>70</Byte>
+        <Byte>01</Byte>
+        <Byte>00</Byte>
+      </After>
+    </CodeEntry>
+    <CodeEntry>
+      <Description>Change of jne 00BCE725</Description>
+      <Address>00BCE6CD</Address>
+      <ModuleName>bio4.exe</ModuleName>
+      <ModuleNameOffset>23E6CD</ModuleNameOffset>
+      <Before>
+        <Byte>B9</Byte>
+        <Byte>70</Byte>
+        <Byte>01</Byte>
+        <Byte>00</Byte>
+        <Byte>00</Byte>
+      </Before>
+      <Actual>
+        <Byte>75</Byte>
+        <Byte>56</Byte>
+      </Actual>
+      <After>
+        <Byte>E8</Byte>
+        <Byte>18</Byte>
+        <Byte>A6</Byte>
+        <Byte>DC</Byte>
+        <Byte>FF</Byte>
+      </After>
+    </CodeEntry>
+    <CodeEntry>
+      <Description>Change of jne 00BCE71E</Description>
+      <Address>00BCE709</Address>
+      <ModuleName>bio4.exe</ModuleName>
+      <ModuleNameOffset>23E709</ModuleNameOffset>
+      <Before>
+        <Byte>DD</Byte>
+        <Byte>D9</Byte>
+        <Byte>F6</Byte>
+        <Byte>C4</Byte>
+        <Byte>01</Byte>
+      </Before>
+      <Actual>
+        <Byte>75</Byte>
+        <Byte>13</Byte>
+      </Actual>
+      <After>
+        <Byte>DC</Byte>
+        <Byte>25</Byte>
+        <Byte>48</Byte>
+        <Byte>D4</Byte>
+        <Byte>09</Byte>
+      </After>
+    </CodeEntry>
+    <CodeEntry>
+      <Description>Change of je 00BCE7D7</Description>
+      <Address>00BCE7A0</Address>
+      <ModuleName>bio4.exe</ModuleName>
+      <ModuleNameOffset>23E7A0</ModuleNameOffset>
+      <Before>
+        <Byte>C9</Byte>
+        <Byte>0B</Byte>
+        <Byte>C1</Byte>
+        <Byte>5F</Byte>
+        <Byte>5E</Byte>
+      </Before>
+      <Actual>
+        <Byte>74</Byte>
+        <Byte>35</Byte>
+      </Actual>
+      <After>
+        <Byte>E8</Byte>
+        <Byte>EF</Byte>
+        <Byte>2D</Byte>
+        <Byte>DC</Byte>
+        <Byte>FF</Byte>
+      </After>
+    </CodeEntry>
+    <CodeEntry>
+      <Description>Change of je 00DA76EB</Description>
+      <Address>00DA76AD</Address>
+      <ModuleName>bio4.exe</ModuleName>
+      <ModuleNameOffset>5676AD</ModuleNameOffset>
+      <Before>
+        <Byte>FA</Byte>
+        <Byte>FF</Byte>
+        <Byte>FF</Byte>
+        <Byte>3B</Byte>
+        <Byte>C1</Byte>
+      </Before>
+      <Actual>
+        <Byte>74</Byte>
+        <Byte>3C</Byte>
+      </Actual>
+      <After>
+        <Byte>3B</Byte>
+        <Byte>78</Byte>
+        <Byte>14</Byte>
+        <Byte>72</Byte>
+        <Byte>37</Byte>
+      </After>
+    </CodeEntry>
+    <CodeEntry>
+      <Description>Change of mov [eax+10],ecx</Description>
+      <Address>00DA61A1</Address>
+      <ModuleName>bio4.exe</ModuleName>
+      <ModuleNameOffset>5661A1</ModuleNameOffset>
+      <Before>
+        <Byte>44</Byte>
+        <Byte>5F</Byte>
+        <Byte>04</Byte>
+        <Byte>01</Byte>
+        <Byte>01</Byte>
+      </Before>
+      <Actual>
+        <Byte>89</Byte>
+        <Byte>48</Byte>
+        <Byte>10</Byte>
+      </Actual>
+      <After>
+        <Byte>89</Byte>
+        <Byte>50</Byte>
+        <Byte>14</Byte>
+        <Byte>0F</Byte>
+        <Byte>84</Byte>
+      </After>
+    </CodeEntry>
+    <CodeEntry>
+      <Description>Change of jne 00DA79E8</Description>
+      <Address>00DA79E0</Address>
+      <ModuleName>bio4.exe</ModuleName>
+      <ModuleNameOffset>5679E0</ModuleNameOffset>
+      <Before>
+        <Byte>FF</Byte>
+        <Byte>8B</Byte>
+        <Byte>08</Byte>
+        <Byte>3B</Byte>
+        <Byte>CA</Byte>
+      </Before>
+      <Actual>
+        <Byte>75</Byte>
+        <Byte>06</Byte>
+      </Actual>
+      <After>
+        <Byte>33</Byte>
+        <Byte>C0</Byte>
+        <Byte>33</Byte>
+        <Byte>C9</Byte>
+        <Byte>EB</Byte>
+      </After>
+    </CodeEntry>
+    <CodeEntry>
+      <Description>Change of je 00DA7AA7</Description>
+      <Address>00DA7A72</Address>
+      <ModuleName>bio4.exe</ModuleName>
+      <ModuleNameOffset>567A72</ModuleNameOffset>
+      <Before>
+        <Byte>00</Byte>
+        <Byte>75</Byte>
+        <Byte>37</Byte>
+        <Byte>0B</Byte>
+        <Byte>D6</Byte>
+      </Before>
+      <Actual>
+        <Byte>74</Byte>
+        <Byte>33</Byte>
+      </Actual>
+      <After>
+        <Byte>80</Byte>
+        <Byte>3D</Byte>
+        <Byte>D8</Byte>
+        <Byte>01</Byte>
+        <Byte>0A</Byte>
+      </After>
+    </CodeEntry>
+    <CodeEntry>
+      <Description>Change of jne 00DA7AA7</Description>
+      <Address>00DA7A7B</Address>
+      <ModuleName>bio4.exe</ModuleName>
+      <ModuleNameOffset>567A7B</ModuleNameOffset>
+      <Before>
+        <Byte>D8</Byte>
+        <Byte>01</Byte>
+        <Byte>0A</Byte>
+        <Byte>01</Byte>
+        <Byte>00</Byte>
+      </Before>
+      <Actual>
+        <Byte>75</Byte>
+        <Byte>2A</Byte>
+      </Actual>
+      <After>
+        <Byte>D9</Byte>
+        <Byte>EE</Byte>
+        <Byte>D9</Byte>
+        <Byte>15</Byte>
+        <Byte>B0</Byte>
+      </After>
+    </CodeEntry>
+    <CodeEntry>
+      <Description>Change of jne 00DA7AA9</Description>
+      <Address>00DA7A8E</Address>
+      <ModuleName>bio4.exe</ModuleName>
+      <ModuleNameOffset>567A8E</ModuleNameOffset>
+      <Before>
+        <Byte>65</Byte>
+        <Byte>01</Byte>
+        <Byte>83</Byte>
+        <Byte>FB</Byte>
+        <Byte>10</Byte>
+      </Before>
+      <Actual>
+        <Byte>75</Byte>
+        <Byte>19</Byte>
+      </Actual>
+      <After>
+        <Byte>83</Byte>
+        <Byte>BD</Byte>
+        <Byte>EC</Byte>
+        <Byte>FA</Byte>
+        <Byte>FF</Byte>
+      </After>
+    </CodeEntry>
+    <CodeEntry>
+      <Description>Change of jne 00DA7AA9</Description>
+      <Address>00DA7A97</Address>
+      <ModuleName>bio4.exe</ModuleName>
+      <ModuleNameOffset>567A97</ModuleNameOffset>
+      <Before>
+        <Byte>EC</Byte>
+        <Byte>FA</Byte>
+        <Byte>FF</Byte>
+        <Byte>FF</Byte>
+        <Byte>00</Byte>
+      </Before>
+      <Actual>
+        <Byte>75</Byte>
+        <Byte>10</Byte>
+      </Actual>
+      <After>
+        <Byte>D9</Byte>
+        <Byte>95</Byte>
+        <Byte>F8</Byte>
+        <Byte>FA</Byte>
+        <Byte>FF</Byte>
+      </After>
+    </CodeEntry>
+    <CodeEntry>
+      <Description>Change of je 00DA7E23</Description>
+      <Address>00DA7C05</Address>
+      <ModuleName>bio4.exe</ModuleName>
+      <ModuleNameOffset>567C05</ModuleNameOffset>
+      <Before>
+        <Byte>85</Byte>
+        <Byte>EC</Byte>
+        <Byte>FA</Byte>
+        <Byte>FF</Byte>
+        <Byte>FF</Byte>
+      </Before>
+      <Actual>
+        <Byte>0F</Byte>
+        <Byte>84</Byte>
+        <Byte>18</Byte>
+        <Byte>02</Byte>
+        <Byte>00</Byte>
+        <Byte>00</Byte>
+      </Actual>
+      <After>
+        <Byte>09</Byte>
+        <Byte>1D</Byte>
+        <Byte>88</Byte>
+        <Byte>F6</Byte>
+        <Byte>09</Byte>
+      </After>
+    </CodeEntry>
+    <CodeEntry>
+      <Description>Change of je 00DA7DC7</Description>
+      <Address>00DA7DA5</Address>
+      <ModuleName>bio4.exe</ModuleName>
+      <ModuleNameOffset>567DA5</ModuleNameOffset>
+      <Before>
+        <Byte>65</Byte>
+        <Byte>01</Byte>
+        <Byte>00</Byte>
+        <Byte>D8</Byte>
+        <Byte>C9</Byte>
+      </Before>
+      <Actual>
+        <Byte>74</Byte>
+        <Byte>20</Byte>
+      </Actual>
+      <After>
+        <Byte>D9</Byte>
+        <Byte>C0</Byte>
+        <Byte>D8</Byte>
+        <Byte>C1</Byte>
+        <Byte>E8</Byte>
+      </After>
+    </CodeEntry>
+    <CodeEntry>
+      <Description>Change of fld dword ptr [eax+2C]</Description>
+      <Address>00DB0F1D</Address>
+      <ModuleName>bio4.exe</ModuleName>
+      <ModuleNameOffset>570F1D</ModuleNameOffset>
+      <Before>
+        <Byte>40</Byte>
+        <Byte>28</Byte>
+        <Byte>D9</Byte>
+        <Byte>59</Byte>
+        <Byte>28</Byte>
+      </Before>
+      <Actual>
+        <Byte>D9</Byte>
+        <Byte>40</Byte>
+        <Byte>2C</Byte>
+      </Actual>
+      <After>
+        <Byte>D9</Byte>
+        <Byte>59</Byte>
+        <Byte>2C</Byte>
+        <Byte>5D</Byte>
+        <Byte>C3</Byte>
+      </After>
+    </CodeEntry>
+    <CodeEntry>
+      <Description>Change of je 0024E280</Description>
+      <Address>0024E274</Address>
+      <ModuleName>bio4.exe</ModuleName>
+      <ModuleNameOffset>19E274</ModuleNameOffset>
+      <Before>
+        <Byte>E7</Byte>
+        <Byte>FF</Byte>
+        <Byte>83</Byte>
+        <Byte>E8</Byte>
+        <Byte>02</Byte>
+      </Before>
+      <Actual>
+        <Byte>74</Byte>
+        <Byte>0A</Byte>
+      </Actual>
+      <After>
+        <Byte>83</Byte>
+        <Byte>E8</Byte>
+        <Byte>02</Byte>
+        <Byte>74</Byte>
+        <Byte>05</Byte>
+      </After>
+    </CodeEntry>
+    <CodeEntry>
+      <Description>Change of je 0024E280</Description>
+      <Address>0024E279</Address>
+      <ModuleName>bio4.exe</ModuleName>
+      <ModuleNameOffset>19E279</ModuleNameOffset>
+      <Before>
+        <Byte>90</Byte>
+        <Byte>90</Byte>
+        <Byte>83</Byte>
+        <Byte>E8</Byte>
+        <Byte>02</Byte>
+      </Before>
+      <Actual>
+        <Byte>74</Byte>
+        <Byte>05</Byte>
+      </Actual>
+      <After>
+        <Byte>83</Byte>
+        <Byte>E8</Byte>
+        <Byte>04</Byte>
+        <Byte>75</Byte>
+        <Byte>0C</Byte>
+      </After>
+    </CodeEntry>
+    <CodeEntry>
+      <Description>Change of je 0024E29C</Description>
+      <Address>0024E293</Address>
+      <ModuleName>bio4.exe</ModuleName>
+      <ModuleNameOffset>19E293</ModuleNameOffset>
+      <Before>
+        <Byte>B6</Byte>
+        <Byte>01</Byte>
+        <Byte>00</Byte>
+        <Byte>00</Byte>
+        <Byte>00</Byte>
+      </Before>
+      <Actual>
+        <Byte>74</Byte>
+        <Byte>07</Byte>
+      </Actual>
+      <After>
+        <Byte>83</Byte>
+        <Byte>0D</Byte>
+        <Byte>F8</Byte>
+        <Byte>C9</Byte>
+        <Byte>91</Byte>
+      </After>
+    </CodeEntry>
+    <CodeEntry>
+      <Description>Change of fmul st(0),st(2)</Description>
+      <Address>0024E1B7</Address>
+      <ModuleName>bio4.exe</ModuleName>
+      <ModuleNameOffset>19E1B7</ModuleNameOffset>
+      <Before>
+        <Byte>05</Byte>
+        <Byte>78</Byte>
+        <Byte>D2</Byte>
+        <Byte>8F</Byte>
+        <Byte>00</Byte>
+      </Before>
+      <Actual>
+        <Byte>D8</Byte>
+        <Byte>CA</Byte>
+      </Actual>
+      <After>
+        <Byte>D9</Byte>
+        <Byte>9D</Byte>
+        <Byte>84</Byte>
+        <Byte>FE</Byte>
+        <Byte>FF</Byte>
+      </After>
+    </CodeEntry>
+    <CodeEntry>
+      <Description>Change of mov [ecx],edx</Description>
+      <Address>01424E70</Address>
+      <ModuleName>bio4.exe</ModuleName>
+      <ModuleNameOffset>574E70</ModuleNameOffset>
+      <Before>
+        <Byte>D1</Byte>
+        <Byte>75</Byte>
+        <Byte>10</Byte>
+        <Byte>8B</Byte>
+        <Byte>10</Byte>
+      </Before>
+      <Actual>
+        <Byte>89</Byte>
+        <Byte>11</Byte>
+      </Actual>
+      <After>
+        <Byte>8B</Byte>
+        <Byte>50</Byte>
+        <Byte>04</Byte>
+        <Byte>89</Byte>
+        <Byte>51</Byte>
+      </After>
+    </CodeEntry>
+    <CodeEntry>
+      <Description>Change of jne 01424E7E</Description>
+      <Address>01424E6C</Address>
+      <ModuleName>bio4.exe</ModuleName>
+      <ModuleNameOffset>574E6C</ModuleNameOffset>
+      <Before>
+        <Byte>D9</Byte>
+        <Byte>58</Byte>
+        <Byte>08</Byte>
+        <Byte>3B</Byte>
+        <Byte>D1</Byte>
+      </Before>
+      <Actual>
+        <Byte>75</Byte>
+        <Byte>10</Byte>
+      </Actual>
+      <After>
+        <Byte>8B</Byte>
+        <Byte>10</Byte>
+        <Byte>89</Byte>
+        <Byte>11</Byte>
+        <Byte>8B</Byte>
+      </After>
+    </CodeEntry>
+    <CodeEntry>
+      <Description>Change of je 01424E4F</Description>
+      <Address>01424E4B</Address>
+      <ModuleName>bio4.exe</ModuleName>
+      <ModuleNameOffset>574E4B</ModuleNameOffset>
+      <Before>
+        <Byte>8D</Byte>
+        <Byte>45</Byte>
+        <Byte>F0</Byte>
+        <Byte>3B</Byte>
+        <Byte>D1</Byte>
+      </Before>
+      <Actual>
+        <Byte>74</Byte>
+        <Byte>02</Byte>
+      </Actual>
+      <After>
+        <Byte>8B</Byte>
+        <Byte>C1</Byte>
+        <Byte>D9</Byte>
+        <Byte>02</Byte>
+        <Byte>D9</Byte>
+      </After>
+    </CodeEntry>
+    <CodeEntry>
+      <Description>Change of je 00F7490D</Description>
+      <Address>00F748FC</Address>
+      <ModuleName>bio4.exe</ModuleName>
+      <ModuleNameOffset>2548FC</ModuleNameOffset>
+      <Before>
+        <Byte>DF</Byte>
+        <Byte>E0</Byte>
+        <Byte>F6</Byte>
+        <Byte>C4</Byte>
+        <Byte>41</Byte>
+      </Before>
+      <Actual>
+        <Byte>74</Byte>
+        <Byte>0F</Byte>
+      </Actual>
+      <After>
+        <Byte>DD</Byte>
+        <Byte>05</Byte>
+        <Byte>30</Byte>
+        <Byte>B4</Byte>
+        <Byte>43</Byte>
+      </After>
+    </CodeEntry>
+    <CodeEntry>
+      <Description>Change of jne 012872AB</Description>
+      <Address>0128729D</Address>
+      <ModuleName>bio4.exe</ModuleName>
+      <ModuleNameOffset>56729D</ModuleNameOffset>
+      <Before>
+        <Byte>DF</Byte>
+        <Byte>E0</Byte>
+        <Byte>F6</Byte>
+        <Byte>C4</Byte>
+        <Byte>41</Byte>
+      </Before>
+      <Actual>
+        <Byte>75</Byte>
+        <Byte>0C</Byte>
+      </Actual>
+      <After>
+        <Byte>DD</Byte>
+        <Byte>D8</Byte>
+        <Byte>DD</Byte>
+        <Byte>D9</Byte>
+        <Byte>D9</Byte>
+      </After>
+    </CodeEntry>
+    <CodeEntry>
+      <Description>Change of jp 012872BE</Description>
+      <Address>012872B4</Address>
+      <ModuleName>bio4.exe</ModuleName>
+      <ModuleNameOffset>5672B4</ModuleNameOffset>
+      <Before>
+        <Byte>DF</Byte>
+        <Byte>E0</Byte>
+        <Byte>F6</Byte>
+        <Byte>C4</Byte>
+        <Byte>05</Byte>
+      </Before>
+      <Actual>
+        <Byte>7A</Byte>
+        <Byte>08</Byte>
+      </Actual>
+      <After>
+        <Byte>D9</Byte>
+        <Byte>1D</Byte>
+        <Byte>B4</Byte>
+        <Byte>F0</Byte>
+        <Byte>B3</Byte>
+      </After>
+    </CodeEntry>
+    <CodeEntry>
+      <Description>Change of je 01286EBC</Description>
+      <Address>01286EAC</Address>
+      <ModuleName>bio4.exe</ModuleName>
+      <ModuleNameOffset>566EAC</ModuleNameOffset>
+      <Before>
+        <Byte>00</Byte>
+        <Byte>00</Byte>
+        <Byte>00</Byte>
+        <Byte>80</Byte>
+        <Byte>00</Byte>
+      </Before>
+      <Actual>
+        <Byte>74</Byte>
+        <Byte>0E</Byte>
+      </Actual>
+      <After>
+        <Byte>D9</Byte>
+        <Byte>85</Byte>
+        <Byte>F8</Byte>
+        <Byte>FA</Byte>
+        <Byte>FF</Byte>
+      </After>
+    </CodeEntry>
+    <CodeEntry>
+      <Description>Change of je 01287217</Description>
+      <Address>01286EC3</Address>
+      <ModuleName>bio4.exe</ModuleName>
+      <ModuleNameOffset>566EC3</ModuleNameOffset>
+      <Before>
+        <Byte>D8</Byte>
+        <Byte>01</Byte>
+        <Byte>58</Byte>
+        <Byte>01</Byte>
+        <Byte>00</Byte>
+      </Before>
+      <Actual>
+        <Byte>0F</Byte>
+        <Byte>84</Byte>
+        <Byte>4E</Byte>
+        <Byte>03</Byte>
+        <Byte>00</Byte>
+        <Byte>00</Byte>
+      </Actual>
+      <After>
+        <Byte>E8</Byte>
+        <Byte>29</Byte>
+        <Byte>FA</Byte>
+        <Byte>A9</Byte>
+        <Byte>FF</Byte>
+      </After>
+    </CodeEntry>
+    <CodeEntry>
+      <Description>Change of jne 0114727D</Description>
+      <Address>0114726F</Address>
+      <ModuleName>bio4.exe</ModuleName>
+      <ModuleNameOffset>56726F</ModuleNameOffset>
+      <Before>
+        <Byte>2E</Byte>
+        <Byte>01</Byte>
+        <Byte>F6</Byte>
+        <Byte>C4</Byte>
+        <Byte>41</Byte>
+      </Before>
+      <Actual>
+        <Byte>75</Byte>
+        <Byte>0C</Byte>
+      </Actual>
+      <After>
+        <Byte>DD</Byte>
+        <Byte>D9</Byte>
+        <Byte>D9</Byte>
+        <Byte>C9</Byte>
+        <Byte>D9</Byte>
+      </After>
+    </CodeEntry>
+    <CodeEntry>
+      <Description>Change of fstp st(1)</Description>
+      <Address>01147271</Address>
+      <ModuleName>bio4.exe</ModuleName>
+      <ModuleNameOffset>567271</ModuleNameOffset>
+      <Before>
+        <Byte>F6</Byte>
+        <Byte>C4</Byte>
+        <Byte>41</Byte>
+        <Byte>75</Byte>
+        <Byte>0C</Byte>
+      </Before>
+      <Actual>
+        <Byte>DD</Byte>
+        <Byte>D9</Byte>
+      </Actual>
+      <After>
+        <Byte>D9</Byte>
+        <Byte>C9</Byte>
+        <Byte>D9</Byte>
+        <Byte>15</Byte>
+        <Byte>B0</Byte>
+      </After>
+    </CodeEntry>
+    <CodeEntry>
+      <Description>Change of fst dword ptr [019FF0B0]</Description>
+      <Address>011472CB</Address>
+      <ModuleName>bio4.exe</ModuleName>
+      <ModuleNameOffset>5672CB</ModuleNameOffset>
+      <Before>
+        <Byte>00</Byte>
+        <Byte>74</Byte>
+        <Byte>36</Byte>
+        <Byte>D9</Byte>
+        <Byte>EE</Byte>
+      </Before>
+      <Actual>
+        <Byte>D9</Byte>
+        <Byte>15</Byte>
+        <Byte>B0</Byte>
+        <Byte>F0</Byte>
+        <Byte>9F</Byte>
+        <Byte>01</Byte>
+      </Actual>
+      <After>
+        <Byte>D9</Byte>
+        <Byte>1D</Byte>
+        <Byte>B4</Byte>
+        <Byte>F0</Byte>
+        <Byte>9F</Byte>
+      </After>
+    </CodeEntry>
+    <CodeEntry>
+      <Description>Change of fst dword ptr [019FF0B0]</Description>
+      <Address>01147288</Address>
+      <ModuleName>bio4.exe</ModuleName>
+      <ModuleNameOffset>567288</ModuleNameOffset>
+      <Before>
+        <Byte>F6</Byte>
+        <Byte>C4</Byte>
+        <Byte>41</Byte>
+        <Byte>75</Byte>
+        <Byte>06</Byte>
+      </Before>
+      <Actual>
+        <Byte>D9</Byte>
+        <Byte>15</Byte>
+        <Byte>B0</Byte>
+        <Byte>F0</Byte>
+        <Byte>9F</Byte>
+        <Byte>01</Byte>
+      </Actual>
+      <After>
+        <Byte>D9</Byte>
+        <Byte>C9</Byte>
+        <Byte>D9</Byte>
+        <Byte>05</Byte>
+        <Byte>B4</Byte>
+      </After>
+    </CodeEntry>
+    <CodeEntry>
+      <Description>Change of fst dword ptr [019FF0B0]</Description>
+      <Address>01147275</Address>
+      <ModuleName>bio4.exe</ModuleName>
+      <ModuleNameOffset>567275</ModuleNameOffset>
+      <Before>
+        <Byte>0C</Byte>
+        <Byte>DD</Byte>
+        <Byte>D9</Byte>
+        <Byte>D9</Byte>
+        <Byte>C9</Byte>
+      </Before>
+      <Actual>
+        <Byte>D9</Byte>
+        <Byte>15</Byte>
+        <Byte>B0</Byte>
+        <Byte>F0</Byte>
+        <Byte>9F</Byte>
+        <Byte>01</Byte>
+      </Actual>
+      <After>
+        <Byte>EB</Byte>
+        <Byte>13</Byte>
+        <Byte>D8</Byte>
+        <Byte>D1</Byte>
+        <Byte>DF</Byte>
+      </After>
+    </CodeEntry>
+    <CodeEntry>
+      <Description>Change of fstp dword ptr [019FF0B0]</Description>
+      <Address>01147240</Address>
+      <ModuleName>bio4.exe</ModuleName>
+      <ModuleNameOffset>567240</ModuleNameOffset>
+      <Before>
+        <Byte>01</Byte>
+        <Byte>DE</Byte>
+        <Byte>C2</Byte>
+        <Byte>D9</Byte>
+        <Byte>C9</Byte>
+      </Before>
+      <Actual>
+        <Byte>D9</Byte>
+        <Byte>1D</Byte>
+        <Byte>B0</Byte>
+        <Byte>F0</Byte>
+        <Byte>9F</Byte>
+        <Byte>01</Byte>
+      </Actual>
+      <After>
+        <Byte>D9</Byte>
+        <Byte>85</Byte>
+        <Byte>F4</Byte>
+        <Byte>FA</Byte>
+        <Byte>FF</Byte>
+      </After>
+    </CodeEntry>
+    <CodeEntry>
+      <Description>Change of fxch st(1)</Description>
+      <Address>0114723E</Address>
+      <ModuleName>bio4.exe</ModuleName>
+      <ModuleNameOffset>56723E</ModuleNameOffset>
+      <Before>
+        <Byte>F0</Byte>
+        <Byte>9F</Byte>
+        <Byte>01</Byte>
+        <Byte>DE</Byte>
+        <Byte>C2</Byte>
+      </Before>
+      <Actual>
+        <Byte>D9</Byte>
+        <Byte>C9</Byte>
+      </Actual>
+      <After>
+        <Byte>D9</Byte>
+        <Byte>1D</Byte>
+        <Byte>B0</Byte>
+        <Byte>F0</Byte>
+        <Byte>9F</Byte>
+      </After>
+    </CodeEntry>
+  </CheatCodes>
+  <UserdefinedSymbols>
+    <SymbolEntry>
+      <Name>enableFlags</Name>
+      <Address>00F36049</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>cameraBase</Name>
+      <Address>13B50000</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>spinCam</Name>
+      <Address>01147236</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>minVal</Name>
+      <Address>0114723C</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>maxVal</Name>
+      <Address>01147240</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>zero</Name>
+      <Address>01147244</Address>
+    </SymbolEntry>
+  </UserdefinedSymbols>
+</CheatTable>

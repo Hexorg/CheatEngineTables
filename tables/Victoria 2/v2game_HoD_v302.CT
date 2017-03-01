@@ -1,0 +1,1072 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="14">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>54</ID>
+      <Description>"[X] &lt;== Victoria II - Heart of Darkness v3.02 Script 1.2"</Description>
+      <Options moHideChildren="1"/>
+      <Color>FF0000</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>{
+===========================================
+ Game Title    : Victoria II - Heart of Darkness
+ Game Version  : 3.02 (FCKR)
+ Game Sponsor  : 3DM/Torrent
+ Proces Name   : v2game.exe
+ Script Version: 1.2
+ CE Version    : 6.2
+ Release date  : 03-Jun-2013
+ Author        : Recifense
+ History:
+ 18-Apr-13: First Release (for v3.01)
+ 03-Jun-13: Release for version v3.02
+ Features:
+ - Minimum Money (62,000.00)
+ - Research in 1 day
+ - Project Goods and Money
+ - Construction in 1 day (Including factory expansion)
+ - Troop/Ship Recruitment in 1 day
+ - Weak Foe
+ - Blessed Units:
+   - Max Size
+   - Max Organization
+   - Speed &gt;= 62 Km/h
+ - God Mode
+ - Quick Ownership of conquered province
+ - Quick Occupation/Protection against occupation
+ - Diplomatic Points (9.0)
+===========================================
+}
+
+//=========================================
+// Definitions
+define(LUDO,"v2game.exe")
+define(MMON,v2game.exe+00305a8b) //*
+define(MRCH,v2game.exe+00170268) //=
+define(MPRJ,v2game.exe+002e4bd1) //=
+define(MPJM,v2game.exe+002e42e3) //=
+define(MDAT,v2game.exe+0050f5cf) //=
+define(MTPR,v2game.exe+0032b16d) //=
+define(MCCO,v2game.exe+000b0e4d) //=
+define(MUNI,v2game.exe+001cbc57) //=
+define(GDMD,v2game.exe+001b57fb) //=
+define(QKOS,v2game.exe+003379c6) //=
+define(MOCC,v2game.exe+001a009d) //=
+define(MEF1,v2game.exe+000f27ea) //=
+
+[ENABLE]
+//=========================================
+// Check if script is compatible to running game version
+// If false the script will not be loaded
+
+assert(MMON,8b 81 68 0e 00 00 8b 89 6c 0e 00 00 89 85 3c ff ff ff 89 8d 40 ff)
+assert(MRCH,8d 04 0b 3b c2 ?? ?? 01 4e 08 ?? ?? 03 cb 2b ca 03 f9 89 56 08 ??)
+assert(MPRJ,8b 50 04 8b 08 89 55 b0 ba ?? ?? ?? ?? 8d b5 20 ff ff ff 89 4d ac)
+assert(MPJM,8b 8f 28 02 00 00 8b 97 2c 02 00 00 8d 45 dc 89 4d d4 50 8d 8f c8)
+assert(MDAT,8b 90 0c 0b 00 00 3b 51 64 ?? ?? 83 7e 24 00 ?? ?? 80 b8 11 0d 00)
+assert(MTPR,8b 91 88 00 00 00 8a 42 39 3a 47 78 ?? ?? ff 44 24 10 3b f3 ?? ??)
+assert(MCCO,8b 54 24 10 8b 06 89 4c 24 14 8b ce 3b 56 3c 0f 8c ?? ?? ?? ?? 8b)
+assert(MUNI,8b 52 3c 8b 40 08 01 11 85 c0 ?? ?? 8b c1 5d c2 04 00 ?? ?? ?? ??)
+assert(GDMD,8b 47 6c 29 47 3c 8b 47 40 39 47 70 ?? ?? 89 47 70 8b 47 70 29 47)
+assert(QKOS,39 9a 34 01 00 00 ba ?? ?? ?? ?? 0f 84 ?? ?? ?? ?? 8d 74 24 6c e8)
+assert(MOCC,89 87 14 01 00 00 8b 44 24 34 8b 70 18 83 be 14 01 00 00 00 0f 8f)
+assert(MEF1,89 86 7c 01 00 00 b9 01 00 00 00 39 8e 7c 01 00 00 0f 8d ?? ?? ??)
+
+//=========================================
+alloc(MyCode,4096,LUDO)
+//=========================================
+// Declaration section
+label(_MonMoney)
+label(_BackMM)
+label(_ExitMM)
+label(_MonM0)
+label(_MonM1)
+label(_MonResearch)
+label(_BackMR)
+label(_ExitMR)
+label(_MonProjects)
+label(_BackMP)
+label(_ExitMP)
+label(_MonProjMoney)
+label(_BackMPM)
+label(_ExitMPM)
+label(_MonDate)
+label(_BackMD)
+label(_MonTroopProduction)
+label(_BackMTP)
+label(_ExitMTP)
+label(_MonCityConstruction)
+label(_BackMCC)
+label(_ExitMCC)
+label(_MonUnits)
+label(_MonU0)
+label(_BackMU)
+label(_ExitMU)
+label(_GodMode)
+label(_GodM0)
+label(_GodM1)
+label(_GodM2)
+label(_BackGM)
+label(_ExitGM)
+label(_QuickOwnership)
+label(_QuickO0)
+label(_BackQO)
+label(_ExitQO)
+label(_MonOccupation)
+label(_BackMO)
+label(_ExitMO)
+label(_MonO0)
+label(_MonExpandFactory1)
+label(_BackMEF1)
+label(_ExitMEF1)
+label(pPlayer)
+label(pCity)
+label(iEnableMM)
+label(iEnableMR)
+label(iEnableMP)
+label(iEnableMC)
+label(iEnableMTP)
+label(iEnableWF)
+label(iEnableMU)
+label(iEnableGM)
+label(iEnableQO)
+label(iEnableMO)
+label(iEnableDP)
+label(iRP)
+label(iDate)
+label(iPlayerID)
+
+//=========================================
+// Registering Symbols
+registersymbol(MyCode)
+registersymbol(pPlayer)
+registersymbol(pCity)
+registersymbol(iEnableMM)
+registersymbol(iEnableMR)
+registersymbol(iEnableMP)
+registersymbol(iEnableMC)
+registersymbol(iEnableMTP)
+registersymbol(iEnableWF)
+registersymbol(iEnableMU)
+registersymbol(iEnableGM)
+registersymbol(iEnableQO)
+registersymbol(iEnableMO)
+registersymbol(iEnableDP)
+registersymbol(iRP)
+registersymbol(iDate)
+registersymbol(iPlayerID)
+
+//=========================================
+MyCode:
+//========================================= HoD 302
+// Money and Diplomatic Points
+_MonMoney:
+ mov [pPlayer],ecx
+ mov eax,[ecx+20]
+ mov [iPlayerID],eax
+
+ cmp dword ptr [iEnableMM],0
+ je _MonM0                      // Jump if feature is disabled
+
+ cmp dword ptr [ecx+00000e6c],0
+ jne _MonM0
+
+ mov eax,79180000
+ cmp eax,[ecx+00000e68]
+ jle _MonM0
+
+ mov [ecx+00000e68],eax
+
+_MonM0:
+ cmp dword ptr [iEnableDP],0
+ je _MonM1                      // Jump if feature is disabled
+
+ mov eax,#9000
+ cmp eax,[ecx+0000064C]         // Minimum Diplomatic Points
+ jle _MonM1
+
+ mov [ecx+0000064C],eax
+
+_MonM1:
+ cmp dword ptr [iEnableMR],0
+ je _ExitMM                     // Jump if feature is disabled
+
+_ExitMM:
+ mov eax,[ecx+00000E68]         // Original code
+ jmp _BackMM                    // Back to main code
+
+//========================================= HoD 302
+// Research in 1 Day // During Turn
+_MonResearch:
+ cmp dword ptr [iEnableMR],0
+ je _ExitMR                     // Jump if feature is disabled
+
+ mov eax,[esi+18]
+ cmp eax,[iPlayerID]
+ jne _ExitMR
+
+ mov ebx,[esi+0c]
+
+_ExitMR:
+ lea eax,[ebx+ecx]              // Original code
+ cmp eax,edx                    // Original code
+ jmp _BackMR                    // Back to main code
+
+//=========================================  HoD 302
+// Goods value under cursor on Project Screen
+_MonProjects:
+ cmp dword ptr [iEnableMP],0
+ je _ExitMP                     // Jump if feature is disabled
+
+ cmp dword ptr [eax+04],0
+ jne _ExitMP
+
+ mov dword ptr [eax+04],1
+
+_ExitMP:
+ mov edx,[eax+04]               // Original code
+ mov ecx,[eax]                  // Original code
+ jmp _BackMP                    // Back to main code
+
+//========================================= HoD 302
+// Money value under cursor on Project Screen
+_MonProjMoney:
+ mov ecx,[edi+5c]
+ cmp ecx,[iPlayerID]
+ jne _ExitMPM
+
+ cmp dword ptr [iEnableMP],0
+ je _ExitMPM                    // Jump if feature is disabled
+
+ cmp dword ptr [edi+0000022c],1
+ jge _ExitMPM
+
+ mov dword ptr [edi+0000022c],1
+
+_ExitMPM:
+ mov ecx,[edi+00000228]         // Original code (rds available money)
+ jmp _BackMPM                   // Back to main code
+
+//========================================= HoD 302
+_MonDate:
+ mov edx,[eax+00000B0C]         // Original code
+
+ mov [iDate],edx                // Save current date for further use
+ jmp _BackMD                    // Back to main code
+
+//========================================= HoD 302
+// When starting production
+_MonTroopProduction:
+ mov edx,[ecx+50]
+ cmp edx,[iPlayerID]
+ jne _ExitMTP
+
+ cmp dword ptr [iEnableMTP],0
+ je _ExitMTP                    // Jump if feature is disabled
+
+ mov dword ptr [ecx+40],1
+
+ mov edx,#24                    // 1 Day
+ add edx,[iDate]
+ mov [ecx+3c],edx               // Current date + 1 day
+
+_ExitMTP:
+ mov edx,[ecx+00000088]         // Original code
+ jmp _BackMTP                   // Back to main code
+
+//========================================= HoD 302
+// When checking if construction has finished (1 day const) // During Turn
+_MonCityConstruction:
+ cmp dword ptr [iEnableMC],0
+ je _ExitMCC                    // Jump if feature is disabled
+
+ mov edx,[esi+50]               // Get ownerID
+ cmp edx,[iPlayerID]
+ jne _ExitMCC
+
+ mov edx,[esp+10]
+ mov [esi+3C],edx
+
+_ExitMCC:
+ mov edx,[esp+10]               // Original code
+ mov eax,[esi]                  // Original code
+ jmp _BackMCC                   // Back to main code
+
+//=========================================  HoD 302
+// Visible Units
+_MonUnits:
+ push esi
+ push ecx
+ push eax
+
+ mov esi,edx
+
+ cmp dword ptr [iEnableMU],0
+ je _ExitMU                     // Jump if feature is disabled
+
+ mov eax,[esi+64]
+ cmp eax,[iPlayerID]            // A player's unit?
+ jne _ExitMU                    // Jump if false
+
+ mov ecx,[esi+38]               // Get ptr to unit info
+
+//Unit Size
+ mov eax,[ecx+000000b0]         // Get maximum size
+ mov [esi+3C],eax               // Size = maximum
+
+//Organization
+ mov eax,[ecx+000000b4]         // Get maximum Organization
+ mov [esi+40],eax               // Organization = maximum
+
+//Army/Fleet Speed
+ mov ecx,[esi+74]               // Get ptr to Army/Fleet
+ mov ecx,[ecx+000000a4]         // Get ptr to Army/Fleet info
+ cmp dword ptr [ecx+000000b8],#62000  // Speed &gt;= 62?
+ jge _MonU0                     // Jump if true
+
+ mov dword ptr [ecx+000000b8],#62000  // Make Speed = 62 - fantastic for that time :)
+
+_MonU0:
+//Unit Speed
+ mov ecx,[esi+38]               // Get ptr to unit info
+ cmp dword ptr [ecx+000000b8],#62000  // Speed &gt;= 62?
+ jge _ExitMU                    // Jump if true
+
+ mov dword ptr [ecx+000000b8],#62000  // Make Speed = 62 - fantastic for that time :)
+
+_ExitMU:
+ pop eax
+ pop ecx
+ pop esi
+
+ mov edx,[edx+3C]               // Original code (rds size)
+ mov eax,[eax+08]               // Original code
+ jmp _BackMU                    // Back to main code
+
+//========================================= HoD 302
+_GodMode:
+ push ebx
+
+ mov eax,[edi+64]               // Get Unit ownerID
+ cmp eax,[iPlayerID]            // Is it a player's unit?
+ jne _GodM0                     // jump if false
+
+ cmp dword ptr [iEnableGM],0
+ je _ExitGM                     // Jump if feature is disabled
+
+//Unit Size
+ mov eax,[edi+38]               // Get ptr to unit info
+ mov eax,[eax+000000b0]         // Get maximum size
+ mov [edi+3C],eax               // Size = maximum
+//Unit Organization
+ mov eax,[edi+38]               // Get ptr to unit info
+ mov eax,[eax+000000b4]         // Get maximum Organization
+ mov [edi+40],eax               // Organization = maximum
+
+ xor eax,eax
+ mov [edi+6C],eax               // Make TroopSize2Decrease = 0
+ mov [edi+70],eax               // Make Organization2Decrease = 0
+ jmp _ExitGM
+
+_GodM0:
+ cmp dword ptr [iEnableWF],0
+ je _ExitGM                     // Jump if feature is disabled
+
+ mov eax,[edi+74]               // Get ptr to Army
+ test eax,eax
+ jz _ExitGM
+
+ mov ebx,[eax+000000dc]         // Get ptr to Province
+ test ebx,ebx
+ jz _ExitGM
+
+ mov eax,[ebx+000000fc]         // Get ptr to pArmy (defender)
+ test eax,eax
+ jz _GodM1
+
+ mov eax,[eax]                  // Get Army
+ test eax,eax
+ jz _GodM1
+
+ mov eax,[eax+000000c4]
+ cmp eax,[iPlayerID]            // Is it a player's army?
+ je _GodM2                      // jump if false
+
+_GodM1:
+ mov eax,[ebx+00000100]         // Get ptr to pArmy (attacker)
+ test eax,eax
+ jz _ExitGM
+
+ mov eax,[eax]                  // Get Army
+ test eax,eax
+ jz _ExitGM
+
+ mov eax,[eax+000000c4]
+ cmp eax,[iPlayerID]            // Is it a player's army?
+ jne _ExitGM                    // jump if false
+
+_GodM2:
+ mov eax,[edi+3C]               // Current Size
+ mov [edi+6C],eax               // Make TroopSize2Decrease = current
+ mov eax,[edi+40]               // Current Organization
+ mov [edi+70],eax               // Make Organization2Decrease = current
+
+_ExitGM:
+ pop ebx
+
+ mov eax,[edi+6C]               // Original code
+ sub [edi+3C],eax               // Original code
+ jmp _BackGM                    // Back to main code
+
+//========================================= HoD 302
+// Upon selecting province
+_QuickOwnership:
+ push eax
+ push ebx
+ push ecx
+
+ mov ecx,edx
+
+ mov [pCity],ecx                // Save pointer for debugging
+
+ cmp dword ptr [iEnableQO],0
+ je _ExitQO                     // Jump if feature is disabled
+
+ mov eax,[ecx+00000134]         // Get possible Invader ID
+ cmp eax,[iPlayerID]            // Is it the player?
+ jne _QuickO0                   // Jump if false
+
+ mov [ecx+0000012c],eax         // Take ownership
+ mov eax,[ecx+00000130]
+ mov [ecx+00000128],eax         // Take ownership
+ mov dword ptr [ecx+00000114],#100000 // Occupation
+
+ mov ebx,[ecx+00000148]
+ test ebx,ebx
+ jz _ExitQO
+
+ mov eax,[ecx+00000128]
+ mov [ebx],eax
+ mov eax,[ecx+0000012c]
+ mov [ebx+04],eax
+ lea ebx,[ebx+08]
+ mov [ecx+0000014C],ebx
+ jmp _ExitQO
+
+_QuickO0:
+ mov eax,[ecx+0000012c]         // Get Owner ID
+ cmp eax,[iPlayerID]            // Is it the player?
+ jne _ExitQO                    // Jump if false
+
+ mov [ecx+00000134],eax         // Take ownership
+ mov eax,[ecx+00000128]
+ mov [ecx+00000130],eax         // Take ownership
+
+_ExitQO:
+ pop ecx
+ pop ebx
+ pop eax
+
+ cmp [edx+00000134],ebx         // Original code (Rds Conqueror ID)
+ jmp _BackQO                    // Back to main code
+
+//========================================= HoD 302
+// This prevents your province of being occupied
+// And quicken up accupation of enemy province
+_MonOccupation:
+ push ebx
+
+ cmp dword ptr [iEnableMO],0
+ je _ExitMO                     // Jump if feature is disabled
+
+ mov ebx,[edi+0000012c]         // Get City Owner ID
+ cmp ebx,[iPlayerID]            // Is it the player?
+ jne _MonO0                     // Jump if false
+
+ mov [edi+00000134],ebx
+ mov ebx,[edi+00000128]         // Get City Owner ID
+ mov [edi+00000130],ebx
+
+ mov eax,#100000                // Occupation = 0%
+ jmp _ExitMO
+
+_MonO0:
+ mov ebx,[edi+000000fc]         // Get pointer Level 1
+ or ebx,ebx                     // Valid Pointer?
+ jz _ExitMO                     // Jump if false
+
+ mov ebx,[ebx]                  // Get pointer Level 2 (ptr to Army)
+ or ebx,ebx                     // Valid Pointer?
+ jz _ExitMO                     // Jump if false
+
+ mov ebx,[ebx+000000c4]         // Get Army ID
+ cmp ebx,[iPlayerID]            // Is it the player?
+ jne _ExitMO                    // Jump if false
+
+ xor eax,eax                    // Finish occupation
+
+_ExitMO:
+ pop ebx
+
+ mov [edi+00000114],eax         // Original code (upds Occupation)
+ jmp _BackMO                    // Back to main code
+
+//========================================= HoD 302
+// During Turn
+_MonExpandFactory1:
+ cmp dword ptr [iEnableMC],0
+ je _ExitMEF1                   // Jump if feature is disabled
+
+ mov ecx,[esi+1c]               // Get ptr to Owner Info
+ test ecx,ecx
+ jz _ExitMEF1
+
+ mov ecx,[ecx+5c]
+ cmp ecx,[iPlayerID]
+ jne _ExitMEF1
+
+ xor eax,eax                    // Finish construction
+
+_ExitMEF1:
+ mov [esi+0000017C],eax         // Original code
+ jmp _BackMEF1                  // Back to main code
+
+//=========================================
+ db '====================================&gt;'
+ db 'CE6.2 Script by Recifense 060313'
+//=========================================
+// Variables
+iEnableMM:
+ dd 0
+iEnableMR:
+ dd 0
+iEnableMP:
+ dd 0
+iEnableMC:
+ dd 0
+iEnableMTP:
+ dd 0
+iEnableWF:
+ dd 0
+iEnableMU:
+ dd 0
+iEnableGM:
+ dd 0
+iEnableQO:
+ dd 0
+iEnableMO:
+ dd 0
+iEnableDP:
+ dd 0
+pPlayer:
+ dd MyCode
+pCity:
+ dd 0
+iPlayerID:
+ dd MyCode
+iRP:
+ dd #360000
+iDate:
+ dd #59883360                    // 01-Jan-1836
+
+//=========================================
+// Hacking Points
+MMON:
+ jmp _MonMoney
+ nop
+_BackMM:
+
+MRCH:
+ jmp _MonResearch
+_BackMR:
+
+MPRJ:
+ jmp _MonProjects
+_BackMP:
+
+MPJM:
+ jmp _MonProjMoney
+ nop
+_BackMPM:
+
+MDAT:
+ jmp _MonDate
+ nop
+_BackMD:
+
+MTPR:
+ jmp _MonTroopProduction
+ nop
+_BackMTP:
+
+MCCO:
+ jmp _MonCityConstruction
+ nop
+_BackMCC:
+
+MUNI:
+ jmp _MonUnits
+ nop
+_BackMU:
+
+GDMD:
+ jmp _GodMode
+ nop
+_BackGM:
+
+QKOS:
+ jmp _QuickOwnership
+ nop
+_BackQO:
+
+MOCC:
+ jmp _MonOccupation
+ nop
+_BackMO:
+
+MEF1:
+ jmp _MonExpandFactory1
+ nop
+_BackMEF1:
+
+//=========================================
+// Script for Restoring Original Codes
+[DISABLE]
+MMON:
+// mov eax,[ecx+00000E68]
+ db 8b 81 68 0e 00 00
+
+MRCH:
+// lea eax,[ebx+ecx]
+// cmp eax,edx
+ db 8d 04 0b 3b c2
+
+MPRJ:
+// mov edx,[eax+04]
+// mov ecx,[eax]
+ db 8b 50 04 8b 08
+
+MPJM:
+// mov ecx,[edi+00000228]
+ db 8b 8f 28 02 00 00
+
+MDAT:
+// mov edx,[eax+00000B0C]
+ db 8b 90 0c 0b 00 00
+
+MTPR:
+// mov edx,[ecx+00000088]
+ db 8b 91 88 00 00 00
+
+MCCO:
+// mov edx,[esp+10]
+// mov eax,[esi]
+ db 8b 54 24 10 8b 06
+
+MUNI:
+// mov edx,[edx+3C]
+// mov eax,[eax+08]
+ db 8b 52 3c 8b 40 08
+
+GDMD:
+// mov eax,[edi+6C]
+// sub [edi+3C],eax
+ db 8b 47 6c 29 47 3c
+
+QKOS:
+// cmp [edx+00000134],ebx
+ db 39 9a 34 01 00 00
+
+MOCC:
+// mov [edi+00000114],eax
+ db 89 87 14 01 00 00
+
+MEF1:
+// mov [esi+0000017C],eax
+ db 89 86 7c 01 00 00
+
+//=========================================
+// Unregistering Symbols
+unregistersymbol(MyCode)
+unregistersymbol(pPlayer)
+unregistersymbol(pCity)
+unregistersymbol(iEnableMM)
+unregistersymbol(iEnableMR)
+unregistersymbol(iEnableMP)
+unregistersymbol(iEnableMC)
+unregistersymbol(iEnableMTP)
+unregistersymbol(iEnableWF)
+unregistersymbol(iEnableMU)
+unregistersymbol(iEnableGM)
+unregistersymbol(iEnableQO)
+unregistersymbol(iEnableMO)
+unregistersymbol(iEnableDP)
+unregistersymbol(iRP)
+unregistersymbol(iDate)
+unregistersymbol(iPlayerID)
+
+//=========================================
+dealloc(MyCode)
+//============= Scripts End ===============
+
+// ****************************************
+// NOTES
+// ****************************************
+{
+}
+
+
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>29</ID>
+          <Description>"Enable/Disable Minimum Money =&gt; (1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMM</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>55</ID>
+          <Description>"Enable/Disable Research in 1 Day =&gt; (1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMR</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>56</ID>
+          <Description>"Enable/Disable Project Goods and Money =&gt; (1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMP</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>57</ID>
+          <Description>"Enable/Disable Construction in 1 Day =&gt; (1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMC</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>58</ID>
+          <Description>"Enable/Disable Troop/Ship Recruitment in 1 Day =&gt; (1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMTP</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>34</ID>
+          <Description>"Enable/Disable Weak Foe =&gt; (1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableWF</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>45</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>46</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>35</ID>
+          <Description>"Enable/Disable Blassed Units =&gt; (1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMU</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>33</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>34</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>59</ID>
+          <Description>"Enable/Disable God Mode =&gt; (1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableGM</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>61</ID>
+          <Description>"Enable/Disable Instant Ownership =&gt; (1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableQO</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>45</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>46</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>62</ID>
+          <Description>"Enable/Disable Quick Occupation =&gt; (1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMO</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>45</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>46</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>60</ID>
+          <Description>"Enable/Disable Minimum Diplomatic Points =&gt; (1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableDP</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols/>
+  <Comments>===========================================
+ Game Title    : Victoria II - Heart of Darkness
+ Game Version  : 3.02 (FCKR)
+ Game Sponsor  : 3DM/Torrent
+ Proces Name   : v2game.exe
+ Script Version: 1.2
+ CE Version    : 6.2
+ Release date  : 03-Jun-2013
+ Author        : Recifense
+ History:
+ 18-Apr-13: First Release (for v3.01)
+ 03-Jun-13: Release for version v3.02
+ Features:
+ - Minimum Money (62,000.00)                           [1]
+ - Research in 1 day                                   [2]
+ - Project Goods and Money                             [3]
+ - Construction in 1 day (Including factory expansion) [4]
+ - Troop/Ship Recruitment in 1 day                     [5]
+ - Weak Foe                                            [6]
+ - Blessed Units:                                      [7]
+   - Max Size
+   - Max Organization
+   - Speed &gt;= 62 Km/h
+ - God Mode                                            [8]
+ - Quick Ownership of conquered province               [9]
+ - Quick Occupation/Protection against occupation      [A]
+ - Diplomatic Points (9.0)                             [B]
+===========================================
+[1] Only human player is affected;
+[2] Only human player is affected;
+[3] You have to pass the cursor over the needed goods and money;
+[4] Only human player is affected;
+[5] Only human player is affected;
+[6] The enemy will easily die when fighting against human player;
+[7] Human player's visible units will be blessed; (no coming back);
+[8] Only human player is affected;
+[9] The conquered province should be selected;
+[A] The province should be selected;
+[B] Only human player is affected;
+===========================================
+HOTKEYS:
+CTRL+Home = Enable most of the cheats;
+CTRL+End  = Disable most of the cheats;
+CTRL+PgUp = Enable  "Blessed Units"
+CTRL+PgDn = Disable "Blessed Units"
+CTRL+INS  = Enable  "Weak Foe"/"Ownership"/"Occupation"
+CTRL+DEL  = Disable "Weak Foe"/"Ownership"/"Occupation"
+===========================================
+Cheers!
+</Comments>
+</CheatTable>

@@ -1,0 +1,184 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="18">
+  <Forms>
+    <UDF1 Class="TCEForm" Encoding="Ascii85">omI/j)=Ap+,fD4mB}g;6(_Q9jigu4g=IeJRNR$_L%OsvQR[qyTJQdA/uwl!N4WEFJSnvZZSnv)3kk}Tz[z?dBl?clPWai#]=m6d/bEyJgO-D}u%N(jf@$y,*M({1)bj[42sr}^vH!G$LB+h{W)vxaej=GreZ%H,w(m4m5QT)ClIta5gS^J^QV4)Bj(nda{4RWVvOMxS63Cvdz!pK@T?,)6+89CVQL.hW@2nkT%ci^%nJnm/Z!}H2}7F/lIji?YvhGjw+VH=s$vWVgJ1pb47Z@rPSfHr@)S(oNlAo[gy+m^:L/Qu%])70uc.O;Iqu+YfCS72-g6XWC)@KR,fu}7)gW*jROan-DWZXqIEs0_oUgYcqWFFWRqmE.SbzJZv5d;RpG#^_BEjzPj!:RRCI[}tC4,dj%}h8eX}:rSJa1an:NYxPmdVRW*BbY!,kyaf=vC)H9HIm#d[n3sii?{UI?A7-bsP?/isj+G#CVnw-ok:(0^xmA%L:ry=JCv}[E6I8g4s)}]$n:cvi.(KmabGC7j,FAw!O8fzNhsRF9GI8?G+W=Ul:$fKnB=h@Z8w2GB5RJ+NQg@pfQd1A9+eDpup*=LPh706s?w3vxt-6(XZSsqWXoay]1$O%;n4Ts}TM@U03Dc)}5.s%!y70RH8hS^dLdqL5iA$(kK:{3;,7462qmpQ/#C_t7O_K#.L:q)5:Eh9/6O(ZlmtO0pHbc.!V0Y8V4a_QgUfj!V-^yBXbR7S4$lVf$,Nndz?Xp]uOl9_pbN4iVv4]=UN%PY)jTL?V^s9</UDF1>
+  </Forms>
+  <CheatEntries>
+    <CheatEntry>
+      <ID>0</ID>
+      <Description>"AA script for testing"</Description>
+      <LastState Activated="0"/>
+      <Color>80000008</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>[ENABLE]
+alloc(player1,4096)
+alloc(player2,4096)
+registersymbol(player1)
+registersymbol(player2)
+
+player1:
+db 'unknown data    '
+player1+50:
+dd (int)25
+dd (int)5
+dd (int)1975
+player1+90: // exp
+dd (int)1500
+player1+100: // name
+db 'Cyrus'
+
+player2:
+db 'unknown data    '
+player2+50:
+dd (int)25
+dd (int)5
+dd (int)1975
+player2+90: // exp
+dd (int)9001
+player2+100: // name
+db 'Obelix'
+ 
+[DISABLE]
+dealloc(player1)
+dealloc(player2)
+
+
+unregistersymbol(player1)
+unregistersymbol(player2)
+</AssemblerScript>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>1</ID>
+      <Description>"player1 EXP"</Description>
+      <LastState Value="0" Activated="0" RealAddress="02840090"/>
+      <Color>80000008</Color>
+      <VariableType>4 Bytes</VariableType>
+      <Address>player1+90</Address>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>2</ID>
+      <Description>"player1 EXP"</Description>
+      <LastState Value="0" Activated="0" RealAddress="02841090"/>
+      <Color>80000008</Color>
+      <VariableType>4 Bytes</VariableType>
+      <Address>player2+90</Address>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols/>
+  <LuaScript>dobCalendar = UDF1.Calendar1
+cbFoundPlayers = UDF1.CEComboBox1
+edtPlayerName = UDF1.CEEdit1
+edtPlayerExp = UDF1.CEEdit2
+
+-- global variables
+groupscancommand = nil
+
+
+offsets = {
+           DOB = 0x50,           -- +0 day, +4 month, +8 year
+           EXP = 0x90,           -- exp
+           PlayerName = 0x100
+          }
+
+addrTable = {}
+
+function num2HEX(num)
+  return string.format('%X',num)
+end
+
+function easyReading(address)
+  local T = {}
+  for k,v in pairs(offsets) do
+    T[k]=num2HEX(v+address)
+  end
+  return T
+end
+
+function groupScan(command,adjust)
+  local MS = createMemScan()
+  local FL = createFoundList(MS)
+  local results = {} -- will contain found addresses (every address as string)
+
+  --firstScan(scanoption, vartype, roundingtype, input1, input2,
+  --          startAddress, stopAddress, protectionflags,
+  --          alignmenttype, "alignmentparam",
+  --          isHexadecimalInput, isNotABinaryString, isunicodescan, iscasesensitive)
+
+  MS.firstScan(soExactValue, vtGrouped, rtTruncated,command,nil,
+                       "00000000","7fffffff","+W*X-C",
+                       fsmAligned,"4",
+                       false, false, false, false)
+  MS.waitTillDone(); FL.initialize()
+
+  if FL.Count~=0 then
+    for i=0,FL.Count-1 do
+      local addr = ( "0x"..FL.Address[i] )+adjust
+      results[#results+1] = addr
+    end
+  end
+
+  sleep(100); FL.destroy()
+  sleep(100); MS.destroy()
+
+  return results
+end
+
+-- TCalendar  OnChange Event
+function DateChanged(sender)
+  local year =  sender.Date:sub( 1,  4) + 0
+  local month = sender.Date:sub( 6,  7) + 0
+  local day =   sender.Date:sub( 9, 10) + 0
+
+  -- update group scan command
+  groupscancommand = "4:"..day.." 4:"..month.." 4:"..year
+end
+
+-- TComboBox  OnChange Event
+function ChosenPlayer(sender)
+  if (sender.ItemIndex &lt; 0) then return end
+  refreshClick(nil)
+end
+
+dobCalendar.OnChange = DateChanged
+cbFoundPlayers.OnChange = ChosenPlayer
+
+function btnFindPlayersByDOBClick(sender)
+  addrTable = groupScan(groupscancommand, -offsets.DOB)
+  cbFoundPlayers.Items.clear()
+
+  if #addrTable ~= 0 then
+    for i,v in ipairs(addrTable) do
+      cbFoundPlayers.Items.add('player '..i..'/'..#addrTable)
+    end
+    cbFoundPlayers.ItemIndex = 0
+  end
+
+  refreshClick(nil)
+end
+
+function refreshClick(sender)
+  if (#addrTable&gt;0) and (cbFoundPlayers.ItemIndex&gt;=0) then
+
+    local address = addrTable[ cbFoundPlayers.ItemIndex + 1 ]
+    local er = easyReading(address)
+
+    edtPlayerName.Text =  readString( er.PlayerName )
+    edtPlayerExp.Text  = readInteger( er.EXP        )
+
+  else
+    edtPlayerName.Text = ''
+    edtPlayerExp.Text = ''
+  end
+end
+
+
+UDF1.show()
+cbFoundPlayers.Items.clear()
+
+-- for testing purposes (see "AA script for testing")
+dobCalendar.Date = "1975-5-25"; DateChanged(dobCalendar)
+
+refreshClick(nil)
+
+</LuaScript>
+</CheatTable>

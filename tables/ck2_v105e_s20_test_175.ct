@@ -1,0 +1,977 @@
+<?xml version="1.0"?>
+<CheatTable CheatEngineTableVersion="12">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>45</ID>
+      <Description>"[X] &lt;== Crusader Kings II v1.05e Script v2.0"</Description>
+      <Options moHideChildren="1"/>
+      <Color>FF0000</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>{
+===========================================
+ Game Title    : Crusader Kings II
+ Game Version  : 1.05e (BQBN)
+ Proces Name   : ck2.exe
+ Script Version: 2.0
+ CE Version    : 6.1
+ Release date  : 11-May-2012
+ Author        : Recifense
+ History:
+ 20-Apr-2012: Release for version 1.05c
+ Features:
+ - Minimum Gold
+ - Upgrade in 1 Day
+ - Construction in 1 Day
+ - Movement in 1 Day
+ - God Mode
+ - Morale
+ - Damage (x16)
+ - Siege
+ - Super Ruler
+   - Diplomacy   (base) &gt;= 70
+   - Martial     (base) &gt;= 70
+   - Stewardship (base) &gt;= 70
+   - Intrigue    (base) &gt;= 70
+   - Learning    (base) &gt;= 70
+   - Fertility           = 1
+   - Health              = 9.9
+   - Prestige           &gt;= 50
+   - Piety              &gt;= 50
+ - Revolt Risk
+ - Technology Progress (9)
+ - Technology Level    (user defined =&gt; max = 5)
+ - Some pointers
+===========================================
+}
+
+[ENABLE]
+//=========================================
+// Check if script is compatible to this game version
+// If false the script will not be loaded
+
+assert(ck2.exe+00228e05,8d 86 f8 00 00 00)  //_MP
+assert(ck2.exe+003a02f6,8b 08 3b 4f 14)     //_MU
+assert(ck2.exe+0004002d,8b 46 20 8b 40 10)  //_MC
+assert(ck2.exe+00228bc1,8b b0 28 02 00 00)  //_MD
+assert(ck2.exe+0035a621,8b 08 3b 4e 14)     //_MB
+assert(ck2.exe+0044b2a0,8b 7d e8 39 7b 74)  //_MMov
+assert(ck2.exe+002f5b24,2b c8 89 0b 8b 4d ec) //_GM
+assert(ck2.exe+002f5bd3,29 01 83 39 00)     //_MMor
+assert(ck2.exe+00142042,03 c2 39 43 14)     //_MS
+assert(ck2.exe+001332fe,89 88 a8 00 00 00)  //_GMS
+assert(ck2.exe+0018645c,8b 48 50 8b 0c 91)  //_MTP
+assert(ck2.exe+00186396,8b 49 40 8b 0c 91)  //_MTL
+
+//=========================================
+alloc(MyCode,1024)
+//=========================================
+// Declaration section
+label(_MonPlayer)
+label(_MonP00)
+label(_BackMP)
+label(_ExitMP)
+label(_MonUpgrade)
+label(_BackMU)
+label(_ExitMU)
+label(_MonCapital)
+label(_BackMC)
+label(_ExitMC)
+label(_MonDate)
+label(_BackMD)
+label(_ExitMD)
+label(_MonBuilding)
+label(_BackMB)
+label(_ExitMB)
+label(_MonMovement)
+label(_BackMM)
+label(_ExitMM)
+label(_GodMode)
+label(_GodM00)
+label(_BackGM)
+label(_ExitGM)
+label(_MonMorale)
+label(_BackMMo)
+label(_ExitMMo)
+label(_MonSiege)
+label(_MonS00)
+label(_BackMS)
+label(_ExitMS)
+label(_GodModeS)
+label(_BackGMS)
+label(_ExitGMS)
+label(_MonTechProg)
+label(_BackMTP)
+label(_ExitMTP)
+label(_MonTechLevel)
+label(_BackMTL)
+label(_ExitMTL)
+label(pUnit)
+label(pPlayer)
+label(pOwner)
+label(pCapital)
+label(pProvince)
+label(iDate)
+label(iMinTech)
+label(iEnableMG)
+label(iEnableMU)
+label(iEnableMB)
+label(iEnableMM)
+label(iEnableGM)
+label(iEnableMMo)
+label(iEnableMD)
+label(iEnableMS)
+label(iEnableSR)
+label(iEnableRR)
+label(iEnableMTP)
+label(iEnableMTL)
+
+//=========================================
+// Registering Symbols
+registersymbol(MyCode)
+registersymbol(pUnit)
+registersymbol(pPlayer)
+registersymbol(pOwner)
+registersymbol(pCapital)
+registersymbol(pProvince)
+registersymbol(iEnableMG)
+registersymbol(iEnableMU)
+registersymbol(iEnableMB)
+registersymbol(iEnableMM)
+registersymbol(iEnableGM)
+registersymbol(iEnableMMo)
+registersymbol(iEnableMD)
+registersymbol(iEnableMS)
+registersymbol(iEnableSR)
+registersymbol(iEnableRR)
+registersymbol(iEnableMTP)
+registersymbol(iEnableMTL)
+registersymbol(iMinTech)
+
+//=========================================
+MyCode:
+//========================================= v105e
+// On main screen
+_MonPlayer:
+ push ebx
+ push ecx
+
+ mov [pPlayer],esi
+
+ mov eax,[esi+10]
+ mov [pOwner],eax
+
+ cmp dword ptr [iEnableSR],0
+ je _MonP00                        // Jump if feature is disabled
+
+ test eax,eax
+ jz _MonP00
+
+ cmp eax,[eax+000000e8]
+ jne _MonP00
+
+ xor ecx,ecx
+ mov ebx,#70
+
+ mov cl,[eax+000000fc]             // Diplomacy (base)
+ cmp ebx,ecx
+ cmovg ecx,ebx
+ mov [eax+000000fc],cl
+
+ mov cl,[eax+000000fd]             // Martial (base)
+ cmp ebx,ecx
+ cmovg ecx,ebx
+ mov [eax+000000fd],cl
+
+ mov cl,[eax+000000fe]             // Stewardship (base)
+ cmp ebx,ecx
+ cmovg ecx,ebx
+ mov [eax+000000fe],cl
+
+ mov cl,[eax+000000ff]             // Intrigue (base)
+ cmp ebx,ecx
+ cmovg ecx,ebx
+ mov [eax+000000ff],cl
+
+ mov cl,[eax+00000100]             // Learning (base)
+ cmp ebx,ecx
+ cmovg ecx,ebx
+ mov [eax+00000100],cl
+
+ mov ebx,#1000
+ mov ecx,[eax+00000104]            // Fertility (base)
+ cmp ebx,ecx
+ cmovg ecx,ebx
+ mov [eax+00000104],ecx
+
+ mov ecx,[eax+00000108]            // Fertility (base)
+ cmp ebx,ecx
+ cmovg ecx,ebx
+ mov [eax+00000108],ecx
+
+ mov ebx,#9900
+ mov ecx,[eax+0000010c]            // Health (base)
+ cmp ebx,ecx
+ cmovg ecx,ebx
+ mov [eax+0000010c],ecx
+
+ mov ebx,#50000
+ mov ecx,[eax+00000114]            // Prestige
+ cmp ebx,ecx
+ cmovg ecx,ebx
+ mov [eax+00000114],ecx
+
+ mov ecx,[eax+0000011c]            // Piety
+ cmp ebx,ecx
+ cmovg ecx,ebx
+ mov [eax+0000011c],ecx
+
+ mov ebx,[iDate]
+ mov ecx,0006aef0
+ sub ebx,ecx
+ js _MonP00
+
+ mov ecx,[eax+000000a4]            // Age
+ cmp ebx,ecx
+ cmovg ecx,ebx
+ mov [eax+000000a4],ecx
+
+_MonP00:
+ cmp dword ptr [iEnableMG],0
+ je _ExitMP                        // Jump if feature is disabled
+
+ mov eax,[esi+000000fc]
+ test eax,eax
+ jnz _ExitMP
+
+ mov eax,77240000
+ cmp eax,[esi+000000f8]
+ jle _ExitMP
+
+ mov [esi+000000f8],eax
+
+_ExitMP:
+ pop ecx
+ pop ebx
+
+ lea eax,[esi+000000F8]            // Original code (pMoney)
+ jmp _BackMP                       // Back to main code
+
+//========================================= v105e
+// When changing date
+_MonUpgrade:
+ cmp dword ptr [iEnableMU],0
+ je _ExitMU                        // Jump if feature is disabled
+
+ mov ecx,[edi+28]                  // Get pCapital
+ test ecx,ecx
+ jz _ExitMU
+
+ mov ecx,[ecx+2c]                  // Get pProvince
+ test ecx,ecx
+ jz _ExitMU
+
+ mov ecx,[ecx+000006ac]            // Get pProvinceName (*)
+ test ecx,ecx
+ jz _ExitMU
+
+ mov ecx,[ecx+000001d4]            // Get pOwner
+ cmp ecx,[pOwner]
+ jne _ExitMU
+
+ mov ecx,[eax]                     // Get current date
+ mov [edi+14],ecx                  // Update finishing Date
+
+_ExitMU:
+ mov ecx,[eax]                     // Original code
+ cmp ecx,[edi+14]                  // Original code
+ jmp _BackMU                       // Back to main code
+
+//========================================= v105e
+// On Selecting the Capital of a Province
+_MonCapital:
+ mov eax,[esi+20]
+
+ mov [pCapital],eax
+ mov eax,[eax+2c]
+
+ mov [pProvince],eax
+
+ cmp dword ptr [iEnableRR],0
+ je _ExitMC                        // Jump if feature is disabled
+
+ mov eax,[eax+000006ac]
+ test eax,eax
+ jz _ExitMC
+
+ mov eax,[eax+000001d4]
+ cmp eax,[pOwner]
+ jne _ExitMC
+
+ mov eax,[pCapital]
+ mov [eax+60],0
+
+ mov eax,[pProvince]
+ mov [eax+000002d4],0
+
+_ExitMC:
+ mov eax,[esi+20]                  // Original code
+ mov eax,[eax+10]                  // Original code
+ jmp _BackMC                       // Back to main code
+
+//========================================= v105e
+// On Main Screen
+_MonDate:
+ mov esi,[eax+00000228]            // Original code (Get Date)
+
+ mov [iDate],esi
+
+_ExitMD:
+ jmp _BackMD                       // Back to main code
+
+//========================================= v105e
+// When changing date (construction)
+_MonBuilding:
+ cmp dword ptr [iEnableMB],0
+ je _ExitMB                        // Jump if feature is disabled
+
+ mov ecx,[esi+20]                  // Get pProvince
+ test ecx,ecx
+ jz _ExitMB
+
+ mov ecx,[ecx+000006ac]            // Get pProvinceName (*)
+ test ecx,ecx
+ jz _ExitMB
+
+ mov ecx,[ecx+000001d4]            // Get pOwner
+ cmp ecx,[pOwner]
+ jne _ExitMB
+
+ mov ecx,[eax]                     // Get current date
+ mov [esi+14],ecx                  // Update finishing Date
+
+_ExitMB:
+ mov ecx,[eax]                     // Original code
+ cmp ecx,[esi+14]                  // Original code
+ jmp _BackMB                       // Back to main code
+
+//========================================= v105e
+// When changing date
+_MonMovement:
+ cmp dword ptr [iEnableMM],0
+ je _ExitMM                        // Jump if feature is disabled
+
+ mov edi,[ebx+0000010c]            // Get pOwner
+ cmp edi,[pOwner]
+ jne _ExitMM
+
+ mov edi,[ebp-18]
+ inc edi
+ mov [ebx+74],edi
+
+_ExitMM:
+ mov edi,[ebp-18]                  // Original code
+ cmp [ebx+74],edi                  // Original code
+ jmp _BackMM                       // Back to main code
+
+//========================================= v105e
+// During combat
+_GodMode:
+ push esi
+
+ mov esi,[ebp+08]
+ test esi,esi
+ jz _ExitGM
+
+ lea esi,[esi-84]
+ mov esi,[esi+48]                  // Get pOwner
+ cmp esi,[pOwner]
+ jne _GodM00
+
+ cmp dword ptr [iEnableGM],0
+ je _ExitGM                        // Jump if feature is disabled
+
+ mov ecx,[ebx+20]
+ mov [ebx],ecx
+
+ xor eax,eax                       // Value2decrease = 0
+ jmp _ExitGM
+
+_GodM00:
+ cmp dword ptr [iEnableMD],0
+ je _ExitGM                        // Jump if feature is disabled
+
+ shl eax,4                         // Damage * 16
+ cmp ecx,eax
+ cmovl eax,ecx
+
+_ExitGM:
+ pop esi
+
+ sub ecx,eax                       // Original code
+ mov [ebx],ecx                     // Original code
+ mov ecx,[ebp-14]                  // Original code
+ jmp _BackGM                       // Back to main code
+
+//========================================= v105e
+// When in combat
+_MonMorale:
+ push edi
+
+ cmp dword ptr [iEnableMMo],0
+ je _ExitMMo                       // Jump if feature is disabled
+
+ mov edi,[ecx+08]                  // Get pOwner
+ cmp edi,[pOwner]
+ jne _ExitMMo
+
+ mov edi,#1000
+ mov [ecx],edi
+
+ xor eax,eax                       // value2decrease = 0
+
+_ExitMMo:
+ pop edi
+
+ sub [ecx],eax                     // Original code
+ cmp dword ptr [ecx],00            // Original code
+ jmp _BackMMo                      // Back to main code
+
+//========================================= v105e
+// Selected Province in Siege
+// If a player's province, set value to 1 day
+// If a Enemy's province, set value to maximum (Enable Assault)
+_MonSiege:
+ push edi
+
+ add eax,edx                       // Original code
+
+ cmp dword ptr [iEnableMS],0
+ je _ExitMS                        // Jump if feature is disabled
+
+ mov edi,[ebx+10]                  // Get pCapital
+ test edi,edi
+ jz _ExitMS
+
+ mov edi,[edi+10]                  // Get pInfo
+ test edi,edi
+ jz _ExitMS
+
+ mov edi,[edi+000001d4]            // Get pOwner
+ cmp edi,[pOwner]
+ jne _MonS00
+
+ mov eax,1
+ jmp _ExitMS
+// Enemy Province's Capital
+_MonS00:
+ mov edi,[ebx+10]                  // Get pCapital
+
+ mov edi,[edi+2c]                  // Get pProvince
+ test edi,edi
+ jz _ExitMS
+
+ mov edi,[edi+0000067c]            // Get ppArmy (*)
+ test edi,edi
+ jz _ExitMS
+
+ mov edi,[edi]                     // Get pArmy
+ test edi,edi
+ jz _ExitMS
+
+ mov edi,[edi+0000010c]            // Get pOwner
+ cmp edi,[pOwner]
+ jne _ExitMS
+
+ mov [ebx+14],eax                  // Enable Assault
+
+_ExitMS:
+ pop edi
+
+ cmp [ebx+14],eax                  // Original code
+ jmp _BackMS                       // Back to main code
+
+//========================================= v105e
+// Army During Siege
+_GodModeS:
+ push esi
+ push edi
+ push ecx
+
+ mov [eax+000000A8],ecx            // Original code
+
+ cmp dword ptr [iEnableGM],0
+ je _ExitGMS                       // Jump if feature is disabled
+
+ mov esi,[eax+48]                  // Get pOwner
+ cmp esi,[pOwner]
+ jne _ExitGMS
+
+ pushfd
+ cld
+
+ lea esi,[eax+000000ac]
+ lea edi,[eax+0000008c]
+ mov ecx,8
+
+ rep movsd
+
+ popfd
+
+ mov [eax+40],#1000
+
+_ExitGMS:
+ pop ecx
+ pop edi
+ pop esi
+ jmp _BackGMS                      // Back to main code
+
+//========================================= v105e
+// Looking at the Technology Screen
+_MonTechProg:
+ push esi
+
+ cmp dword ptr [iEnableMTP],0
+ je _ExitMTP                       // Jump if feature is disabled
+
+ mov ecx,eax                       // Get pProvince
+
+ mov ecx,[ecx+000006ac]            // Get pProvinceName (*)
+ test ecx,ecx
+ jz _ExitMTP
+
+ mov ecx,[ecx+000001d4]            // Get pOwner
+ cmp ecx,[pOwner]
+ jne _ExitMTP
+
+ mov esi,[eax+50]                  // Get pTechProgressList
+ mov ecx,9
+ cmp ecx,[esi+edx*4]               // Get progress
+ jle _ExitMTP
+
+ mov [esi+edx*4],ecx               // Update progress
+
+_ExitMTP:
+ pop esi
+
+ mov ecx,[eax+50]                  // Original code
+ mov ecx,[ecx+edx*4]               // Original code
+ jmp _BackMTP                      // Back to main code
+
+//========================================= v105e
+// Looking at the Technology Screen
+// ECX = province or demesne part, EDX = Index
+_MonTechLevel:
+ push esi
+ push edi
+ push eax
+
+ cmp dword ptr [iEnableMTL],0
+ je _ExitMTL                       // Jump if feature is disabled
+
+ mov eax,[ecx+000006ac]            // Get pProvinceName (*)
+ test eax,eax
+ jz _ExitMTL
+
+ mov eax,[eax+000001d4]            // Get pOwner
+ cmp eax,[pOwner]
+ jne _ExitMTL
+
+ mov esi,[ecx+30]
+ test esi,esi
+ jz _ExitMTL
+
+ mov edi,[ecx+40]
+ test edi,edi
+ jz _ExitMTL
+
+ mov eax,[iMinTech]
+ cmp eax,5
+ jg _ExitMTL
+
+ test eax,eax
+ js _ExitMTL
+
+ add eax,[esi+edx*4]
+ mov [edi+edx*4],eax
+
+_ExitMTL:
+ pop eax
+ pop edi
+ pop esi
+
+ mov ecx,[ecx+40]                  // Original code
+ mov ecx,[ecx+edx*4]               // Original code
+ jmp _BackMTL                      // Back to main code
+
+//=========================================
+ db '=============================&gt;'
+ db 'CE6.1 Script by Recifense 051112'
+//=========================================
+// Variables
+iEnableMG:
+ dd 1
+iEnableMU:
+ dd 1
+iEnableMB:
+ dd 1
+iEnableMM:
+ dd 1
+iEnableGM:
+ dd 1
+iEnableMMo:
+ dd 1
+iEnableMD:
+ dd 1
+iEnableMS:
+ dd 1
+iEnableSR:
+ dd 0
+iEnableRR:
+ dd 1
+iEnableMTP:
+ dd 0
+iEnableMTL:
+ dd 0
+pUnit:
+ dd 0
+pPlayer:
+ dd 0
+pOwner:
+ dd MyCode
+pCapital:
+ dd 0
+pProvince:
+ dd 0
+iDate:
+ dd 0
+iMinTech:
+ dd 0
+
+//=========================================
+//ck2.exe+00228315:
+ck2.exe+00228e05:
+ jmp _MonPlayer
+ nop
+_BackMP:
+
+//ck2.exe+0039f906:
+ck2.exe+003a02f6:
+ jmp _MonUpgrade
+_BackMU:
+
+//ck2.exe+0004018d:
+ck2.exe+0004002d:
+ jmp _MonCapital
+ nop
+_BackMC:
+
+//ck2.exe+002280d1:
+ck2.exe+00228bc1:
+ jmp _MonDate
+ nop
+_BackMD:
+
+//ck2.exe+00359c51:
+ck2.exe+0035a621:
+ jmp _MonBuilding
+_BackMB:
+
+//ck2.exe+0044a000:
+ck2.exe+0044b2a0:
+ jmp _MonMovement
+ nop
+_BackMM:
+
+//ck2.exe+002f4c14:
+ck2.exe+002f5b24:
+ jmp _GodMode
+ nop
+ nop
+_BackGM:
+
+//ck2.exe+002f4cc3:
+ck2.exe+002f5bd3:
+ jmp _MonMorale
+_BackMMo:
+
+//ck2.exe+00141f22:
+ck2.exe+00142042:
+ jmp _MonSiege
+_BackMS:
+
+//ck2.exe+0013323e:
+ck2.exe+001332fe:
+ jmp _GodModeS
+ nop
+_BackGMS:
+
+//ck2.exe+0018625c:
+ck2.exe+0018645c:
+ jmp _MonTechProg
+ nop
+_BackMTP:
+
+//ck2.exe+00186196:
+ck2.exe+00186396:
+ jmp _MonTechLevel
+ nop
+_BackMTL:
+
+//=========================================
+// Script for Restoring Original Codes
+[DISABLE]
+//ck2.exe+00228315:
+ck2.exe+00228e05:
+// lea eax,[esi+000000F8]
+ db 8d 86 f8 00 00 00
+
+//ck2.exe+0039f906:
+ck2.exe+003a02f6:
+// mov ecx,[eax]
+// cmp ecx,[edi+14]
+ db 8b 08 3b 4f 14
+
+//ck2.exe+0004018d:
+ck2.exe+0004002d:
+// mov eax,[esi+20]
+// mov eax,[eax+10]
+ db 8b 46 20 8b 40 10
+
+//ck2.exe+002280d1:
+ck2.exe+00228bc1:
+// mov esi,[eax+00000228]
+ db 8b b0 28 02 00 00
+
+//ck2.exe+00359c51:
+ck2.exe+0035a621:
+// mov ecx,[eax]
+// cmp ecx,[esi+14]
+ db 8b 08 3b 4e 14
+
+//ck2.exe+0044a000:
+ck2.exe+0044b2a0:
+// mov edi,[ebp-18]
+// cmp [ebx+74],edi
+ db 8b 7d e8 39 7b 74
+
+//ck2.exe+002f4c14:
+ck2.exe+002f5b24:
+// sub ecx,eax
+// mov [ebx],ecx
+// mov ecx,[ebp-14]
+ db 2b c8 89 0b 8b 4d ec
+
+//ck2.exe+002f4cc3:
+ck2.exe+002f5bd3:
+// sub [ecx],eax
+// cmp dword ptr [ecx],00
+ db 29 01 83 39 00
+
+//ck2.exe+00141f22:
+ck2.exe+00142042:
+// add eax,edx
+// cmp [ebx+14],eax
+ db 03 c2 39 43 14
+
+//ck2.exe+0013323e:
+ck2.exe+001332fe:
+// mov [eax+000000A8],ecx
+ db 89 88 a8 00 00 00
+
+//ck2.exe+0018625c:
+ck2.exe+0018645c:
+// mov ecx,[eax+50]
+// mov ecx,[ecx+edx*4]
+ db 8b 48 50 8b 0c 91
+
+//ck2.exe+00186196:
+ck2.exe+00186396:
+// mov ecx,[ecx+40]
+// mov ecx,[ecx+edx*4]
+ db 8b 49 40 8b 0c 91
+
+//=========================================
+// Unregistering Symbols
+unregistersymbol(MyCode)
+unregistersymbol(pUnit)
+unregistersymbol(pOwner)
+unregistersymbol(pCapital)
+unregistersymbol(pProvince)
+unregistersymbol(pPlayer)
+unregistersymbol(iEnableMG)
+unregistersymbol(iEnableMU)
+unregistersymbol(iEnableMB)
+unregistersymbol(iEnableMM)
+unregistersymbol(iEnableGM)
+unregistersymbol(iEnableMMo)
+unregistersymbol(iEnableMD)
+unregistersymbol(iEnableMS)
+unregistersymbol(iEnableSR)
+unregistersymbol(iEnableRR)
+unregistersymbol(iEnableMTP)
+unregistersymbol(iEnableMTL)
+unregistersymbol(iMinTech)
+
+//=========================================
+dealloc(MyCode)
+//============= Scripts End ===============
+
+// ****************************************
+// NOTES
+// ****************************************
+{
+}
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>4</ID>
+          <Description>"Enable/Disable Minimum Wealth =&gt; (1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMG</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>14</ID>
+          <Description>"Enable/Disable Upgrade in 1 Day =&gt; (1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMU</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>22</ID>
+          <Description>"Enable/Disable Construction in 1 Day =&gt; (1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMB</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>30</ID>
+          <Description>"Enable/Disable Movement to neighbor Province in 1 Day =&gt; (1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMM</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>31</ID>
+          <Description>"Enable/Disable God Mode =&gt; (1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableGM</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>32</ID>
+          <Description>"Enable/Disable Morale in 100% =&gt; (1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMMo</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>34</ID>
+          <Description>"Enable/Disable Damage X 16  =&gt; (1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMD</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>37</ID>
+          <Description>"Enable/Disable Siege/Assault instantaneously  =&gt; (1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMS</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>46</ID>
+          <Description>"Enable/Disable No Revolt Risk  =&gt; (1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableRR</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>43</ID>
+          <Description>"Enable/Disable Super Ruler  =&gt; (1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableSR</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>59</ID>
+          <Description>"Enable/Disable Tech Progress  =&gt; (1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMTP</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>67</ID>
+          <Description>"Enable/Disable Tech Level  =&gt; (1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMTL</Address>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>68</ID>
+              <Description>"Minimum Technology Level Value (Max = 5) ==&gt; "</Description>
+              <Color>0080FF</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>iMinTech</Address>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>15</ID>
+          <Description>"Player's Score (PLS Look at Table Extras)"</Description>
+          <Color>0000FF</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>pOwner</Address>
+          <Offsets>
+            <Offset>118</Offset>
+          </Offsets>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols/>
+  <Comments>===========================================
+ Game Title    : Crusader Kings II
+ Game Version  : 1.05e (BQBN)
+ Proces Name   : ck2.exe
+ Script Version: 2.0
+ CE Version    : 6.1
+ Release date  : 11-May-2012
+ Author        : Recifense
+ History:
+ 20-Apr-2012: Release for version 1.05c
+ Features:
+ - Minimum Gold [1]
+ - Upgrade in 1 Day [2]
+ - Construction in 1 Day [2]
+ - Movement in 1 Day [2]
+ - God Mode [3]
+ - Morale [3]
+ - Damage (x16) [3]
+ - Siege [4]
+ - Super Ruler [1](*)
+   - Diplomacy   (base) &gt;= 70
+   - Martial     (base) &gt;= 70
+   - Stewardship (base) &gt;= 70
+   - Intrigue    (base) &gt;= 70
+   - Learning    (base) &gt;= 70
+   - Fertility           = 1
+   - Health              = 9.9
+   - Prestige           &gt;= 50
+   - Piety              &gt;= 50
+ - Revolt Risk [5]
+ - Technology Progress (9) [7]
+ - Technology Level    (user defined =&gt; max = 5) [7] (**)
+ - Pointer to Score[6]
+===========================================
+[1] Activated when in main screen (Minimum value = 61000);
+[2] Activated between turns;
+[3] Activated during Normal Battle or Assault
+[4] Activated as soon as you select a province during a siege (by you)
+[5] Activated when looking at a province's capital
+[6] The value should be multiplied by 1000; If you want 123, you have to change the value to 123000;
+[7] Activated on the Technology Screen; (demesne: only the current province is affected/ Realm: all player's provinces are affected)
+(*) Once activated there is no more coming back;
+(**) Change the value to 1, then 2, and so on (in this way you will see what tech is available for each level)
+</Comments>
+</CheatTable>

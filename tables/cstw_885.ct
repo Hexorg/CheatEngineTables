@@ -1,0 +1,254 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="18">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>7</ID>
+      <Description>"No Damage In Battle"</Description>
+      <LastState Activated="0"/>
+      <Color>80000008</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>[ENABLE]
+aobscan(subtracthp,29 91 D4 01 00 00)
+alloc(newmem,$1000)
+
+label(code)
+label(return)
+
+newmem:
+
+code:
+  //sub [ecx+000001D4],edx //Don't subtract HP.
+  jmp return
+
+subtracthp:
+  jmp code
+  nop
+return:
+registersymbol(subtracthp)
+
+[DISABLE]
+subtracthp:
+  db 29 91 D4 01 00 00
+unregistersymbol(subtracthp)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: 0A17DB15
+
+0A17DAF8: 55                 -  push ebp
+0A17DAF9: 8B EC              -  mov ebp,esp
+0A17DAFB: 3B 91 D4 01 00 00  -  cmp edx,[ecx+000001D4]
+0A17DB01: 0F 9E C0           -  setle al
+0A17DB04: 0F B6 C0           -  movzx eax,al
+0A17DB07: 85 C0              -  test eax,eax
+0A17DB09: 75 0A              -  jne 0A17DB15
+0A17DB0B: 33 D2              -  xor edx,edx
+0A17DB0D: 89 91 D4 01 00 00  -  mov [ecx+000001D4],edx
+0A17DB13: EB 06              -  jmp 0A17DB1B
+// ---------- INJECTING HERE ----------
+0A17DB15: 29 91 D4 01 00 00  -  sub [ecx+000001D4],edx
+// ---------- DONE INJECTING  ----------
+0A17DB1B: 5D                 -  pop ebp
+0A17DB1C: C3                 -  ret 
+0A17DB1D: 00 00              -  add [eax],al
+0A17DB1F: 00 70 6B           -  add [eax+6B],dh
+0A17DB22: DF 07              -  fild word ptr [edi]
+0A17DB24: 00 00              -  add [eax],al
+0A17DB26: 00 00              -  add [eax],al
+0A17DB28: 8C 6B DF           -  mov [ebx-21],gs
+0A17DB2B: 07                 -  pop es
+0A17DB2C: 58                 -  pop eax
+}
+</AssemblerScript>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>9</ID>
+      <Description>"Infinite MP"</Description>
+      <LastState Activated="0"/>
+      <Color>80000008</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>//Hook into the MP read, add a reset.
+[ENABLE]
+aobscan(readmp,8B 80 DC 01 00 00 89 45 E4)
+alloc(newmem,$1000)
+
+label(code)
+label(return)
+
+newmem:
+
+code:
+  mov [eax+000001DC], (Int)999 //999 MP.
+  mov eax,[eax+000001DC]
+  jmp return
+
+readmp:
+  jmp code
+  nop
+return:
+registersymbol(readmp)
+
+[DISABLE]
+readmp:
+  db 8B 80 DC 01 00 00
+unregistersymbol(readmp)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: 079903F0
+
+079903C2: E8 31 14 35 01     -  call 08CE17F8
+079903C7: 8B 86 C8 00 00 00  -  mov eax,[esi+000000C8]
+079903CD: 8B 96 E0 00 00 00  -  mov edx,[esi+000000E0]
+079903D3: 8B 52 1C           -  mov edx,[edx+1C]
+079903D6: 3B 7A 04           -  cmp edi,[edx+04]
+079903D9: 0F 83 D5 00 00 00  -  jae 079904B4
+079903DF: 8B 54 BA 08        -  mov edx,[edx+edi*4+08]
+079903E3: 3B 50 04           -  cmp edx,[eax+04]
+079903E6: 0F 83 C8 00 00 00  -  jae 079904B4
+079903EC: 8B 44 90 0C        -  mov eax,[eax+edx*4+0C]
+// ---------- INJECTING HERE ----------
+079903F0: 8B 80 DC 01 00 00  -  mov eax,[eax+000001DC]
+// ---------- DONE INJECTING  ----------
+079903F6: 89 45 E4           -  mov [ebp-1C],eax
+079903F9: E8 99 4F 5F 53     -  call clr.dll+15397
+079903FE: 8B C8              -  mov ecx,eax
+07990400: 39 09              -  cmp [ecx],ecx
+07990402: E8 99 1F A6 4E     -  call mscorlib.ni.dll+2E23A0
+07990407: 8B C8              -  mov ecx,eax
+07990409: E8 02 FB B0 4E     -  call mscorlib.ni.dll+38FF10
+0799040E: 50                 -  push eax
+0799040F: 8B 4D E4           -  mov ecx,[ebp-1C]
+07990412: 33 D2              -  xor edx,edx
+}
+</AssemblerScript>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>12</ID>
+      <Description>"Level Up Each Battle"</Description>
+      <LastState Activated="0"/>
+      <Color>80000008</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>//Hook into the code that reads the EXP to the next level after battle.
+//Use an override that reads 0 so you level up each battle.
+[ENABLE]
+aobscan(readexp,8B 80 5C 02 00 00 8B 95)
+alloc(newmem,$1000)
+
+label(code)
+label(return)
+
+newmem:
+
+code:
+  //mov eax,[eax+0000025C]
+  mov eax,0 //Read 0 EXP left.
+  jmp return
+
+readexp:
+  jmp code
+  nop
+return:
+registersymbol(readexp)
+
+[DISABLE]
+readexp:
+  db 8B 80 5C 02 00 00
+unregistersymbol(readexp)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: 17BF257B
+
+17BF2546: 0F B6 C0              -  movzx eax,al
+17BF2549: 89 85 80 FE FF FF     -  mov [ebp-00000180],eax
+17BF254F: 83 BD 80 FE FF FF 00  -  cmp dword ptr [ebp-00000180],00
+17BF2556: 0F 85 C5 01 00 00     -  jne 17BF2721
+17BF255C: 8B 85 E4 FE FF FF     -  mov eax,[ebp-0000011C]
+17BF2562: 8B 95 B4 DD FF FF     -  mov edx,[ebp-0000224C]
+17BF2568: 8B 92 C8 00 00 00     -  mov edx,[edx+000000C8]
+17BF256E: 3B 42 04              -  cmp eax,[edx+04]
+17BF2571: 0F 83 8F 99 02 00     -  jae 17C1BF06
+17BF2577: 8B 44 82 0C           -  mov eax,[edx+eax*4+0C]
+// ---------- INJECTING HERE ----------
+17BF257B: 8B 80 5C 02 00 00     -  mov eax,[eax+0000025C]
+// ---------- DONE INJECTING  ----------
+17BF2581: 8B 95 E4 FE FF FF     -  mov edx,[ebp-0000011C]
+17BF2587: 8B 8D B4 DD FF FF     -  mov ecx,[ebp-0000224C]
+17BF258D: 8B 89 DC 00 00 00     -  mov ecx,[ecx+000000DC]
+17BF2593: 8B 49 18              -  mov ecx,[ecx+18]
+17BF2596: 3B 51 04              -  cmp edx,[ecx+04]
+17BF2599: 0F 83 67 99 02 00     -  jae 17C1BF06
+17BF259F: 3B 44 91 08           -  cmp eax,[ecx+edx*4+08]
+17BF25A3: 0F 9F C0              -  setg al
+17BF25A6: 0F B6 C0              -  movzx eax,al
+17BF25A9: 89 85 80 FE FF FF     -  mov [ebp-00000180],eax
+}
+</AssemblerScript>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>14</ID>
+      <Description>"999,999,999 Gold After Battle"</Description>
+      <LastState Activated="0"/>
+      <Color>80000008</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>//Find the code that adds to your gold after battle.  Make it add tons.
+[ENABLE]
+aobscan(addgold,01 42 2C 33 D2)
+alloc(newmem,$1000)
+
+label(code)
+label(return)
+
+newmem:
+
+code:
+  //add [edx+2C],eax
+  add [edx+2C],(Int)999999999
+  xor edx,edx
+  jmp return
+
+addgold:
+  jmp code
+return:
+registersymbol(addgold)
+
+[DISABLE]
+addgold:
+  db 01 42 2C 33 D2
+unregistersymbol(addgold)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: 17BF1D56
+
+17BF1D1C: 8B 85 B4 DD FF FF              -  mov eax,[ebp-0000224C]
+17BF1D22: 8B 80 DC 00 00 00              -  mov eax,[eax+000000DC]
+17BF1D28: C6 80 51 01 00 00 01           -  mov byte ptr [eax+00000151],01
+17BF1D2F: 8B 85 B4 DD FF FF              -  mov eax,[ebp-0000224C]
+17BF1D35: 8B 80 E0 00 00 00              -  mov eax,[eax+000000E0]
+17BF1D3B: 89 85 B0 FC FF FF              -  mov [ebp-00000350],eax
+17BF1D41: 8B 85 B4 DD FF FF              -  mov eax,[ebp-0000224C]
+17BF1D47: 8B 80 D8 00 00 00              -  mov eax,[eax+000000D8]
+17BF1D4D: 8B 40 1C                       -  mov eax,[eax+1C]
+17BF1D50: 8B 95 B0 FC FF FF              -  mov edx,[ebp-00000350]
+// ---------- INJECTING HERE ----------
+17BF1D56: 01 42 2C                       -  add [edx+2C],eax
+17BF1D59: 33 D2                          -  xor edx,edx
+// ---------- DONE INJECTING  ----------
+17BF1D5B: 89 55 DC                       -  mov [ebp-24],edx
+17BF1D5E: E9 52 01 00 00                 -  jmp 17BF1EB5
+17BF1D63: 8B 45 DC                       -  mov eax,[ebp-24]
+17BF1D66: 8B 95 B4 DD FF FF              -  mov edx,[ebp-0000224C]
+17BF1D6C: 8B 92 C8 00 00 00              -  mov edx,[edx+000000C8]
+17BF1D72: 3B 42 04                       -  cmp eax,[edx+04]
+17BF1D75: 0F 83 8B A1 02 00              -  jae 17C1BF06
+17BF1D7B: 8B 44 82 0C                    -  mov eax,[edx+eax*4+0C]
+17BF1D7F: 8B 88 7C 01 00 00              -  mov ecx,[eax+0000017C]
+17BF1D85: 8B 15 84 21 D9 04              -  mov edx,[04D92184]
+}
+</AssemblerScript>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols/>
+</CheatTable>

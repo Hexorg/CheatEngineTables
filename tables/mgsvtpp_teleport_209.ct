@@ -1,0 +1,637 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="18">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>1648</ID>
+      <Description>"Player Position Data"</Description>
+      <LastState Activated="1"/>
+      <Color>FF0000</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>[ENABLE]
+aobscanmodule(PosAOB,mgsvtpp.exe,44 0F 28 50 20 89 DA)
+aobscanmodule(WPAOB,mgsvtpp.exe,F3 0F 10 5B 10 0F 57 C9 0F 14 D8 0F 14 D1 0F 14 DA 0F 29 5A 20)
+alloc(newmem,1024,"mgsvtpp.exe"+3D55ECB)
+
+label(goPosAOB)
+label(returnPosAOB)
+label(exitPosAOB)
+
+label(goWPAOB)
+label(returnWPAOB)
+label(exitWPAOB)
+
+label(L1)
+label(L2)
+label(L2a)
+label(L3)
+label(L3a)
+label(L4)
+
+label(PosData)
+registersymbol(PosData)
+
+label(WPData)
+registersymbol(WPData)
+
+label(iTeleSave)
+label(iTelePort)
+label(iTeleMark)
+label(iTeleBack)
+label(TeleSlot)
+label(CorrSave)
+registersymbol(iTeleSave)
+registersymbol(iTelePort)
+registersymbol(iTeleMark)
+registersymbol(iTeleBack)
+registersymbol(TeleSlot)
+
+newmem:
+// =======================
+goPosAOB:
+  mov [PosData],rax
+
+  mov r8d,[iTeleSave]
+  test r8d,r8d
+  jnz L1
+
+  mov r8d,[iTelePort]
+  test r8d,r8d
+  jnz L2
+
+  mov r8d,[iTeleBack]
+  test r8d,r8d
+  jnz L3
+
+  jmp exitPosAOB
+
+// ===== Save position =====
+L1:
+  mov rdx,TeleSlot
+  imul r8d,r8d,10
+  lea rdx,[rdx+r8d]
+
+  mov r8,[rax+20]
+  mov [rdx],r8
+
+  mov r8d,[rax+28]
+  mov [rdx+8],r8d
+
+  xor rdx,rdx
+  mov [iTeleSave],edx
+  jmp exitPosAOB
+
+// ===== Teleport to saved point =====
+L2:
+  mov rdx,TeleSlot
+  imul r8d,r8d,10
+  lea rdx,[rdx+r8d]
+  mov r8,[rdx]
+  test r8,r8
+  jz L2a
+
+  push rdi
+  mov rdi,TeleSlot
+  mov r8,[rax+20]
+  mov [rdi],r8
+  mov r8,[rdx]
+  mov [rax+20],r8
+
+  mov r8d,[rax+28]
+  mov [rdi+8],r8d
+  mov r8d,[rdx+8]
+  mov [rax+28],r8d
+  pop rdi
+
+  movss xmm10,[rax+24]
+  addss xmm10,[CorrSave]
+  movss [rax+24],xmm10
+
+L2a:
+  xor rdx,rdx
+  mov [iTelePort],edx
+  jmp exitPosAOB
+
+// ===== Teleport to back =====
+L3:
+  mov rdx,TeleSlot
+  mov r8,[rdx]
+  test r8,r8
+  jz L3a
+
+  push rdi
+  mov rdi,[rdx]
+  mov r8,[rax+20]
+  mov [rdx],r8
+  mov [rax+20],rdi
+
+  mov edi,[rdx+8]
+  mov r8d,[rax+28]
+  mov [rdx+8],r8d
+  mov [rax+28],edi
+  pop rdi
+
+  movss xmm10,[rax+24]
+  addss xmm10,[CorrSave]
+  movss [rax+24],xmm10
+
+L3a:
+  xor rdx,rdx
+  mov [iTeleBack],edx
+  jmp exitPosAOB
+
+exitPosAOB:
+  movaps xmm10,[rax+20]
+  jmp returnPosAOB
+
+// =======================
+goWPAOB:
+  mov [WPData],rbx
+
+  mov edi,[iTeleMark]
+  test edi,edi
+  jz exitWPAOB
+
+  mov rdi,PosData
+  test rdi,rdi
+  jz L4
+
+  mov rax,[rbx+10]
+  test rax,rax
+  jz L4
+
+  mov rdi,[rdi]
+  mov rsi,TeleSlot
+
+  mov rax,[rdi+20]
+  mov [rsi],rax        // backup pos in Slot+0
+  mov rax,[rbx+10]
+  mov [rdi+20],rax
+
+  mov eax,[rdi+28]
+  mov [rsi+8],eax      // backup pos in Slot+0
+  mov eax,[rbx+18]
+  mov [rdi+28],eax
+
+  movss xmm3,[rdi+24]
+  addss xmm3,[CorrSave]
+  movss [rdi+24],xmm3
+
+L4:
+  xor rax,rax
+  mov [iTeleMark],eax
+
+exitWPAOB:
+  movss xmm3,[rbx+10]
+  jmp returnWPAOB
+
+// =======================
+CorrSave:
+  dd (float)1
+iTeleSave:
+  dd 0
+iTelePort:
+  dd 0
+iTeleMark:
+  dd 0
+iTeleBack:
+  dd 0
+PosData:
+  dq 0
+WPData:
+  dq 0
+TeleSlot:
+  dq 0,0,0,0,0,0,0,0,0,0
+
+// -----
+PosAOB:
+  jmp goPosAOB
+returnPosAOB:
+registersymbol(PosAOB)
+
+WPAOB:
+  jmp goWPAOB
+returnWPAOB:
+registersymbol(WPAOB)
+
+[DISABLE]
+PosAOB:
+  movaps xmm10,[rax+20]
+unregistersymbol(PosAOB)
+
+WPAOB:
+   movss xmm3,[rbx+10]
+unregistersymbol(WPAOB)
+
+unregistersymbol(PosData)
+unregistersymbol(WPData)
+unregistersymbol(iTeleSave)
+unregistersymbol(iTelePort)
+unregistersymbol(iTeleMark)
+unregistersymbol(iTeleBack)
+unregistersymbol(TeleSlot)
+
+dealloc(newmem)
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>29674</ID>
+          <Description>"Save in slot #"</Description>
+          <LastState Value="0" Activated="0" RealAddress="146FD01F3"/>
+          <ShowAsSigned>1</ShowAsSigned>
+          <Color>0080FF</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iTeleSave</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>18</Key>
+                <Key>97</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>18</Key>
+                <Key>98</Key>
+              </Keys>
+              <Value>2</Value>
+              <ID>1</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>18</Key>
+                <Key>99</Key>
+              </Keys>
+              <Value>3</Value>
+              <ID>2</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>29672</ID>
+          <Description>"Teleport to #"</Description>
+          <LastState Value="0" Activated="0" RealAddress="146FD01F7"/>
+          <ShowAsSigned>1</ShowAsSigned>
+          <Color>0080FF</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iTelePort</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>97</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>98</Key>
+              </Keys>
+              <Value>2</Value>
+              <ID>1</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>99</Key>
+              </Keys>
+              <Value>3</Value>
+              <ID>2</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>29675</ID>
+          <Description>"Teleport to Mark"</Description>
+          <LastState Value="0" Activated="0" RealAddress="146FD01FB"/>
+          <ShowAsSigned>0</ShowAsSigned>
+          <Color>0080FF</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iTeleMark</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>96</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>29748</ID>
+          <Description>"Teleport back"</Description>
+          <LastState Value="0" Activated="0" RealAddress="146FD01FF"/>
+          <ShowAsSigned>1</ShowAsSigned>
+          <Color>0080FF</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iTeleBack</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>110</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>1864</ID>
+          <Description>"Raw Waypoint #1"</Description>
+          <Options moHideChildren="1"/>
+          <LastState Value="F1 7F 0A 42 BE 5B D0 43 58 69 38 C4" Activated="0" RealAddress="23945010"/>
+          <ShowAsHex>1</ShowAsHex>
+          <Color>000080</Color>
+          <VariableType>Array of byte</VariableType>
+          <ByteLength>12</ByteLength>
+          <Address>WPData</Address>
+          <Offsets>
+            <Offset>10</Offset>
+          </Offsets>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>29685</ID>
+              <Description>"X"</Description>
+              <LastState Value="34.62494278" Activated="0" RealAddress="23945010"/>
+              <Color>008000</Color>
+              <VariableType>Float</VariableType>
+              <Address>WPData</Address>
+              <Offsets>
+                <Offset>10</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>29686</ID>
+              <Description>"Y"</Description>
+              <LastState Value="-737.6459961" Activated="0" RealAddress="23945018"/>
+              <Color>008000</Color>
+              <VariableType>Float</VariableType>
+              <Address>WPData</Address>
+              <Offsets>
+                <Offset>18</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>29687</ID>
+              <Description>"Z"</Description>
+              <LastState Value="416.7167358" Activated="0" RealAddress="23945014"/>
+              <Color>008000</Color>
+              <VariableType>Float</VariableType>
+              <Address>WPData</Address>
+              <Offsets>
+                <Offset>14</Offset>
+              </Offsets>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>29689</ID>
+          <Description>"Raw Teleportation"</Description>
+          <Options moHideChildren="1"/>
+          <LastState Value="7E F7 F4 43 EB 22 CE 43 35 EF 2C C4" Activated="0" RealAddress="A9CCF130"/>
+          <ShowAsHex>1</ShowAsHex>
+          <Color>000080</Color>
+          <VariableType>Array of byte</VariableType>
+          <ByteLength>12</ByteLength>
+          <Address>PosData</Address>
+          <Offsets>
+            <Offset>20</Offset>
+          </Offsets>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>29690</ID>
+              <Description>"X"</Description>
+              <LastState Value="489.9335327" Activated="0" RealAddress="A9CCF130"/>
+              <Color>008000</Color>
+              <VariableType>Float</VariableType>
+              <Address>PosData</Address>
+              <Offsets>
+                <Offset>20</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>29691</ID>
+              <Description>"Y"</Description>
+              <LastState Value="-691.7376099" Activated="0" RealAddress="A9CCF138"/>
+              <Color>008000</Color>
+              <VariableType>Float</VariableType>
+              <Address>PosData</Address>
+              <Offsets>
+                <Offset>28</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>29692</ID>
+              <Description>"Z"</Description>
+              <LastState Value="412.2727966" Activated="0" RealAddress="A9CCF134"/>
+              <Color>008000</Color>
+              <VariableType>Float</VariableType>
+              <Address>PosData</Address>
+              <Offsets>
+                <Offset>24</Offset>
+              </Offsets>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>10730</ID>
+          <Description>"Slot #0 (Back)"</Description>
+          <Options moHideChildren="1"/>
+          <LastState Value="00 00 00 00 00 00 00 00 00 00 00 00" Activated="0" RealAddress="146FD0213"/>
+          <ShowAsHex>1</ShowAsHex>
+          <Color>000080</Color>
+          <VariableType>Array of byte</VariableType>
+          <ByteLength>12</ByteLength>
+          <Address>TeleSlot</Address>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>29676</ID>
+              <Description>"X"</Description>
+              <LastState Value="0" Activated="0" RealAddress="146FD0213"/>
+              <Color>008000</Color>
+              <VariableType>Float</VariableType>
+              <Address>TeleSlot+0</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>29678</ID>
+              <Description>"Y"</Description>
+              <LastState Value="0" Activated="0" RealAddress="146FD021B"/>
+              <Color>008000</Color>
+              <VariableType>Float</VariableType>
+              <Address>TeleSlot+8</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>29677</ID>
+              <Description>"Z"</Description>
+              <LastState Value="0" Activated="0" RealAddress="146FD0217"/>
+              <Color>008000</Color>
+              <VariableType>Float</VariableType>
+              <Address>TeleSlot+4</Address>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>29744</ID>
+          <Description>"Slot #1"</Description>
+          <Options moHideChildren="1"/>
+          <LastState Value="00 00 00 00 00 00 00 00 00 00 00 00" Activated="0" RealAddress="146FD0223"/>
+          <ShowAsHex>1</ShowAsHex>
+          <Color>000080</Color>
+          <VariableType>Array of byte</VariableType>
+          <ByteLength>12</ByteLength>
+          <Address>TeleSlot+10</Address>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>29745</ID>
+              <Description>"X"</Description>
+              <LastState Value="0" Activated="0" RealAddress="146FD0213"/>
+              <Color>008000</Color>
+              <VariableType>Float</VariableType>
+              <Address>TeleSlot+0</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>29746</ID>
+              <Description>"Y"</Description>
+              <LastState Value="0" Activated="0" RealAddress="146FD021B"/>
+              <Color>008000</Color>
+              <VariableType>Float</VariableType>
+              <Address>TeleSlot+8</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>29747</ID>
+              <Description>"Z"</Description>
+              <LastState Value="0" Activated="0" RealAddress="146FD0217"/>
+              <Color>008000</Color>
+              <VariableType>Float</VariableType>
+              <Address>TeleSlot+4</Address>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>10732</ID>
+          <Description>"Slot #2"</Description>
+          <Options moHideChildren="1"/>
+          <LastState Value="00 00 00 00 00 00 00 00 00 00 00 00" Activated="0" RealAddress="146FD0233"/>
+          <ShowAsHex>1</ShowAsHex>
+          <Color>000080</Color>
+          <VariableType>Array of byte</VariableType>
+          <ByteLength>12</ByteLength>
+          <Address>TeleSlot+20</Address>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>29679</ID>
+              <Description>"X"</Description>
+              <LastState Value="0" Activated="0" RealAddress="146FD021F"/>
+              <Color>008000</Color>
+              <VariableType>Float</VariableType>
+              <Address>TeleSlot+c</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>29680</ID>
+              <Description>"Y"</Description>
+              <LastState Value="0" Activated="0" RealAddress="146FD0227"/>
+              <Color>008000</Color>
+              <VariableType>Float</VariableType>
+              <Address>TeleSlot+14</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>29681</ID>
+              <Description>"Z"</Description>
+              <LastState Value="0" Activated="0" RealAddress="146FD0223"/>
+              <Color>008000</Color>
+              <VariableType>Float</VariableType>
+              <Address>TeleSlot+10</Address>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>10731</ID>
+          <Description>"Slot #3"</Description>
+          <Options moHideChildren="1"/>
+          <LastState Value="00 00 00 00 00 00 00 00 00 00 00 00" Activated="0" RealAddress="146FD0243"/>
+          <ShowAsHex>1</ShowAsHex>
+          <Color>000080</Color>
+          <VariableType>Array of byte</VariableType>
+          <ByteLength>12</ByteLength>
+          <Address>TeleSlot+30</Address>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>29682</ID>
+              <Description>"X"</Description>
+              <LastState Value="0" Activated="0" RealAddress="146FD022B"/>
+              <Color>008000</Color>
+              <VariableType>Float</VariableType>
+              <Address>TeleSlot+18</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>29683</ID>
+              <Description>"Y"</Description>
+              <LastState Value="0" Activated="0" RealAddress="146FD0233"/>
+              <Color>008000</Color>
+              <VariableType>Float</VariableType>
+              <Address>TeleSlot+20</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>29684</ID>
+              <Description>"Z"</Description>
+              <LastState Value="0" Activated="0" RealAddress="146FD022F"/>
+              <Color>008000</Color>
+              <VariableType>Float</VariableType>
+              <Address>TeleSlot+1c</Address>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols>
+    <SymbolEntry>
+      <Name>PosData</Name>
+      <Address>146FD0203</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>WPData</Name>
+      <Address>146FD020B</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>iTeleSave</Name>
+      <Address>146FD01F3</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>iTelePort</Name>
+      <Address>146FD01F7</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>iTeleMark</Name>
+      <Address>146FD01FB</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>iTeleBack</Name>
+      <Address>146FD01FF</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>TeleSlot</Name>
+      <Address>146FD0213</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>PosAOB</Name>
+      <Address> 143D5EDEB</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>WPAOB</Name>
+      <Address> 143688E93</Address>
+    </SymbolEntry>
+  </UserdefinedSymbols>
+</CheatTable>

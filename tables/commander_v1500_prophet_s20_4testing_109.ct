@@ -1,0 +1,1307 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="16">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>0</ID>
+      <Description>"[X] &lt;== Commander Conquest of the Americas v1.500 PROPHET Script 2.0"</Description>
+      <Options moHideChildren="1"/>
+      <Color>FF0000</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>{
+===========================================
+ Game Title    : Commander - Conquest of the Americas
+ Game Version  : 1.500
+ Game Sponsor  : PROPHET
+ Proces Name   : Commander.exe
+ Script Version: 2.0
+ CE Version    : 6.3
+ Release date  : 14-Nov-2013
+ Author        : Recifense
+ History:
+ 14-Nov-13: First Release
+ Features:
+ - Minimum Money
+ - Minimum Item in Warehouse
+ - Minimum Colonists
+ - Minimum Colony Morale
+ - Quick Building Construction
+ - Quick Ship Construction
+ - God Mode
+ - Full Ammo
+ - Minimum Speed on MAP (38 kn)
+ - Early Ship Availability
+ - Pointers
+===========================================
+}
+
+//=========================================
+// Definitions
+define(LUDO,"Commander.exe")
+
+define(MPMY,Commander.exe+001c4642)
+define(MPWH,Commander.exe+001314f3)
+define(MPCS,Commander.exe+0012d3fa)
+define(MCME,Commander.exe+0012d476)
+define(MBCN,Commander.exe+00229503)
+define(MSC1,Commander.exe+002c2c27)
+define(MSC2,Commander.exe+002c2c98)
+define(MSHL,Commander.exe+000c51bb)
+define(MSSL,Commander.exe+000c54b5)
+define(MSCW,Commander.exe+000c54f2)
+define(MSAO,Commander.exe+000bae38)
+define(MSSP,Commander.exe+001bbc0f)
+define(MSMS,Commander.exe+0024568a)
+define(MSM1,Commander.exe+000c540f)
+define(MSM2,Commander.exe+000ae226)
+define(MSIB,Commander.exe+001cb504)
+define(MSCA,Commander.exe+000bc1f4)
+define(MCA1,Commander.exe+00080f8c)
+define(MSLL,Commander.exe+0013a320)
+
+//=========================================
+// Constants used in the script (that can be changed)
+define(ctMMON,#630000) // Minimum Money
+
+//=========================================
+[ENABLE]
+//=========================================
+//LuaCall(CheckVersion())
+//=========================================
+// Check if script is compatible to this game version
+// If false the script will not be loaded
+
+assert(MPMY,8b 88 b0 00 00 00 51 8b 8f d0 00 00 00 e8 ?? ?? ?? ?? 83 bf f8 00)
+assert(MPWH,83 bd 80 01 00 00 00 ?? ?? c7 46 74 00 00 00 00 ?? ?? c7 46 74 01)
+assert(MPCS,8b 82 e4 01 00 00 8b 8f dc 00 00 00 50 e8 ?? ?? ?? ?? 8b 8f e8 00)
+assert(MCME,8b 88 f8 01 00 00 55 e8 ?? ?? ?? ?? 51 8b 8f e0 00 00 00 d9 1c 24)
+assert(MBCN,8b 32 80 7e 20 00 ?? ?? 40 83 c2 04 3b d1 ?? ?? 5e c3 cc cc cc cc)
+assert(MSC1,8b 80 78 01 00 00 3b f1 ?? ?? 2b 43 30 8b f8 ?? ?? 2b f1 8d 3c 76)
+assert(MSC2,8d 8c 24 5c 02 00 00 c7 84 24 74 02 00 00 01 00 00 00 e8 ?? ?? ??)
+assert(MSHL,8b 82 14 01 00 00 2b c5 8b ca 89 81 14 01 00 00 8b 86 a0 14 00 00)
+assert(MSSL,29 98 18 01 00 00 8b 86 a0 14 00 00 8b 88 90 00 00 00 f3 0f 2c 54)
+assert(MSCW,8b aa 3c 01 00 00 e8 ?? ?? ?? ?? 3b e8 ?? ?? 8b 86 a0 14 00 00 8b)
+assert(MSAO,8b 82 3c 01 00 00 89 44 24 04 db 44 24 04 dd 5c 24 08 e8 ?? ?? ??)
+assert(MSSP,89 81 c8 00 00 00 e8 ?? ?? ?? ?? 8b 4c 24 20 5f 33 c0 5e 64 89 0d)
+assert(MSMS,29 90 48 01 00 00 29 51 14 b8 00 00 00 00 ?? ?? 89 41 14 8b 89 90)
+assert(MSM1,8b a9 90 00 00 00 83 bd 48 01 00 00 00 ?? ?? db 44 24 7c dc 0d ??)
+assert(MSM2,8b 90 90 00 00 00 39 9a 48 01 00 00 ?? ?? 8b d0 8b 82 90 00 00 00)
+assert(MSIB,8b 82 90 00 00 00 d9 80 50 01 00 00 6a 00 51 8b cf d9 1c 24 e8 ??)
+assert(MSCA,80 7c 16 38 00 8d 44 16 38 ?? ?? 5f 5e 5d c6 00 00 5b 83 c4 14 c2)
+assert(MCA1,80 7d 38 00 0f 57 c0 0f 8f e6 00 00 00 89 4d 34 8b 87 a0 14 00 00)
+assert(MSLL,89 8e 64 01 00 00 d9 87 68 01 00 00 d9 9e 68 01 00 00 d9 87 6c 01)
+
+//=========================================
+alloc(MyCode,4096,LUDO)
+//=========================================
+// Declaration section
+label(_MonPlayerMoney)
+label(_BackMPM)
+label(_ExitMPM)
+label(_MonPlayerWarehouse)
+label(_BackMPW)
+label(_ExitMPW)
+label(_MonPlayerColonists)
+label(_MonPC00)
+label(_BackMPC)
+label(_ExitMPC)
+label(_MonColonyMorale)
+label(_BackMCM)
+label(_ExitMCM)
+label(_MonBuildingConstruction)
+label(_BackMBC)
+label(_ExitMBC)
+label(_MonShipConstruction1)
+label(_BackSC1)
+label(_ExitSC1)
+label(_MonShipConstruction2)
+label(_MonSC20)
+label(_MonSC21)
+label(_BackSC2)
+label(_ExitSC2)
+label(_MonShipHull)
+label(_BackMSH)
+label(_ExitMSH)
+label(_MonShipSail)
+label(_BackMSS)
+label(_ExitMSS)
+label(_MonShipCrew)
+label(_BackMSC)
+label(_ExitMSC)
+label(_MonShipAmmo)
+label(_BackMSA)
+label(_ExitMSA)
+label(_MonSelShip)
+label(_BackSSP)
+label(_ExitSSP)
+label(_MonShipMarines)
+label(_BackMSM)
+label(_ExitMSM)
+label(_MonShipMarines1)
+label(_BackMS1)
+label(_ExitMS1)
+label(_MonShipMarines2)
+label(_BackMS2)
+label(_ExitMS2)
+label(_MonShipInBattle)
+label(_BackMSI)
+label(_ExitMSI)
+label(_MonShipCannons)
+label(_BackSCA)
+label(_ExitSCA)
+label(_MonShipCannons1)
+label(_BackCA1)
+label(_ExitCA1)
+label(_MonShipSpeed)
+label(_ExitMSD)
+label(_MonShipLevel)
+label(_BackMSL)
+label(_ExitMSL)
+label(iEnableMPM)
+label(iEnableMPW)
+label(iEnableMPC)
+label(iEnableMCM)
+label(iEnableMBC)
+label(iEnableMSC)
+label(iEnableGMD)
+label(iEnableMSA)
+label(iEnableMSS)
+label(iEnableSLY)
+label(iOwnerID)
+label(iMinMoney)
+label(pMoney)
+label(pItem)
+label(pColonists)
+label(pShip)
+label(pShipyard)
+label(pPrototype)
+label(aLast)
+
+//=========================================
+// Registering Symbols
+registersymbol(MyCode)
+registersymbol(iEnableMPM)
+registersymbol(iEnableMPW)
+registersymbol(iEnableMPC)
+registersymbol(iEnableMCM)
+registersymbol(iEnableMBC)
+registersymbol(iEnableMSC)
+registersymbol(iEnableGMD)
+registersymbol(iEnableMSA)
+registersymbol(iEnableMSS)
+registersymbol(iEnableSLY)
+registersymbol(iOwnerID)
+registersymbol(iMinMoney)
+registersymbol(pMoney)
+registersymbol(pItem)
+registersymbol(pColonists)
+registersymbol(pShip)
+registersymbol(pShipyard)
+registersymbol(pPrototype)
+registersymbol(aLast)
+
+//=========================================
+MyCode:
+//========================================= 1500
+// Main game screen
+_MonPlayerMoney:
+ mov dword ptr [aLast],'_MPM'
+
+ mov [pMoney],eax                  // Save ptr for debugging
+
+ cmp dword ptr [iEnableMPM],0
+ je _ExitMPM                       // Jump if feature is disabled
+
+ mov ecx,[iMinMoney]               // Get minimum money value
+ cmp ecx,[eax+000000B0]            // Current money &gt;= minimum?
+ jle _ExitMPM                      // Jump if true
+
+ mov [eax+000000B0],ecx            // Update money
+
+_ExitMPM:
+ mov ecx,[eax+000000B0]            // Original code (rds money)
+ jmp _BackMPM                      // Back to main code
+
+//========================================= 1500
+_MonPlayerWarehouse:
+ mov dword ptr [aLast],'_MPW'
+
+ push ecx
+
+ mov [pItem],ebp                   // Save ptr for debugging
+
+ cmp dword ptr [iEnableMPW],0
+ je _ExitMPW                       // Jump if feature is disabled
+
+ mov ecx,#101                      // Get minimum item value
+ cmp ecx,[ebp+00000180]            // Current value &gt;= minimum?
+ js _ExitMPW                       // Jump if true
+
+ mov [ebp+00000180],ecx            // Update item value
+ mov ecx,(float)202.0
+ mov [ebp+00000174],ecx            // Update item cost
+
+_ExitMPW:
+ pop ecx
+
+ cmp dword ptr [ebp+00000180],00   // Original code (rds item value)
+ jmp _BackMPW                      // Back to main code
+
+//========================================= 1500
+_MonPlayerColonists:
+ mov dword ptr [aLast],'_MPC'
+
+ mov [pColonists],edx              // Save ptr for debugging
+
+ cmp dword ptr [iEnableMPC],0
+ je _ExitMPC                       // Jump if feature is disabled
+
+ mov eax,#2500                     // Get minimum Colonists
+ cmp eax,[edx+000001E4]            // Current value &gt;= minimum?
+ jle _MonPC00                      // Jump if true
+
+ mov [edx+000001E4],eax            // Update Colonists
+
+_MonPC00:
+ mov eax,#250                      // Get minimum Soldiers
+ cmp eax,[edx+000001E8]            // Current value &gt;= minimum?
+ jle _ExitMPC                      // Jump if true
+
+ mov [edx+000001E8],eax            // Update Soldiers
+
+_ExitMPC:
+ mov eax,[edx+000001E4]            // Original code (rds colonists)
+ jmp _BackMPC                      // Back to main code
+
+//========================================= 1500
+_MonColonyMorale:
+ mov dword ptr [aLast],'_MCM'
+
+ mov ecx,[eax+000001F8]            // Original code (rds pMorale)
+
+ cmp dword ptr [iEnableMCM],0
+ je _ExitMCM                       // Jump if feature is disabled
+
+ cmp dword ptr [ecx+08],(float)80.0 // Current value &gt;= minimum?
+ jge _ExitMCM                      // Jump if true
+
+ mov dword ptr [ecx+08],(float)80.0 // Update Morale
+ mov dword ptr [ecx+0c],(float)80.0 // Update Morale
+
+_ExitMCM:
+ jmp _BackMCM                      // Back to main code
+
+//========================================= 1500
+_MonBuildingConstruction:
+ mov dword ptr [aLast],'_MBC'
+
+ mov esi,[edx]                     // Original code (rds pBuilding)
+
+ cmp dword ptr [iEnableMBC],0
+ je _ExitMBC                       // Jump if feature is disabled
+
+ cmp dword ptr [esi+24],0          // Is it complete?
+ je _ExitMBC                       // Jump if true
+
+ mov dword ptr [esi+24],1          // Just one more month
+
+_ExitMBC:
+ cmp byte ptr [esi+20],00          // Original code (checks underconstruction)
+ jmp _BackMBC                      // Back to main code
+
+//========================================= 1500
+_MonShipConstruction1:
+ mov dword ptr [aLast],'_SC1'
+
+ mov [pShipyard],ebx
+
+_ExitSC1:
+ mov eax,[eax+00000178]            // Original code
+ jmp _BackSC1                      // Back to main code
+
+//========================================= 1500
+// EBX = #Months
+_MonShipConstruction2:
+ mov dword ptr [aLast],'_SC2'
+
+ push eax
+ push ebx
+ push edi
+ push esi
+
+ cmp dword ptr [iEnableMSC],0
+ je _ExitSC2                       // Jump if feature is disabled
+
+ mov esi,[pShipyard]
+
+ dec ebx                           // # of months - 1
+
+ mov ecx,[esi+34]                  // Get currrent year
+ mov eax,[esi+30]                  // Get current month
+
+_MonSC20:
+ cmp ebx,eax                       // Could it be this year?
+ jl _MonSC21                       // Jump if true
+
+ dec ecx                           // Decrease year by 1
+ lea eax,[eax+0c]                  // Add 12 months
+ jmp _MonSC20
+
+_MonSC21:
+ sub eax,ebx                       // Month = Current Month - Remaining Months
+ mov [esi+30],eax                  // Update Month of Const Start
+ mov [esi+34],ecx                  // Update Year  of Const Start
+
+_ExitSC2:
+ pop esi
+ pop edi
+ pop ebx
+ pop eax
+
+ lea ecx,[esp+0000025c]           // Original code
+ jmp _BackSC2                     // Back to main code
+
+//========================================= 1500
+_MonShipHull:
+ mov dword ptr [aLast],'_MSH'
+
+ cmp dword ptr [iEnableGMD],0
+ je _ExitMSH                       // Jump if feature is disabled
+
+ mov eax,[ecx+0000008c]            // Get pointer to Fleet
+ test eax,eax
+ jz _ExitMSH                       // Jump if invalid pointer
+
+ mov eax,[eax+1c]                  // Get ship's owner ID
+
+ cmp eax,[iOwnerID]                // Is it a player's ship?
+ jne _ExitMSH                      // Jump if false
+
+ xor ebp,ebp                       // Make value2decrease = 0
+ mov [esp+00000080],ebp            // Damage = 0
+
+_ExitMSH:
+ mov eax,[edx+00000114]            // Original code (rds HULL HP)
+ jmp _BackMSH                      // Back to main code
+
+//========================================= 1500
+_MonShipSail:
+ mov dword ptr [aLast],'_MSS'
+
+ cmp dword ptr [iEnableGMD],0
+ je _ExitMSS                       // Jump if feature is disabled
+
+ mov ecx,[edx+0000008c]            // Get pointer to Fleet
+ test ecx,ecx
+ jz _ExitMSS                       // Jump if invalid pointer
+
+ mov ecx,[ecx+1c]                  // Get ship's owner ID
+
+ cmp ecx,[iOwnerID]                // Is it a player's ship?
+ jne _ExitMSS                      // Jump if false
+
+ xor ebx,ebx                       // Make value2decrease = 0
+ mov [esp+18],ebx                  // Sail Damage = 0
+ mov [esp+1C],ebx                  // Crew Damage = 0
+
+_ExitMSS:
+ sub [eax+00000118],ebx            // Original code (decs SAIL HP)
+ jmp _BackMSS                      // Back to main code
+
+//========================================= 1500
+_MonShipCrew:
+ mov dword ptr [aLast],'_MSC'
+
+ cmp dword ptr [iEnableGMD],0
+ je _ExitMSC                       // Jump if feature is disabled
+
+ mov ebp,[ecx+0000008c]            // Get pointer to Fleet
+ test ebp,ebp
+ jz _ExitMSC                       // Jump if invalid pointer
+
+ mov ebp,[ebp+1c]                  // Get ship's owner ID
+
+ cmp ebp,[iOwnerID]                // Is it a player's ship?
+ jne _ExitMSC                      // Jump if false
+
+ mov ebp,[edx+00000134]            // Get maximum CREW
+
+ cmp ebp,[edx+0000013C]
+ jle _ExitMSC
+
+ mov [edx+0000013C],ebp            // Update current CREW
+
+_ExitMSC:
+ mov ebp,[edx+0000013C]            // Original code (rds CREW)
+ jmp _BackMSC                      // Back to main code
+
+//========================================= 1500
+_MonShipAmmo:
+// ECX = Ship, EDX = ShipInfo
+ mov dword ptr [aLast],'_MSA'
+
+ cmp dword ptr [iEnableMSA],0
+ je _ExitMSA                       // Jump if feature is disabled
+
+ mov eax,[ecx+0000008c]            // Get pointer to Fleet
+ test eax,eax
+ jz _ExitMSA                       // Jump if invalid pointer
+
+ mov eax,[eax+1c]                  // Get ship's owner ID
+
+ cmp eax,[iOwnerID]                // Is it a player's ship?
+ jne _ExitMSA                      // Jump if false
+
+ mov eax,[edx+000001a0]            // Get maximum Solid Shot
+ mov [edx+000001b0],eax            // Update current Solid Shot
+ mov eax,[edx+000001a4]            // Get maximum Grape Shot
+ mov [edx+000001b4],eax            // Update current Grape Shot
+ mov eax,[edx+000001a8]            // Get maximum Chain Shot
+ mov [edx+000001b8],eax            // Update current Chain Shot
+
+ cmp dword ptr [iEnableGMD],0
+ je _ExitMSA                       // Jump if feature is disabled
+
+ mov eax,[edx+00000154]            // Get maximum Morale
+ mov [edx+00000150],eax            // Update Morale
+
+ mov dword ptr [ecx+000000b0],0    // Status = OK
+ mov dword ptr [ecx+000000b4],0    // Status = OK
+
+ mov eax,[edx+00000134]            // Get Base Crew
+ cmp eax,[edx+0000013c]            // Current Crew
+ jle _ExitMSA
+
+ mov [edx+0000013c],eax            // Update current crew
+
+_ExitMSA:
+ mov eax,[edx+0000013C]            // Original code (rds CREW)
+ jmp _BackMSA                      // Back to main code
+
+//========================================= 1500
+// Selected Ship on Ship Info Screen
+_MonSelShip:
+ mov dword ptr [aLast],'_SSP'
+
+ mov [pShip],eax
+
+ call _MonShipSpeed
+
+_ExitSSP:
+ mov [ecx+000000C8],eax            // Original code
+ jmp _BackSSP                      // Back to main code
+
+//========================================= 1500
+_MonShipMarines:
+ mov dword ptr [aLast],'_SM0'
+
+ cmp dword ptr [iEnableGMD],0
+ je _ExitMSM                       // Jump if feature is disabled
+
+ mov eax,[ecx+0000008c]            // Get pointer to Fleet
+ test eax,eax
+ jz _ExitMSM                       // Jump if invalid pointer
+
+ mov eax,[eax+1c]                  // Get ship's owner ID
+
+ cmp eax,[iOwnerID]                // Is it a player's ship?
+ jne _ExitMSM                      // Jump if false
+
+ xor edx,edx                       // Make value2decrease = 0
+
+_ExitMSM:
+ mov eax,[ecx+00000090]            // Gets ptr to shipinfo
+ sub [eax+00000148],edx            // Original code (decs Marines)
+ jmp _BackMSM                      // Back to main code
+
+//========================================= 1500
+_MonShipMarines1:
+ mov dword ptr [aLast],'_SM1'
+
+ cmp dword ptr [iEnableGMD],0
+ je _ExitMS1                       // Jump if feature is disabled
+
+ mov ebp,[ecx+0000008c]            // Get pointer to Fleet
+ test ebp,ebp
+ jz _ExitMS1                       // Jump if invalid pointer
+
+ mov ebp,[ebp+1c]                  // Get ship's owner ID
+
+ cmp ebp,[iOwnerID]                // Is it a player's ship?
+ jne _ExitMS1                      // Jump if false
+
+ xor ebx,ebx                       // Make value2decrease = 0
+ mov [esp+00000080],ebx            // Damage = 0
+ mov [esp+00000018],ebx            // Damage = 0
+ mov [esp+0000001c],ebx            // Damage = 0
+ mov [esi+000014d8],ebx            // Status = ok
+ mov [esi+000014dc],ebx            // Status = ok
+
+_ExitMS1:
+ mov ebp,[ecx+00000090]            // Gets ptr to shipinfo
+ jmp _BackMS1                      // Back to main code
+
+//========================================= 1500
+_MonShipMarines2:
+ mov dword ptr [aLast],'_SM2'
+
+ cmp dword ptr [iEnableGMD],0
+ je _ExitMS2                       // Jump if feature is disabled
+
+ mov edx,[eax+0000008c]            // Get pointer to Fleet
+ test edx,edx
+ jz _ExitMS2                       // Jump if invalid pointer
+
+ mov edx,[edx+1c]                  // Get ship's owner ID
+
+ cmp edx,[iOwnerID]                // Is it a player's ship?
+ jne _ExitMS2                      // Jump if false
+
+ xor ebx,ebx                       // Make value2decrease = 0
+ xor edi,edi                       // Make value2decrease = 0
+ xor ecx,ecx                       // Make value2decrease = 0
+
+_ExitMS2:
+ mov edx,[eax+00000090]            // Gets ptr to shipinfo
+ jmp _BackMS2                      // Back to main code
+
+//========================================= 1500
+// Selected Ship in Combat
+_MonShipInBattle:
+ mov dword ptr [aLast],'_MSI'
+
+ mov [pShip],edx
+
+ mov eax,[edx+0000008c]            // Get pointer to OwnerID
+ test eax,eax
+ jz _ExitMSI                       // Jump if invalid pointer
+
+ mov eax,[eax+1c]                  // Get ID
+ mov [iOwnerID],eax                // Save ID for further use
+
+_ExitMSI:
+ mov eax,[edx+00000090]            // Original code (rds pShipInfo)
+ jmp _BackMSI                      // Back to main code
+
+//========================================= 1500
+_MonShipCannons:
+ mov dword ptr [aLast],'_CA0'
+
+ cmp dword ptr [iEnableGMD],0
+ je _ExitSCA                       // Jump if feature is disabled
+
+ mov eax,[ebp+000014a0]            // Get pointer to Ship
+ test eax,eax
+ jz _ExitSCA                       // Jump if invalid pointer
+
+ mov eax,[eax+0000008c]            // Get pointer to Fleet
+ test eax,eax
+ jz _ExitSCA                       // Jump if invalid pointer
+
+ mov eax,[eax+1c]                  // Get ship's owner ID
+
+ cmp eax,[iOwnerID]                // Is it a player's ship?
+ jne _ExitSCA                      // Jump if false
+
+ mov al,#100
+ mov [edx+esi+38],al               // HP = 100%
+
+_ExitSCA:
+ cmp byte ptr [edx+esi+38],00      // Original code (Cannon HP)
+ jmp _BackSCA                      // Back to main code
+
+//========================================= 1500
+_MonShipCannons1:
+ mov dword ptr [aLast],'_CA1'
+
+ cmp dword ptr [iEnableGMD],0
+ je _ExitCA1                       // Jump if feature is disabled
+
+ mov eax,[edi+000014a0]            // Get pointer to Ship
+ test eax,eax
+ jz _ExitCA1                       // Jump if invalid pointer
+
+ mov eax,[eax+0000008c]            // Get pointer to Fleet
+ test eax,eax
+ jz _ExitCA1                       // Jump if invalid pointer
+
+ mov eax,[eax+1c]                  // Get ship's owner ID
+
+ cmp eax,[iOwnerID]                // Is it a player's ship?
+ jne _ExitCA1                      // Jump if false
+
+ mov al,#100
+ mov [ebp+38],al                   // HP = 100%
+
+_ExitCA1:
+ cmp byte ptr [ebp+38],00          // Original code (Cannon HP)
+ xorps xmm0,xmm0                   // Original code
+ jmp _BackCA1                      // Back to main code
+
+//========================================= 1500 new
+// Selected Ship on Ship Info Screen
+// ECX = free
+_MonShipSpeed:
+ mov dword ptr [aLast],'_MSD'
+
+ push eax
+ push ecx
+
+ test eax,eax
+ jz _ExitMSD
+
+ mov eax,[eax+00000090]
+ test eax,eax
+ jz _ExitMSD
+
+ cmp dword ptr [iEnableMSS],0
+ je _ExitMSD                       // Jump if feature is disabled
+
+ mov ecx,(float)0.1
+ cmp ecx,[eax+00000100]
+ js _ExitMSD
+
+ mov [eax+00000100],ecx
+ mov ecx,(float)30.0
+ mov [eax+00000230],ecx
+
+_ExitMSD:
+ pop ecx
+ pop eax
+ ret
+
+//========================================= 1500
+// on Shipyard
+_MonShipLevel:
+ mov dword ptr [aLast],'_SLL'
+
+ mov [pPrototype],edi
+
+ cmp dword ptr [iEnableSLY],0
+ je _ExitMSL                       // Jump if feature is disabled
+
+ mov ecx,#1
+ mov [esi+00000160],ecx
+ mov ecx,#1500
+
+_ExitMSL:
+ mov [esi+00000164],ecx            // Original code
+ jmp _BackMSL                      // Back to main code
+
+//=========================================
+ db '========================================&gt;'
+ db 'CE6.3 Script by Recifense 111413'
+//=========================================
+// Variables
+iEnableMPM:
+ dd 0
+iEnableMPW:
+ dd 0
+iEnableMPC:
+ dd 0
+iEnableMCM:
+ dd 0
+iEnableMBC:
+ dd 0
+iEnableMSC:
+ dd 0
+iEnableGMD:
+ dd 0
+iEnableMSA:
+ dd 0
+iEnableMSS:
+ dd 0
+iEnableSLY:
+ dd 0
+iOwnerID:
+ dd MyCode
+iMinMoney:
+ dd ctMMON
+pMoney:
+ dd 0
+pItem:
+ dd 0
+pColonists:
+ dd 0
+pShipyard:
+ dd 0
+pShip:
+ dd 0
+pPrototype:
+ dd 0
+aLast:
+ db 'CE63'
+
+//=========================================
+// Hacking Points
+MPMY:
+ jmp _MonPlayerMoney
+ nop
+_BackMPM:
+
+MPWH:
+ jmp _MonPlayerWarehouse
+ nop
+ nop
+_BackMPW:
+
+MPCS:
+ jmp _MonPlayerColonists
+ nop
+_BackMPC:
+
+MCME:
+ jmp _MonColonyMorale
+ nop
+_BackMCM:
+
+MBCN:
+ jmp _MonBuildingConstruction
+ nop
+_BackMBC:
+
+MSC1:
+ jmp _MonShipConstruction1
+ nop
+_BackSC1:
+
+MSC2:
+ jmp _MonShipConstruction2
+ nop
+ nop
+_BackSC2:
+
+MSHL:
+ jmp _MonShipHull
+ nop
+_BackMSH:
+
+MSSL:
+ jmp _MonShipSail
+ nop
+_BackMSS:
+
+MSCW:
+ jmp _MonShipCrew
+ nop
+_BackMSC:
+
+MSAO:
+ jmp _MonShipAmmo
+ nop
+_BackMSA:
+
+MSSP:
+ jmp _MonSelShip
+ nop
+_BackSSP:
+
+MSMS:
+ jmp _MonShipMarines
+ nop
+_BackMSM:
+
+MSM1:
+ jmp _MonShipMarines1
+ nop
+_BackMS1:
+
+MSM2:
+ jmp _MonShipMarines2
+ nop
+_BackMS2:
+
+MSIB:
+ jmp _MonShipInBattle
+ nop
+_BackMSI:
+
+MSCA:
+ jmp _MonShipCannons
+_BackSCA:
+
+MCA1:
+ jmp _MonShipCannons1
+ nop
+ nop
+_BackCA1:
+
+MSLL:
+ jmp _MonShipLevel
+ nop
+_BackMSL:
+
+//=========================================
+// Script for Restoring Original Codes
+[DISABLE]
+MPMY:
+// mov ecx,[eax+000000B0]
+ db 8b 88 b0 00 00 00
+
+MPWH:
+// cmp dword ptr [ebp+00000180],00
+ db 83 bd 80 01 00 00 00
+
+MPCS:
+// mov eax,[edx+000001E4]
+ db 8b 82 e4 01 00 00
+
+MCME:
+// mov ecx,[eax+000001F8]
+ db 8b 88 f8 01 00 00
+
+MBCN:
+// mov esi,[edx]
+// cmp byte ptr [esi+20],00
+ db 8b 32 80 7e 20 00
+
+MSC1:
+// mov eax,[eax+00000178]
+ db 8b 80 78 01 00 00
+
+MSC2:
+// lea ecx,[esp+0000025C]
+ db 8d 8c 24 5c 02 00 00
+
+MSHL:
+// mov eax,[edx+00000114]
+ db 8b 82 14 01 00 00
+
+MSSL:
+// sub [eax+00000118],ebx
+ db 29 98 18 01 00 00
+
+MSCW:
+// mov ebp,[edx+0000013C]
+ db 8b aa 3c 01 00 00
+
+MSAO:
+// mov eax,[edx+0000013C]
+ db 8b 82 3c 01 00 00
+
+MSSP:
+// mov [ecx+000000C8],eax
+ db 89 81 c8 00 00 00
+
+MSMS:
+// sub [eax+00000148],edx
+ db 29 90 48 01 00 00
+
+MSM1:
+// mov ebp,[ecx+00000090]
+ db 8b a9 90 00 00 00
+
+MSM2:
+// mov edx,[eax+00000090]
+ db 8b 90 90 00 00 00
+
+MSIB:
+// mov eax,[edx+00000090]
+ db 8b 82 90 00 00 00
+
+MSCA:
+// cmp byte ptr [esi+edx+38],00
+ db 80 7c 16 38 00
+
+MCA1:
+// cmp byte ptr [ebp+38],00
+// xorps xmm0,xmm0
+ db 80 7d 38 00 0f 57 c0
+
+MSLL:
+// mov [esi+00000164],ecx
+ db 89 8e 64 01 00 00
+
+//=========================================
+// Unregistering Symbols
+unregistersymbol(MyCode)
+unregistersymbol(iEnableMPM)
+unregistersymbol(iEnableMPW)
+unregistersymbol(iEnableMPC)
+unregistersymbol(iEnableMCM)
+unregistersymbol(iEnableMBC)
+unregistersymbol(iEnableMSC)
+unregistersymbol(iEnableGMD)
+unregistersymbol(iEnableMSA)
+unregistersymbol(iEnableMSS)
+unregistersymbol(iEnableSLY)
+unregistersymbol(iOwnerID)
+unregistersymbol(iMinMoney)
+unregistersymbol(pMoney)
+unregistersymbol(pItem)
+unregistersymbol(pColonists)
+unregistersymbol(pShip)
+unregistersymbol(pShipyard)
+unregistersymbol(pPrototype)
+unregistersymbol(aLast)
+
+//=========================================
+dealloc(MyCode)
+//============= Scripts End ===============
+
+// ****************************************
+// NOTES
+// ****************************************
+{
+}
+
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>1</ID>
+          <Description>"Enable/Disable Minimum Money =&gt; (1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMPM</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>19</ID>
+              <Description>"Minimum Money Value ==&gt;"</Description>
+              <Color>0080FF</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>iMinMoney</Address>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>11</ID>
+          <Description>"Enable/Disable Minimum Items in Warehouse =&gt; (1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMPW</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>12</ID>
+          <Description>"Enable/Disable Minimum Colonists in Colony =&gt; (1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMPC</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>13</ID>
+          <Description>"Enable/Disable Minimum Colony Morale =&gt; (1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMCM</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>14</ID>
+          <Description>"Enable/Disable Quick Building Construction =&gt; (1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMBC</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>15</ID>
+          <Description>"Enable/Disable Quick Ship Construction =&gt; (1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMSC</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>16</ID>
+          <Description>"Enable/Disable God Mode =&gt; (1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableGMD</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>17</ID>
+          <Description>"Enable/Disable Minimum Ship Ammo =&gt; (1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMSA</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>21</ID>
+          <Description>"Enable/Disable Minimum Ship Speed =&gt; (1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMSS</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>33</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>34</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>33</ID>
+          <Description>"Enable/Disable Early Ship Availability =&gt; (1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableSLY</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>45</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>46</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>9</ID>
+          <Description>"Selected Colony Colonists"</Description>
+          <Color>0000FF</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>pColonists</Address>
+          <Offsets>
+            <Offset>1E4</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>10</ID>
+          <Description>"Selected Colony Soldiers"</Description>
+          <Color>0000FF</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>pColonists</Address>
+          <Offsets>
+            <Offset>1E8</Offset>
+          </Offsets>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols/>
+  <Comments>===========================================
+ Game Title    : Commander - Conquest of the Americas
+ Game Version  : 1.500
+ Game Sponsor  : PROPHET
+ Proces Name   : Commander.exe
+ Script Version: 2.0
+ CE Version    : 6.3
+ Release date  : 14-Nov-2013
+ Author        : Recifense
+ History:
+ 14-Nov-13: First Release
+ Features:
+ - Minimum Money               [1]
+ - Minimum Item in Warehouse   [2]
+ - Minimum Colonists           [3]
+ - Minimum Colony Morale       [4]
+ - Quick Building Construction [5]
+ - Quick Ship Construction     [6]
+ - God Mode                    [7]
+ - Full Ammo                   [8]
+ - Minimum Speed on MAP (38 kn)[9]
+ - Early Ship Availability     [a]
+ - Pointers                    [b]
+===========================================
+[1] Player's money will not go under minimum value;
+[2] Player's warehouse will have minimum existing items;
+[3] Player's colony will have minimum colo9nists and soldiers; 
+[4] Player's colony will be set to a minimum morale;
+[5] That's it;
+[6] That's it;
+[7] During combat;
+[8] During combat;
+[9] On main map;
+[a] When selecting a ship to be built;
+[b] Used on the table
+===========================================
+[NOTE]
+[2] Warehouse should be selected;
+[3] and [4] Colony should be selected;
+[9] Enable the cheat, select commader and then each ship;
+[a] Enable it when selecting ships to be built. Then disable it.
+===========================================
+HOTKEYS:
+CTRL+Home  = Enable most of the cheats;
+CTRL+End   = Disable most of the cheats;
+============
+CTRL+PageUp   = Enable  minimum speed cheat;
+CTRL+PageDown = Disable minimum speed cheat;
+============
+CTRL+Insert = Enable  Ship Availability cheat;
+CTRL+Delete = Disable Ship Availability cheat;
+===========================================
+Cheers!
+
+</Comments>
+</CheatTable>

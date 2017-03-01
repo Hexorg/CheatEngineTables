@@ -1,0 +1,214 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="18">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>25</ID>
+      <Description>"Infinite Resources"</Description>
+      <LastState Activated="0"/>
+      <Color>80000008</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>{
+Title  : Infinite Resources
+Desc   : Infinite Resources only stops resources from decreasing, you must already have some resources to use.
+Game   : Keeper RL
+Version: Alpha 13 (ASCII &amp; Art versions)
+Date   : 2015-04-25
+Author : vkiko2
+Hooks  :
+       void __fastcall Collective::takeResource(Collective *const this, Collective::CostInfo *p_cost);
+            AOB: 0F 84 ? ? ? ? 89 CF 0F 8E
+}
+[ENABLE]
+aobscan(TakeRscHook,0F 84 ? ? ? ? 89 CF 0F 8E)
+aobscan(JmpHere, 8B 45 D0 83 EC 04 89 ? 24 8D 48 F4 E8 ? ? ? ? 83 EC 04 8D 65 F4 5B 5E 5F 5D C2 04 00)
+registersymbol(TakeRscHook)
+registersymbol(JmpHere)
+
+
+TakeRscHook:
+jmp JmpHere+14
+nop
+
+
+[DISABLE]
+TakeRscHook:
+je JmpHere+14
+
+
+unregistersymbol(TakeRscHook)
+unregistersymbol(JmpHere)
+
+
+</AssemblerScript>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>29</ID>
+      <Description>"Player Godmode"</Description>
+      <LastState Activated="0"/>
+      <Color>80000008</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>{
+Title  : Player Godmode
+Desc   : Currently controlled creature will take no damage, does not prevent getting/dying from poison or bleeding.
+Game   : Keeper RL
+Version: Alpha 13(ASCII and Art versions)
+Date   : 2015-04-25
+Author : vkiko2
+Hooks  :
+       bool __fastcall Creature::takeDamage(Creature *const this, const Attack *const attack);
+            AOB: 55 89 E5 57 56 53 89 CE 81 EC ? ? ? ? 8B 4D 08
+Calls  :
+       bool __fastcall Creature::isPlayer(const Creature *const this);
+            AOB: 8B 89 ? ? ? ? 8B 01 8B 00
+}
+
+[ENABLE]
+
+aobscan(takeDamageHook,55 89 E5 57 56 53 89 CE 81 EC ? ? ? ? 8B 4D 08)
+aobscan(isPlayer, 8B 89 ? ? ? ? 8B 01 8B 00)
+alloc(newmem,$1000)
+label(return)
+label(takeDamage)
+
+newmem:
+//If(Creature::IsPlayer == FALSE):
+//takeDamage()
+pushad
+call isPlayer
+cmp al, 0
+je takeDamage
+
+//Else:
+//return 0
+popad
+mov eax, #0
+retn 4
+
+takeDamage:
+popad
+push ebp
+mov ebp,esp
+push edi
+push esi
+jmp return
+
+takeDamageHook:
+  jmp newmem
+return:
+registersymbol(takeDamageHook)
+
+[DISABLE]
+takeDamageHook:
+  db 55 89 E5 57 56
+
+unregistersymbol(takeDamageHook)
+dealloc(newmem)
+
+</AssemblerScript>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>28</ID>
+      <Description>"See Everything"</Description>
+      <LastState Activated="0"/>
+      <Color>80000008</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>{
+Title  : See Everything
+Desc   : Removes the 'Fog of war' effect while playing.
+Game   : Keeper RL
+Version: Alpha 13 (ASCII &amp; Art versions)
+Date   : 2015-04-25
+Author : vkiko2
+Hooks  :
+       bool __fastcall Creature::canSee(const Creature *const this, Vec2 pos);
+            AOB: 53 89 CB 83 EC 18 E8 ? ? ? ? 31 D2
+
+       bool __fastcall PlayerControl::canSee(const PlayerControl *const this, Vec2 position);
+            AOB: 55 89 E5 57 56 53 83 EC 4C 80 3D ? ? ? ? ? 74 12
+
+}
+
+[ENABLE]
+aobscan(CreatureCanSeeHook, 53 89 CB 83 EC 18 E8 ? ? ? ? 31 D2)
+aobscan(PlayerCanSeeHook, 55 89 E5 57 56 53 83 EC 4C 80 3D ? ? ? ? ? 74 12)
+registersymbol(CreatureCanSeeHook)
+registersymbol(PlayerCanSeeHook)
+
+alloc(returnTrue,$128)
+
+returnTrue:
+       mov eax, #1
+       retn 8
+
+CreatureCanSeeHook:
+  jmp returnTrue
+  nop
+
+PlayerCanSeeHook:
+  jmp returnTrue
+
+[DISABLE]
+CreatureCanSeeHook:
+  db 53 89 CB 83 EC 18
+
+PlayerCanSeeHook:
+  db 55 89 E5 57 56
+
+unregistersymbol(CreatureCanSeeHook)
+unregistersymbol(PlayerCanSeeHook)
+dealloc(returnTrue)
+
+</AssemblerScript>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols>
+    <SymbolEntry>
+      <Name>canSeeHook</Name>
+      <Address>0056E5D0</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>isKnownTileHookASCII</Name>
+      <Address>0058A820</Address>
+    </SymbolEntry>
+  </UserdefinedSymbols>
+  <Structures StructVersion="2">
+    <Structure Name="Creature" AutoFill="0" AutoCreate="1" DefaultHex="0" AutoDestroy="0" DoNotSaveLocal="0" AutoCreateStructsize="4096">
+      <Elements>
+        <Element Offset="0" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="4" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="8" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="12" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="16" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="20" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="24" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="28" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="32" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="36" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="40" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="44" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="48" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="52" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="56" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="60" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="64" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="68" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="72" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="76" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="80" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="84" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="88" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="92" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="96" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="100" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="104" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="108" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="112" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="116" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="120" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="124" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="128" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="132" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+      </Elements>
+    </Structure>
+  </Structures>
+</CheatTable>

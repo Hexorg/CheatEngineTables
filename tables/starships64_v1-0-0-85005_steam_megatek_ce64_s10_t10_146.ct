@@ -1,0 +1,579 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="18">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>45</ID>
+      <Description>"[X] &lt;== Sid Meier's STARSHIPS x64 v1.0.0.85005 Steam Script v1.0"</Description>
+      <Options moHideChildren="1"/>
+      <LastState Activated="0"/>
+      <Color>FF0000</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>{
+===========================================
+ Game Title    : Sid Meier's STARSHIPS (64bits)
+ Game Version  : 1.0.0.85005 (steam)
+ Game Sponsor  : Megatek
+ Process Name  : Starships64.exe
+ Script Version: 1.0
+ CE Version    : 6.4
+ Release date  : 12-Aug-2015
+ Author        : Recifense
+ History:
+ 13-Mar-15: First Release
+ 12-Aug-15: Release for version 1.0.0.85005
+ Features:
+ - Minimum Resources:
+   - Energy
+   - Metals
+   - Science
+   - Food
+   - Credits
+ - God Mode
+ - Crew 100% Ready
+ - Some Pointers
+===========================================
+}
+
+//=========================================
+// Definitions
+define(LUDO,"Starships64.exe")
+define(MOPR,Starships64.exe+0004c46b) //=
+define(MOPS,Starships64.exe+0006ce89) //=
+define(MOSB,Starships64.exe+00030a6b) //=
+define(GDMD,Starships64.exe+00013f40) //#
+define(MOPT,Starships64.exe+000484f8) //=
+define(MOPC,Starships64.exe+0004157a) //=
+
+define(AOPC,Starships64.exe+006ecbd8) //=
+
+//=========================================
+// Constants used in the script (that can be changed)
+define(ctCE64,(float)6.4)
+define(ctMMON,#64000)   // Minimum Resource
+
+//=========================================
+[ENABLE]
+//=========================================
+//LuaCall(CheckVersion())
+//=========================================
+// Check if script is compatible to this game version
+// If false the script will not be loaded
+
+assert(MOPR,45 8b 04 37 41 8b d6 49 8b cd ff 50 60 41 ff c6 48 8d 76 04 41)
+assert(MOPS,41 83 3c 08 00 0f 95 c0 f6 d8 48 8b c3 1b c9 83 e1 02 89 4c 24)
+assert(MOSB,41 f6 84 07 98 00 00 00 04 0f 84 ?? ?? ?? ?? 3b 1d ?? ?? ?? ??)
+assert(GDMD,42 8b ac 17 b8 95 6d 00 41 03 e8 42 89 ac 17 b8 95 6d 00 42 3b)
+assert(MOPT,0f 5a c1 0f 28 d4 89 35 ?? ?? ?? ?? f2 0f 5c d0 0f 5a c1 0f 57)
+assert(MOPC,8b 1d ?? ?? ?? ?? 48 63 f9 b8 64 00 00 00 3b 3d ?? ?? ?? ?? 48)
+
+//=========================================
+alloc(MyCode,4096,LUDO)
+//=========================================
+// Declaration section
+label(_MonPlayerRes)
+label(_BackMPR)
+label(_ExitMPR)
+label(_MonPlayerShips)
+label(_BackMPS)
+label(_ExitMPS)
+label(_MonShipInBattle)
+label(_BackMSB)
+label(_ExitMSB)
+label(_GodMode)
+label(_BackGMD)
+label(_ExitGMD)
+label(_CheckShip)
+label(_CheckShip)
+label(_ChkSP00)
+label(_ExitCSP)
+label(_MonPlayerTurn)
+label(_BackMPT)
+label(_ExitMPT)
+label(_MonPlayerCrew)
+label(_BackMPC)
+label(_ExitMPC)
+
+label(iEnableMPR)
+label(iEnableGMD)
+label(iEnableMPC)
+label(iCurPlayer)
+label(pShipArray)
+
+//=========================================
+// Registering Symbols
+registersymbol(MyCode)
+registersymbol(iEnableMPR)
+registersymbol(iEnableGMD)
+registersymbol(iEnableMPC)
+
+registersymbol(iCurPlayer)
+registersymbol(pShipArray)
+
+//=========================================
+MyCode:
+//=========================================
+// At the strategic map
+_MonPlayerRes:
+ push r13
+
+ mov r13,iEnableMPR
+ cmp dword ptr [r13],0
+ je _ExitMPR                       // Jump if feature is disabled
+
+ mov r8d,ctMMON
+ cmp r8d,[r15+rsi]
+ js _ExitMPR
+
+ mov [r15+rsi],r8d
+
+_ExitMPR:
+ pop r13
+
+ mov r8d,[r15+rsi]                 // Original code (Get Value)
+ mov edx,r14d                      // Original code
+ jmp _BackMPR                      // Back to main code
+
+//=========================================
+// At the fleet Overview
+_MonPlayerShips:
+ push r13
+
+ mov r13,iEnableGMD
+ cmp dword ptr [r13],0
+ je _ExitMPS                       // Jump if feature is disabled
+
+ mov dword ptr [r8+rcx],00
+
+_ExitMPS:
+ pop r13
+
+ cmp dword ptr [r8+rcx],00         // Original code (Get Value)
+ jmp _BackMPS                      // Back to main code
+
+//=========================================
+// During combat phase
+_MonShipInBattle:
+ push rcx
+ push rdx
+ push r13
+
+ mov r13,iEnableGMD
+ cmp dword ptr [r13],0
+ je _ExitMSB                       // Jump if feature is disabled
+
+ test rbx,rbx
+ jnz _ExitMSB
+
+ cmp rdi,#8
+ jns _ExitMSB
+
+ lea rcx,[r15+rax]
+ mov rdx,pShipArray
+
+ mov [rdx+rdi*8],rcx
+
+ mov dword ptr [rcx+48],00
+ mov dword ptr [rcx+4C],00
+ mov dword ptr [rcx+50],00
+
+_ExitMSB:
+ pop r13
+ pop rdx
+ pop rcx
+
+ test byte ptr [r15+rax+00000098],04 // Original code
+ jmp _BackMSB                      // Back to main code
+
+//========================================= 1.0.0.85005
+// When increasing damage
+_GodMode:
+ push rax
+ push r13
+
+ mov r13,iEnableGMD
+ cmp dword ptr [r13],0
+ je _ExitGMD                       // Jump if feature is disabled
+
+ lea rax,[rdi+r10+006D9570]        // -48 = Base  006D9570 00692830
+ call _CheckShip
+ jne _ExitGMD
+
+ xor rax,rax
+ mov [rdi+r10+006D95b8],eax        // 00692878
+ mov [rdi+r10+006D95bc],eax        // 0069287c
+ mov [rdi+r10+006D95c0],eax        // 00692880
+ mov r8d,eax
+ mov r15d,eax
+
+_ExitGMD:
+ pop r13
+ pop rax
+
+ mov ebp,[rdi+r10+006D95b8]        // Original code (get cur Damage) 00692878
+ jmp _BackGMD                      // Back to main code
+
+//=========================================
+// Check if a player's ship
+// Entry: RAX = pShip
+// ZF = OK
+_CheckShip:
+ push rbx
+ push rcx
+ push rdx
+
+ mov rcx,8
+ mov rdx,pShipArray
+
+_ChkSP00:
+ cmp rax,[rdx+rcx*8-04]
+ je _ExitCSP
+ loop _ChkSP00
+
+ test rax,rax
+
+_ExitCSP:
+ pop rdx
+ pop rcx
+ pop rbx
+ ret
+
+//=========================================
+// On player changing
+_MonPlayerTurn:
+ push r13
+
+ mov r13,iCurPlayer
+ mov [r13],edi
+
+_ExitMPT:
+ pop r13
+
+ cvtps2pd xmm0,xmm1                // Original code
+ movaps xmm2,xmm4                  // Original code
+ jmp _BackMPT                      // Back to main code
+
+//=========================================
+// When moving Fleet
+_MonPlayerCrew:
+ push rax
+ push r13
+
+ mov rax,AOPC
+
+ mov r13,iEnableMPC
+ cmp dword ptr [r13],0
+ je _ExitMPC                        // Jump if feature is disabled
+
+ mov r13,iCurPlayer
+ cmp dword ptr [r13],0
+ jne _ExitMPC
+
+ mov dword ptr [rax],#100
+
+_ExitMPC:
+ mov ebx,[rax]                     // Original code
+
+ pop r13
+ pop rax
+ jmp _BackMPC                      // Back to main code
+
+//=========================================
+ db '==========================================&gt;'
+ db 'CE6.4 Script by Recifense 081215'
+//=========================================
+// Variables
+iEnableMPR:
+ dd 0
+iEnableGMD:
+ dd 0
+iEnableMPC:
+ dd 0
+iCurPlayer:
+ dd 0
+pShipArray:
+ dq 0,0,0,0,0,0,0,0,0,0
+
+//=========================================
+// Hacking Points
+MOPR:
+ jmp _MonPlayerRes
+ nop
+ nop
+_BackMPR:
+
+MOPS:
+ jmp _MonPlayerShips
+_BackMPS:
+
+MOSB:
+ jmp _MonShipInBattle
+ db 90 90 90 90
+_BackMSB:
+
+GDMD:
+ jmp _GodMode
+ db 90 90 90
+_BackGMD:
+
+MOPT:
+ jmp _MonPlayerTurn
+ nop
+_BackMPT:
+
+MOPC:
+ jmp _MonPlayerCrew
+ nop
+_BackMPC:
+
+//=========================================
+// Script for Restoring Original Codes
+[DISABLE]
+MOPR:
+// mov r8d,[r15+rsi]
+// mov edx,r14d
+ db 45 8b 04 37 41 8b d6
+
+MOPS:
+// cmp dword ptr [r8+rcx],00
+ db 41 83 3c 08 00
+
+MOSB:
+// test byte ptr [r15+rax+00000098],04
+ db 41 f6 84 07 98 00 00 00 04
+
+GDMD:
+// mov ebp,[rdi+r10+006D95B8]
+ db 42 8b ac 17 b8 95 6d 00
+
+MOPT:
+// cvtps2pd xmm0,xmm1
+// movaps xmm2,xmm4
+ db 0f 5a c1 0f 28 d4
+
+MOPC:
+ mov ebx,[AOPC]
+
+//=========================================
+// Unloading Scripts
+{$lua}
+getAddressList().getMemoryRecordByID(100).Active=false
+getAddressList().getMemoryRecordByID(102).Active=false
+getAddressList().getMemoryRecordByID(101).Active=false
+{$asm}
+
+//=========================================
+// Unregistering Symbols
+unregistersymbol(MyCode)
+unregistersymbol(iEnableMPR)
+unregistersymbol(iEnableGMD)
+unregistersymbol(iEnableMPC)
+
+unregistersymbol(iCurPlayer)
+unregistersymbol(pShipArray)
+
+//=========================================
+dealloc(MyCode)
+//============= Scripts End ===============
+
+// ****************************************
+// NOTES
+// ****************************************
+{
+}
+
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>100</ID>
+          <Description>"[X] &lt;== Minimum Player Resources"</Description>
+          <LastState Activated="0"/>
+          <Color>C08000</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[enable]
+define(test,LUDO)
+
+{$LUA}
+writeInteger("iEnableMPR",1)
+getAddressList().getMemoryRecordByID(100).Color = 0x00008000
+{$ASM}
+
+[disable]
+{$LUA}
+writeInteger("iEnableMPR",0)
+getAddressList().getMemoryRecordByID(100).Color = 0x00c08000
+{$ASM}
+
+</AssemblerScript>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Activate</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Deactivate</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>102</ID>
+          <Description>"[X] &lt;== God Mode"</Description>
+          <LastState Activated="0"/>
+          <Color>C08000</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[enable]
+define(test,LUDO)
+
+{$LUA}
+writeInteger("iEnableGMD",1)
+getAddressList().getMemoryRecordByID(102).Color = 0x00008000
+{$ASM}
+
+[disable]
+{$LUA}
+writeInteger("iEnableGMD",0)
+getAddressList().getMemoryRecordByID(102).Color = 0x00c08000
+{$ASM}
+
+</AssemblerScript>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Activate</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Deactivate</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>101</ID>
+          <Description>"[X] &lt;== Crew Always 100% Ready"</Description>
+          <LastState Activated="0"/>
+          <Color>C08000</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[enable]
+define(test,LUDO)
+
+{$LUA}
+writeInteger("iEnableMPC",1)
+getAddressList().getMemoryRecordByID(101).Color = 0x00008000
+{$ASM}
+
+[disable]
+{$LUA}
+writeInteger("iEnableMPC",0)
+getAddressList().getMemoryRecordByID(101).Color = 0x00c08000
+{$ASM}
+
+</AssemblerScript>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Activate</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Deactivate</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>228</ID>
+      <Description>"[X] &lt;== Table/Script Information"</Description>
+      <Options moHideChildren="1"/>
+      <LastState Activated="0"/>
+      <Color>0000FF</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>[enable]
+define(test,LUDO)
+
+{$LUA}
+getMainForm().CommentButton.doClick()
+{$ASM}
+
+[disable]
+
+</AssemblerScript>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols>
+    <SymbolEntry>
+      <Name>Recifense</Name>
+      <Address>20150812</Address>
+    </SymbolEntry>
+  </UserdefinedSymbols>
+  <Comments>===========================================
+ Game Title    : Sid Meier's STARSHIPS (64bits)
+ Game Version  : 1.0.0.85005 (steam)
+ Game Sponsor  : Megatek
+ Process Name  : Starships64.exe
+ Script Version: 1.0
+ CE Version    : 6.4
+ Release date  : 12-Aug-2015
+ Author        : Recifense
+ History:
+ 13-Mar-15: First Release
+ 12-Aug-15: Release for version 1.0.0.85005
+ Features:
+ - Minimum Resources: [1]
+   - Energy
+   - Metals
+   - Science
+   - Food
+   - Credits
+ - God Mode           [2]
+ - Crew 100% Ready    [3]
+ - Some Pointers
+===========================================
+[1] For human player only (min=64000);
+[2] For human player's ships only;
+[3] For human player's fleet only;
+===========================================
+[USAGE]
+1) Run CE64;
+2) Run Game;
+3) Load the game process "Starships64.exe" in CE;
+4) Load this table and activate the main script;
+5) Now Activate the script of each cheat you want to use;
+6) Game On;
+===========================================
+[HOTKEYS]
+Node Defined.
+===========================================
+[ADVICE]
+When you can,save the game before starting using table/cheat. So you can always come back in case you don't like the result.
+===========================================
+[INFO]
+Tested on Win 7 64bits
+===========================================
+Cheers!
+</Comments>
+</CheatTable>

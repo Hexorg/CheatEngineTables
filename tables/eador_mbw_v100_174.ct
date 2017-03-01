@@ -1,0 +1,564 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="14">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>27</ID>
+      <Description>"[X] &lt;== Eador Masters of the Broken World v1.0.0 Script"</Description>
+      <Options moHideChildren="1"/>
+      <Color>FF0000</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>{
+===========================================
+ Game Title    : Eador Masters of the Broken World
+ Game Version  : 1.0.0
+ Game Sponsor  : COGENT
+ Proces Name   : eador_mbw.exe
+ Script Version: 1.0
+ CE Version    : 6.2
+ Release date  : 24-Apr-2013
+ Author        : Recifense
+ History:
+ 24-Apr-13: First Release
+ Features:
+ - Minimum Resources:
+   - Gold    = 99000
+   - Gem     = 9900
+ - Strong Units:
+   - HP      = 990
+   - MP      = 4
+   - Moral   = 62
+   - Fear    = 0
+   - Stamina = 62
+   - Ammo    = 62
+===========================================
+}
+
+//=========================================
+// Definitions
+define(LUDO,"eador_mbw.exe")
+define(MHPR,eador_mbw.exe+001f8c58)
+define(MPUN,eador_mbw.exe+0035062d)
+define(SCHV,eador_mbw.exe+003f1b3d)
+
+//=========================================
+[ENABLE]
+//=========================================
+//LuaCall(CheckVersion())
+//=========================================
+// Check if script is compatible to this game version
+// If false the script will not be loaded
+
+assert(MHPR,8b 53 24 8b 52 14 8b 52 08 89 50 7c ?? ?? e8 ?? ?? ?? ?? 33 d2)
+assert(MPUN,89 b3 ac 00 00 00 8b 83 cc 00 00 00 80 78 48 00 ?? ?? ff 86 48)
+assert(SCHV,8b 4b 04 8b 54 91 04 e8 ?? ?? ?? ?? ?? ?? 8b c7 e8 ?? ?? ?? ??)
+
+//=========================================
+alloc(MyCode,4096,LUDO)
+//=========================================
+// Declaration section
+label(_MonHumanPlayer)
+label(_MonHP00)
+label(_MonHP01)
+label(_MonHP02)
+label(_MonHP03)
+label(_MonHP04)
+label(_BackMHP)
+label(_ExitMHP)
+label(_MonPlayerUnits)
+label(_MonPU00)
+label(_MonPU01)
+label(_BackMPU)
+label(_ExitMPU)
+label(_SearchDefinedValue)
+label(_BackSDV)
+label(_ExitSDV)
+label(pUnit)
+label(pPlayer)
+label(pCommon)
+label(iEnableMMR)
+label(iEnableMPU)
+label(iDefinedValue)
+label(pValue)
+label(ppValue)
+
+//=========================================
+// Registering Symbols
+registersymbol(MyCode)
+registersymbol(pUnit)
+registersymbol(pPlayer)
+registersymbol(pCommon)
+registersymbol(iEnableMMR)
+registersymbol(iEnableMPU)
+registersymbol(iDefinedValue)
+registersymbol(pValue)
+registersymbol(ppValue)
+
+//=========================================
+MyCode:
+//=========================================
+// On Main screen
+_MonHumanPlayer:
+ push eax
+ push ecx
+ push esi
+
+ mov ecx,[ebx+0c]
+ test ecx,ecx
+ jz _ExitMHP
+
+ mov eax,[ecx+04]
+ cmp eax,302e7265
+ jne _ExitMHP
+
+ mov [pPlayer],ebx
+
+ cmp dword ptr [iEnableMMR],0
+ je _ExitMHP                       // Jump if feature is disabled
+
+ mov edx,[ebx+24]
+ mov edx,[edx+14]
+ mov edx,[edx+04]
+
+ mov ecx,[edx]
+ test ecx,ecx
+ jz _ExitMHP
+
+ mov eax,[ecx]
+ cmp eax,646c6f67
+ jne _ExitMHP
+
+ mov esi,[edx+04]
+ test esi,esi
+ jz _ExitMHP
+
+ xor edx,edx
+ mov ecx,edx
+
+ mov eax,[esi-04]
+ cmp eax,6
+ jge _MonHP02
+
+_MonHP00:
+ movsx eax,byte ptr [esi+ecx]
+ cmp eax,00000030
+ jl _MonHP01
+
+ cmp eax,00000039
+ jg _MonHP01
+
+ push eax
+ mov eax,#10
+ imul edx,eax
+ pop eax
+
+ and eax,0000000f
+ add edx,eax
+ inc ecx
+ jmp _MonHP00
+
+_MonHP01:
+ mov ecx,#99000
+ mov eax,[esi-04]
+ cmp eax,4
+ mov eax,#990
+ cmovl ecx,eax
+
+ cmp edx,ecx
+ jge _MonHP02
+
+ mov dword ptr [esi],00303939
+ mov eax,3
+ xchg eax,[esi-04]
+ cmp eax,3
+ jle _MonHP02
+
+ mov dword ptr [esi+03],00003030
+ mov dword ptr [esi-4],05
+
+_MonHP02:
+ mov edx,[ebx+24]
+ mov edx,[edx+14]
+ mov edx,[edx+04]
+
+ mov ecx,[edx+0c]
+ test ecx,ecx
+ jz _ExitMHP
+
+ mov eax,[ecx]
+ cmp eax,006d6567
+ jne _ExitMHP
+
+ mov esi,[edx+10]
+ test esi,esi
+ jz _ExitMHP
+
+ xor edx,edx
+ mov ecx,edx
+
+ mov eax,[esi-04]
+ cmp eax,5
+ jge _ExitMHP
+
+_MonHP03:
+ movsx eax,byte ptr [esi+ecx]
+ cmp eax,00000030
+ jl _MonHP04
+
+ cmp eax,00000039
+ jg _MonHP04
+
+ push eax
+ mov eax,#10
+ imul edx,eax
+ pop eax
+
+ and eax,0000000f
+ add edx,eax
+ inc ecx
+ jmp _MonHP03
+
+_MonHP04:
+ mov ecx,#9900
+ mov eax,[esi-04]
+ cmp eax,4
+ mov eax,#990
+ cmovl ecx,eax
+
+ cmp edx,ecx
+ jge _ExitMHP
+
+ mov dword ptr [esi],00303939
+ mov eax,3
+ xchg eax,[esi-04]
+ cmp eax,3
+ jle _ExitMHP
+
+ mov dword ptr [esi+03],00000030
+ mov dword ptr [esi-4],04
+
+_ExitMHP:
+ pop esi
+ pop ecx
+ pop eax
+
+ mov edx,[ebx+24]                  // Original code
+ mov edx,[edx+14]                  // Original code
+ jmp _BackMHP                      // Back to main code
+
+//=========================================
+// During battle
+_MonPlayerUnits:
+ push ecx
+ push edx
+
+ mov [ebx+000000AC],esi            // Original code
+
+ cmp dword ptr [iEnableMPU],0
+ je _ExitMPU                       // Jump if feature is disabled
+
+ mov eax,[ebx+00000094]
+ test eax,eax
+ jz _MonPU00
+
+ mov edx,[ebx+000000A8]
+ test edx,edx
+ jz _ExitMPU
+
+ mov eax,[edx+1c]
+ cmp eax,2
+ jne _ExitMPU
+
+ mov [pCommon],edx
+
+_MonPU00:
+ mov eax,[ebx+000000A8]
+ cmp eax,[pCommon]
+ jne _ExitMPU
+
+ mov ecx,[ebx+000000C8]
+ test ecx,ecx
+ jz _ExitMPU
+
+ mov ecx,[ecx+28]
+ test ecx,ecx
+ jz _ExitMPU
+
+ mov ecx,[ecx+10]
+ test ecx,ecx
+ jz _ExitMPU
+
+ mov ecx,[ecx+14]
+ test ecx,ecx
+ jz _ExitMPU
+
+ mov ecx,[ecx+04]
+ test ecx,ecx
+ jz _ExitMPU
+
+ mov eax,[ecx+0c]
+ test eax,eax
+ jz _ExitMPU
+
+ mov eax,[eax]
+ cmp eax,00706863
+ jne _ExitMPU
+
+ mov edx,[ecx+10]
+ test edx,edx
+ jz _ExitMPU
+
+ mov eax,00303939
+ cmp eax,[edx]
+ jle _MonPU01
+
+ mov [edx],eax
+ mov dword ptr [edx-04],3
+
+_MonPU01:
+ mov edx,[ecx+1c]
+ test edx,edx
+ jz _ExitMPU
+
+ mov ax,0034
+ mov [edx],ax
+ mov dword ptr [edx-04],1
+
+ mov edx,[ecx+28]
+ test edx,edx
+ jz _ExitMPU
+
+ mov eax,00003236
+ mov [edx],eax
+ mov dword ptr [edx-04],2
+
+ mov edx,[ecx+34]
+ test edx,edx
+ jz _ExitMPU
+
+ mov ax,0030
+ mov [edx],ax
+ mov dword ptr [edx-04],1
+
+ mov edx,[ecx+40]
+ test edx,edx
+ jz _ExitMPU
+
+ mov eax,00003236
+ mov [edx],eax
+ mov dword ptr [edx-04],2
+
+ mov edx,[ecx+40]
+ test edx,edx
+ jz _ExitMPU
+
+ mov al,[edx]
+ cmp al,30
+ je _ExitMPU
+
+ mov eax,00003236
+ mov [edx],eax
+ mov dword ptr [edx-04],2
+
+_ExitMPU:
+ pop edx
+ pop ecx
+ jmp _BackMPU                      // Back to main code
+
+//=========================================
+// Dev Tool
+_SearchDefinedValue:
+ push eax
+ push esi
+
+ mov ecx,[ebx+04]                  // Original code
+ lea esi,[ecx+edx*4]
+ mov edx,[ecx+edx*4+04]            // Original code
+ test edx,edx
+ jz _ExitSDV
+
+ mov eax,[edx]
+ cmp eax,[iDefinedValue]
+ jne _ExitSDV
+
+ mov [pValue],esi
+ mov [ppValue],ebx
+
+ mov eax,[edx]
+
+_ExitSDV:
+ pop esi
+ pop eax
+ jmp _BackSDV                      // Back to main code
+
+//=========================================
+ db '==================================&gt;'
+ db 'CE6.2 Script by Recifense 042413'
+//=========================================
+// Variables
+iEnableMMR:
+ dd 0
+iEnableMPU:
+ dd 0
+pUnit:
+ dd 0
+pPlayer:
+ dd 0
+pCommon:
+ dd MyCode
+iDefinedValue:
+ dd MyCode
+pValue:
+ dd 0
+ppValue:
+ dd 0
+
+//=========================================
+// Hacking Points
+MHPR:
+ jmp _MonHumanPlayer
+ nop
+_BackMHP:
+
+MPUN:
+ jmp _MonPlayerUnits
+ nop
+_BackMPU:
+
+SCHV:
+// jmp _SearchDefinedValue
+// nop
+// nop
+_BackSDV:
+
+//=========================================
+// Script for Restoring Original Codes
+[DISABLE]
+MHPR:
+// mov edx,[ebx+24]
+// mov edx,[edx+14]
+ db 8b 53 24 8b 52 14
+
+MPUN:
+// mov [ebx+000000AC],esi
+ db 89 b3 ac 00 00 00
+
+SCHV:
+// mov ecx,[ebx+04]
+// mov edx,[ecx+edx*4+04]
+ db 8b 4b 04 8b 54 91 04
+
+//=========================================
+// Unregistering Symbols
+unregistersymbol(MyCode)
+unregistersymbol(pUnit)
+unregistersymbol(iEnableMMR)
+unregistersymbol(iEnableMPU)
+unregistersymbol(pPlayer)
+unregistersymbol(pCommon)
+unregistersymbol(iDefinedValue)
+unregistersymbol(pValue)
+unregistersymbol(ppValue)
+
+//=========================================
+dealloc(MyCode)
+//============= Scripts End ===============
+
+// ****************************************
+// NOTES
+// ****************************************
+{
+}
+
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>9</ID>
+          <Description>"Enable/Disable Minimum Resources =&gt; (1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMMR</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>22</ID>
+          <Description>"Enable/Disable Strong Units =&gt; (1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMPU</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols/>
+  <Comments>===========================================
+ Game Title    : Eador Masters of the Broken World
+ Game Version  : 1.0.0
+ Game Sponsor  : COGENT
+ Proces Name   : eador_mbw.exe
+ Script Version: 1.0
+ CE Version    : 6.2
+ Release date  : 24-Apr-2013
+ Author        : Recifense
+ History:
+ 24-Apr-13: First Release
+ Features:
+ - Minimum Resources: [1]
+   - Gold    = 990/99000
+   - Gem     = 990/9900
+ - Strong Units:      [2]
+   - HP      = 990
+   - MP      = 4
+   - Moral   = 62
+   - Fear    = 0
+   - Stamina = 62
+   - Ammo    = 62
+===========================================
+[1] In order to update displayed values, click on STRONGHOLD button and then press ESC;
+[2] It is almost like a God Mode. If you move your unit square by square, you can reach the enemy unit quickly.
+===========================================
+HOTKEYS:
+CTRL+Home = Enable  both cheats;
+CTRL+End  = Disable both cheats;
+===========================================
+Cheers!
+</Comments>
+</CheatTable>

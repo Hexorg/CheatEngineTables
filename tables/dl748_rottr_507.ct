@@ -1,0 +1,681 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="24">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>201</ID>
+      <Description>"Run Script"</Description>
+      <Options moHideChildren="1" moManualExpandCollapse="1" moAllowManualCollapseAndExpand="1"/>
+      <LastState/>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>[ENABLE]
+{$lua}
+if syntaxcheck then return end
+autoAssemble([[
+alloc(data, $1000)
+label(Flags)
+data:
+Flags:
+  dq 0
+
+registersymbol(Flags)
+]])
+idtoname = {
+  [0x4D826A39] = "Cloth",
+  [0x5F2885E7] = "Herbs",
+  [0x5F28F125] = "Hides",
+  [0x045EC57E] = "Salvage",
+  [0x6EE65E59] = "Mushrooms",
+  [0x1EC99446] = "Hardwood",
+  [0x90F8019C] = "Feathers",
+  [0xFA60F478] = "Oil",
+  [0xC50146F2] = "BoarFat",
+  [0xEF21C8DA] = "DeerAntlers",
+  [0x50B025C6] = "ExoticHides",
+  [0x50F3E958] = "MagnesiteOre",
+  [0x104D7CDF] = "BearHides",
+  [0x55C9ED57] = "TechnicalParts",
+  [0xE42682B1] = "ByzantineCoins",
+  [0x97C8C7FB] = "ChromiteOre",
+  [0x8863BA99] = "Arrows",
+  [0x9CDA8C92] = "PoisonArrows",
+  [0xB62B6E6C] = "PistolAmmo",
+  [0x8CE197A7] = "HollowPoints",
+  [0xA230E397] = "ShotgunShells",
+  [0x5C522579] = "RifleAmmo",
+  [0xAA96C1D1] = "Grenades",
+  [0x540F3C56] = "FireArrows",
+  [0xEFB08959] = "DragonfireShells",
+  [0x3C7C95A2] = "GrenadeArrows"
+}
+
+function hex(addr)
+  if addr ~= nil then
+    return string.format("%X", addr)
+  end
+  return "nil"
+end
+
+function readIntegerSigned(a)
+  local val = readInteger(a)
+  if val==nil then return nil end
+  if val&gt;0x7fffffff then val=val-0x100000000 end
+  return val
+end
+
+function forceStrongReinterpretAddresses()
+  local al=getAddressList()
+
+  for i=0,al.Count-1 do
+    if al[i].Parent==nil then
+      local a,poffsets = al[i].getAddress()
+      al[i].setAddress(a,poffsets)
+    end
+  end
+end
+
+function processItem(addr, isMax)
+  type = readInteger(addr+0x8)
+  symbolname = nil
+  for i,v in pairs(idtoname) do
+    if i == type then
+      symbolname = v .. "Location"
+    end
+  end
+  if symbolname ~= nil then
+    if isMax then
+      symbolname = "Max" .. symbolname
+      data = readBytes("Flags",1)
+      if data ~= 0 then
+        writeInteger(addr+0xc, 999)
+      end
+    end
+    registerSymbol(symbolname, addr+0xc)
+  else
+    value = readInteger(addr+0xc)
+    --print("Unknown Type: ".. hex(addr) .. " -- " .. hex(type) .. " = " .. value)
+  end
+end
+
+function processItemList(addr)
+  while addr ~= 0 do
+    processItem(addr, false)
+    addr = readPointer(addr)
+  end
+end
+
+function processMaxItemList(addr)
+  while addr ~= 0 do
+    processItem(addr, true)
+    addr = readPointer(addr)
+  end
+end
+
+function Run()
+  print("Iteration")
+  unregisterSymbol('InventoryLocation')
+  unregisterSymbol('MaxLocation')
+
+  for i,v in pairs(idtoname) do
+    unregisterSymbol(v .. "Location")
+    unregisterSymbol("Max" .. v .. "Location")
+  end
+  if InvLocations == nil  then
+    InvLocations = AOBScan("48 83 EC ?? E8 ?? ?? ?? ?? 48 8B 1D ?? ?? ?? ?? 48 85 DB 74", "+W-C+X")
+  end
+  if InvLocations ~= nil then
+    if InvLocations.Count == 1 then
+      address = getAddress(InvLocations[0])
+  --    print("Locations - "..hex(address))
+      address = address + 15 + readIntegerSigned(address+12)
+      address = readPointer(address)
+      currentinv = readPointer(address + 0x3A8)
+      if currentinv ~= nil and currentinv ~= 0 then
+        registerSymbol('InventoryLocation', currentinv)
+        count = readInteger(currentinv+0x40)
+        hashaddr = readPointer(currentinv + 0x28)
+        for i=0,count-1 do
+          paddr = readPointer(hashaddr + (i*8))
+          if paddr ~= 0 then
+            processItemList(paddr)
+          end
+        end
+      end
+      maxinv = readPointer(address + 0x318)
+      count = readInteger(address + 0x330)
+      if maxinv ~= nil and maxinv ~= 0 then
+        registerSymbol('MaxLocation', maxinv)
+        for i=0,count-1 do
+          paddr = readPointer(maxinv + (i*8))
+          if paddr ~= 0 then
+            processMaxItemList(paddr)
+          end
+        end
+      end
+    end
+  end
+  unregisterSymbol('SkillPointsLocation')
+  if InfoLocations == nil then
+    InfoLocations = AOBScan("0F 85 ?? ?? ?? ?? 48 8B 35 ?? ?? ?? ?? 4C 89 FB","+W-C+X")
+  end
+  if InfoLocations ~= nil then
+    if InfoLocations.Count == 1 then
+      address = getAddress(InfoLocations[0])
+  --    print("InfoLocations - "..hex(address))
+      address = address + 12 + readIntegerSigned(address+9)
+      address = readPointer(address)
+      address = readPointer(address)
+      address = readPointer(address+0x10)
+      address = readPointer(address+0x61D0)
+      if address ~= 0 then
+        registerSymbol('SkillPointsLocation', address + 0x44)
+      end
+    end
+  end
+  unregisterSymbol('HealthLocation')
+  unregisterSymbol('MaxHealthLocation')
+  if HealthLocation == nil then
+    HealthLocation = AOBScan("48 8B 0D ?? ?? ?? ?? 30 DB 45 30 ED","+W-C+X")
+    HealthLocation2 = AOBScan("45 30 FF FF 50 ?? 48 8B 0D ?? ?? ?? ?? 48 89 C2 45 31 C0","+W-C+X")
+  end
+  if HealthLocation ~= nil and HealthLocation2 ~= nil then
+    if HealthLocation.Count == 1 and HealthLocation2.Count == 1 then
+      address = getAddress(HealthLocation[0])
+      address = address + 6 + readIntegerSigned(address+3)
+      address = readPointer(address)
+      local id = readQword(address+0x348)
+      address = getAddress(HealthLocation2[0])
+      address = address + 12 + readIntegerSigned(address+9)
+      address = readPointer(address)
+      local count = readInteger(address + 0x328)
+      address = readPointer(address + 0x330)
+      local addr = 0
+      for i=0,count-1 do
+        local tempaddr = readPointer(address + (i*0x8))
+        if tempaddr ~= 0 then
+          local tempaddr2 = readPointer(tempaddr + 0x338)
+          if tempaddr2 ~= 0 then
+            local tempid = readQword(tempaddr2+0x28)
+            if id == tempid then
+              addr = tempaddr
+            end
+          end
+        end
+      end
+      if addr ~= 0 then
+        address = readPointer(addr+0x60E8)
+        if address ~= 0 then
+          address = readPointer(address+0x3198)
+          address = readPointer(address+0xD8)
+          local healthpos = 0x20
+          local healthloc = readPointer(address + (healthpos * 0x8))
+          registerSymbol("MaxHealthLocation", healthloc + 0x2C4)
+          address = readPointer(healthloc + 0x2A8)
+          registerSymbol("HealthLocation", address + 0x2C)
+          data = readBytes("Flags+1",1)
+          if data ~= 0 then
+            value = readInteger(healthloc+0x2C4)
+            writeFloat(address + 0x2C, value)
+          end
+        end
+      end
+    end
+  end
+
+  forceStrongReinterpretAddresses()
+end
+
+if myTimer == nil then
+  myTimer = createTimer()
+end
+print("Startup")
+myTimer.Interval = 1000
+myTimer.OnTimer = Run
+myTimer.Enabled = true
+
+reinitializeSymbolhandler(true)
+
+[DISABLE]
+{$lua}
+if syntaxcheck then return end
+
+if myTimer ~= nil then
+   myTimer.Enabled = false
+end
+
+InvLocations = nil
+InfoLocations = nil
+HealthLocation = nil
+HealthLocation2 = nil
+
+autoAssemble([[
+unregistersymbol(Flags)
+dealloc(data)
+]])
+unregisterSymbol('MaxLocation')
+unregisterSymbol('InventoryLocation')
+for i,v in pairs(idtoname) do
+  unregisterSymbol(v .. "Location")
+  unregisterSymbol("Max" .. v .. "Location")
+end
+unregisterSymbol('SkillPointsLocation')
+unregisterSymbol('HealthLocation')
+unregisterSymbol('MaxHealthLocation')
+forceStrongReinterpretAddresses()
+reinitializeSymbolhandler(true)
+
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>245</ID>
+          <Description>"Force Max Inventory"</Description>
+          <DropDownList ReadOnly="1" DescriptionOnly="1" DisplayValueAsItem="1">0:Off
+1:On
+</DropDownList>
+          <VariableType>Byte</VariableType>
+          <Address>Flags</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>474</ID>
+          <Description>"Freeze Health"</Description>
+          <DropDownList ReadOnly="1" DescriptionOnly="1" DisplayValueAsItem="1">0:Off
+1:On
+</DropDownList>
+          <VariableType>Byte</VariableType>
+          <Address>Flags+1</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>473</ID>
+          <Description>"Skill Points"</Description>
+          <VariableType>4 Bytes</VariableType>
+          <Address>SkillPointsLocation</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>471</ID>
+          <Description>"Health"</Description>
+          <VariableType>Float</VariableType>
+          <Address>HealthLocation</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>472</ID>
+          <Description>"Max Health"</Description>
+          <VariableType>4 Bytes</VariableType>
+          <Address>MaxHealthLocation</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>300</ID>
+          <Description>"Inventory"</Description>
+          <LastState Value="" RealAddress="00000000"/>
+          <GroupHeader>1</GroupHeader>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>301</ID>
+              <Description>"InventoryLocation"</Description>
+              <ShowAsHex>1</ShowAsHex>
+              <VariableType>8 Bytes</VariableType>
+              <Address>InventoryLocation</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>302</ID>
+              <Description>"MaxLocation"</Description>
+              <ShowAsHex>1</ShowAsHex>
+              <VariableType>8 Bytes</VariableType>
+              <Address>MaxLocation</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>303</ID>
+              <Description>"Cloth"</Description>
+              <VariableType>2 Bytes</VariableType>
+              <Address>ClothLocation</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>304</ID>
+              <Description>"MaxCloth"</Description>
+              <VariableType>2 Bytes</VariableType>
+              <Address>MaxClothLocation</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>305</ID>
+              <Description>"Herbs"</Description>
+              <VariableType>2 Bytes</VariableType>
+              <Address>HerbsLocation</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>306</ID>
+              <Description>"Max Herbs"</Description>
+              <VariableType>2 Bytes</VariableType>
+              <Address>MaxHerbsLocation</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>307</ID>
+              <Description>"Hides"</Description>
+              <VariableType>2 Bytes</VariableType>
+              <Address>HidesLocation</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>308</ID>
+              <Description>"Max Hides"</Description>
+              <VariableType>2 Bytes</VariableType>
+              <Address>MaxHidesLocation</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>309</ID>
+              <Description>"Salvage"</Description>
+              <VariableType>2 Bytes</VariableType>
+              <Address>SalvageLocation</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>310</ID>
+              <Description>"Max Salvage"</Description>
+              <VariableType>2 Bytes</VariableType>
+              <Address>MaxSalvageLocation</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>311</ID>
+              <Description>"Mushrooms"</Description>
+              <VariableType>2 Bytes</VariableType>
+              <Address>MushroomsLocation</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>312</ID>
+              <Description>"Max Mushrooms"</Description>
+              <VariableType>2 Bytes</VariableType>
+              <Address>MaxMushroomsLocation</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>313</ID>
+              <Description>"Hardwood"</Description>
+              <VariableType>2 Bytes</VariableType>
+              <Address>HardwoodLocation</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>314</ID>
+              <Description>"Max Hardwood"</Description>
+              <VariableType>2 Bytes</VariableType>
+              <Address>MaxHardwoodLocation</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>315</ID>
+              <Description>"Feathers"</Description>
+              <VariableType>2 Bytes</VariableType>
+              <Address>FeathersLocation</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>316</ID>
+              <Description>"Max Feathers"</Description>
+              <VariableType>2 Bytes</VariableType>
+              <Address>MaxFeathersLocation</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>317</ID>
+              <Description>"Oil"</Description>
+              <VariableType>2 Bytes</VariableType>
+              <Address>OilLocation</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>318</ID>
+              <Description>"Max Oil"</Description>
+              <VariableType>2 Bytes</VariableType>
+              <Address>MaxOilLocation</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>319</ID>
+              <Description>"Boar Fat"</Description>
+              <VariableType>2 Bytes</VariableType>
+              <Address>BoarFatLocation</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>320</ID>
+              <Description>"Max Boar Fat"</Description>
+              <VariableType>2 Bytes</VariableType>
+              <Address>MaxBoarFatLocation</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>321</ID>
+              <Description>"Deer Antlers"</Description>
+              <VariableType>2 Bytes</VariableType>
+              <Address>DeerAntlersLocation</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>322</ID>
+              <Description>"Max Deer Antlers"</Description>
+              <VariableType>2 Bytes</VariableType>
+              <Address>MaxDeerAntlersLocation</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>323</ID>
+              <Description>"Exotic Hides"</Description>
+              <VariableType>2 Bytes</VariableType>
+              <Address>ExoticHidesLocation</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>324</ID>
+              <Description>"Max Exotic Hides"</Description>
+              <VariableType>2 Bytes</VariableType>
+              <Address>MaxExoticHidesLocation</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>325</ID>
+              <Description>"Magnesite Ore"</Description>
+              <VariableType>2 Bytes</VariableType>
+              <Address>MagnesiteOreLocation</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>326</ID>
+              <Description>"Max Magnesite Ore"</Description>
+              <VariableType>2 Bytes</VariableType>
+              <Address>MaxMagnesiteOreLocation</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>327</ID>
+              <Description>"Bear Hides"</Description>
+              <VariableType>2 Bytes</VariableType>
+              <Address>BearHidesLocation</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>328</ID>
+              <Description>"Max Bear Hides"</Description>
+              <VariableType>2 Bytes</VariableType>
+              <Address>MaxBearHidesLocation</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>329</ID>
+              <Description>"Technical Parts"</Description>
+              <VariableType>2 Bytes</VariableType>
+              <Address>TechnicalPartsLocation</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>330</ID>
+              <Description>"Max Technical Parts"</Description>
+              <VariableType>2 Bytes</VariableType>
+              <Address>MaxTechnicalPartsLocation</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>331</ID>
+              <Description>"Byzantine Coins"</Description>
+              <VariableType>2 Bytes</VariableType>
+              <Address>ByzantineCoinsLocation</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>332</ID>
+              <Description>"Max Byzantine Coins"</Description>
+              <VariableType>2 Bytes</VariableType>
+              <Address>MaxByzantineCoinsLocation</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>333</ID>
+              <Description>"Chromite Ore"</Description>
+              <VariableType>2 Bytes</VariableType>
+              <Address>ChromiteOreLocation</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>334</ID>
+              <Description>"Max Chromite Ore"</Description>
+              <VariableType>2 Bytes</VariableType>
+              <Address>MaxChromiteOreLocation</Address>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>400</ID>
+          <Description>"Ammo"</Description>
+          <LastState Value="" RealAddress="00000000"/>
+          <GroupHeader>1</GroupHeader>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>401</ID>
+              <Description>"Arrows"</Description>
+              <VariableType>2 Bytes</VariableType>
+              <Address>ArrowsLocation</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>402</ID>
+              <Description>"Max Arrows"</Description>
+              <VariableType>2 Bytes</VariableType>
+              <Address>MaxArrowsLocation</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>403</ID>
+              <Description>"Poison Arrows"</Description>
+              <VariableType>2 Bytes</VariableType>
+              <Address>PoisonArrowsLocation</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>404</ID>
+              <Description>"Max Poison Arrows"</Description>
+              <VariableType>2 Bytes</VariableType>
+              <Address>MaxPoisonArrowsLocation</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>405</ID>
+              <Description>"Pistol Ammo"</Description>
+              <VariableType>2 Bytes</VariableType>
+              <Address>PistolAmmoLocation</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>406</ID>
+              <Description>"Max Pistol Ammo"</Description>
+              <VariableType>2 Bytes</VariableType>
+              <Address>MaxPistolAmmoLocation</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>407</ID>
+              <Description>"Hollow Points"</Description>
+              <VariableType>2 Bytes</VariableType>
+              <Address>HollowPointsLocation</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>408</ID>
+              <Description>"Max Hollow Points"</Description>
+              <VariableType>2 Bytes</VariableType>
+              <Address>MaxHollowPointsLocation</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>409</ID>
+              <Description>"Shotgun Shells"</Description>
+              <VariableType>2 Bytes</VariableType>
+              <Address>ShotgunShellsLocation</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>410</ID>
+              <Description>"Max Shotgun Shells"</Description>
+              <VariableType>2 Bytes</VariableType>
+              <Address>MaxShotgunShellsLocation</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>411</ID>
+              <Description>"Rifle Ammo"</Description>
+              <VariableType>2 Bytes</VariableType>
+              <Address>RifleAmmoLocation</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>412</ID>
+              <Description>"Max Rifle Ammo"</Description>
+              <VariableType>2 Bytes</VariableType>
+              <Address>MaxRifleAmmoLocation</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>413</ID>
+              <Description>"Grenades"</Description>
+              <VariableType>2 Bytes</VariableType>
+              <Address>GrenadesLocation</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>414</ID>
+              <Description>"Max Grenades"</Description>
+              <VariableType>2 Bytes</VariableType>
+              <Address>MaxGrenadesLocation</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>415</ID>
+              <Description>"Fire Arrows"</Description>
+              <VariableType>2 Bytes</VariableType>
+              <Address>FireArrowsLocation</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>416</ID>
+              <Description>"Max Fire Arrows"</Description>
+              <VariableType>2 Bytes</VariableType>
+              <Address>MaxFireArrowsLocation</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>417</ID>
+              <Description>"Dragonfire Shells"</Description>
+              <VariableType>2 Bytes</VariableType>
+              <Address>DragonfireShellsLocation</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>418</ID>
+              <Description>"Max Dragonfire Shells"</Description>
+              <VariableType>2 Bytes</VariableType>
+              <Address>MaxDragonfireShellsLocation</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>419</ID>
+              <Description>"Grenade Arrows"</Description>
+              <VariableType>2 Bytes</VariableType>
+              <Address>GrenadeArrowsLocation</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>420</ID>
+              <Description>"Max Grenade Arrows"</Description>
+              <VariableType>2 Bytes</VariableType>
+              <Address>MaxGrenadeArrowsLocation</Address>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+  </CheatEntries>
+  <CheatCodes>
+    <CodeEntry>
+      <Description>Code :mov rcx,[ROTTR.exe+29805C0]</Description>
+      <Address>14371C9B4</Address>
+      <ModuleName>ROTTR.exe</ModuleName>
+      <ModuleNameOffset>371C9B4</ModuleNameOffset>
+      <Before>
+        <Byte>05</Byte>
+        <Byte>74</Byte>
+        <Byte>F7</Byte>
+        <Byte>22</Byte>
+        <Byte>FF</Byte>
+      </Before>
+      <Actual>
+        <Byte>48</Byte>
+        <Byte>8B</Byte>
+        <Byte>0D</Byte>
+        <Byte>05</Byte>
+        <Byte>3C</Byte>
+        <Byte>26</Byte>
+        <Byte>FF</Byte>
+      </Actual>
+      <After>
+        <Byte>30</Byte>
+        <Byte>DB</Byte>
+        <Byte>45</Byte>
+        <Byte>30</Byte>
+        <Byte>ED</Byte>
+      </After>
+    </CodeEntry>
+  </CheatCodes>
+  <UserdefinedSymbols/>
+</CheatTable>

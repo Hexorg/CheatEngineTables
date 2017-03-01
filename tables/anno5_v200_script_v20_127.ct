@@ -1,0 +1,805 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="14">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>61</ID>
+      <Description>"[X] &lt;== Anno 2070 v2.00 Script 2.0"</Description>
+      <Options moHideChildren="1"/>
+      <Color>FF0000</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>{
+===========================================
+ Game Title    : Anno 2070 - The Deep Ocean (sea)
+ Game Version  : 2.00.7780
+ Process Name  : Anno5.exe
+ Script Version: 2.0
+ CE Version    : 6.2
+ Release date  : 26-Oct-2012
+ Author        : Recifense
+ History:
+ 04-Dec-2011: First Release (version 1.01.6234)
+ 26-Oct-2012: Adapted to version 2.00.7780
+ Features:
+ - Wealth  (62000)
+ - License (620)
+ - Ship Cargo
+ - Warehouse Items (max/min)
+ - God Mode
+ - Unlimited Fuel
+ - Useful Pointers
+===========================================
+}
+
+//=========================================
+// Definitions
+define(LUDO,"Anno5.exe")
+
+//=========================================
+[ENABLE]
+//=========================================
+// Check if script is compatible to this game version
+// If false the script will not be loaded
+
+assert(LUDO+000f5a62,8b 8b 84 00 00 00 0f ac c8 0a) //_MG
+assert(LUDO+0065dbe0,8b 41 08 c3 cc)                //_MC
+assert(LUDO+00470f96,8b 50 10 89 55 fc)             //_MWH
+assert(LUDO+0067411f,89 bb f4 02 00 00)             //_MS
+assert(LUDO+00470eb2,8b 55 08 39 51 10)             //_MWH2 (NHP)
+assert(LUDO+0052a359,01 46 08 b8 10 27 00 00)       //_GM
+assert(LUDO+0050c6c6,8b 46 0c 3b c3)                //_MF
+
+//=========================================
+alloc(MyCode,4048,LUDO)
+//=========================================
+// Declaration section
+label(_MonGold)
+label(_MonG0)
+label(_BackMG)
+label(_ExitMG)
+label(_MonCargo)
+label(_BackMC)
+label(_ExitMC)
+label(_MonWH)
+label(_MonW0)
+label(_BackMW)
+label(_ExitMW)
+label(_MonSel)
+label(_BackMS)
+label(_ExitMS)
+label(_MonWH2)
+label(_MonW02)
+label(_BackMW2)
+label(_ExitMW2)
+label(_GodMode)
+label(_BackGM)
+label(_ExitGM)
+label(_MonFuel)
+label(_BackMF)
+label(_ExitMF)
+label(pGold)
+label(pCargo)
+label(pSel)
+label(pResInfo)
+label(pIsland)
+label(iEnableMG)
+label(iEnableML)
+label(iEnableMC)
+label(iEnableMW)
+label(iEnableGM)
+label(iEnableMF)
+label(aLast)
+
+//=========================================
+// Registering Symbols
+registersymbol(MyCode)
+registersymbol(pGold)
+registersymbol(pCargo)
+registersymbol(pSel)
+registersymbol(pResInfo)
+registersymbol(pIsland)
+registersymbol(iEnableMG)
+registersymbol(iEnableML)
+registersymbol(iEnableMC)
+registersymbol(iEnableMW)
+registersymbol(iEnableGM)
+registersymbol(iEnableMF)
+registersymbol(aLast)
+
+//=========================================
+MyCode:
+//========================================= 200
+// Activated on the strategic screen
+_MonGold:
+ mov dword ptr [aLast],'MonG'
+
+ mov [pGold],ebx
+
+ cmp dword ptr [iEnableMG],0
+ je _MonG0                         // Jump if feature is disabled
+
+ mov ecx,[ebx+00000084]            // Original code
+ test ecx,ecx
+ jnz _MonG0
+
+ mov ecx,#63488000                 // 62000 * 1024
+ cmp ecx,[ebx+00000080]
+ jle _MonG0
+
+ mov [ebx+00000080],ecx
+
+_MonG0:
+ cmp dword ptr [iEnableML],0
+ je _ExitMG                        // Jump if feature is disabled
+
+ mov ecx,[ebx+00000088]
+ test ecx,ecx
+ jz _ExitMG
+
+ mov ecx,#634880                   // 620 * 1024
+ cmp ecx,[ebx+00000088]
+ jle _ExitMG
+
+ mov [ebx+00000088],ecx
+
+_ExitMG:
+ mov ecx,[ebx+00000084]            // Original code
+ jmp _BackMG                       // Back to main code
+
+//========================================= 200
+// Activated when a ship is selected
+_MonCargo:
+ mov dword ptr [aLast],'MonC'
+
+ mov [pCargo],ecx
+
+ cmp dword ptr [iEnableMC],0
+ je _ExitMC                        // Jump if feature is disabled
+
+ mov eax,[ecx+04]                  // Cargo ID
+ cmp eax,#76
+ jge _ExitMC
+
+ mov eax,#20                       // Minimum Load
+ cmp eax,[ecx+08]
+ jle _ExitMC
+
+ mov [ecx+08],eax
+
+_ExitMC:
+ mov eax,[ecx+08]                  // Original code
+ ret
+ jmp _BackMC                       // Back to main code (just the template)
+
+//========================================= 200
+// Activated when the WH is visible or selected
+_MonWH:
+ mov dword ptr [aLast],'MWH1'
+
+ mov edx,[esi+04]        //ppIsland
+ cmp esi,[edx+00005f70]  //5880
+ jne _ExitMW
+
+ mov [pIsland],esi
+
+ cmp dword ptr [iEnableMW],0
+ je _ExitMW                        // Jump if feature is disabled
+
+ mov edx,[esi+0000039c]  //**318
+ lea edx,[edx-00004e20]  //20000
+ cmp edx,[eax+10]
+ jle _MonW0
+
+ mov [eax+10],edx                  // Minimum = Max - 20
+ jmp _ExitMW
+
+_MonW0:
+ mov edx,[esi+0000039c]  //**318
+ lea edx,[edx-0000176f] // 5999
+ cmp edx,[eax+10]
+ jge _ExitMW
+
+ mov [eax+10],edx                  // Maximum = Max - 5
+
+_ExitMW:
+ mov edx,[eax+10]                  // Original code
+ mov [ebp-04],edx                  // Original code
+ jmp _BackMW                       // Back to main code
+
+//========================================= 200
+// Activated when a building is selected
+_MonSel:
+ mov dword ptr [aLast],'MSel'
+
+ push esi
+
+ mov [pSel],edi
+
+ test edi,edi
+ jz _ExitMS
+
+ cmp dword ptr [edi+48],0
+ jne _ExitMS
+
+ mov esi,[edi+58]                  // ppIsland
+ test esi,esi
+ jz _ExitMS
+
+ mov esi,[esi+00005f70] //**5880   // pIsland
+ mov [pResInfo],esi
+
+_ExitMS:
+ pop esi
+
+ mov [ebx+000002F4],edi            // Original code
+ jmp _BackMS                       // Back to main code
+
+//========================================= 200
+// Activated when an Item in WH is modified
+// ESI = pIsland
+_MonWH2:
+ mov dword ptr [aLast],'MWH2'
+
+ cmp dword ptr [iEnableMW],0
+ je _ExitMW2                       // Jump if feature is disabled
+
+ mov edx,[esi+04]
+ cmp esi,[edx+00005f70] //**5880   // pIsland
+ jne _ExitMW2
+
+ mov edx,[esi+0000039c]  //**318
+ lea edx,[edx-00004e20]
+ cmp edx,[ecx+10]
+ jle _MonW02
+
+ mov [ecx+10],edx                  // Minimum = Max - 20
+ jmp _ExitMW2
+
+_MonW02:
+ mov edx,[esi+0000039c]  //**318
+ lea edx,[ecx-0000176f]
+ cmp edx,[ecx+10]
+ jge _ExitMW2
+
+ mov [ecx+10],edx                  // Maximum = Max - 5
+
+_ExitMW2:
+ mov edx,[ebp+08]                  // Original code (get max value)
+ cmp [ecx+10],edx                  // Original code
+ jmp _BackMW2                      // Back to main code
+
+//========================================= 200
+// Activated during combat
+_GodMode:
+ mov dword ptr [aLast],'GMod'
+
+ push ecx
+
+ mov ecx,[esi+04]
+ test ecx,ecx
+ jz _ExitGM
+
+ cmp dword ptr [ecx+48],0
+ jne _ExitGM
+
+ cmp dword ptr [iEnableGM],0
+ je _ExitGM                        // Jump if feature is disabled
+
+ xor eax,eax
+ mov ecx,#40960000                 // 100%
+
+ mov [esi+08],ecx
+ mov [esi+0c],eax
+ mov edx,eax
+
+_ExitGM:
+ pop ecx
+
+ add [esi+08],eax                  // Original code
+ mov eax,00002710                  // Original code
+ jmp _BackGM                       // Back to main code
+
+//========================================= ???
+// Activated when an aircraft is on the air
+_MonFuel:
+ mov dword ptr [aLast],'MFue'
+
+ test edi,edi
+ jz _ExitMF
+
+ cmp dword ptr [edi+48],0
+ jne _ExitMF
+
+ cmp dword ptr [iEnableMF],0
+ je _ExitMF                        // Jump if feature is disabled
+
+ xor ebx,ebx                       // value2decease = 0
+
+_ExitMF:
+ mov eax,[esi+0C]                  // Original code
+ cmp eax,ebx                       // Original code
+ jmp _BackMF                       // Back to main code
+
+//=========================================
+ db '======================================&gt;'
+ db 'CE6.2 Script by Recifense 102612'
+//=========================================
+// Variables
+iEnableMG:
+ dd 0
+iEnableML:
+ dd 0
+iEnableMC:
+ dd 0
+iEnableMW:
+ dd 0
+iEnableGM:
+ dd 0
+iEnableMF:
+ dd 0
+pGold:
+ dd 0
+pCargo:
+ dd 0
+pIsland:
+ dd 0
+pSel:
+ dd 0
+pResInfo:
+ dd MyCode
+aLast:
+ db 'CE62'
+
+//=========================================
+// Hacking Points
+LUDO+000f5a62:
+ jmp _MonGold
+ nop
+_BackMG:
+
+LUDO+0065dbe0:
+ jmp _MonCargo
+_BackMC:
+
+LUDO+00470f96:
+ jmp _MonWH
+ nop
+_BackMW:
+
+LUDO+0067411f:
+ jmp _MonSel
+ nop
+_BackMS:
+
+LUDO+00470eb2:
+ jmp _MonWH2
+ nop
+_BackMW2:
+
+LUDO+0052a359:
+ jmp _GodMode
+ nop
+ nop
+ nop
+_BackGM:
+
+LUDO+0050c6c6:
+ jmp _MonFuel
+_BackMF:
+
+//=========================================
+// Script for Restoring Original Codes
+[DISABLE]
+LUDO+000f5a62:
+// mov ecx,[ebx+00000084]
+ db 8b 8b 84 00 00 00
+
+LUDO+0065dbe0:
+// mov eax,[ecx+08]
+// ret
+// int 3
+ db 8b 41 08 c3 cc
+
+LUDO+00470f96:
+// mov edx,[eax+10]
+// mov [ebp-04],edx
+ db 8b 50 10 89 55 fc
+
+LUDO+0067411f:
+// mov [ebx+000002F4],edi
+ db 89 bb f4 02 00 00
+
+LUDO+00470eb2:
+// mov edx,[ebp+08]
+// cmp [ecx+10],edx
+ db 8b 55 08 39 51 10
+
+LUDO+0052a359:
+// add [esi+08],eax
+// mov eax,00002710
+ db 01 46 08 b8 10 27 00 00
+
+LUDO+0050c6c6:
+// mov eax,[esi+0C]
+// cmp eax,ebx
+ db 8b 46 0c 3b c3
+
+//=========================================
+// Unregistering Symbols
+unregistersymbol(MyCode)
+unregistersymbol(pGold)
+unregistersymbol(pCargo)
+unregistersymbol(pSel)
+unregistersymbol(pResInfo)
+unregistersymbol(pIsland)
+unregistersymbol(iEnableMG)
+unregistersymbol(iEnableML)
+unregistersymbol(iEnableMC)
+unregistersymbol(iEnableMW)
+unregistersymbol(iEnableGM)
+unregistersymbol(iEnableMF)
+unregistersymbol(aLast)
+
+//=========================================
+dealloc(MyCode)
+//============= Scripts End ===============
+
+// ****************************************
+// NOTES
+// ****************************************
+{
+struct PLAYER:
+0080 = liWealth (integer of 8 bytes)  (Display * 1024 =&gt; 1 = 1024)
+0088 = liLicense (integer of 8 bytes) (Display * 1024 =&gt; 1 = 1024)
+
+struct ppSHIP_CARGO:
+000c = i#Slots
+0010 = iMaxValue
+0014 = pp1stCargo
+0018 = i#Slots
+
+struct p_SHIP_CARGO:
+0000 = pNextCargo
+0004 = pPreviousCargo
+000c = pCargo
+
+struct SHIP_CARGO:
+0004 = iType
+0008 = iQuantity (1 = 1)
+
+struct ITEM_WAREHOUSE:
+0000 = pPreviousItem
+0004 = pNextItem
+0008 = pNextItem
+000c = iType
+0010 = iQuantity (display * 1000 =&gt; 1 = 1000)
+
+struct ISLAND:
+0004 = ppIsland
+0318 = iMaximum per item slot
+034c = p1stItemInWarehouse
+
+struct ppISLAND:
+5880 = pIsland
+
+struct BUILDING:
+000c = iType
+0010 = b01
+0048 = iPlayerID (=0)
+004c = pType
+0050 = pType
+0058 = ppIsland
+
+struct HP:
+0004 = pBuilding/pShip
+0008 = i%HP (100% = 4K*10000)
+
+struct FUEL:
+000c = iFuel (10T = 10000)
+
+Item Type IDs:
+01 = Building Module	02 = Tools				03 = Wood				04 = Glass				05 = Concrete
+06 = Steel				07 = Carbon				08 = Fish				09 = Pasta Dish			10 = Health Food
+11 = Convenience Food	12 = Luxury Meal		13 = Functional Food	14 = Tea				15 = Bio Drink
+16 = Liquor				17 = Champagne			18 = Functional Drink	19 = Plastics			20 = Jewelery
+21 = Pharmaceuticals	22 = Communicator		23 = 3D Projector		24 = Service Bots		25 = Coal
+26 = Granules			27 = Iron Ore			28 = Iron				29 = Copper				30 = Limestone
+31 = Sand				32 = Crude Oil			33 = Oil				34 = Microchips			35 = Sugar
+36 = Manganese Nodules	37 = Rare-earth Element	38 = Diamonds			39 = Uranium			40 = Meat
+41 = Super Flavor		42 = Explosives			43 = Lobster			44 = Truffle			45 = Grapes
+46 = Gold Nuggets		47 = Gold				48 = Omega Acids		49 = Secret Ingredients	50 = Rice
+51 = Vegetables			52 = Fruits				53 = Milk				54 = Durum Wheat		55 = Pasta
+56 = Corn				57 = Biopolymers		58 = Caffeine			59 = Algae				60 = Fuel Rods
+61 = Kerosene			62 = Weapons			63 = Heavy Weapons		64 = High-tech Weapons	65 = Immunity Drugs
+66 = Lab Instruments	67 = Neuroimplants		68 = Bionic Suits		69 = Enzymes        	70 = Platinum
+71 = Sponges			72 = Lithium			73 = Electrolyte Cells	74 = Exoskeletons   	75 = Coral
+}
+
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>26</ID>
+          <Description>"Enable/Disable Minimum Wealth ==&gt; (1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMG</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>55</ID>
+          <Description>"Enable/Disable Minimum License  ==&gt; (1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableML</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>27</ID>
+          <Description>"Enable/Disable Minimum Cargo  ==&gt; (1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMC</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>33</ID>
+          <Description>"Enable/Disable Minimum Resources  ==&gt; (1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMW</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>62</ID>
+          <Description>"Enable/Disable God Mode  ==&gt; (1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableGM</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>63</ID>
+          <Description>"Enable/Disable Unlimited Fuel  ==&gt; (1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMF</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>30</ID>
+          <Description>"Selected Ship Last Item ID ==&gt;"</Description>
+          <Color>0000FF</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>pCargo</Address>
+          <Offsets>
+            <Offset>4</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>31</ID>
+          <Description>"Selected Ship Last Item Quantity ==&gt;"</Description>
+          <Color>0000FF</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>pCargo</Address>
+          <Offsets>
+            <Offset>8</Offset>
+          </Offsets>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols/>
+  <Comments>===========================================
+ Game Title    : Anno 2070 - The Deep Ocean (sea)
+ Game Version  : 2.00.7780
+ Game Sponsor  : RELOADED (via internet)
+ Process Name  : Anno5.exe
+ Script Version: 2.0
+ CE Version    : 6.2
+ Release date  : 26-Oct-2012
+ Author        : Recifense
+ History:
+ 04-Dec-2011: First Release (version 1.01.6234)
+ 26-Oct-2012: Adapted to version 2.00.7780
+ Features:
+ - Wealth [1]
+ - License [2]
+ - Ship Cargo [3]
+ - Warehouse Items (max/min) [4]
+ - God Mode [5]
+ - Fuel
+ - Useful Pointers [6]
+===========================================
+[1]  The minimum value will be 50000
+[2] The minimum value will be 500. In order to this cheat to work you should earn at least 1 license;
+[3] The minimum cargo value will be 20;
+[4] The minimum value will be the maximum base value - 20. And the maximum value will be the maximum base value - 5;
+[5] For Ships and buildings;
+[6] Last ship cargo;
+===========================================
+[Item Type]:
+01 = Building Module
+02 = Tools
+03 = Wood
+04 = Glass
+05 = Concrete
+06 = Stee
+07 = Carbon
+08 = Fish
+09 = Pasta Dish
+10 = Health Food
+11 = Convenience Food
+12 = Luxury Meal
+13 = Functional Food
+14 = Tea
+15 = Bio Drink
+16 = Liquor
+17 = Champagne
+18 = Functional Drink
+19 = Plastics
+20 = Jewelery
+21 = Pharmaceuticals
+22 = Communicator
+23 = 3D Projector
+24 = Service Bots
+25 = Coal
+26 = Granules
+27 = Iron Ore
+28 = Iron
+29 = Copper
+30 = Limestone
+31 = Sand
+32 = Crude Oil
+33 = Oil
+34 = Microchips
+35 = Sugar
+36 = Manganese Nodules
+37 = Rare-earth Element
+38 = Diamonds
+39 = Uranium
+40 = Meat
+41 = Super Flavor
+42 = Explosives
+43 = Lobster
+44 = Truffle
+45 = Grapes
+46 = Gold Nuggets
+47 = Gold
+48 = Omega Acids
+49 = Secret Ingredients
+50 = Rice
+51 = Vegetables
+52 = Fruits
+53 = Milk
+54 = Durum Wheat
+55 = Pasta
+56 = Corn
+57 = Biopolymers
+58 = Caffeine
+59 = Algae	
+60 = Fuel Rods
+61 = Kerosene
+62 = Weapons
+63 = Heavy Weapons
+64 = High-tech Weapons
+==========================================
+HOTKYES:
+CRTL+Home = Enable  all cheats;
+CRTL+End  = Disable all cheats;
+==========================================
+Cheers!
+</Comments>
+</CheatTable>

@@ -1,0 +1,1667 @@
+<?xml version="1.0"?>
+<CheatTable CheatEngineTableVersion="12">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>69</ID>
+      <Description>"[X] &lt;== King Arthur 2 dx11 v1.1.06 Script (64bits)"</Description>
+      <Options moHideChildren="1"/>
+      <Color>80000008</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>{
+===========================================
+ Game Title    : King Arthur 2 The Role Play Game (64 bits)
+ Game Version  : 1.1.06
+ Process Name  : CoreTech2_X86_11.exe
+ Script Version: 1.1
+ CE Version    : 6.1
+ Release date  : 04-Mar-2012
+ Author        : Recifense
+ Features:
+ - God Mode
+ - Unlimited Mana
+ - No decreasing Shield
+ - Stronger Units
+ - No decreasing Will
+ - Minimum Gold
+ - Recover Troop Size
+ - Unlimited Movement Points
+ - Useful Pointers
+===========================================
+}
+
+[ENABLE]
+//=========================================
+// Check if script is compatible to this game version
+// If false the script will not be loaded
+
+assert(CoreTech2_X64_11.exe+034de9,49 8b ac 24 f0 00 00 00 48 8b 9d 38 03 00 00 48 8b 43 08)
+assert(CoreTech2_X64_11.exe+1073ea,29 ae 04 01 00 00 8b 86 04 01 00 00 41 b8 00 00 00 00)
+assert(CoreTech2_X64_11.exe+0cb4b0,48 89 5c 24 08 57 48 83 ec 20 01 91 78 05 00 00)
+assert(CoreTech2_X64_11.exe+0d06d2,48 8b d9 8b 41 18 89 84 24 c0 00 00 00 48 83 79 10 00)
+assert(CoreTech2_X64_11.exe+113b83,b8 59 17 b7 d1 f7 e2 c1 ea 0c 29 93 a4 01 00 00)
+assert(CoreTech2_X64_11.exe+5855af,4c 8b 9e e8 01 00 00 45 8b 4c 24 34 45 8b 83 58 01 00 00)
+assert(CoreTech2_X64_11.exe+540b1b,8b 97 c8 01 00 00 c1 e2 10 83 ca 03 48 8b 8f 88 00 00 00)
+assert(CoreTech2_X64_11.exe+0cd148,8b 93 84 05 00 00 89 94 24 c0 00 00 00 48 8d 8b 50 01 00 00)
+assert(CoreTech2_X64_11.exe+0e34ce,89 9f 1c 01 00 00 4c 8d 9c 24 e0 00 00 00 49 8b 5b 28)
+
+//=========================================
+alloc(MyCode,1024,CoreTech2_X64_11.exe)
+//=========================================
+// Declaration section
+label(_MonHP)
+label(_MonH0)
+label(_MonH1)
+label(_BackMH)
+label(_ExitMH)
+label(_GodMode)
+label(_BackGM)
+label(_ExitGM)
+label(_MonMana)
+label(_BackMM)
+label(_ExitMM)
+label(_MonShield)
+label(_BackMS)
+label(_ExitMS)
+label(_MonWill)
+label(_BackMW)
+label(_ExitMW)
+label(_MonTroop)
+label(_MonT00)
+label(_BackMT)
+label(_ExitMT)
+label(_MonGold)
+label(_BackMG)
+label(_ExitMG)
+label(_MonHero)
+label(_BackMHr)
+label(_ExitMHr)
+label(_MonMP)
+label(_BackMMp)
+label(_ExitMMp)
+label(pUnit)
+label(pPlayer)
+label(pOwner)
+label(pGold)
+label(pHero)
+label(iEnableGM)
+label(iEnableMM)
+label(iEnableMU)
+label(iEnableMS)
+label(iEnableMW)
+label(iEnableMG)
+label(iEnableMT)
+label(iEnableMMp)
+
+//=========================================
+// Registering Symbols
+registersymbol(MyCode)
+registersymbol(pUnit)
+registersymbol(pPlayer)
+registersymbol(pOwner)
+registersymbol(pGold)
+registersymbol(pHero)
+registersymbol(iEnableGM)
+registersymbol(iEnableMM)
+registersymbol(iEnableMU)
+registersymbol(iEnableMS)
+registersymbol(iEnableMW)
+registersymbol(iEnableMG)
+registersymbol(iEnableMT)
+registersymbol(iEnableMMp)
+
+//=========================================
+MyCode:
+//========================================= ok
+// RTS - ALL Units
+_MonHP:
+ push rdi
+ push rsi
+
+ push r12                          // Armengue because of CE61
+ pop rsi
+
+ mov rdi,[rsi+000000f0]            // pTroop
+ test rdi,rdi
+ jz _ExitMH
+
+ mov rdi,[rdi+00000140]            // pOwner
+ test rdi,rdi
+ jz _ExitMH
+
+ mov ebx,[rdi+00000160]            // ID
+ and ebx,000000ff
+ jnz _ExitMH
+
+ mov [pOwner],rdi
+
+ cmp dword ptr [iEnableGM],0
+ je _MonH0                         // Jump if feature is disabled
+
+ mov edi,#610050
+ mov [rsi+00000104],edi
+ mov edi,#87150
+ mov [rsi+10],edi
+
+_MonH0:
+ cmp dword ptr [iEnableMU],0
+ je _ExitMH                        // Jump if feature is disabled
+
+ mov edi,#2000
+ cmp dword ptr [rsi+20],0
+ je _MonH1
+
+ mov edi,#4000
+
+_MonH1:
+ cmp edi,[rsi+14]
+ jle _ExitMH
+
+ mov [rsi+14],edi
+
+_ExitMH:
+ mov rbp,[rsi+000000F0]            // Original code
+
+ pop rsi
+ pop rdi
+ ret
+// jmp _BackMH                       // Back to main code
+
+//========================================= ok
+// RTS - Under attack
+_GodMode:
+ cmp dword ptr [iEnableGM],0
+ je _ExitGM                        // Jump if feature is disabled
+
+ mov rax,[rsi+000000f0]            // pTroop
+ test rax,rax
+ jz _ExitGM
+
+ mov rax,[rax+00000140]            // pOwner
+ test rax,rax
+ jz _ExitGM
+
+ mov eax,[rax+00000160]            // ID
+ and eax,000000ff
+ jnz _ExitGM
+
+ mov eax,#610050
+ mov [rsi+00000104],eax
+ mov eax,#87150
+ mov [rsi+10],eax
+
+ xor ebp,ebp                       // value2decrease = 0
+
+_ExitGM:
+ sub [rsi+00000104],ebp            // Original code
+ ret
+// jmp _BackGM                       // Back to main code
+
+//========================================= ok
+// RTS - when spending Mana
+_MonMana:
+ test edx,edx
+ jns _ExitMM
+
+ cmp dword ptr [iEnableMM],0
+ je _ExitMM                        // Jump if feature is disabled
+
+ mov rax,[rcx+00000200]            // pTroop (Base-110)
+ test rax,rax
+ jz _ExitMM
+
+ mov rax,[rax+00000140]            // pOwner
+ test rax,rax
+ jz _ExitMM
+
+ mov eax,[rax+00000160]            // ID
+ and eax,000000ff
+ jne _ExitMM
+
+ mov eax,[rcx+00000660]            // SpentMana
+ add [rcx+00000578],eax
+
+ xor eax,eax                       // Value2decrease = 0
+ mov edx,eax
+
+ mov [rcx+00000660],eax            // SpentMana = 0
+
+_ExitMM:
+ add [rcx+00000578],edx            // Original code
+ ret
+// jmp _BackMM                       // Back to main code
+
+//========================================= ok NHP
+// RTS - Minimum = 50
+_MonShield:
+ cmp dword ptr [iEnableMS],0
+ je _ExitMS                        // Jump if feature is disabled
+
+ mov rax,[rcx+10]                  // pOwner
+ test rax,rax
+ jz _ExitMS
+
+ mov eax,[rax+00000160]            // ID
+ and eax,000000ff
+ jnz _ExitMS
+
+ mov eax,#50
+ cmp eax,[rcx+18]
+ jle _ExitMS
+
+ mov [rcx+18],eax                  // Shield = 50
+
+_ExitMS:
+ mov rbx,rcx                       // Original code
+ mov eax,[rcx+18]                  // Original code Shield
+ ret
+// jmp _BackMS                       // Back to main code
+
+//========================================= ok
+// RTS - when decreasing Will
+_MonWill:
+ push rdi
+
+ cmp dword ptr [iEnableMW],0
+ je _ExitMW                        // Jump if feature is disabled
+
+ mov rdi,[rbx+00000140]            // pOwner
+ test rdi,rdi
+ jz _ExitMW
+
+ mov eax,[rdi+00000160]            // ID
+ and eax,000000ff
+ jnz _ExitMW
+
+ xor edx,edx                       // Value2decrease = 0
+
+ mov edi,[rbx+10]
+ mov [rbx+000001a4],edi            // Max Will
+ mov edi,[rbx+000001a8]
+ test edi,edi
+ jns _ExitMW
+
+ mov [rbx+000001a8],edx            // Negative Will = 0
+
+_ExitMW:
+ pop rdi
+
+ sub [rbx+000001A4],edx            // Original code
+ ret
+// jmp _BackMW                       // Back to main code
+
+//========================================= ok
+// TBS - Select Troop Info Screen
+_MonTroop:
+ mov r11,[rsi+000001E8]            // Original code
+
+ mov [pUnit],r11
+
+ mov rdx,[r11+08]
+ test rdx,rdx
+ jz _ExitMT
+
+ cmp dword ptr [iEnableMT],0
+ je _MonT00                        // Jump if feature is disabled
+
+ mov r8d,[rdx+34]                  // Get max size
+ mov [r11+00000158],r8d            // Update Size
+
+_MonT00:
+ cmp dword ptr [iEnableMMp],0
+ je _ExitMT                        // Jump if feature is disabled
+
+ mov rdx,[r11+00000140]            // pArmy
+ test rdx,rdx
+ jz _ExitMT
+
+ mov r8d,#8000
+ cmp r8d,[rdx+0000011c]
+ jle _ExitMT
+
+ mov [rdx+0000011c],r8d
+
+_ExitMT:
+ ret
+// jmp _BackMT                       // Back to main code
+
+//========================================= ok NHP
+// TBS Main Screen
+_MonGold:
+ mov [pGold],rsi
+
+ cmp dword ptr [iEnableMG],0
+ je _ExitMG                        // Jump if feature is disabled
+
+ mov r8d,#50000
+ cmp r8d,[rsi+000002EC]
+ jle _ExitMG
+
+ mov [rsi+000002EC],r8d
+
+_ExitMG:
+ mov r8d,[rsi+000002EC]            // Original code
+ ret
+// jmp _BackMG                       // Back to main code
+
+//========================================= ok
+// TBS - Select Hero Status Screen
+_MonHero:
+ mov [pHero],rbx
+
+_ExitMHr:
+ mov edx,[rbx+00000584]            // Original code (skill points)
+ ret
+// jmp _BackMHr                      // Back to main code
+
+//========================================= ok
+// TBS Main Screen
+_MonMP:
+ push rax
+
+ cmp dword ptr [iEnableMMp],0
+ je _ExitMMp                       // Jump if feature is disabled
+
+ mov rax,[rdi+68]
+ cmp rax,[pGold]
+ jne _ExitMMp
+
+ cmp ebx,[rdi+0000011C]
+ jge _ExitMMp
+
+ mov ebx,[rdi+0000011C]
+
+_ExitMMp:
+ pop rax
+
+ mov [rdi+0000011C],ebx            // Original code
+ ret
+// jmp _BackMMp                      // Back to main code
+
+//=========================================
+ db '============================&gt;'
+ db 'CE6.1 Script by Recifense 030412'
+//=========================================
+// Variables
+iEnableGM:
+ dd 0
+iEnableMM:
+ dd 0
+iEnableMU:
+ dd 0
+iEnableMS:
+ dd 0
+iEnableMW:
+ dd 0
+iEnableMG:
+ dd 0
+iEnableMT:
+ dd 0
+iEnableMMp:
+ dd 0
+pUnit:
+ dd 0
+ dd 0
+pPlayer:
+ dd 0
+ dd 0
+pOwner:
+ dd 0
+ dd 0
+pGold:
+ dd 0
+ dd 0
+pHero:
+ dd 0
+ dd 0
+ db 'CE61'
+
+//=========================================
+// Hacking Points
+CoreTech2_X64_11.exe+034de9: //06
+ call _MonHP
+ nop
+ nop
+ nop
+_BackMH:
+
+CoreTech2_X64_11.exe+1073ea: //06
+ call _GodMode
+ nop
+_BackGM:
+
+CoreTech2_X64_11.exe+0cb4ba: //06
+ call _MonMana
+ nop
+_BackMM:
+
+CoreTech2_X64_11.exe+0d06d2: //06
+ call _MonShield
+ nop
+_BackMS:
+
+CoreTech2_X64_11.exe+113b8d: //06
+ call _MonWill
+ nop
+_BackMW:
+
+CoreTech2_X64_11.exe+5855af: //06
+ call _MonTroop
+ nop
+ nop
+_BackMT:
+
+CoreTech2_X64_11.exe+540b03: //06
+ call _MonGold
+ nop
+ nop
+_BackMG:
+
+CoreTech2_X64_11.exe+0cd148: //06
+ call _MonHero
+ nop
+_BackMHr:
+
+CoreTech2_X64_11.exe+0e34ce: //06
+ call _MonMP
+ nop
+_BackMMp:
+
+//=========================================
+// Script for Restoring Original Codes
+[DISABLE]
+CoreTech2_X64_11.exe+034de9: //06
+// mov rbp,[r12+000000F0]
+ db 49 8b ac 24 f0 00 00 00
+
+CoreTech2_X64_11.exe+1073ea: //06
+// sub [rsi+00000104],ebp
+ db 29 ae 04 01 00 00
+
+CoreTech2_X64_11.exe+0cb4ba: //06
+// add [rcx+00000578],edx
+ db 01 91 78 05 00 00
+
+CoreTech2_X64_11.exe+0d06d2: //06
+// mov rbx,rcx
+// mov eax,[rcx+18]
+ db 48 8b d9 8b 41 18
+
+CoreTech2_X64_11.exe+113b8d: //06
+// sub [rbx+000001A4],edx
+ db 29 93 a4 01 00 00
+
+CoreTech2_X64_11.exe+5855af: //06
+// mov r11,[rsi+000001E8]
+ db 4c 8b 9e e8 01 00 00
+
+CoreTech2_X64_11.exe+540b03: //06
+// mov r8d,[rsi+000002EC]
+ db 44 8b 86 ec 02 00 00
+
+CoreTech2_X64_11.exe+0cd148: //06
+// mov edx,[rbx+00000584]
+ db 8b 93 84 05 00 00
+
+CoreTech2_X64_11.exe+0e34ce: //06
+// mov [rdi+0000011C],ebx
+ db 89 9f 1c 01 00 00
+
+//=========================================
+// Unregistering Symbols
+unregistersymbol(MyCode)
+unregistersymbol(pUnit)
+unregistersymbol(pOwner)
+unregistersymbol(iEnableGM)
+unregistersymbol(iEnableMM)
+unregistersymbol(iEnableMU)
+unregistersymbol(iEnableMS)
+unregistersymbol(iEnableMW)
+unregistersymbol(iEnableMG)
+unregistersymbol(iEnableMT)
+unregistersymbol(iEnableMMp)
+unregistersymbol(pPlayer)
+unregistersymbol(pGold)
+unregistersymbol(pHero)
+
+//=========================================
+dealloc(MyCode)
+//============= Scripts End ===============
+
+// ****************************************
+// NOTES
+// ****************************************
+{
+}
+
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>8</ID>
+          <Description>"Enable/Disable God Mode ==&gt; (1/0)"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableGM</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>15</ID>
+          <Description>"Enable/Disable Unlimited Mana ==&gt; (1/0)"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMM</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>16</ID>
+          <Description>"Enable/Disable Stronger Units ==&gt; (1/0)"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMU</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>21</ID>
+          <Description>"Enable/Disable Unlimited Magic Shield ==&gt; (1/0)"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMS</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>26</ID>
+          <Description>"Enable/Disable No Decreasing Will ==&gt; (1/0)"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMW</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>47</ID>
+          <Description>"Enable/Disable Minimum Gold ==&gt; (1/0)"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMG</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>49</ID>
+          <Description>"Enable/Disable Recover Troop Size ==&gt; (1/0)"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMT</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>63</ID>
+          <Description>"Enable/Disable Movement Points ==&gt; (1/0)"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMMp</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>37</ID>
+          <Description>"Current Gold Value"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>pGold</Address>
+          <Offsets>
+            <Offset>2EC</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>35</ID>
+          <Description>"Selected Troop's Points"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>pUnit</Address>
+          <Offsets>
+            <Offset>1AC</Offset>
+          </Offsets>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Increase Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>33</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>46</ID>
+          <Description>"Selected Hero's Points"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>pHero</Address>
+          <Offsets>
+            <Offset>584</Offset>
+          </Offsets>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Increase Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>45</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>70</ID>
+          <Description>"Validation Signature ==&gt; CE61"</Description>
+          <Color>80000008</Color>
+          <VariableType>String</VariableType>
+          <Length>4</Length>
+          <Unicode>0</Unicode>
+          <ZeroTerminate>1</ZeroTerminate>
+          <Address>pHero+08</Address>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>71</ID>
+      <Description>"[X] &lt;== King Arthur 2 dx11 v1.1.06 Script (64bits)"</Description>
+      <Options moHideChildren="1"/>
+      <Color>80000008</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>{
+===========================================
+ Game Title    : King Arthur 2 The Role Play Game (64 bits)
+ Game Version  : 1.1.06
+ Process Name  : CoreTech2_X86_11.exe
+ Script Version: 1.1
+ CE Version    : 6.1
+ Release date  : 04-Mar-2012
+ Author        : Recifense
+ Features:
+ - God Mode
+ - Unlimited Mana
+ - No decreasing Shield
+ - Stronger Units
+ - No decreasing Will
+ - Minimum Gold
+ - Recover Troop Size
+ - Unlimited Movement Points
+ - Useful Pointers
+===========================================
+}
+
+[ENABLE]
+//=========================================
+// Check if script is compatible to this game version
+// If false the script will not be loaded
+
+assert(CoreTech2_X64_11.exe+034de9,49 8b ac 24 f0 00 00 00 48 8b 9d 38 03 00 00 48 8b 43 08)
+assert(CoreTech2_X64_11.exe+1073ea,29 ae 04 01 00 00 8b 86 04 01 00 00 41 b8 00 00 00 00)
+assert(CoreTech2_X64_11.exe+0cb4b0,48 89 5c 24 08 57 48 83 ec 20 01 91 78 05 00 00)
+assert(CoreTech2_X64_11.exe+0d06d2,48 8b d9 8b 41 18 89 84 24 c0 00 00 00 48 83 79 10 00)
+assert(CoreTech2_X64_11.exe+113b83,b8 59 17 b7 d1 f7 e2 c1 ea 0c 29 93 a4 01 00 00)
+assert(CoreTech2_X64_11.exe+5855af,4c 8b 9e e8 01 00 00 45 8b 4c 24 34 45 8b 83 58 01 00 00)
+assert(CoreTech2_X64_11.exe+540b1b,8b 97 c8 01 00 00 c1 e2 10 83 ca 03 48 8b 8f 88 00 00 00)
+assert(CoreTech2_X64_11.exe+0cd148,8b 93 84 05 00 00 89 94 24 c0 00 00 00 48 8d 8b 50 01 00 00)
+assert(CoreTech2_X64_11.exe+0e34ce,89 9f 1c 01 00 00 4c 8d 9c 24 e0 00 00 00 49 8b 5b 28)
+
+//=========================================
+alloc(MyCode,1024,CoreTech2_X64_11.exe)
+//=========================================
+// Declaration section
+label(_MonHP)
+label(_MonH0)
+label(_MonH1)
+label(_BackMH)
+label(_ExitMH)
+label(_GodMode)
+label(_BackGM)
+label(_ExitGM)
+label(_MonMana)
+label(_BackMM)
+label(_ExitMM)
+label(_MonShield)
+label(_BackMS)
+label(_ExitMS)
+label(_MonWill)
+label(_BackMW)
+label(_ExitMW)
+label(_MonTroop)
+label(_MonT00)
+label(_BackMT)
+label(_ExitMT)
+label(_MonGold)
+label(_BackMG)
+label(_ExitMG)
+label(_MonHero)
+label(_BackMHr)
+label(_ExitMHr)
+label(_MonMP)
+label(_BackMMp)
+label(_ExitMMp)
+label(pUnit)
+label(pPlayer)
+label(pOwner)
+label(pGold)
+label(pHero)
+label(iEnableGM)
+label(iEnableMM)
+label(iEnableMU)
+label(iEnableMS)
+label(iEnableMW)
+label(iEnableMG)
+label(iEnableMT)
+label(iEnableMMp)
+
+//=========================================
+// Registering Symbols
+registersymbol(MyCode)
+registersymbol(pUnit)
+registersymbol(pPlayer)
+registersymbol(pOwner)
+registersymbol(pGold)
+registersymbol(pHero)
+registersymbol(iEnableGM)
+registersymbol(iEnableMM)
+registersymbol(iEnableMU)
+registersymbol(iEnableMS)
+registersymbol(iEnableMW)
+registersymbol(iEnableMG)
+registersymbol(iEnableMT)
+registersymbol(iEnableMMp)
+
+//=========================================
+MyCode:
+//========================================= ok
+// RTS - ALL Units
+_MonHP:
+ push rdi
+ push rsi
+
+ push r12                          // Armengue because of CE61
+ pop rsi
+
+ mov rdi,[rsi+000000f0]            // pTroop
+ test rdi,rdi
+ jz _ExitMH
+
+ mov rdi,[rdi+00000140]            // pOwner
+ test rdi,rdi
+ jz _ExitMH
+
+ mov ebx,[rdi+00000160]            // ID
+ and ebx,000000ff
+ jnz _ExitMH
+
+ mov [pOwner],rdi
+
+ cmp dword ptr [iEnableGM],0
+ je _MonH0                         // Jump if feature is disabled
+
+ mov edi,#610050
+ mov [rsi+00000104],edi
+ mov edi,#87150
+ mov [rsi+10],edi
+
+_MonH0:
+ cmp dword ptr [iEnableMU],0
+ je _ExitMH                        // Jump if feature is disabled
+
+ mov edi,#2000
+ cmp dword ptr [rsi+20],0
+ je _MonH1
+
+ mov edi,#4000
+
+_MonH1:
+ cmp edi,[rsi+14]
+ jle _ExitMH
+
+ mov [rsi+14],edi
+
+_ExitMH:
+ mov rbp,[rsi+000000F0]            // Original code
+
+ pop rsi
+ pop rdi
+ ret
+// jmp _BackMH                       // Back to main code
+
+//========================================= ok
+// RTS - Under attack
+_GodMode:
+ cmp dword ptr [iEnableGM],0
+ je _ExitGM                        // Jump if feature is disabled
+
+ mov rax,[rsi+000000f0]            // pTroop
+ test rax,rax
+ jz _ExitGM
+
+ mov rax,[rax+00000140]            // pOwner
+ test rax,rax
+ jz _ExitGM
+
+ mov eax,[rax+00000160]            // ID
+ and eax,000000ff
+ jnz _ExitGM
+
+ mov eax,#610050
+ mov [rsi+00000104],eax
+ mov eax,#87150
+ mov [rsi+10],eax
+
+ xor ebp,ebp                       // value2decrease = 0
+
+_ExitGM:
+ sub [rsi+00000104],ebp            // Original code
+ ret
+// jmp _BackGM                       // Back to main code
+
+//========================================= ok
+// RTS - when spending Mana
+_MonMana:
+ test edx,edx
+ jns _ExitMM
+
+ cmp dword ptr [iEnableMM],0
+ je _ExitMM                        // Jump if feature is disabled
+
+ mov rax,[rcx+00000200]            // pTroop (Base-110)
+ test rax,rax
+ jz _ExitMM
+
+ mov rax,[rax+00000140]            // pOwner
+ test rax,rax
+ jz _ExitMM
+
+ mov eax,[rax+00000160]            // ID
+ and eax,000000ff
+ jne _ExitMM
+
+ mov eax,[rcx+00000660]            // SpentMana
+ add [rcx+00000578],eax
+
+ xor eax,eax                       // Value2decrease = 0
+ mov edx,eax
+
+ mov [rcx+00000660],eax            // SpentMana = 0
+
+_ExitMM:
+ add [rcx+00000578],edx            // Original code
+ ret
+// jmp _BackMM                       // Back to main code
+
+//========================================= ok NHP
+// RTS - Minimum = 50
+_MonShield:
+ cmp dword ptr [iEnableMS],0
+ je _ExitMS                        // Jump if feature is disabled
+
+ mov rax,[rcx+10]                  // pOwner
+ test rax,rax
+ jz _ExitMS
+
+ mov eax,[rax+00000160]            // ID
+ and eax,000000ff
+ jnz _ExitMS
+
+ mov eax,#50
+ cmp eax,[rcx+18]
+ jle _ExitMS
+
+ mov [rcx+18],eax                  // Shield = 50
+
+_ExitMS:
+ mov rbx,rcx                       // Original code
+ mov eax,[rcx+18]                  // Original code Shield
+ ret
+// jmp _BackMS                       // Back to main code
+
+//========================================= ok
+// RTS - when decreasing Will
+_MonWill:
+ push rdi
+
+ cmp dword ptr [iEnableMW],0
+ je _ExitMW                        // Jump if feature is disabled
+
+ mov rdi,[rbx+00000140]            // pOwner
+ test rdi,rdi
+ jz _ExitMW
+
+ mov eax,[rdi+00000160]            // ID
+ and eax,000000ff
+ jnz _ExitMW
+
+ xor edx,edx                       // Value2decrease = 0
+
+ mov edi,[rbx+10]
+ mov [rbx+000001a4],edi            // Max Will
+ mov edi,[rbx+000001a8]
+ test edi,edi
+ jns _ExitMW
+
+ mov [rbx+000001a8],edx            // Negative Will = 0
+
+_ExitMW:
+ pop rdi
+
+ sub [rbx+000001A4],edx            // Original code
+ ret
+// jmp _BackMW                       // Back to main code
+
+//========================================= ok
+// TBS - Select Troop Info Screen
+_MonTroop:
+ mov r11,[rsi+000001E8]            // Original code
+
+ mov [pUnit],r11
+
+ mov rdx,[r11+08]
+ test rdx,rdx
+ jz _ExitMT
+
+ cmp dword ptr [iEnableMT],0
+ je _MonT00                        // Jump if feature is disabled
+
+ mov r8d,[rdx+34]                  // Get max size
+ mov [r11+00000158],r8d            // Update Size
+
+_MonT00:
+ cmp dword ptr [iEnableMMp],0
+ je _ExitMT                        // Jump if feature is disabled
+
+ mov rdx,[r11+00000140]            // pArmy
+ test rdx,rdx
+ jz _ExitMT
+
+ mov r8d,#8000
+ cmp r8d,[rdx+0000011c]
+ jle _ExitMT
+
+ mov [rdx+0000011c],r8d
+
+_ExitMT:
+ ret
+// jmp _BackMT                       // Back to main code
+
+//========================================= ok NHP
+// TBS Main Screen
+_MonGold:
+ mov [pGold],rsi
+
+ cmp dword ptr [iEnableMG],0
+ je _ExitMG                        // Jump if feature is disabled
+
+ mov r8d,#50000
+ cmp r8d,[rsi+000002EC]
+ jle _ExitMG
+
+ mov [rsi+000002EC],r8d
+
+_ExitMG:
+ mov r8d,[rsi+000002EC]            // Original code
+ ret
+// jmp _BackMG                       // Back to main code
+
+//========================================= ok
+// TBS - Select Hero Status Screen
+_MonHero:
+ mov [pHero],rbx
+
+_ExitMHr:
+ mov edx,[rbx+00000584]            // Original code (skill points)
+ ret
+// jmp _BackMHr                      // Back to main code
+
+//========================================= ok
+// TBS Main Screen
+_MonMP:
+ push rax
+
+ cmp dword ptr [iEnableMMp],0
+ je _ExitMMp                       // Jump if feature is disabled
+
+ mov rax,[rdi+68]
+ cmp rax,[pGold]
+ jne _ExitMMp
+
+ cmp ebx,[rdi+0000011C]
+ jge _ExitMMp
+
+ mov ebx,[rdi+0000011C]
+
+_ExitMMp:
+ pop rax
+
+ mov [rdi+0000011C],ebx            // Original code
+ ret
+// jmp _BackMMp                      // Back to main code
+
+//=========================================
+ db '============================&gt;'
+ db 'CE6.1 Script by Recifense 030412'
+//=========================================
+// Variables
+iEnableGM:
+ dd 0
+iEnableMM:
+ dd 0
+iEnableMU:
+ dd 0
+iEnableMS:
+ dd 0
+iEnableMW:
+ dd 0
+iEnableMG:
+ dd 0
+iEnableMT:
+ dd 0
+iEnableMMp:
+ dd 0
+pUnit:
+ dd 0
+ dd 0
+pPlayer:
+ dd 0
+ dd 0
+pOwner:
+ dd 0
+ dd 0
+pGold:
+ dd 0
+ dd 0
+pHero:
+ dd 0
+ dd 0
+ db 'CE61'
+
+//=========================================
+// Hacking Points
+CoreTech2_X64_11.exe+034de9: //06
+ call _MonHP
+ nop
+ nop
+ nop
+_BackMH:
+
+CoreTech2_X64_11.exe+1073ea: //06
+ call _GodMode
+ nop
+_BackGM:
+
+CoreTech2_X64_11.exe+0cb4ba: //06
+ call _MonMana
+ nop
+_BackMM:
+
+CoreTech2_X64_11.exe+0d06d2: //06
+ call _MonShield
+ nop
+_BackMS:
+
+CoreTech2_X64_11.exe+113b8d: //06
+ call _MonWill
+ nop
+_BackMW:
+
+CoreTech2_X64_11.exe+5855af: //06
+ call _MonTroop
+ nop
+ nop
+_BackMT:
+
+CoreTech2_X64_11.exe+540b03: //06
+ call _MonGold
+ nop
+ nop
+_BackMG:
+
+CoreTech2_X64_11.exe+0cd148: //06
+ call _MonHero
+ nop
+_BackMHr:
+
+CoreTech2_X64_11.exe+0e34ce: //06
+ call _MonMP
+ nop
+_BackMMp:
+
+//=========================================
+// Script for Restoring Original Codes
+[DISABLE]
+CoreTech2_X64_11.exe+034de9: //06
+// mov rbp,[r12+000000F0]
+ db 49 8b ac 24 f0 00 00 00
+
+CoreTech2_X64_11.exe+1073ea: //06
+// sub [rsi+00000104],ebp
+ db 29 ae 04 01 00 00
+
+CoreTech2_X64_11.exe+0cb4ba: //06
+// add [rcx+00000578],edx
+ db 01 91 78 05 00 00
+
+CoreTech2_X64_11.exe+0d06d2: //06
+// mov rbx,rcx
+// mov eax,[rcx+18]
+ db 48 8b d9 8b 41 18
+
+CoreTech2_X64_11.exe+113b8d: //06
+// sub [rbx+000001A4],edx
+ db 29 93 a4 01 00 00
+
+CoreTech2_X64_11.exe+5855af: //06
+// mov r11,[rsi+000001E8]
+ db 4c 8b 9e e8 01 00 00
+
+CoreTech2_X64_11.exe+540b03: //06
+// mov r8d,[rsi+000002EC]
+ db 44 8b 86 ec 02 00 00
+
+CoreTech2_X64_11.exe+0cd148: //06
+// mov edx,[rbx+00000584]
+ db 8b 93 84 05 00 00
+
+CoreTech2_X64_11.exe+0e34ce: //06
+// mov [rdi+0000011C],ebx
+ db 89 9f 1c 01 00 00
+
+//=========================================
+// Unregistering Symbols
+unregistersymbol(MyCode)
+unregistersymbol(pUnit)
+unregistersymbol(pOwner)
+unregistersymbol(iEnableGM)
+unregistersymbol(iEnableMM)
+unregistersymbol(iEnableMU)
+unregistersymbol(iEnableMS)
+unregistersymbol(iEnableMW)
+unregistersymbol(iEnableMG)
+unregistersymbol(iEnableMT)
+unregistersymbol(iEnableMMp)
+unregistersymbol(pPlayer)
+unregistersymbol(pGold)
+unregistersymbol(pHero)
+
+//=========================================
+dealloc(MyCode)
+//============= Scripts End ===============
+
+// ****************************************
+// NOTES
+// ****************************************
+{
+}
+
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>72</ID>
+          <Description>"Enable/Disable God Mode ==&gt; (1/0)"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableGM+100000000</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>73</ID>
+          <Description>"Enable/Disable Unlimited Mana ==&gt; (1/0)"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMM+100000000</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>74</ID>
+          <Description>"Enable/Disable Stronger Units ==&gt; (1/0)"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMU+100000000</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>75</ID>
+          <Description>"Enable/Disable Unlimited Magic Shield ==&gt; (1/0)"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMS+100000000</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>76</ID>
+          <Description>"Enable/Disable No Decreasing Will ==&gt; (1/0)"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMW+100000000</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>77</ID>
+          <Description>"Enable/Disable Minimum Gold ==&gt; (1/0)"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMG+100000000</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>78</ID>
+          <Description>"Enable/Disable Recover Troop Size ==&gt; (1/0)"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMT+100000000</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>79</ID>
+          <Description>"Enable/Disable Movement Points ==&gt; (1/0)"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMMp+100000000</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>80</ID>
+          <Description>"Current Gold Value"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>pGold+100000000</Address>
+          <Offsets>
+            <Offset>2EC</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>81</ID>
+          <Description>"Selected Troop's Points"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>pUnit+100000000</Address>
+          <Offsets>
+            <Offset>1AC</Offset>
+          </Offsets>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Increase Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>33</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>82</ID>
+          <Description>"Selected Hero's Points"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>pHero+100000000</Address>
+          <Offsets>
+            <Offset>584</Offset>
+          </Offsets>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Increase Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>45</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>83</ID>
+          <Description>"Validation Signature ==&gt; CE61"</Description>
+          <Color>80000008</Color>
+          <VariableType>String</VariableType>
+          <Length>4</Length>
+          <Unicode>0</Unicode>
+          <ZeroTerminate>1</ZeroTerminate>
+          <Address>pHero+100000008</Address>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols/>
+  <Comments>===========================================
+ Game Title    : King Arthur 2 The Role Play Game (64 bits)
+ Game Version  : 1.1.06
+ Process Name  : CoreTech2_X86_11.exe
+ Script Version: 1.1
+ CE Version    : 6.1
+ Release date  : 04-Mar-2012
+ Author        : Recifense
+ Features:
+ - God Mode (RTS) [1]
+ - Unlimited Mana (RTS) [2]
+ - No decreasing Shield (RTS) [3]
+ - Stronger Units (RTS) [4]
+ - No decreasing Will (RTS)
+ - Minimum Gold (TBS)
+ - Recover Troop Size (TBS) [5]
+ - Unlimited Movement Points (TBS)
+ - Useful Pointers (TBS) [6]
+===========================================
+[1] Depending on the enemy's hero, some units will still die;
+[2] Only valid for the player's heroes;
+[3] In fact, it can decrease, but the minimum is 50;
+[4] Player's Units will do more damage;
+[5] Size is recovered when troop is selected;
+[6] Pointers to gold and to selected troop's and hero's points
+[IMPORTANT] If Validation Signature is different of "CE61", Unload script or CRASH may occur.
+==========================
+HOY KEYS:
+CTRL+HOME = DISABLE all cheats;
+CTRL+END = ENABLE all cheats;
+CTRL+PEGAUP = INCREASE TROOP POINTS by 1 
+CTRL+INSERT = INCREASE HERO POINTS by 1 
+</Comments>
+</CheatTable>

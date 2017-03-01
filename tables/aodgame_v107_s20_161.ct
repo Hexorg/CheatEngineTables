@@ -1,0 +1,737 @@
+<?xml version="1.0"?>
+<CheatTable CheatEngineTableVersion="11">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>24</ID>
+      <Description>"[X] &lt;== Arsenal of Democracy (1.07) Script 2.0"</Description>
+      <Options moHideChildren="1"/>
+      <Color>80000008</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>{
+===========================================
+ Game Title    : Arsenal of Democracy
+ Game Version  : 1.07
+ Process Name  : aodgame.exe
+ Script Version: 2.0
+ CE Version    : 6.1
+ Release date  : 08-Jan-2012 (added Research in 5 Days)
+ Author        : Recifense
+ Features:
+ - Minimum Resources (Oil, Energy, Rare Material, Money, Metal, Supplies, Menpower)
+ - Quick Production (1 day)
+ - God Mode (Strength/Organization)
+ - Quick Ownership (of invaded cities/provinces/whatever) upon selecting
+ - Research in 5 days (new)
+ - Super Units (Land/Sea/Air):
+   - Unlimited Supply
+   - Unlimited Fuel
+   - Minimum Speed    = 90 km/h
+   - Minimum Morale   = 90
+   - Soft Attack      = 20
+   - Hard Attack      = 20
+   - Air Attack       = 10
+   - Sub Attack       = 10
+   - Convoy Attack    = 10
+   - Strategic Attack = 20
+   - Navel Attack     = 20
+=========================================== 005-12
+}
+
+[ENABLE]
+//=========================================
+// Check if script is compatible to this game version
+// If false the script will not be loaded
+
+assert(aodgame.exe+16abcf,d9 86 6a 5d 00 00)
+assert(aodgame.exe+0ce244,da 4e 32 d9 5c 24 30)
+assert(aodgame.exe+0d6dd3,d9 99 94 00 00 00)
+assert(aodgame.exe+0df859,d9 9e 94 00 00 00)
+assert(aodgame.exe+0d68e4,d9 99 9c 00 00 00)
+assert(aodgame.exe+0df847,d9 9e 9C 00 00 00)
+assert(aodgame.exe+08a662,d8 b6 98 00 00 00)
+assert(aodgame.exe+1bda11,8b 83 30 3d 00 00)
+assert(aodgame.exe+2b2116,d8 44 be 24 d9 5c be 24)
+
+//=========================================
+alloc(MyCode,1024)
+//=========================================
+// Declaration section
+label(_MonRes)
+label(_BackMR)
+label(_ExitMR)
+label(_MonR0)
+label(_MonR1)
+label(_MonR2)
+label(_MonR3)
+label(_MonR4)
+label(_MonR5)
+label(_MonProd)
+label(_BackMP)
+label(_ExitMP)
+label(_MonStrengthA)
+label(_BackMSa)
+label(_ExitMSa)
+label(_MonStrengthC)
+label(_BackMSc)
+label(_ExitMSc)
+label(_MonOrganA)
+label(_BackMOa)
+label(_ExitMOa)
+label(_MonOrganC)
+label(_BackMOc)
+label(_ExitMOc)
+label(_MonUnits)
+label(_BackMU)
+label(_ExitMU)
+label(_MonU0)
+label(_MonU00)
+label(_MonU01)
+label(_MonU1)
+label(_MonU10)
+label(_MonU11)
+label(_MonU2)
+label(_MonU20)
+label(_MonU21)
+label(_MonU22)
+label(_MonU23)
+label(_MonCity)
+label(_BackMC)
+label(_ExitMC)
+label(_MonResearch)
+label(_BackMRe)
+label(_ExitMRe)
+label(pPlayer)
+label(pCity)
+label(iEnableMR)
+label(iEnableMP)
+label(iEnableGM)
+label(iEnableMU)
+label(iEnableMC)
+label(iEnableMRe)
+label(fResPoints)
+
+//=========================================
+// Registering Symbols
+registersymbol(MyCode)
+registersymbol(pPlayer)
+registersymbol(pCity)
+registersymbol(iEnableMR)
+registersymbol(iEnableMP)
+registersymbol(iEnableGM)
+registersymbol(iEnableMU)
+registersymbol(iEnableMC)
+registersymbol(iEnableMRe)
+
+//=========================================
+MyCode:
+//========================================= ok
+_MonRes:
+ push eax
+
+ mov [pPlayer],edi              // Save ptr for further use
+
+ cmp dword ptr [iEnableMR],0
+ je _ExitMR                     // Jump if feature is disabled
+
+ mov eax,(float)40000.0
+// Money
+ cmp eax,[esi+00005d7e]
+ jle _MonR0
+
+ mov [esi+00005d7e],eax
+// Supplies
+_MonR0:
+ cmp eax,[esi+00005d7A]
+ jle _MonR1
+
+ mov [esi+00005d7A],eax
+// Rare Material
+_MonR1:
+ cmp eax,[esi+00005d76]
+ jle _MonR2
+
+ mov [esi+00005d76],eax
+// Energy
+_MonR2:
+ cmp eax,[esi+00005d72]
+ jle _MonR3
+
+ mov [esi+00005d72],eax
+// Metal
+_MonR3:
+ cmp eax,[esi+00005d6e]
+ jle _MonR4
+
+ mov [esi+00005d6e],eax
+// Oil
+_MonR4:
+ cmp eax,[esi+00005d6a]
+ jle _MonR5
+
+ mov [esi+00005d6a],eax
+// Men Power
+_MonR5:
+ mov eax,(float)1000.0
+
+ cmp eax,[esi+00005d82]
+ jle _ExitMR
+
+ mov [esi+00005d82],eax
+
+_ExitMR:
+ pop eax
+
+ fld dword ptr [esi+00005D6A]   // Original code
+ jmp _BackMR                    // Back to main code
+
+//========================================= ok
+_MonProd:
+ push eax
+
+ cmp dword ptr [iEnableMP],0
+ je _ExitMP                     // Jump if feature is disabled
+
+ mov eax,[esi+3A]               // Get ptr to owner
+ cmp eax,[pPlayer]
+ jne _ExitMP
+
+ mov dword ptr [esi+54],(float)1.0 // 100% complete
+
+_ExitMP:
+ pop eax
+
+ fimul [esi+32]                 // Original code
+ fstp dword ptr [esp+30]        // Original code
+ jmp _BackMP                    // Back to main code
+
+//========================================= ok
+// Decreased by Attriction
+_MonStrengthA:
+ push eax
+
+ fstp dword ptr [ecx+00000094]  // Original code
+
+ cmp dword ptr [iEnableGM],0
+ je _ExitMSa                    // Jump if feature is disabled
+
+ mov eax,[ecx+54]               // Get ptr to owner
+ cmp eax,[pPlayer]
+ jne _ExitMSa
+
+ mov eax,(float)100.0           // Strength = 100%
+ mov [ecx+00000094],eax
+
+_ExitMSa:
+ pop eax
+
+ jmp _BackMSa                   // Back to main code
+
+//========================================= ok
+// Decreased in Combat
+_MonStrengthC:
+ fstp dword ptr [esi+00000094]  // Original code
+
+ cmp dword ptr [iEnableGM],0
+ je _ExitMSc                    // Jump if feature is disabled
+
+ mov ebx,[esi+54]               // Get ptr to owner
+ cmp ebx,[pPlayer]
+ jne _ExitMSc
+
+ mov ebx,(float)100.0
+ mov [esi+00000094],ebx         // Strength = 100%
+
+_ExitMSc:
+ jmp _BackMSc                   // Back to main code
+
+//========================================= ok
+// Decreased by Attriction
+_MonOrganA:
+ push edx
+
+ fstp dword ptr [ecx+0000009c]  // Original code
+
+ cmp dword ptr [iEnableGM],0
+ je _ExitMOa                    // Jump if feature is disabled
+
+ mov edx,[ecx+54]               // Get ptr to owner
+ cmp edx,[pPlayer]
+ jne _ExitMOa
+
+ mov edx,[ecx+000000b4]
+
+ cmp edx,[ecx+0000009c]         // Organization &gt;= maximum?
+ jle _ExitMOa                   // Jump if true
+
+ mov [ecx+0000009c],edx         // Organization = maximum
+
+_ExitMOa:
+ pop edx
+
+ jmp _BackMOa                   // Back to main code
+
+//========================================= ok
+// Decreased in Combat
+_MonOrganC:
+ fstp dword ptr [esi+0000009c]  // Original code
+
+ cmp dword ptr [iEnableGM],0
+ je _ExitMOc                    // Jump if feature is disabled
+
+ mov ecx,[esi+54]               // Get ptr to owner
+ cmp ecx,[pPlayer]
+ jne _ExitMOc
+
+ mov ecx,[esi+000000b4]         // Get current Organization
+
+ cmp ecx,[esi+0000009c]         // Organization &gt;= maximum?
+ jle _ExitMOc                   // Jump if true
+
+ mov [esi+0000009c],ecx         // Organization = maximum
+
+_ExitMOc:
+ jmp _BackMOc                   // Back to main code
+
+//========================================= ok
+// Unit upgrades
+_MonUnits:
+ push eax
+ push ecx
+
+ mov ecx,esi
+
+ cmp dword ptr [iEnableMU],0
+ je _ExitMU                     // Jump if feature is disabled
+
+ mov eax,[ecx+54]               // Get ptr to owner
+ cmp eax,[pPlayer]
+ jne _ExitMU
+
+ mov eax,(float)90.0
+ mov [ecx+000000a0],eax         // Morale    = 90%
+
+ cmp eax,[ecx+000000ac]
+ jle _MonU0
+
+ mov [ecx+000000ac],eax         // Max Speed = 90
+// mov dword ptr [ecx+16],0
+
+_MonU0:
+ mov eax,[ecx+000000cc]
+ mov [ecx+0000014e],eax         // Current supply = maximum
+ mov eax,[ecx+000000d0]
+ mov [ecx+00000152],eax         // Current Fuel   = maximum
+
+ mov eax,[ecx]
+//--------------
+ cmp eax,aodgame.exe+31ac1c     // Ground Unit?
+ jne _MonU1                     // Jump if false
+
+ mov eax,(float)20.0
+// Soft Attack
+ cmp dword ptr [ecx+00000166],0
+ je _MonU00
+
+ cmp eax,[ecx+00000166]
+ jle _MonU00
+
+ mov [ecx+00000166],eax
+
+_MonU00:
+// Hard Attack
+ cmp dword ptr [ecx+0000016A],0
+ je _MonU01
+
+ cmp eax,[ecx+0000016A]
+ jle _MonU01
+
+ mov [ecx+0000016A],eax
+
+_MonU01:
+// Air Attack
+ cmp dword ptr [ecx+000000bc],0
+ jz _ExitMU
+
+ mov eax,(float)10.0
+
+ cmp eax,[ecx+000000bc]
+ jle _ExitMU
+
+ mov [ecx+000000bc],eax
+ jmp _ExitMU
+//--------------
+_MonU1:
+ cmp eax,aodgame.exe+30f83c     // Sea Unit?
+ jne _MonU2                     // Jump if false
+
+ mov eax,(float)10.0
+// Sub Attack
+ cmp dword ptr [ecx+00000172],0
+ je _MonU10
+
+ cmp eax,[ecx+00000172]
+ jle _MonU10
+
+ mov [ecx+00000172],eax
+
+_MonU10:
+// Convoy Attack
+ cmp dword ptr [ecx+00000176],0
+ je _MonU11
+
+ cmp eax,[ecx+00000176]
+ jle _MonU11
+
+ mov [ecx+00000176],eax
+
+_MonU11:
+// Air Attack
+ cmp dword ptr [ecx+000000bc],0
+ je _ExitMU
+
+ cmp eax,[ecx+000000bc]
+ jle _ExitMU
+
+ mov [ecx+000000bc],eax
+ jmp _ExitMU
+//--------------
+_MonU2:
+ cmp eax,aodgame.exe+327454     // Really Air Unit?
+ jne _ExitMU                    // Jump if false
+
+ mov eax,(float)20.0
+// Strategic Attack
+ cmp dword ptr [ecx+00000166],0
+ je _MonU20
+
+ cmp eax,[ecx+00000166]
+ jle _MonU20
+
+ mov [ecx+00000166],eax
+
+_MonU20:
+// Soft Attack
+ cmp dword ptr [ecx+0000016a],0
+ je _MonU21
+
+ cmp eax,[ecx+0000016a]
+ jle _MonU21
+
+ mov [ecx+0000016a],eax
+
+_MonU21:
+// Hard Attack
+ cmp dword ptr [ecx+0000016e],0
+ je _MonU22
+
+ cmp eax,[ecx+0000016e]
+ jle _MonU22
+
+ mov [ecx+0000016e],eax
+
+_MonU22:
+// Naval Attack
+ cmp dword ptr [ecx+00000172],0
+ je _MonU23
+
+ cmp eax,[ecx+00000172]
+ jle _MonU23
+
+ mov [ecx+00000172],eax
+
+_MonU23:
+// Air Attack
+ cmp dword ptr [ecx+000000bc],0
+ je _ExitMU
+
+ cmp eax,[ecx+000000bc]
+ jle _ExitMU
+
+ mov [ecx+000000bc],eax
+ jmp _ExitMU
+
+_ExitMU:
+ pop ecx
+ pop eax
+ fdiv dword ptr [esi+00000098]  // Original code
+ jmp _BackMU                    // Back to main code
+
+//========================================= ok
+// Quick ownership
+_MonCity:
+ cmp dword ptr [iEnableMC],0
+ je _ExitMC                     // Jump if feature is disabled
+
+ mov eax,[ebx+00003D30]         // Get Invader/Owner ID
+ cmp eax,[pPlayer]              // Is it the Player ?
+ jne _ExitMC                    // Jump if false
+
+ mov [ebx+00003D2C],eax         // Change City's ownership
+
+_ExitMC:
+ mov [pCity],ebx                // Save pointer for debugging
+
+ mov eax,[ebx+00003D30]         // Original code
+ jmp _BackMC                    // Back to main code
+
+//========================================= new
+// Quick Research
+_MonResearch:
+ push eax
+
+ fadd dword ptr [esi+edi*4+24]  // Original code
+
+ cmp dword ptr [iEnableMRe],0
+ je _ExitMRe                    // Jump if feature is disabled
+
+ mov eax,[esi+20]               // Get Owner ID
+ cmp eax,[pPlayer]              // Is it the Player ?
+ jne _ExitMRe                   // Jump if false
+
+ fadd dword ptr [fResPoints]    // Add bonus :)
+
+_ExitMRe:
+ pop eax
+
+ fstp dword ptr [esi+edi*4+24]  // Original code
+ jmp _BackMRe                   // Back to main code
+
+//=========================================
+ db '============================&gt;'
+ db 'CE6.1 Script by Recifense 010812'
+//=========================================
+// Variables
+pPlayer:
+ dd MyCode
+pCity:
+ dd 0
+iEnableMR:
+ dd 1
+iEnableMP:
+ dd 1
+iEnableGM:
+ dd 1
+iEnableMU:
+ dd 1
+iEnableMC:
+ dd 1
+iEnableMRe:
+ dd 1
+fResPoints:
+ dd (float)500.0
+
+//=========================================
+// Hacking Points
+//aodgame.exe+2c8257:
+aodgame.exe+16abcf:
+ jmp _MonRes
+ nop
+_BackMR:
+
+//aodgame.exe+149779:
+aodgame.exe+0ce244:
+ jmp _MonProd
+ nop
+ nop
+_BackMP:
+
+//aodgame.exe+15fa24:
+aodgame.exe+0d6dd3:
+ jmp _MonStrengthA
+ nop
+_BackMSa:
+
+//aodgame.exe+154b36:
+aodgame.exe+0df859:
+ jmp _MonStrengthC
+ nop
+_BackMSc:
+
+//aodgame.exe+15e9b2:
+aodgame.exe+0d68e4:
+ jmp _MonOrganA
+ nop
+_BackMOa:
+
+//aodgame.exe+154b27:
+aodgame.exe+0df847:
+ jmp _MonOrganC
+ nop
+_BackMOc:
+
+//aodgame.exe+0dc9a3:
+aodgame.exe+08a662:
+ jmp _MonUnits
+ nop
+_BackMU:
+
+//aodgame.exe+266273:
+aodgame.exe+1bda11:
+ jmp _MonCity
+ nop
+_BackMC:
+
+aodgame.exe+2b2116: //new
+ jmp _MonResearch
+ nop
+ nop
+ nop
+_BackMRe:
+
+//=========================================
+// Script for Restoring Original Codes
+[DISABLE]
+//aodgame.exe+2c8257:
+// fld dword ptr [esi+00003c82]
+aodgame.exe+16abcf:
+// fld dword ptr [esi+00005D6A]
+ db d9 86 6a 5d 00 00
+
+//aodgame.exe+149779:
+// fimul [esi+2a]
+// fstp dword ptr [esp+24]
+aodgame.exe+0ce244:
+// fimul [esi+32]
+// fstp dword ptr [esp+30]
+ db da 4e 32 d9 5c 24 30
+
+//aodgame.exe+15fa24:
+// mov [ecx+00000084],edx
+aodgame.exe+0d6dd3:
+// fstp dword ptr [ecx+00000094]
+ db d9 99 94 00 00 00
+
+//aodgame.exe+154b36:
+// fstp dword ptr [esi+00000084]
+aodgame.exe+0df859:
+// fstp dword ptr [esi+00000094]
+ db d9 9e 94 00 00 00
+
+//aodgame.exe+15e9b2:
+// mov [ecx+0000008c],eax
+aodgame.exe+0d68e4:
+// fstp dword ptr [ecx+0000009C]
+ db d9 99 9C 00 00 00
+
+//aodgame.exe+154b27:
+// fstp dword ptr [esi+0000008c]
+aodgame.exe+0df847:
+// fstp dword ptr [esi+0000009C]
+ db d9 9e 9C 00 00 00
+
+//aodgame.exe+0dc9a3:
+// fdiv dword ptr [esi+00000088]
+aodgame.exe+08a662:
+// fdiv dword ptr [esi+00000098]
+ db d8 b6 98 00 00 00
+
+//aodgame.exe+266273:
+// mov eax,[ebx+00000cbe]
+aodgame.exe+1bda11:
+// mov eax,[ebx+00003D30]
+ db 8b 83 30 3d 00 00
+
+aodgame.exe+2b2116: //new
+// fadd dword ptr [esi+edi*4+24]
+// fstp dword ptr [esi+edi*4+24]
+ db d8 44 be 24 d9 5c be 24
+
+//=========================================
+// Unregistering Symbols
+unregistersymbol(MyCode)
+unregistersymbol(pPlayer)
+unregistersymbol(pCity)
+unregistersymbol(iEnableMR)
+unregistersymbol(iEnableMP)
+unregistersymbol(iEnableGM)
+unregistersymbol(iEnableMU)
+unregistersymbol(iEnableMC)
+unregistersymbol(iEnableMRe)
+
+//=========================================
+dealloc(MyCode)
+//============= Scripts End ===============
+
+// ****************************************
+// NOTES
+// ****************************************
+{
+}
+
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>1</ID>
+          <Description>"Enable/Disable Unlimited Resources ==&gt; (1/0)"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMR</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>2</ID>
+          <Description>"Enable/Disable Fast Production ==&gt; (1/0)"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMP</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>3</ID>
+          <Description>"Enable/Disable God Mode ==&gt; (1/0)"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableGM</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>4</ID>
+          <Description>"Enable/Disable Fast City Ownership ==&gt; (1/0)"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMC</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>5</ID>
+          <Description>"Enable/Disable Unit Upgrade ==&gt; (1/0)"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMU</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>25</ID>
+          <Description>"Enable/Disable Research in 5 Days ==&gt; (1/0)"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMRe</Address>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols/>
+  <Comments>===========================================
+ Game Title    : Arsenal of Democracy
+ Game Version  : 1.07
+ Process Name  : aodgame.exe
+ Script Version: 2.0
+ CE Version    : 6.1
+ Release date  : 08-Jan-2012 (added Research in 5 Days)
+ Author        : Recifense
+ Features:
+ - Minimum Resources (Oil, Energy, Rare Material, Money, Metal, Supplies, Menpower)
+ - Quick Production (1 day)
+ - God Mode (Strength/Organization)
+ - Quick Ownership (of invaded cities/provinces/whatever) upon selecting
+ - Research in 5 days (new)
+ - Super Units (Land/Sea/Air):
+   - Unlimited Supply
+   - Unlimited Fuel
+   - Minimum Speed    = 90 km/h
+   - Minimum Morale   = 90
+   - Soft Attack      = 20
+   - Hard Attack      = 20
+   - Air Attack       = 10
+   - Sub Attack       = 10
+   - Convoy Attack    = 10
+   - Strategic Attack = 20
+   - Navel Attack     = 20
+=========================================== 005-12
+</Comments>
+</CheatTable>

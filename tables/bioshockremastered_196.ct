@@ -1,0 +1,709 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="24">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>0</ID>
+      <Description>"[Enable]"</Description>
+      <Options moHideChildren="1"/>
+      <LastState Activated="1"/>
+      <Color>FF0000</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>[ENABLE]
+
+aobscanmodule( LocalPlayerHook_AOB, Bioshock.exe, 8B75088B46488B80FC0000003B8118010000 )
+registersymbol( LocalPlayerHook_AOB )
+aobscanmodule( PawnHook_AOB, Bioshock.exe, 80BE90000000020F849800000080BEF90C0000007407C686F80C000000 )
+registersymbol( PawnHook_AOB )
+alloc( Hooks, 512, Bioshock.exe )
+label( LocalPlayerHook )
+label( PawnHook )
+label( LocalPlayer )
+registersymbol( LocalPlayer )
+label( PlayerController )
+registersymbol( PlayerController )
+label( Pawn )
+registersymbol( Pawn )
+label( back_a )
+label( back_b )
+
+Hooks:
+
+LocalPlayerHook:
+mov esi,[ebp+8]
+mov eax,[esi+48]
+mov [LocalPlayer],esi
+mov [PlayerController],eax
+jmp back_a
+
+PawnHook:
+cmp byte ptr [esi+90],2
+mov [Pawn],esi
+jmp back_b
+
+LocalPlayer:
+dd 0
+PlayerController:
+dd 0
+Pawn:
+dd 0
+
+// Bioshock.exe+2CB7D4 - 8B 75 08              - mov esi,[ebp+08]
+// Bioshock.exe+2CB7D7 - 8B 46 48              - mov eax,[esi+48]
+
+LocalPlayerHook_AOB:
+jmp LocalPlayerHook
+db 90
+back_a:
+
+// Bioshock.exe+22EFC - 80 BE 90000000 02     - cmp byte ptr [esi+90],2
+// Bioshock.exe+22F03 - 0F84 98000000         - je Bioshock.exe+22FA1
+
+PawnHook_AOB:
+jmp PawnHook
+db 90 90
+back_b:
+
+[DISABLE]
+
+LocalPlayerHook_AOB:
+db 8B 75 08 8B 46 48
+
+PawnHook_AOB:
+db 80 BE 90 00 00 00 02
+
+unregistersymbol( Pawn )
+unregistersymbol( PlayerController )
+unregistersymbol( LocalPlayer )
+dealloc( Hooks )
+unregistersymbol( PawnHook_AOB )
+unregistersymbol( LocalPlayerHook_AOB )
+
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>19</ID>
+          <Description>"Unlimited Eve"</Description>
+          <LastState Activated="1"/>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[ENABLE]
+
+aobscanmodule( UnlimitedEve_AOB, Bioshock.exe, D95C240CD944240C0F57C9F30F1096FC0A0000 )
+label( UnlimitedEve )
+registersymbol( UnlimitedEve )
+aobscanmodule( RefreshEve_AOB, Bioshock.exe, D945080F57C9568BF157D886F80A0000 )
+label( RefreshEve )
+registersymbol( RefreshEve )
+alloc( UnlimitedEveHook, 512, Bioshock.exe )
+label( UnlimitedEveHook_back )
+label( UnlimitedEveHook_exit )
+
+RefreshEve_AOB-1E:
+RefreshEve:
+
+UnlimitedEveHook:
+mov eax,[PlayerController]
+mov eax,[eax+450]
+cmp eax,ecx
+jne UnlimitedEveHook_exit      // if not us, exit
+  push ecx
+  push [edi+AFC]
+  call RefreshEve              // function of 1 argument that refreshes Eve to given value (I chose Max Eve)
+  pop ecx
+  mov [esp+4],0                // set value to be subtracted to 0 (it's an argument of this function)
+UnlimitedEveHook_exit:
+push ebp
+mov ebp,esp
+and esp,-8
+jmp UnlimitedEveHook_back
+
+// Bioshock.exe+22330 - 55                    - push ebp
+// Bioshock.exe+22331 - 8B EC                 - mov ebp,esp
+// Bioshock.exe+22333 - 83 E4 F8              - and esp,-08
+
+UnlimitedEve_AOB-78:
+UnlimitedEve:
+jmp UnlimitedEveHook
+db 90
+UnlimitedEveHook_back:
+
+[DISABLE]
+
+UnlimitedEve:
+db 55 8B EC 83 E4 F8
+
+dealloc( UnlimitedEveHook )
+unregistersymbol( RefreshEve )
+unregistersymbol( UnlimitedEve )
+
+</AssemblerScript>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>27</ID>
+          <Description>"Unlimited Health"</Description>
+          <Options moHideChildren="1"/>
+          <LastState Activated="1"/>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[ENABLE]
+
+aobscanmodule( UnlimitedHealth_AOB, Bioshock.exe, 568BF1F30F10867C0800000F2FC1 )
+label( UnlimitedHealth )
+registersymbol( UnlimitedHealth )
+aobscanmodule( RefreshHealth_AOB, Bioshock.exe, D945080F57C9D8817C050000F30F109174070000F30F1155F8 )
+label( RefreshHealth )
+registersymbol( RefreshHealth )
+alloc( UnlimitedHealthHook, 512, Bioshock.exe )
+label( UnlimitedHealthHook_back )
+label( UnlimitedHealthHook_exit )
+label( DamageMultiplier )
+registersymbol( DamageMultiplier )
+
+RefreshHealth_AOB-6:
+RefreshHealth:
+
+UnlimitedHealthHook:
+cmp ecx,[Pawn]
+jne short @f
+  push ecx
+  push 0
+  push [ecx+774]
+  call RefreshHealth
+  pop ecx
+  mov [esp+4],0 // NULL damage done on my Pawn
+  jmp short UnlimitedHealthHook_exit
+@@:
+mov eax,[Pawn]
+{
+  mov eax,[eax+AC]
+  cmp [eax+8B4],ecx // check if Pawn your pointing crosshair at is the one receiving the damage
+  // might have awkward consequences -&gt; pawn_1 hits pawn_2 and you point at pawn_2; you help pawn_1 kill pawn_2 :)
+}
+cmp [esp+38],eax
+jne short @f
+  fld [esp+4]
+  fld [DamageMultiplier]
+  fmul st(0),st(1)
+  fstp [esp+4]
+  fstp st(0)
+UnlimitedHealthHook_exit:
+push ebp
+mov ebp,esp
+and esp,-08
+jmp UnlimitedHealthHook_back
+
+DamageMultiplier:
+dd (float)1.0
+
+// Bioshock.exe+7DF50 - 55                    - push ebp
+// Bioshock.exe+7DF51 - 8B EC                 - mov ebp,esp
+// Bioshock.exe+7DF53 - 83 E4 F8              - and esp,-08
+
+UnlimitedHealth_AOB-21:
+UnlimitedHealth:
+jmp UnlimitedHealthHook
+db 90
+UnlimitedHealthHook_back:
+
+[DISABLE]
+
+UnlimitedHealth:
+db 55 8B EC 83 E4 F8
+
+unregistersymbol( DamageMultiplier )
+dealloc( UnlimitedHealthHook )
+unregistersymbol( RefreshHealth )
+unregistersymbol( UnlimitedHealth )
+</AssemblerScript>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>28</ID>
+              <Description>"Damage Multiplier"</Description>
+              <LastState Value="50" RealAddress="17A20049"/>
+              <VariableType>Float</VariableType>
+              <Address>DamageMultiplier</Address>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>2</ID>
+      <Description>"[Debug]"</Description>
+      <Options moHideChildren="1"/>
+      <LastState Value="" Activated="1" RealAddress="00000000"/>
+      <Color>C0C0C0</Color>
+      <GroupHeader>1</GroupHeader>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>1</ID>
+          <Description>"LocalPlayer"</Description>
+          <LastState Value="41AAAF00" RealAddress="42A40028"/>
+          <ShowAsHex>1</ShowAsHex>
+          <VariableType>4 Bytes</VariableType>
+          <Address>LocalPlayer</Address>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>3</ID>
+              <Description>"PlayerController"</Description>
+              <LastState Value="81CC0C00" RealAddress="42A4002C"/>
+              <ShowAsHex>1</ShowAsHex>
+              <VariableType>4 Bytes</VariableType>
+              <Address>PlayerController</Address>
+              <CheatEntries>
+                <CheatEntry>
+                  <ID>6</ID>
+                  <Description>"God"</Description>
+                  <LastState Value="00000011" RealAddress="81CC1068"/>
+                  <ShowAsHex>1</ShowAsHex>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>PlayerController</Address>
+                  <Offsets>
+                    <Offset>468</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>11</ID>
+                  <Description>"BehindView"</Description>
+                  <LastState Value="0C" RealAddress="81CC1194"/>
+                  <ShowAsHex>1</ShowAsHex>
+                  <VariableType>Byte</VariableType>
+                  <Address>PlayerController</Address>
+                  <Offsets>
+                    <Offset>594</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>7</ID>
+                  <Description>"SloMo"</Description>
+                  <LastState Value="1" RealAddress="1727E1F8"/>
+                  <VariableType>Float</VariableType>
+                  <Address>PlayerController</Address>
+                  <Offsets>
+                    <Offset>5F8</Offset>
+                    <Offset>F8</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>8</ID>
+                  <Description>"PlayersOnly"</Description>
+                  <LastState Value="00000004" RealAddress="1727E298"/>
+                  <ShowAsHex>1</ShowAsHex>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>PlayerController</Address>
+                  <Offsets>
+                    <Offset>698</Offset>
+                    <Offset>F8</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>12</ID>
+                  <Description>"WallHack"</Description>
+                  <LastState Value="0080A37F" RealAddress="7C133304"/>
+                  <ShowAsHex>1</ShowAsHex>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>PlayerController</Address>
+                  <Offsets>
+                    <Offset>304</Offset>
+                    <Offset>450</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>13</ID>
+                  <Description>"Health"</Description>
+                  <LastState Value="520" RealAddress="7C13357C"/>
+                  <VariableType>Float</VariableType>
+                  <Address>PlayerController</Address>
+                  <Offsets>
+                    <Offset>57C</Offset>
+                    <Offset>450</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>17</ID>
+                  <Description>"Max Health"</Description>
+                  <LastState Value="520" RealAddress="7C133774"/>
+                  <VariableType>Float</VariableType>
+                  <Address>PlayerController</Address>
+                  <Offsets>
+                    <Offset>774</Offset>
+                    <Offset>450</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>15</ID>
+                  <Description>"Eve"</Description>
+                  <LastState Value="93" RealAddress="7C133AF8"/>
+                  <VariableType>Float</VariableType>
+                  <Address>PlayerController</Address>
+                  <Offsets>
+                    <Offset>AF8</Offset>
+                    <Offset>450</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>16</ID>
+                  <Description>"Max Eve"</Description>
+                  <LastState Value="93" RealAddress="7C133AFC"/>
+                  <VariableType>Float</VariableType>
+                  <Address>PlayerController</Address>
+                  <Offsets>
+                    <Offset>AFC</Offset>
+                    <Offset>450</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>29</ID>
+                  <Description>"Wallet ($)"</Description>
+                  <LastState Value="5005" RealAddress="7C133AEC"/>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>PlayerController</Address>
+                  <Offsets>
+                    <Offset>AEC</Offset>
+                    <Offset>450</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>30</ID>
+                  <Description>"Max Wallet ($)"</Description>
+                  <LastState Value="9999" RealAddress="7C133AF0"/>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>PlayerController</Address>
+                  <Offsets>
+                    <Offset>AF0</Offset>
+                    <Offset>450</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>43</ID>
+                  <Description>"Adam"</Description>
+                  <LastState Value="820" RealAddress="7C133AF4"/>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>PlayerController</Address>
+                  <Offsets>
+                    <Offset>AF4</Offset>
+                    <Offset>450</Offset>
+                  </Offsets>
+                </CheatEntry>
+              </CheatEntries>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>9</ID>
+          <Description>"Pawn"</Description>
+          <LastState Value="7C133000" RealAddress="42A40030"/>
+          <ShowAsHex>1</ShowAsHex>
+          <VariableType>4 Bytes</VariableType>
+          <Address>Pawn</Address>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>10</ID>
+              <Description>"EPhysics"</Description>
+              <LastState Value="02" RealAddress="7C133090"/>
+              <ShowAsHex>1</ShowAsHex>
+              <VariableType>Byte</VariableType>
+              <Address>Pawn</Address>
+              <Offsets>
+                <Offset>90</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>25</ID>
+              <Description>"X"</Description>
+              <LastState Value="-12288" RealAddress="7C1331D8"/>
+              <VariableType>Float</VariableType>
+              <Address>Pawn</Address>
+              <Offsets>
+                <Offset>1D8</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>24</ID>
+              <Description>"Y"</Description>
+              <LastState Value="-3337.999756" RealAddress="7C1331DC"/>
+              <VariableType>Float</VariableType>
+              <Address>Pawn</Address>
+              <Offsets>
+                <Offset>1DC</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>23</ID>
+              <Description>"Z"</Description>
+              <LastState Value="890.1235962" RealAddress="7C1331E0"/>
+              <VariableType>Float</VariableType>
+              <Address>Pawn</Address>
+              <Offsets>
+                <Offset>1E0</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>26</ID>
+              <Description>"Pawn@Crosshair"</Description>
+              <LastState Value="00000000" RealAddress="81CC14B4"/>
+              <ShowAsHex>1</ShowAsHex>
+              <VariableType>4 Bytes</VariableType>
+              <Address>Pawn</Address>
+              <Offsets>
+                <Offset>8B4</Offset>
+                <Offset>AC</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>33</ID>
+              <Description>"Weapon"</Description>
+              <LastState Value="830AA000" RealAddress="7C13375C"/>
+              <ShowAsHex>1</ShowAsHex>
+              <VariableType>4 Bytes</VariableType>
+              <Address>Pawn</Address>
+              <Offsets>
+                <Offset>75C</Offset>
+              </Offsets>
+              <CheatEntries>
+                <CheatEntry>
+                  <ID>35</ID>
+                  <Description>"Clip - No Decrease Switch"</Description>
+                  <LastState Value="2" RealAddress="830AA4F0"/>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>Pawn</Address>
+                  <Offsets>
+                    <Offset>4F0</Offset>
+                    <Offset>75C</Offset>
+                  </Offsets>
+                  <Hotkeys>
+                    <Hotkey>
+                      <Action>Set Value</Action>
+                      <Keys>
+                        <Key>103</Key>
+                      </Keys>
+                      <Value>2</Value>
+                      <ID>0</ID>
+                      <ActivateSound>Activate</ActivateSound>
+                    </Hotkey>
+                    <Hotkey>
+                      <Action>Set Value</Action>
+                      <Keys>
+                        <Key>105</Key>
+                      </Keys>
+                      <Value>1</Value>
+                      <ID>1</ID>
+                      <ActivateSound>Deactivate</ActivateSound>
+                    </Hotkey>
+                  </Hotkeys>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>34</ID>
+                  <Description>"Clip"</Description>
+                  <LastState Value="16" RealAddress="830AA4F4"/>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>Pawn</Address>
+                  <Offsets>
+                    <Offset>4F4</Offset>
+                    <Offset>75C</Offset>
+                  </Offsets>
+                </CheatEntry>
+              </CheatEntries>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>37</ID>
+              <Description>"Inventory (offsets below are not constant)"</Description>
+              <LastState Value="65AE90D0" RealAddress="7C133948"/>
+              <ShowAsHex>1</ShowAsHex>
+              <VariableType>4 Bytes</VariableType>
+              <Address>Pawn</Address>
+              <Offsets>
+                <Offset>948</Offset>
+              </Offsets>
+              <CheatEntries>
+                <CheatEntry>
+                  <ID>39</ID>
+                  <Description>"Armor-piercing Pistol Rounds"</Description>
+                  <LastState Value="48" RealAddress="891907D4"/>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>Pawn</Address>
+                  <Offsets>
+                    <Offset>54</Offset>
+                    <Offset>48</Offset>
+                    <Offset>44</Offset>
+                    <Offset>948</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>38</ID>
+                  <Description>"Pistol Rounds"</Description>
+                  <LastState Value="180" RealAddress="89190774"/>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>Pawn</Address>
+                  <Offsets>
+                    <Offset>54</Offset>
+                    <Offset>4C</Offset>
+                    <Offset>44</Offset>
+                    <Offset>948</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>40</ID>
+                  <Description>"Machine Gun Rounds"</Description>
+                  <LastState Value="48" RealAddress="891906B4"/>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>Pawn</Address>
+                  <Offsets>
+                    <Offset>54</Offset>
+                    <Offset>54</Offset>
+                    <Offset>44</Offset>
+                    <Offset>948</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>41</ID>
+                  <Description>"Antipersonnel Auto Rounds"</Description>
+                  <LastState Value="360" RealAddress="89190714"/>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>Pawn</Address>
+                  <Offsets>
+                    <Offset>54</Offset>
+                    <Offset>50</Offset>
+                    <Offset>44</Offset>
+                    <Offset>948</Offset>
+                  </Offsets>
+                </CheatEntry>
+              </CheatEntries>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>18</ID>
+          <Description>"TestHandler"</Description>
+          <LastState/>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[ENABLE]
+
+alloc( KeyHandlerThread, 1024, Bioshock.exe )
+registersymbol( KeyHandlerThread )
+CreateThread( KeyHandlerThread )
+alloc( KeyHandlerOff, 4, Bioshock.exe )
+registersymbol( KeyHandlerOff )
+label( ExitKeyHandler )
+
+label( RefreshAdam )
+
+KeyHandlerOff:
+dd 0
+
+KeyHandlerThread:
+push A
+call kernel32.Sleep
+  cmp [KeyHandlerOff],1
+  je ExitKeyHandler
+
+    push 6F // VK_NUMPAD/
+    call GetAsyncKeyState
+    test ax,ax
+    jne RefreshAdam
+
+    push 6A // VK_NUMPAD*
+    call GetAsyncKeyState
+    test ax,ax
+    jne RefreshHealth
+
+    jmp KeyHandlerThread
+
+RefreshAdam:
+mov edi,[PlayerController]
+mov edi,[edi+450]
+push [edi+AFC]
+mov ecx,edi
+call Bioshock.exe+22150 // function updates Adam to given value; I chose Max. Adam
+push C8
+call kernel32.Sleep
+jmp KeyHandlerThread
+
+RefreshHealth:
+mov ecx,[PlayerController]
+mov ecx,[ecx+450]
+push 0
+push [ecx+774]
+call Bioshock.exe+7DEA0 // function updates Health to given value; I chose Max. Health
+push C8
+call kernel32.Sleep
+jmp KeyHandlerThread
+
+ExitKeyHandler:
+mov [KeyHandlerOff],2
+ret
+
+[DISABLE]
+
+{$lua}
+
+if( syntaxcheck == false ) then --actual execution
+  local starttime = getTickCount()
+
+if readInteger( "KeyHandlerOff" ) == 0 then --could be 2 already
+  writeInteger( "KeyHandlerOff", 1 ) --tell the thread to kill itself
+end
+
+while( getTickCount() &lt; starttime + 1000 ) and ( readInteger( "KeyHandlerOff" ) ~= 2 ) do --wait till it has finished
+  sleep( 20 )
+end
+
+if( getTickCount() &gt; starttime + 1000 ) then --could happen when the window is shown
+  showMessage( 'Disabling the thread failed!' )
+  error( 'Thread disabling failed!' )
+end
+  sleep( 1 )
+end
+
+{$asm}
+
+unregistersymbol( KeyHandlerOff )
+dealloc( KeyHandlerOff )
+unregistersymbol( KeyHandlerThread )
+dealloc( KeyHandlerThread )
+</AssemblerScript>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols>
+    <SymbolEntry>
+      <Name>LocalPlayerHook_AOB</Name>
+      <Address> 1052C384</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>PawnHook_AOB</Name>
+      <Address> 10282EFC</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>LocalPlayer</Name>
+      <Address>42A40028</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>PlayerController</Name>
+      <Address>42A4002C</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>Pawn</Name>
+      <Address>42A40030</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>UnlimitedHealth</Name>
+      <Address>102DDF50</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>RefreshHealth</Name>
+      <Address>102DDEA0</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>DamageMultiplier</Name>
+      <Address>17A20049</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>UnlimitedEve</Name>
+      <Address>10282330</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>RefreshEve</Name>
+      <Address>10282150</Address>
+    </SymbolEntry>
+  </UserdefinedSymbols>
+</CheatTable>

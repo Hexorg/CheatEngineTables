@@ -1,0 +1,188 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="21">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>0</ID>
+      <Description>"Test, samething in Menu/Table/Lua"</Description>
+      <LastState/>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>{$lua}
+if syntaxcheck then return end
+--
+GlobalTimeOut = 60
+
+function asyncPartitionEach(from,to,npart,f,...)
+  if to &lt; from then return end -- do nothing
+  npart = npart&lt;1 and 1 or npart &gt; 7 and 7 or npart
+  if not readQwordLocal('_groupLock') then
+    autoAssemble("globalalloc(_groupLock,$1000)",true)
+  end
+  local gBase,gIdx = GetAddress('_groupLock',true)
+  for i=0,511 do
+    local addy = gBase + i*8
+    if readQwordLocal(addy) == 0 then
+      writeQwordLocal(addy,1)
+      gIdx = addy
+      break
+    end
+  end
+  assert(gIdx,"No group Lock Slot")
+  local TH,err,m = {},{},math.max(1, math.ceil((to-from+1)/npart))
+  for i=from,to,m do
+    local thIdx = 1 + #TH
+    TH[thIdx] = createNativeThread(function(th,thIndex,From,To,...)
+      local ok,msg = pcall(function(ThIndex,_from,_to,...)
+        writeBytesLocal(gIdx + ThIndex,1)
+        for k = _from,_to do
+          if f(k,...)==true then break end   -- f return true means break
+        end
+        writeBytesLocal(gIdx + ThIndex,0)
+      end,thIndex,From,To,...)
+      if not ok then -- error occurs
+        err[1+#err] = string.format("%s%s",os.date('@ %X , '),msg)
+      end
+      th.Terminate()
+    end,thIdx,i,math.min(i+m-1,to),...)
+  end
+--  print(npart,m,#TH)
+
+  sleep(25) --- allow the threads start before enter following while loop
+  local timeOut,TimeOut = os.clock(), GlobalTimeOut or 60 -- default 1 min
+  while readQwordLocal(gIdx)~=1 do
+    processMessages()
+    if os.clock() - timeOut &gt; TimeOut then
+      err[1+#err] = string.format("%s%s",os.date('@ %X , '),"*** Time Out!!!")
+      for i=1,#TH do
+        if not TH[i].Terminated then TH[i].Terminate() end
+      end
+      break
+    else
+      sleep(25)
+    end
+  end
+  writeQwordLocal(gIdx,0)-- release group lock
+  if #err &gt; 0 then
+    error(table.concat(err,'\n'),2)
+  end
+end
+
+---- test
+
+local SS = string.rep('x',math.random(1,1000) + 100000)
+function xTask(icnt)
+  SS:gsub("xxx","yyy"):gsub("yyy","xxx"):gsub("xxx","yyy"):gsub("yyy","xxx")
+end
+
+print('prepare')
+
+local expectedTotal = os.clock()
+for i=1,1000 do
+  xTask(i)
+end
+expectedTotal = os.clock() - expectedTotal
+
+print('start, sampled 1000 sequencial total: '..expectedTotal..' sec')
+
+for i=1,7 do
+  local now = os.clock()
+  asyncPartitionEach(1,1000,i,xTask)
+  print(string.format("%d part, %9.4f  -  expected : %9.4f",i,os.clock() - now,expectedTotal/i))
+end
+
+print('done')
+{$asm}
+
+[ENABLE]
+
+ 
+ 
+[DISABLE]
+
+</AssemblerScript>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols/>
+  <LuaScript>--
+GlobalTimeOut = 60
+
+function asyncPartitionEach(from,to,npart,f,...)
+  if to &lt; from then return end -- do nothing
+  npart = npart&lt;1 and 1 or npart &gt; 7 and 7 or npart
+  if not readQwordLocal('_groupLock') then
+    autoAssemble("globalalloc(_groupLock,$1000)",true)
+  end
+  local gBase,gIdx = GetAddress('_groupLock',true)
+  for i=0,511 do
+    local addy = gBase + i*8
+    if readQwordLocal(addy) == 0 then
+      writeQwordLocal(addy,1)
+      gIdx = addy
+      break
+    end
+  end
+  assert(gIdx,"No group Lock Slot")
+  local TH,err,m = {},{},math.max(1, math.ceil((to-from+1)/npart))
+  for i=from,to,m do
+    local thIdx = 1 + #TH
+    TH[thIdx] = createNativeThread(function(th,thIndex,From,To,...)
+      local ok,msg = pcall(function(ThIndex,_from,_to,...)
+        writeBytesLocal(gIdx + ThIndex,1)
+        for k = _from,_to do
+          if f(k,...)==true then break end   -- f return true means break
+        end
+        writeBytesLocal(gIdx + ThIndex,0)
+      end,thIndex,From,To,...)
+      if not ok then -- error occurs
+        err[1+#err] = string.format("%s%s",os.date('@ %X , '),msg)
+      end
+      th.Terminate()
+    end,thIdx,i,math.min(i+m-1,to),...)
+  end
+--  print(npart,m,#TH)
+
+  sleep(25) --- allow the threads start before enter following while loop
+  local timeOut,TimeOut = os.clock(), GlobalTimeOut or 60 -- default 1 min
+  while readQwordLocal(gIdx)~=1 do
+    processMessages()
+    if os.clock() - timeOut &gt; TimeOut then
+      err[1+#err] = string.format("%s%s",os.date('@ %X , '),"*** Time Out!!!")
+      for i=1,#TH do
+        if not TH[i].Terminated then TH[i].Terminate() end
+      end
+      break
+    else
+      sleep(25)
+    end
+  end
+  writeQwordLocal(gIdx,0)-- release group lock
+  if #err &gt; 0 then
+    error(table.concat(err,'\n'),2)
+  end
+end
+
+---- test
+
+local SS = string.rep('x',math.random(1,1000) + 100000)
+function xTask(icnt)
+  SS:gsub("xxx","yyy"):gsub("yyy","xxx"):gsub("xxx","yyy"):gsub("yyy","xxx")
+end
+
+print('prepare')
+
+local expectedTotal = os.clock()
+for i=1,1000 do
+  xTask(i)
+end
+expectedTotal = os.clock() - expectedTotal
+
+print('start, sampled 1000 sequencial total: '..expectedTotal..' sec')
+
+for i=1,7 do
+  local now = os.clock()
+  asyncPartitionEach(1,1000,i,xTask)
+  print(string.format("%d part, %9.4f  -  expected : %9.4f",i,os.clock() - now,expectedTotal/i))
+end
+
+print('done')
+</LuaScript>
+</CheatTable>

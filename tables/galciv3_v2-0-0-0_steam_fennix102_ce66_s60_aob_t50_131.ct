@@ -1,0 +1,1352 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="24">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>109</ID>
+      <Description>"[X] &lt;== Galactic Civilization III v2.0.0.0 Steam Script v6.0 AOB"</Description>
+      <Options moHideChildren="1" moDeactivateChildrenAsWell="1"/>
+      <LastState/>
+      <Color>FF0000</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>{
+===========================================
+ Game Title    : Galactic Civilization III
+ Game Version  : 2.0.0.0
+ Game Sponsor  : Fennix102
+ Process Name  : Galciv3.exe
+ Script Version: 6.0
+ CE Version    : 6.6 (AOB)
+ Release date  : 05-Feb-2017
+ Author        : Recifense
+ History:
+ 14-May-15: First Release
+ 16-May-15: Added 1 Turn Production and improved Research (1 turn) (s2.0)
+ 17-May-15: Added Racial Traits and Ability points (on Customization) (s3.0)
+ 23-May-15: For version 1.01 + Fixed Startbase Upgrade and improved God Mode (s3.2)
+ 24-May-15: Stop protection of non-combatant ships (due to crashes) (s3.3)
+ 24-May-15: Fixed Credits cheat (s3.4)
+ 28-May-15: Fixed Player Identification (for v1.01) (s3.5)
+ 29-May-15: Release for version 1.02 Beta
+ 04-Jun-15: Release for version 1.03 Beta
+ 18-Jun-15: Release for version 1.03-660610 (steam)
+ 10-Jul-15: Release for version 1.1 (steam)
+ 10-Jul-15: Release for version 1.1-690887 (steam)
+ 01-Aug-15: Release for version 1.1.12.0
+ 12-Aug-15: Release for version 1.2.0.11
+ 05-Sep-15: Release for version 1.2.1.6
+ 10-Sep-15: Release for version 1.3.0.14
+ 18-Sep-15: Release for version 1.3.1.4
+ 29-Sep-15: Release for version 1.3.1.5
+ 01-Oct-15: Release for version 1.3.2.9
+ 31-Oct-15: Release for version 1.4.0.18
+ 05-Nov-15: Release for version 1.4.1.2
+ 09-Dec-15: Release for version 1.5.0.7
+ 10-Dec-15: Release for version 1.5.0.8
+ 22-Feb-16: Release for version 1.6.0.29 (s3.6)
+ 04-Mar-16: Release for version 1.6.1.3
+ 23-Apr-16: Release for version 1.7.0.16 (s4.0)
+ 27-Apr-16: Release for version 1.7.0.17
+ 18-May-16: Release for version 1.7.1.4
+ 14-Jun-16: Release for version 1.8.0.16
+ 22-Jun-16: Release for version 1.8.0.19
+ 29-Jun-16: Release for version 1.8.0.21
+ 26-Jul-16: Release for version 1.8.1.8
+ 22-Aug-16: Release for version 1.8.2.10
+ 30-Oct-16: Release for version 1.8.3.10 (s4.1 for CE66)
+ 31-Oct-16: Release for version 1.8.3.10 (new build without changing version) AOB
+ 14-Dec-16: Release for version 1.9.0.0
+ 03-Jan-17: Added back GM and back to CE65
+ 26-Jan-17: Release for version 2.0.0.0
+ 29-Jan-17: Fixed (crash at campaign) (s5.1)
+ 05-Feb-17: Added Unlimited Administrators (s6.0)
+ Features:
+ - Minimum Credits
+ - Minimum units in Colony/Transport Ships
+ - Move Multiple times (included Shipyard)
+ - Research in 1 Turn
+ - Construction in 1 Turn
+ - God Mode (Only recover HP)
+ - Production in 1 Turn
+ - Customization points
+ - Starbase Upgrade
+ - Some Pointers
+===========================================
+}
+
+//=========================================
+// Checking CE version
+{$lua}
+  if(getCEVersion() &lt; 6.5) then
+    ShowMessage('Sorry. CE version should be 6.5 or above')
+  end
+{$asm}
+
+//=========================================
+// Checking Selected Process
+{$lua}
+  if(process == nil) then
+    ShowMessage('No process was selected')
+  elseif (process ~= "Galciv3.exe") then
+    ShowMessage('Error. Expected Process = Galciv3.exe')
+  end
+{$asm}
+
+//=========================================
+// Definitions
+define(LUDO,"GalCiv3.exe")
+{
+define(MOHP,GalCiv3.exe+0016f550) //#===##=#=#===#=#=#=#=##==#=#=##
+define(MOSU,GalCiv3.exe+00168d7e) //==#====#=====#===#=#==#==###===
+define(MOSP,GalCiv3.exe+0010d28d) //=================#===##====#===
+define(MORP,GalCiv3.exe+0002a397) //===================#=======X===
+define(MOCP,GalCiv3.exe+000ea85b) //===================#==#====#===
+define(MOUP,GalCiv3.exe+0014cfd7) //##=======#=========#==#====#===
+define(MORC,GalCiv3.exe+0032cb55) //==#====#==#====#=#===##====#=#=
+define(MOSS,GalCiv3.exe+0014e614) //=#=======#===#=#=#=#==#===#====
+define(MOSB,GalCiv3.exe+0017157e) //=##==========#=#=#=#==#===#====
+define(GDMI,GalCiv3.exe+001d1600) //-----------------------------N=
+define(GDMD,GalCiv3.exe+001d5a4f) //-----------------------------N=
+define(MOPA,GalCiv3.exe+0016f5e0) //------------------------------N
+}
+
+//=========================================
+// Constants used in the script (that can be changed)
+define(ctCE66,(float)6.6)
+define(ctMCRE,#66000000)  // Minimum Credits
+define(ctMMSS,#20000)     // Minimum Settlers/Soldiers
+
+//=========================================
+[ENABLE]
+//=========================================
+//LuaCall(CheckVersion())
+//=========================================
+// Check if script is compatible to this game version
+// If false the script will not be loaded
+
+AOBScanModule(MOHP,Galciv3.exe,42 8b 84 11 e4 2c 02 00 89 02 48 8b c2 c3 49 63 c1 48 69 c8 a4 01)
+AOBScanModule(MOSU,Galciv3.exe,42 8b 84 11 90 05 00 00 89 02 48 8b c2 c3 49 63 c1 48 69 c8 60 01)
+AOBScanModule(MOSP,Galciv3.exe,49 8b 4c 24 08 48 8b 01 ba 16 00 00 00 ff 10 be 01 00 00 00 48 85)
+AOBScanModule(MORP,Galciv3.exe,2B 47 08 3b c2 0f 8f ?? ?? ?? ?? 2b d0 4c 8b c7 89 16 49 8b ce 48)
+AOBScanModule(MOCP,Galciv3.exe,2b 46 08 ba 00 00 00 00 0f 48 c2 48 98 48 69 c0 e8 03 00 00 48 99)
+AOBScanModule(MOUP,Galciv3.exe,41 8B 46 58 03 C3 3B C8 ?? ?? 48 63 07 48 69 c8 08 14 00 00 49 03)
+AOBScanModule(MORC,Galciv3.exe,8B 80 20 04 00 00 89 87 90 1a 00 00 48 8d 55 c0 48 8d 8f 70 1b 00)
+AOBScanModule(MOSS,Galciv3.exe,49 8b 4d 00 ba 01 00 00 00 48 8b 01 ff 10 49 8b 55 00 48 8b cf e8)
+AOBScanModule(MOSB,Galciv3.exe,48 8b 46 18 48 8d 54 24 30 48 8d 4e 18 ff 50 08 4c 8b cf 4c 8d 44)
+AOBScanModule(GDMI,Galciv3.exe,8b 41 20 89 44 1a 04 c7 84 1a f8 00 00 00 00 00 00 00 44 89 74 1a)
+AOBScanModule(GDMD,Galciv3.exe,39 9a 60 44 00 00 ?? ?? 66 0f 1f 84 00 00 00 00 00 8b c3 4c 8b c6)
+AOBScanModule(MOPA,Galciv3.exe,42 8b 84 11 00 2d 02 00 89 02 48 8b c2 c3 49 63 c1 48 69 c8 a4 01)
+
+//=========================================
+alloc(MyCode,4096,$process)
+//=========================================
+// Declaration section
+label(_MonHumanPlayer)
+label(_BackMHP)
+label(_ExitMHP)
+label(_MonSelUnit)
+label(_MonSU00)
+label(_MonSU01)
+label(_BackMSU)
+label(_ExitMSU)
+label(_MonSelPlanet)
+label(_BackMSP)
+label(_ExitMSP)
+label(_MonResearchProg)
+label(_BackMRP)
+label(_ExitMRP)
+label(_MonConstProg)
+label(_BackMCP)
+label(_ExitMCP)
+label(_MonUnitProd)
+label(_BackMUP)
+label(_ExitMUP)
+label(_MonRaceCustomization)
+label(_BackMRC)
+label(_ExitMRC)
+label(_MonSelShipyard)
+label(_BackMSS)
+label(_ExitMSS)
+label(_MonSelStarbase)
+label(_BackMSB)
+label(_ExitMSB)
+label(_GodModeID)
+label(_BackGMI)
+label(_ExitGMI)
+label(_GodMode)
+label(_BackGMD)
+label(_ExitGMD)
+label(_MonPlayerAdmins)
+label(_BackMPA)
+label(_ExitMPA)
+
+label(iEnableMPR)
+label(iEnableGMD)
+label(iEnableMSS)
+label(iEnableMMP)
+label(iEnableMRP)
+label(iEnableMCP)
+label(iEnableMUP)
+label(iEnableMRC)
+label(iEnableMSB)
+label(iEnableMPA)
+
+label(iID)
+label(iID2)
+label(iIDBat)
+label(lRAX)
+
+label(pPlayer)
+label(pUnit)
+label(pSY)
+label(pSB)
+label(pPlanet)
+label(pUnitB)
+
+//=========================================
+// Registering Symbols
+registersymbol(MyCode)
+registersymbol(iEnableMPR)
+registersymbol(iEnableGMD)
+registersymbol(iEnableMSS)
+registersymbol(iEnableMMP)
+registersymbol(iEnableMRP)
+registersymbol(iEnableMCP)
+registersymbol(iEnableMUP)
+registersymbol(iEnableMRC)
+registersymbol(iEnableMSB)
+registersymbol(iEnableMPA)
+registersymbol(iID)
+registersymbol(iID2)
+registersymbol(iIDBat)
+registersymbol(pPlayer)
+registersymbol(pUnit)
+registersymbol(pSY)
+registersymbol(pSB)
+registersymbol(pUnitB)
+registersymbol(pPlanet)
+
+registersymbol(MOHP)
+registersymbol(MOSU)
+registersymbol(MOSP)
+registersymbol(MORP)
+registersymbol(MOCP)
+registersymbol(MOUP)
+registersymbol(MORC)
+registersymbol(MOSS)
+registersymbol(MOSB)
+registersymbol(GDMI)
+registersymbol(GDMD)
+registersymbol(MOPA)
+
+//=========================================
+MyCode:
+//========================================= 2.0.0.0 *
+// On the main screen
+_MonHumanPlayer:
+ push rax
+ push rbx
+ push rcx
+
+ mov rcx,r10
+
+ mov rbx,[rcx+08]
+
+ mov eax,[rbx+34]
+ test eax,eax
+ jnz _ExitMHP
+
+ mov [pPlayer],rbx
+
+ mov eax,[rbx+08]
+ mov [iID],eax
+
+ mov eax,[rbx+44]
+ mov [iID2],eax
+
+ cmp dword ptr [iEnableMPR],0
+ je _ExitMHP                       // Jump if feature is disabled
+
+ mov eax,ctMCRE
+ cmp eax,[rcx+00022ce4]
+ js _ExitMHP
+
+ mov [rcx+00022ce4],eax
+
+_ExitMHP:
+ pop rcx
+ pop rbx
+ pop rax
+
+ mov eax,[rcx+r10+00022Ce4]        // Original code (get Credits)
+ jmp _BackMHP                      // Back to main code
+
+//========================================= 1.9.0.0 modified
+// Unit Under Cursor/Selected
+_MonSelUnit:
+ push rbx
+ push rcx
+
+ mov rcx,r10
+
+ lea rbx,[rcx-28]
+ mov [pUnit],rbx
+
+ mov ebx,[rbx+000000f0]
+ cmp ebx,[iID]
+ jne _ExitMSU
+
+ cmp dword ptr [iEnableGMD],0
+ je _MonSU00                       // Jump if feature is disabled
+
+ mov ebx,[rcx+0000046c]
+ mov [rcx+00000590],ebx
+
+_MonSU00:
+ cmp dword ptr [iEnableMSS],0
+ je _MonSU01                       // Jump if feature is disabled
+
+ mov ebx,[rcx+000005a0]
+ test ebx,ebx
+ jz _MonSU01
+
+ mov ebx,ctMMSS
+ cmp ebx,[rcx+000005a0]
+ js _MonSU01
+
+ mov [rcx+000005a0],ebx
+
+_MonSU01:
+ cmp dword ptr [iEnableMMP],0
+ je _ExitMSU                       // Jump if feature is disabled
+
+ mov ebx,[rcx+000004b4]
+ mov [rcx+0000059c],ebx
+ mov ebx,ffffffff
+ mov [rcx+000000f0],ebx            // 118
+ mov [rcx+000000f4],ebx            // 11c
+
+_ExitMSU:
+ pop rcx
+ pop rbx
+
+ mov eax,[rcx+r10+00000590]        // Original code (get cur HP)
+ jmp _BackMSU                      // Back to main code
+
+//========================================= 1.8.3.10
+// On Selected Planet Detail screen
+_MonSelPlanet:
+ mov rcx,[r12+08]                  // Original code (get pPlanetBase)
+
+ mov [pPlanet],rcx
+
+_ExitMSP:
+ jmp _BackMSP                      // Back to main code
+
+//========================================= 1.8.3.10 X
+// During Turn
+_MonResearchProg:
+ push rbx
+
+ cmp dword ptr [iEnableMRP],0
+ je _ExitMRP                       // Jump if feature is disabled
+
+ lea rbx,[r15-78]
+ cmp rbx,[pPlayer]
+ jne _ExitMRP
+
+ mov ebx,[rdi+08]                  // Previous Prog
+ cmp eax,ebx                       // Needed,pProg
+ js _ExitMRP
+
+ mov edx,eax                       // edx = needed
+ sub edx,ebx                       // edx = needed - pProg
+ inc edx                           // edx+1
+ mov [rsi],edx                     // upd value to be added
+
+_ExitMRP:
+ pop rbx
+
+ sub eax,[rdi+08]                  // Original code (get res prog)
+ cmp eax,edx                       // Original code (will finish?)
+ jmp _BackMRP                      // Back to main code
+
+//========================================= 1.8.3.10 *
+// At main screen (planet)
+_MonConstProg:
+ test rbx,rbx
+ jz _ExitMCP
+
+ cmp rbx,r15
+ jne _ExitMCP
+
+ cmp eax,[rsi+08]
+ jle _ExitMCP
+
+ cmp dword ptr [iEnableMCP],0
+ je _ExitMCP                       // Jump if feature is disabled
+
+ test rdx,rdx                      // pPopulation
+ jz _ExitMCP
+
+ mov rdx,[rbx]                     // Get pPopBase
+ test rdx,rdx
+ jz _ExitMCP
+
+ mov edx,[rdx+38]
+ cmp edx,[iID]
+ jne _ExitMCP
+
+ lea rdx,[rax-64]
+ mov [rsi+08],edx
+
+_ExitMCP:
+ sub eax,[rsi+08]                  // Original code (cur prog)
+ mov edx,00000000                  // Original code
+ jmp _BackMCP                      // Back to main code
+
+//========================================= v1.8.3.10 *
+// During turn
+_MonUnitProd:
+ cmp dword ptr [iEnableMUP],0
+ je _ExitMUP                       // Jump if feature is disabled
+
+ mov rax,[r15]
+ test rax,rax
+ jz _ExitMUP
+
+ mov eax,[rax+00000238]
+ cmp eax,[iID]
+ jne _ExitMUP
+
+ mov [r14+58],ecx
+
+_ExitMUP:
+ mov eax,[r14+58]                  // Original code (Get Prog)
+ add eax,ebx                       // Original code (Inc Prog)
+ jmp _BackMUP                      // Back to main code
+
+//========================================= 1.9.0.0
+// During Race Customization (On changing points)
+_MonRaceCustomization:
+ push rbx
+
+ cmp dword ptr [iEnableMRC],0
+ je _ExitMRC                       // Jump if feature is disabled
+
+ mov dword ptr [rax+00000420],#80
+ mov dword ptr [rax+00000424],#30
+
+_ExitMRC:
+ pop rbx
+
+ mov eax,[rax+00000420]            // Original code (Get max traits' points)
+ jmp _BackMRC                      // Back to main code
+
+//========================================= 1.8.2.10
+// Shipyard under cursor or Last Selected
+_MonSelShipyard:
+ mov rcx,[r13+00]                  // Original code (get pSY)
+ mov [pSY],rcx
+
+ cmp dword ptr [iEnableMMP],0
+ je _ExitMSS                       // Jump if feature is disabled
+
+ mov edx,[rcx+00000238]
+ cmp edx,[iID]
+ jne _ExitMSS
+
+ mov rdx,#1000
+ cmp edx,[rcx+00009a58]            // Move Points
+ js _ExitMSS
+
+ mov [rcx+00009a58],edx
+
+_ExitMSS:
+ mov edx,00000001                  // Original code
+ jmp _BackMSS                      // Back to main code
+
+//========================================= 1.8.2.10
+// Starbase at the detailed screen
+_MonSelStarbase:
+ mov rdx,[rsi+20]
+ mov [pSB],rdx
+
+ cmp dword ptr [iEnableMSB],0
+ je _ExitMSB                       // Jump if feature is disabled
+
+ mov edx,[rdx+00000238]
+ cmp edx,[iID]
+ jne _ExitMSB
+
+ mov edx,[rsi+00002fe4]
+ mov [rsi+00002fe0],edx
+
+_ExitMSB:
+ mov rax,[rsi+18]                  // Original code
+ lea rdx,[rsp+30]                  // Original code
+ jmp _BackMSB                      // Back to main code
+
+//========================================= 2.0.0.0 (fix)
+// Identifies units for GM
+_GodModeID:
+ mov eax,[rcx+20]                  // Original code
+ mov [rdx+rbx+04],eax              // Original code
+
+ test r8d,r8d                      // fix
+ js _ExitGMI
+
+ cmp dword ptr [iEnableGMD],0
+ je _ExitGMI                       // Jump if feature is disabled
+
+ mov eax,[rcx+000000f0]
+ cmp eax,[iID]
+ jne _ExitGMI
+
+ mov [rdx+rbx+04],55555555
+
+_ExitGMI:
+ jmp _BackGMI                      // Back to main code
+
+//========================================= 1.9.0.0 new
+// During combat
+_GodMode:
+ cmp dword ptr [iEnableGMD],0
+ je _ExitGMD                       // Jump if feature is disabled
+
+ cmp [rdx+04],55555555
+ jne _ExitGMD
+
+ mov dword ptr [rdx+00004460],0
+
+_ExitGMD:
+ cmp [rdx+00004460],ebx            // Original code
+ jmp _BackGMD                      // Back to main code
+
+//========================================= 2.0.0.0 new
+// On the main screen
+_MonPlayerAdmins:
+ cmp dword ptr [iEnableMPA],0
+ je _ExitMPA                       // Jump if feature is disabled
+
+ cmp rsi,[pPlayer]
+ jne _ExitMPA
+
+ xor rax,rax
+ mov [rcx+r10+00022D04],eax
+
+_ExitMPA:
+ mov eax,[rcx+r10+00022D00]        // Original code (get Max Administrators)
+ jmp _BackMPA                      // Back to main code
+
+//=========================================
+ db '==============================================&gt;'
+ db 'CE6.6 Script by Recifense 020517'
+//=========================================
+// Variables
+iEnableMPR:
+ dd 0
+iEnableGMD:
+ dd 0
+iEnableMSS:
+ dd 0
+iEnableMMP:
+ dd 0
+iEnableMRP:
+ dd 0
+iEnableMCP:
+ dd 0
+iEnableMUP:
+ dd 0
+iEnableMRC:
+ dd 0
+iEnableMSB:
+ dd 0
+iEnableMPA:
+ dd 0
+iID:
+ dd 0
+iID2:
+ dd 0
+iIDBat:
+ dd 0
+lRAX:
+ dq 0
+pPlayer:
+ dq 0
+pUnit:
+ dq 0
+pSY:
+ dq 0
+pSB:
+ dq 0
+pPlanet:
+ dq 0
+pUnitB:
+ dq 0
+
+//=========================================
+// Hacking Points
+MOHP:
+ jmp _MonHumanPlayer
+ nop
+ nop
+ nop
+_BackMHP:
+
+MOSU:
+ jmp _MonSelUnit
+ nop
+ nop
+ nop
+_BackMSU:
+
+MOSP:
+ jmp _MonSelPlanet
+_BackMSP:
+
+MORP:
+ jmp _MonResearchProg
+_BackMRP:
+
+MOCP:
+ jmp _MonConstProg
+ nop
+ nop
+ nop
+_BackMCP:
+
+MOUP:
+ jmp _MonUnitProd
+ nop
+_BackMUP:
+
+MORC:
+ jmp _MonRaceCustomization
+ nop
+_BackMRC:
+
+MOSS:
+ jmp _MonSelShipyard
+ nop
+ nop
+ nop
+ nop
+_BackMSS:
+
+MOSB:
+ jmp _MonSelStarbase
+ nop
+ nop
+ nop
+ nop
+_BackMSB:
+
+GDMI:
+ jmp _GodModeID
+ nop
+ nop
+_BackGMI:
+
+GDMD:
+ jmp _GodMode
+ nop
+_BackGMD:
+
+MOPA:
+ jmp _MonPlayerAdmins
+ nop
+ nop
+ nop
+_BackMPA:
+
+//=========================================
+// Script for Restoring Original Codes
+[DISABLE]
+MOHP:
+// mov eax,[rcx+r10+00022CE4]
+ db 42 8b 84 11 e4 2c 02 00
+
+MOSU:
+// mov eax,[rcx+r10+00000590]
+ db 42 8b 84 11 90 05 00 00
+
+MOSP:
+// mov rcx,[r12+08]
+ db 49 8b 4c 24 08
+
+MORP:
+// sub eax,[rdi+08]
+// cmp eax,edx
+ db 2b 47 08 3b c2
+
+MOCP:
+// sub eax,[rsi+08]
+// mov edx,00000000
+ db 2b 46 08 ba 00 00 00 00
+
+MOUP:
+// mov eax,[r14+58]
+// add eax,ebx
+ db 41 8b 46 58 03 c3
+
+MORC:
+// mov eax,[rax+00000420]
+ db 8b 80 20 04 00 00
+
+MOSS:
+// mov rcx,[r13+00]
+// mov edx,00000001
+ db 49 8b 4d 00 ba 01 00 00 00
+
+MOSB:
+// mov rax,[rsi+18]
+// lea rdx,[rsp+30]
+ db 48 8b 46 18 48 8d 54 24 30
+
+GDMI:
+// mov eax,[rcx+20]
+// mov [rdx+rbx+04],eax
+ db 8b 41 20 89 44 1a 04
+
+GDMD:
+// cmp [rdx+00004460],ebx
+ db 39 9a 60 44 00 00
+
+MOPA:
+// mov eax,[rcx+r10+00022D00]
+ db 42 8b 84 11 00 2d 02 00
+
+//=========================================
+// Unregistering Symbols
+unregistersymbol(MyCode)
+unregistersymbol(iEnableMPR)
+unregistersymbol(iEnableGMD)
+unregistersymbol(iEnableMSS)
+unregistersymbol(iEnableMMP)
+unregistersymbol(iEnableMRP)
+unregistersymbol(iEnableMCP)
+unregistersymbol(iEnableMUP)
+unregistersymbol(iEnableMRC)
+unregistersymbol(iEnableMSB)
+unregistersymbol(iEnableMPA)
+unregistersymbol(iID)
+unregistersymbol(iID2)
+unregistersymbol(iIDBat)
+unregistersymbol(pPlayer)
+unregistersymbol(pUnit)
+unregistersymbol(pSY)
+unregistersymbol(pSB)
+unregistersymbol(pPlanet)
+unregistersymbol(pUnitB)
+
+unregistersymbol(MOHP)
+unregistersymbol(MOSU)
+unregistersymbol(MOSP)
+unregistersymbol(MORP)
+unregistersymbol(MOCP)
+unregistersymbol(MOUP)
+unregistersymbol(MORC)
+unregistersymbol(MOSS)
+unregistersymbol(MOSB)
+unregistersymbol(GDMI)
+unregistersymbol(GDMD)
+unregistersymbol(MOPA)
+
+//=========================================
+dealloc(MyCode)
+//============= Scripts End ===============
+
+// ****************************************
+// NOTES
+// ****************************************
+{
+}
+
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>96</ID>
+          <Description>"[X] &lt;== Minimum Money -----------------------------&gt; (HK: CTRL+Home / CTRL+End)"</Description>
+          <LastState/>
+          <Color>C08000</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[enable]
+define(test,LUDO)
+
+{$LUA}
+writeInteger("iEnableMPR",1)
+getAddressList().getMemoryRecordByID(96).Color=0x0008000
+{$ASM}
+
+[disable]
+{$LUA}
+writeInteger("iEnableMPR",0)
+getAddressList().getMemoryRecordByID(96).Color=0x0c08000
+{$ASM}
+
+</AssemblerScript>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Activate</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Deactivate</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>110</ID>
+          <Description>"[X] &lt;== God Mode ------------------------------------&gt; (HK: CTRL+Home / CTRL+End)"</Description>
+          <LastState/>
+          <Color>C08000</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[enable]
+define(test,LUDO)
+
+{$LUA}
+writeInteger("iEnableGMD",1)
+getAddressList().getMemoryRecordByID(110).Color=0x0008000
+{$ASM}
+
+[disable]
+{$LUA}
+writeInteger("iEnableGMD",0)
+getAddressList().getMemoryRecordByID(110).Color=0x0c08000
+{$ASM}
+
+</AssemblerScript>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Activate</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Deactivate</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>111</ID>
+          <Description>"[X] &lt;== Minimum Settlers/Soldiers -------------------&gt; (HK: CTRL+Home / CTRL+End)"</Description>
+          <LastState/>
+          <Color>C08000</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[enable]
+define(test,LUDO)
+
+{$LUA}
+writeInteger("iEnableMSS",1)
+getAddressList().getMemoryRecordByID(111).Color=0x0008000
+{$ASM}
+
+[disable]
+{$LUA}
+writeInteger("iEnableMSS",0)
+getAddressList().getMemoryRecordByID(111).Color=0x0c08000
+{$ASM}
+
+</AssemblerScript>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Activate</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Deactivate</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>112</ID>
+          <Description>"[X] &lt;== Move Multiple times -------------------------&gt; (HK: CTRL+Home / CTRL+End)"</Description>
+          <LastState/>
+          <Color>C08000</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[enable]
+define(test,LUDO)
+
+{$LUA}
+writeInteger("iEnableMMP",1)
+getAddressList().getMemoryRecordByID(112).Color=0x0008000
+{$ASM}
+
+[disable]
+{$LUA}
+writeInteger("iEnableMMP",0)
+getAddressList().getMemoryRecordByID(112).Color=0x0c08000
+{$ASM}
+
+</AssemblerScript>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Activate</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Deactivate</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>113</ID>
+          <Description>"[X] &lt;== Quick Research -------------------------------&gt; (HK: CTRL+Home / CTRL+End)"</Description>
+          <LastState/>
+          <Color>C08000</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[enable]
+define(test,LUDO)
+
+{$LUA}
+writeInteger("iEnableMRP",1)
+getAddressList().getMemoryRecordByID(113).Color=0x0008000
+{$ASM}
+
+[disable]
+{$LUA}
+writeInteger("iEnableMRP",0)
+getAddressList().getMemoryRecordByID(113).Color=0x0c08000
+{$ASM}
+
+</AssemblerScript>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Activate</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Deactivate</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>114</ID>
+          <Description>"[X] &lt;== Construction/Improvement in 1 Turn --------&gt; (HK: CTRL+Home / CTRL+End)"</Description>
+          <LastState/>
+          <Color>C08000</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[enable]
+define(test,LUDO)
+
+{$LUA}
+writeInteger("iEnableMCP",1)
+getAddressList().getMemoryRecordByID(114).Color=0x0008000
+{$ASM}
+
+[disable]
+{$LUA}
+writeInteger("iEnableMCP",0)
+getAddressList().getMemoryRecordByID(114).Color=0x0c08000
+{$ASM}
+
+</AssemblerScript>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Activate</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Deactivate</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>229</ID>
+          <Description>"[X] &lt;== Ship Production in 1 Turn --------------------&gt; (HK: CTRL+Home / CTRL+End)"</Description>
+          <LastState/>
+          <Color>C08000</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[enable]
+define(test,LUDO)
+
+{$LUA}
+writeInteger("iEnableMUP",1)
+getAddressList().getMemoryRecordByID(229).Color=0x0008000
+{$ASM}
+
+[disable]
+{$LUA}
+writeInteger("iEnableMUP",0)
+getAddressList().getMemoryRecordByID(229).Color=0x0c08000
+{$ASM}
+
+</AssemblerScript>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Activate</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Deactivate</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>243</ID>
+          <Description>"[X] &lt;== Starbase Available Constructor ---------------&gt; (HK: CTRL+PageUp / CTRL+PageDown)"</Description>
+          <LastState/>
+          <Color>C08000</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[enable]
+define(test,LUDO)
+
+{$LUA}
+writeInteger("iEnableMSB",1)
+getAddressList().getMemoryRecordByID(243).Color=0x0008000
+{$ASM}
+
+[disable]
+{$LUA}
+writeInteger("iEnableMSB",0)
+getAddressList().getMemoryRecordByID(243).Color=0x0c08000
+{$ASM}
+
+</AssemblerScript>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Activate</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>33</Key>
+              </Keys>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Deactivate</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>34</Key>
+              </Keys>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>234</ID>
+          <Description>"[X] &lt;== Race Customization Points -------------------&gt; (HK: CTRL+Insert / CTRL+Delete)"</Description>
+          <LastState/>
+          <Color>C08000</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[enable]
+define(test,LUDO)
+
+{$LUA}
+writeInteger("iEnableMRC",1)
+getAddressList().getMemoryRecordByID(234).Color=0x0008000
+{$ASM}
+
+[disable]
+{$LUA}
+writeInteger("iEnableMRC",0)
+getAddressList().getMemoryRecordByID(234).Color=0x0c08000
+{$ASM}
+
+</AssemblerScript>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Activate</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>45</Key>
+              </Keys>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Deactivate</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>46</Key>
+              </Keys>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>250</ID>
+          <Description>"[X] &lt;== Unlimited Administrators  --------------------&gt; (HK: CTRL+Insert / CTRL+Delete)"</Description>
+          <LastState/>
+          <Color>C08000</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[enable]
+define(test,LUDO)
+
+{$LUA}
+writeInteger("iEnableMPA",1)
+getAddressList().getMemoryRecordByID(250).Color=0x0008000
+{$ASM}
+
+[disable]
+{$LUA}
+writeInteger("iEnableMPA",0)
+getAddressList().getMemoryRecordByID(250).Color=0x0c08000
+{$ASM}
+
+</AssemblerScript>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Activate</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>45</Key>
+              </Keys>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Deactivate</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>46</Key>
+              </Keys>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>244</ID>
+          <Description>"[X] &lt;================= Player Info"</Description>
+          <Options moHideChildren="1"/>
+          <LastState Value="" RealAddress="00000000"/>
+          <Color>000080</Color>
+          <GroupHeader>1</GroupHeader>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>245</ID>
+              <Description>"Benevolent Ideology Points (x10000) ===&gt;"</Description>
+              <Color>0000FF</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pPlayer</Address>
+              <Offsets>
+                <Offset>22d50</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>246</ID>
+              <Description>"Pragmatic Ideology Points (x10000) ===&gt;"</Description>
+              <Color>0000FF</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pPlayer</Address>
+              <Offsets>
+                <Offset>22d54</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>247</ID>
+              <Description>"Malevolent Ideology Points (x10000) ===&gt;"</Description>
+              <Color>0000FF</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pPlayer</Address>
+              <Offsets>
+                <Offset>22d58</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>248</ID>
+              <Description>"Current Money (x1000) ===&gt;"</Description>
+              <Color>0000FF</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pPlayer</Address>
+              <Offsets>
+                <Offset>22d5C</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>249</ID>
+              <Description>"Additional Research Points (x10000) ===&gt;"</Description>
+              <Color>0000FF</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pPlayer</Address>
+              <Offsets>
+                <Offset>22D68</Offset>
+              </Offsets>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>228</ID>
+      <Description>"[X] &lt;== Table/Script Information"</Description>
+      <Options moHideChildren="1"/>
+      <LastState/>
+      <Color>0000FF</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>[enable]
+define(test,LUDO)
+
+{$LUA}
+getMainForm().CommentButton.doClick()
+{$ASM}
+
+[disable]
+
+</AssemblerScript>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols>
+    <SymbolEntry>
+      <Name>Recifense</Name>
+      <Address>20170205</Address>
+    </SymbolEntry>
+  </UserdefinedSymbols>
+  <Comments>===========================================
+ Game Title    : Galactic Civilization III
+ Game Version  : 2.0.0.0
+ Game Sponsor  : Fennix102
+ Process Name  : Galciv3.exe
+ Script Version: 6.0
+ CE Version    : 6.6 (AOB)
+ Release date  : 05-Feb-2017
+ Author        : Recifense
+ History:
+ 14-May-15: First Release
+ 16-May-15: Added 1 Turn Production and improved Research (1 turn) (s2.0)
+ 17-May-15: Added Racial Traits and Ability points (on Customization) (s3.0)
+ 23-May-15: For version 1.01 + Fixed Startbase Upgrade and improved God Mode (s3.2)
+ 24-May-15: Stop protection of non-combatant ships (due to crashes) (s3.3)
+ 24-May-15: Fixed Credits cheat (s3.4)
+ 28-May-15: Fixed Player Identification (for v1.01) (s3.5)
+ 29-May-15: Release for version 1.02 Beta
+ 04-Jun-15: Release for version 1.03 Beta
+ 18-Jun-15: Release for version 1.03-660610 (steam)
+ 10-Jul-15: Release for version 1.1 (steam)
+ 10-Jul-15: Release for version 1.1-690887 (steam)
+ 01-Aug-15: Release for version 1.1.12.0
+ 12-Aug-15: Release for version 1.2.0.11
+ 05-Sep-15: Release for version 1.2.1.6
+ 10-Sep-15: Release for version 1.3.0.14
+ 18-Sep-15: Release for version 1.3.1.4
+ 29-Sep-15: Release for version 1.3.1.5
+ 01-Oct-15: Release for version 1.3.2.9
+ 31-Oct-15: Release for version 1.4.0.18
+ 05-Nov-15: Release for version 1.4.1.2
+ 09-Dec-15: Release for version 1.5.0.7
+ 10-Dec-15: Release for version 1.5.0.8
+ 22-Feb-16: Release for version 1.6.0.29 (s3.6)
+ 04-Mar-16: Release for version 1.6.1.3
+ 23-Apr-16: Release for version 1.7.0.16 (s4.0)
+ 27-Apr-16: Release for version 1.7.0.17
+ 18-May-16: Release for version 1.7.1.4
+ 14-Jun-16: Release for version 1.8.0.16
+ 22-Jun-16: Release for version 1.8.0.19
+ 29-Jun-16: Release for version 1.8.0.21
+ 26-Jul-16: Release for version 1.8.1.8
+ 22-Aug-16: Release for version 1.8.2.10
+ 30-Oct-16: Release for version 1.8.3.10 (s4.1 for CE66)
+ 31-Oct-16: Release for version 1.8.3.10 (new build without changing version) AOB
+ 14-Dec-16: Release for version 1.9.0.0
+ 03-Jan-17: Added back GM and back to CE65
+ 26-Jan-17: Release for version 2.0.0.0
+ 29-Jan-17: Fixed (crash at campaign) (s5.1)
+ 05-Feb-17: Added Unlimited Administrators (s6.0)
+ Features:
+ - Minimum Money             [1]
+ - Move Multiple times       [2] (*)
+ - Research in 1 Turn        [3]
+ - Construction in 1 Turn    [4] (**)
+ - God Mode                  [5] 
+ - Minimum Settlers/Soldiers [6] (*)
+ - Ship Production in 1 Turn [7]
+ - Customization points      [8]
+ - Starbase Upgrade          [9]
+ - Some Pointers
+===========================================
+[1] For Human player only (not AI);
+[2] For Human player's ships/fleet only (*);
+[3] For Human player only (not AI);
+[4] For human player colonies only (**)
+[5] For Human player's ships/fleet only (HP is recovered when selected);
+[6] For Human player's colony and transport ships only (*);
+[7] For Human player only (not AI);
+[8] On the Civ Custumization, available points will be set to minimum needed;
+[9] For Human player's starbase only;
+-----------
+(* ) Ship or Fleet should be selected;
+(**) Click on each colony listed in a column at the right side;
+===========================================
+[USAGE]
+1) Run CE65 or greater;
+2) Run Game;
+3) Load the game process "GalCiv3.exe" in CE;
+4) Load this table and activate the main script;
+5) Now Activate the script of each cheat you want to use;
+6) Game On;
+===========================================
+[HOTKEYS]
+CTRL+Home      = Enable  ALL cheats;
+CTRL+End       = Disable ALL cheats;
+---------------
+CTRL+Insert    = Enable  RCP cheat;
+CTRL+Delete    = Disable RCP cheat;
+===========================================
+[ADVICE]
+When you can,save the game before starting using table/cheat. So you can always come back in case you don't like the result.
+===========================================
+[INFO]
+Tested on Win 10 64bits
+===========================================
+Cheers!
+</Comments>
+</CheatTable>

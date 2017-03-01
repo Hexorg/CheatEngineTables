@@ -1,0 +1,231 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="14">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>28</ID>
+      <Description>"[X] &lt;== CnC 3 - Tiberium Wars v1.09 Script"</Description>
+      <Options moHideChildren="1"/>
+      <Color>FF0000</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>{
+===========================================
+ Game Title    : Command &amp; Conquer 3 - Tiberium Wars
+ Game Version  : 1.09
+ Process Name  : cnc3game.dat
+ Script Version: 1.0
+ CE Version    : 6.2
+ Release date  : 15-Jun-2012
+ Author        : Recifense
+ Features:
+ - God Mode (Units and Buildings)
+ - Minimum Resource (62000)
+ - Unlimited Energy (spent energy = 0)
+===========================================
+}
+
+//=========================================
+define(LUDO,"cnc3game.dat")
+//=========================================
+[ENABLE]
+//=========================================
+// Check if script is compatible to this game version
+// If false the script will not be loaded
+
+assert(LUDO+003bb1dc,8b 47 60 8b 48 10)
+assert(LUDO+001f8a6a,f3 0f 10 5d 08)
+
+//=========================================
+alloc(MyCode,2048,LUDO)
+//=========================================
+// Declaration section
+label(_MonPlayer)
+label(_MonP00)
+label(_BackMP)
+label(_ExitMP)
+label(_GodMode)
+label(_BackGM)
+label(_ExitGM)
+label(pPlayer)
+label(pCommon)
+label(iEnableGM)
+label(iEnableMR)
+label(iEnableME)
+
+//=========================================
+// Registering Symbols
+registersymbol(MyCode)
+registersymbol(pPlayer)
+registersymbol(pCommon)
+registersymbol(iEnableGM)
+registersymbol(iEnableMR)
+registersymbol(iEnableME)
+
+//=========================================
+MyCode:
+//=========================================
+// Resource and Energy
+_MonPlayer:
+ mov [pPlayer],edi
+
+ mov eax,[edi+000000e8]
+ mov [pCommon],eax
+
+ cmp dword ptr [iEnableMR],0
+ je _MonP00                        // Jump if feature is disabled
+
+ mov eax,[edi+60]                  // Get pResource
+
+ mov ecx,[eax+10]
+ add ecx,[eax+04]
+ sub ecx,#62000
+ jns _MonP00
+
+ neg ecx
+ add [eax+04],ecx
+
+_MonP00:
+ cmp dword ptr [iEnableME],0
+ je _ExitMP                        // Jump if feature is disabled
+
+ mov eax,[edi+80]                  // Get pEnergy
+ mov dword ptr [eax+08],0          // Used_energy = 0
+
+_ExitMP:
+ mov eax,[edi+60]                  // Original code
+ mov ecx,[eax+10]                  // Original code
+ jmp _BackMP                       // Back to main code
+
+//=========================================
+_GodMode:
+ push esi
+
+ mov eax,[ebp+08]
+ test eax,eax
+ jns _ExitGM                       // Jump if a positive value
+
+ cmp dword ptr [iEnableGM],0
+ je _ExitGM                        // Jump if feature is disabled
+
+ lea esi,[ecx-1c]
+ mov esi,[esi+14]                  // Get pHP
+
+ mov eax,[esi+00000350]
+ or eax,[esi+0000038c]             // Could it be an effect?
+ jz _ExitGM                        // Jump if true
+
+ mov esi,[esi+0000033c]
+ cmp esi,[pCommon]                 // Is it a player's unit?
+ jne _ExitGM                       // Jump if false
+
+ mov dword ptr [ebp+08],0          // value2decrease = 0
+
+ mov eax,[ecx+1c]
+ mov [ecx+08],eax
+
+_ExitGM:
+ pop esi
+
+ movss xmm3,[ebp+08]               // Original code
+ jmp _BackGM                       // Back to main code
+
+//=========================================
+ db '======================================&gt;'
+ db 'CE6.2 Script by Recifense 061512'
+//=========================================
+// Variables
+iEnableGM:
+ dd 1
+iEnableMR:
+ dd 1
+iEnableME:
+ dd 1
+pPlayer:
+ dd 0
+pCommon:
+ dd MyCode
+
+//=========================================
+// Hacking Points
+LUDO+003bb1dc:
+ jmp _MonPlayer
+ nop
+_BackMP:
+
+LUDO+001f8a6a:
+ jmp _GodMode
+_BackGM:
+
+//=========================================
+// Script for Restoring Original Codes
+[DISABLE]
+LUDO+003bb1dc:
+// mov eax,[edi+60]
+// mov ecx,[eax+10]
+ db 8b 47 60 8b 48 10
+
+LUDO+001f8a6a:
+// movss xmm3,[ebp+08]
+ db f3 0f 10 5d 08
+
+//=========================================
+// Unregistering Symbols
+unregistersymbol(MyCode)
+unregistersymbol(pPlayer)
+unregistersymbol(pCommon)
+unregistersymbol(iEnableGM)
+unregistersymbol(iEnableMR)
+unregistersymbol(iEnableME)
+
+//=========================================
+dealloc(MyCode)
+//============= Scripts End ===============
+
+// ****************************************
+// NOTES
+// ****************************************
+{
+}
+
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>16</ID>
+          <Description>"Enable/Disable God Mode =&gt; (1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableGM</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>17</ID>
+          <Description>"Enable/Disable Minimum Resource =&gt; (1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMR</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>18</ID>
+          <Description>"Enable/Disable Unlimited Energy =&gt; (1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableME</Address>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols/>
+  <Comments>===========================================
+ Game Title    : Command &amp; Conquer 3 - Tiberium Wars
+ Game Version  : 1.09
+ Process Name  : cnc3game.dat
+ Script Version: 1.0
+ CE Version    : 6.2
+ Release date  : 15-Jun-2012
+ Author        : Recifense
+ Features:
+ - God Mode (Units and Buildings)
+ - Minimum Resource (62000)
+ - Unlimited Energy (spent energy = 0)[1]
+===========================================
+[1] Dark Byte's original idea. 
+</Comments>
+</CheatTable>

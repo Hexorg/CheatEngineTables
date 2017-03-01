@@ -1,0 +1,998 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="14">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>201</ID>
+      <Description>"Gun Timings"</Description>
+      <Options moHideChildren="1"/>
+      <Color>80000008</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>[ENABLE]
+//code from here to '[DISABLE]' will be used to enable the cheat
+alloc(amem,2048) //2kb should be enough
+registersymbol(amem)
+label(hp1)
+label(returnhere)
+label(originalcode)
+label(exit)
+label(max_gun)
+label(min_gun)
+label(branch)
+
+amem:
+dd 1
+dd 1
+hp1:
+cmp [amem],1 //if we want no reload for ourselves...
+jne branch
+cmp [ecx+4],0 //and this gun belongs to us...
+je max_gun
+branch:
+cmp [amem+4],1 //if we want no guns for our enemies...
+jne originalcode
+cmp [ecx+4],0 //and this gun belongs to them...
+jne min_gun
+jmp originalcode
+
+max_gun:
+push ebx
+mov ebx,[ecx+c]
+mov [ecx+8],ebx
+pop ebx
+jmp originalcode
+
+min_gun:
+mov [ecx+8],(float)0
+
+originalcode:
+fld dword ptr [ecx+08]
+fld dword ptr [ecx+0C]
+
+exit:
+jmp returnhere
+
+"FTLGame.exe"+1ce02:
+jmp hp1
+nop
+returnhere:
+
+
+ 
+ 
+[DISABLE]
+//code from here till the end of the code will be used to disable the cheat
+dealloc(amem)
+"FTLGame.exe"+1ce02:
+fld dword ptr [ecx+08]
+fld dword ptr [ecx+0C]
+//Alt: db D9 40 08 D9 40 0C
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>202</ID>
+          <Description>"Instant Reload"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>amem</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>203</ID>
+          <Description>"Enemies Can't Reload"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>amem+4</Address>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>232</ID>
+      <Description>"Travel Anywhere"</Description>
+      <Color>80000008</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>[ENABLE]
+FTLGame.exe+6A41E:
+db 90 90 90 90 90 90
+
+FTLGame.exe+6A47E:
+db eb
+
+ 
+ 
+[DISABLE]
+FTLGame.exe+6A41E:
+je FTLGame.exe+6A4B5
+//0f 84 91 00 00 00
+
+FTLGame.exe+6A47E:
+jne FTLGame.exe+6A4D6
+//75 56
+
+</AssemblerScript>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>206</ID>
+      <Description>"No Crew Damage"</Description>
+      <Color>80000008</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>[ENABLE]
+//code from here to '[DISABLE]' will be used to enable the cheat
+alloc(newmem,2048) //2kb should be enough
+label(returnhere)
+label(originalcode)
+label(exit)
+
+newmem:
+fst dword ptr [edx+28]
+fld dword ptr [esp+00000080]
+
+originalcode:
+
+cmp [edx+4],0 //our dude?
+jne exit
+push eax
+mov eax,[edx+2c]
+mov [edx+28],eax
+pop eax
+
+exit:
+jmp returnhere
+
+"FTLGame.exe"+9E11A:
+jmp newmem
+nop
+nop
+nop
+nop
+nop
+returnhere:
+
+
+ 
+ 
+[DISABLE]
+//code from here till the end of the code will be used to disable the cheat
+dealloc(newmem)
+"FTLGame.exe"+9E11A:
+fst dword ptr [edx+28]
+fld dword ptr [esp+00000080]
+//Alt: db D9 52 28 D9 84 24 80 00 00 00
+</AssemblerScript>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>207</ID>
+      <Description>"Edit Crew (hover to edit)"</Description>
+      <Options moHideChildren="1"/>
+      <Color>80000008</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>[ENABLE]
+//code from here to '[DISABLE]' will be used to enable the cheat
+alloc(bmem,2048) //2kb should be enough
+registersymbol(bmem)
+label(hover)
+label(returnhere)
+label(originalcode)
+label(exit)
+
+bmem:
+dd 1 //max out friendly units?
+dd 0 //addr of last unit
+dd 0
+hover:
+mov [bmem+4],ecx
+cmp [bmem],0 //do we want to max skills for friendly units?
+je originalcode
+cmp [ecx+4],0 //is this unit an enemy?
+jne originalcode
+push eax
+push ebx
+mov eax,[ecx+180]
+
+mov ebx, [eax+4] //piloting
+mov [eax], ebx
+add eax,8
+
+mov ebx, [eax+4] //engines
+mov [eax], ebx
+add eax,8
+
+mov ebx, [eax+4] //shields
+mov [eax], ebx
+add eax,8
+
+mov ebx, [eax+4] //weapons
+mov [eax], ebx
+add eax,8
+
+mov ebx, [eax+4] //repair
+mov [eax], ebx
+add eax,8
+
+mov ebx, [eax+4] //combat
+mov [eax], ebx
+add eax,8
+
+pop ebx
+pop eax
+
+originalcode:
+//fld dword ptr [ecx+28]
+//fnstcw [esp+06]
+db D9 41 28 D9 7C 24 06 //ce 6.1 doesn't compile fnstcw correctly apparently.
+
+exit:
+jmp returnhere
+
+"FTLGame.exe"+9F2F2:
+jmp hover
+nop
+nop
+returnhere:
+
+
+ 
+ 
+[DISABLE]
+//code from here till the end of the code will be used to disable the cheat
+dealloc(newmem)
+"FTLGame.exe"+9F2F2:
+//fld dword ptr [ecx+28]
+//fnstcw [esp+06]
+db D9 41 28 D9 7C 24 06
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>208</ID>
+          <Description>"Max Skills (friendly only) (0/1)"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>bmem</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>209</ID>
+          <Description>"Is Enemy?  (0/1)"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>bmem+4</Address>
+          <Offsets>
+            <Offset>4</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>213</ID>
+          <Description>"Health"</Description>
+          <Color>80000008</Color>
+          <VariableType>Float</VariableType>
+          <Address>bmem+4</Address>
+          <Offsets>
+            <Offset>28</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>214</ID>
+          <Description>"Max Health"</Description>
+          <Color>80000008</Color>
+          <VariableType>Float</VariableType>
+          <Address>bmem+4</Address>
+          <Offsets>
+            <Offset>2C</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>226</ID>
+          <Description>"Skills"</Description>
+          <Options moHideChildren="1"/>
+          <Color>80000008</Color>
+          <GroupHeader>1</GroupHeader>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>212</ID>
+              <Description>"Piloting"</Description>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>bmem+4</Address>
+              <Offsets>
+                <Offset>0</Offset>
+                <Offset>180</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>225</ID>
+              <Description>"Max Piloting"</Description>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>bmem+4</Address>
+              <Offsets>
+                <Offset>4</Offset>
+                <Offset>180</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>224</ID>
+              <Description>"Engines"</Description>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>bmem+4</Address>
+              <Offsets>
+                <Offset>8</Offset>
+                <Offset>180</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>223</ID>
+              <Description>"Max Engines"</Description>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>bmem+4</Address>
+              <Offsets>
+                <Offset>C</Offset>
+                <Offset>180</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>222</ID>
+              <Description>"Shields"</Description>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>bmem+4</Address>
+              <Offsets>
+                <Offset>10</Offset>
+                <Offset>180</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>221</ID>
+              <Description>"Max Shields"</Description>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>bmem+4</Address>
+              <Offsets>
+                <Offset>14</Offset>
+                <Offset>180</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>220</ID>
+              <Description>"Weapons"</Description>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>bmem+4</Address>
+              <Offsets>
+                <Offset>18</Offset>
+                <Offset>180</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>219</ID>
+              <Description>"Max Weapons"</Description>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>bmem+4</Address>
+              <Offsets>
+                <Offset>1C</Offset>
+                <Offset>180</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>218</ID>
+              <Description>"Repair"</Description>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>bmem+4</Address>
+              <Offsets>
+                <Offset>20</Offset>
+                <Offset>180</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>217</ID>
+              <Description>"Max Repair"</Description>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>bmem+4</Address>
+              <Offsets>
+                <Offset>24</Offset>
+                <Offset>180</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>216</ID>
+              <Description>"Combat"</Description>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>bmem+4</Address>
+              <Offsets>
+                <Offset>28</Offset>
+                <Offset>180</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>215</ID>
+              <Description>"Max Combat"</Description>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>bmem+4</Address>
+              <Offsets>
+                <Offset>2C</Offset>
+                <Offset>180</Offset>
+              </Offsets>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>1</ID>
+      <Description>"Vars"</Description>
+      <Options moHideChildren="1"/>
+      <Color>80000008</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>[ENABLE]
+alloc(newmem2,2048) //2kb should be enough
+label(returnhere2)
+label(originalcode2)
+label(exit2)
+alloc(newmem,2048) //2kb should be enough
+label(returnhere)
+label(originalcode)
+label(exit)
+alloc(ship,12)
+registersymbol(ship)
+alloc(newmem6,2048) //2kb should be enough
+label(returnhere6)
+label(originalcode6)
+label(exit6)
+
+newmem6:
+push ebx
+lea ebx,[ecx+80]
+mov [ship+8],ebx
+pop ebx
+originalcode6:
+cmp dword ptr [ecx+00000080],E7
+exit6:
+jmp returnhere6
+
+"FTLGame.exe"+60061:
+jmp newmem6
+nop
+nop
+returnhere6:
+
+newmem2:
+mov edx,[ecx+04]
+mov eax,edx
+originalcode2:
+mov [ship+4],ecx
+exit2:
+jmp returnhere2
+
+"FTLGame.exe"+EB534:
+jmp newmem2
+returnhere2:
+
+newmem:
+mov [ship], eax
+originalcode:
+mov eax,[eax+00000370]
+exit:
+jmp returnhere
+
+"FTLGame.exe"+14EF7D:
+jmp newmem
+nop
+returnhere:
+
+
+[DISABLE]
+//code from here till the end of the code will be used to disable the cheat
+dealloc(newmem6)
+"FTLGame.exe"+60061:
+cmp dword ptr [ecx+00000080],E7
+//Alt: db 83 B9 80 00 00 00 E7
+dealloc(newmem2)
+"FTLGame.exe"+EB534:
+mov edx,[ecx+04]
+mov eax,edx
+//Alt: db 8B 51 04 89 D0
+dealloc(newmem)
+"FTLGame.exe"+14EF7D:
+mov eax,[eax+00000370]
+//Alt: db 8B 80 70 03 00 00
+
+
+
+/*
+
+FTLGame.exe+14EF6F - 89 84 24 90000000     - mov [esp+00000090],eax
+FTLGame.exe+14EF76 - 8B 4C 24 44           - mov ecx,[esp+44]
+FTLGame.exe+14EF7A - 8B 41 0C              - mov eax,[ecx+0C]
+FTLGame.exe+14EF7D - 8B 80 70030000        - mov eax,[eax+00000370]  &lt;-- access scrap
+FTLGame.exe+14EF83 - 89 84 24 94000000     - mov [esp+00000094],eax
+FTLGame.exe+14EF8A - 8D 84 24 98000000     - lea eax,[esp+00000098]
+FTLGame.exe+14EF91 - 8D 94 24 88000000     - lea edx,[esp+00000088]
+FTLGame.exe+14EF98 - 89 54 24 04           - mov [esp+04],edx
+FTLGame.exe+14EF9C - 89 04 24              - mov [esp],eax
+FTLGame.exe+14EF9F - E8 98710700           - call FTLGame.exe+1C613C
+FTLGame.exe+14EFA4 - 8D 84 24 9C000000     - lea eax,[esp+0000009C]
+FTLGame.exe+14EFAB - 8D 94 24 90000000     - lea edx,[esp+00000090]
+
+
+FTLGame.exe+EB52C - 8A 41 10              - mov al,[ecx+10]
+FTLGame.exe+EB52F - C6 41 10 00           - mov byte ptr [ecx+10],00
+FTLGame.exe+EB533 - C3                    - ret
+FTLGame.exe+EB534 - 8B 51 04              - mov edx,[ecx+04]
+FTLGame.exe+EB537 - 89 D0                 - mov eax,edx
+FTLGame.exe+EB539 - 2B 01                 - sub eax,[ecx] &lt;-- access used energy
+FTLGame.exe+EB53B - C3                    - ret
+
+
+FTLGame.exe+6005A - C2 0400               - ret 0004
+FTLGame.exe+6005D - 90                    - nop
+FTLGame.exe+6005E - 83 EC 08              - sub esp,08
+FTLGame.exe+60061 - 83 B9 80000000 E7     - cmp dword ptr [ecx+00000080],E7 &lt;-- access rebel progress when map comes up
+FTLGame.exe+60068 - 0F8D 9C000000         - jnl FTLGame.exe+6010A
+FTLGame.exe+6006E - 8B 81 DC010000        - mov eax,[ecx+000001DC]
+FTLGame.exe+60074 - 85 C0                 - test eax,eax
+FTLGame.exe+60076 - 78 0B                 - js FTLGame.exe+60083
+FTLGame.exe+60078 - 85 C0                 - test eax,eax
+FTLGame.exe+6007A - 7F 0E                 - jg FTLGame.exe+6008A
+FTLGame.exe+6007C - B8 32000000           - mov eax,00000032
+
+*/
+
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>2</ID>
+          <Description>"Ship"</Description>
+          <ShowAsHex>1</ShowAsHex>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>ship</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>227</ID>
+          <Description>"Inventory"</Description>
+          <Options moHideChildren="1"/>
+          <Color>80000008</Color>
+          <GroupHeader>1</GroupHeader>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>181</ID>
+              <Description>"Scrap"</Description>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>ship</Address>
+              <Offsets>
+                <Offset>370</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>10</ID>
+              <Description>"Fuel"</Description>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>ship</Address>
+              <Offsets>
+                <Offset>330</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>6</ID>
+              <Description>"Drone Parts (with no drones equipped)"</Description>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>ship</Address>
+              <Offsets>
+                <Offset>4AC</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>182</ID>
+              <Description>"Missiles"</Description>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>ship</Address>
+              <Offsets>
+                <Offset>168</Offset>
+                <Offset>34</Offset>
+              </Offsets>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>229</ID>
+          <Description>"Status"</Description>
+          <Options moHideChildren="1"/>
+          <Color>80000008</Color>
+          <GroupHeader>1</GroupHeader>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>191</ID>
+              <Description>"Energy Used"</Description>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>ship+4</Address>
+              <Offsets>
+                <Offset>0</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>192</ID>
+              <Description>"Energy Max"</Description>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>ship+4</Address>
+              <Offsets>
+                <Offset>4</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>196</ID>
+              <Description>"Rebellion Progress (-750 start, -600 vis)"</Description>
+              <ShowAsSigned>1</ShowAsSigned>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>ship+8</Address>
+              <Offsets>
+                <Offset>0</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>9</ID>
+              <Description>"FTL Charge (85+ for jump)"</Description>
+              <Color>80000008</Color>
+              <VariableType>Float</VariableType>
+              <Address>ship</Address>
+              <Offsets>
+                <Offset>328</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>8</ID>
+              <Description>"Hull"</Description>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>ship</Address>
+              <Offsets>
+                <Offset>DC</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>7</ID>
+              <Description>"Hull Max"</Description>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>ship</Address>
+              <Offsets>
+                <Offset>E0</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>183</ID>
+              <Description>"Max Weapon Energy"</Description>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>ship</Address>
+              <Offsets>
+                <Offset>40</Offset>
+                <Offset>34</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>234</ID>
+              <Description>"Max Drone Energy"</Description>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>ship</Address>
+              <Offsets>
+                <Offset>40</Offset>
+                <Offset>20</Offset>
+                <Offset>18</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>233</ID>
+              <Description>"Shields"</Description>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>ship</Address>
+              <Offsets>
+                <Offset>40</Offset>
+                <Offset>30</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>11</ID>
+              <Description>"Super Shields"</Description>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>ship</Address>
+              <Offsets>
+                <Offset>178</Offset>
+                <Offset>30</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>12</ID>
+              <Description>"Super Shields Max"</Description>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>ship</Address>
+              <Offsets>
+                <Offset>17C</Offset>
+                <Offset>30</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>68</ID>
+              <Description>"Cloak Recharge Step"</Description>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>ship</Address>
+              <Offsets>
+                <Offset>B0</Offset>
+                <Offset>2C</Offset>
+              </Offsets>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>228</ID>
+          <Description>"Enemy Ship"</Description>
+          <Options moHideChildren="1"/>
+          <Color>80000008</Color>
+          <GroupHeader>1</GroupHeader>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>155</ID>
+              <Description>"--Enemy Ship--"</Description>
+              <ShowAsHex>1</ShowAsHex>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>ship</Address>
+              <Offsets>
+                <Offset>324</Offset>
+              </Offsets>
+              <CheatEntries>
+                <CheatEntry>
+                  <ID>159</ID>
+                  <Description>"Hull"</Description>
+                  <Color>80000008</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>ship</Address>
+                  <Offsets>
+                    <Offset>DC</Offset>
+                    <Offset>324</Offset>
+                  </Offsets>
+                  <Hotkeys>
+                    <Hotkey>
+                      <Action>Set Value</Action>
+                      <Keys>
+                        <Key>17</Key>
+                        <Key>8</Key>
+                      </Keys>
+                      <Value>0</Value>
+                      <ID>0</ID>
+                    </Hotkey>
+                  </Hotkeys>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>158</ID>
+                  <Description>"FTL Charge"</Description>
+                  <Color>80000008</Color>
+                  <VariableType>Float</VariableType>
+                  <Address>ship</Address>
+                  <Offsets>
+                    <Offset>328</Offset>
+                    <Offset>324</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>163</ID>
+                  <Description>"Shields"</Description>
+                  <Color>80000008</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>ship</Address>
+                  <Offsets>
+                    <Offset>40</Offset>
+                    <Offset>30</Offset>
+                    <Offset>324</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>164</ID>
+                  <Description>"Super-Shields"</Description>
+                  <Color>80000008</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>ship</Address>
+                  <Offsets>
+                    <Offset>178</Offset>
+                    <Offset>30</Offset>
+                    <Offset>324</Offset>
+                  </Offsets>
+                </CheatEntry>
+              </CheatEntries>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols>
+    <SymbolEntry>
+      <Name>pAmmoPouch1</Name>
+      <Address>05BC0000</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>pAmmoPouch2</Name>
+      <Address>05BD0000</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>pAmmoPouch</Name>
+      <Address>05C40000</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>pFAmmoPouch1</Name>
+      <Address>05BE0000</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>pFAmmoPouch2</Name>
+      <Address>05BF0000</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>pHealth</Name>
+      <Address>0B010000</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>pLightBat</Name>
+      <Address>0B0B0000</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>flareReadJMP</Name>
+      <Address>00551980</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>hHRJMP</Name>
+      <Address>004CF678</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>hSubJMP</Name>
+      <Address>004CF87D</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>staminaSubJMP</Name>
+      <Address>004CC3B9</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>minAmmoPouch</Name>
+      <Address>0B092026</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>aPRJMP</Name>
+      <Address>00541C2D</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>aAPSJMP</Name>
+      <Address>0054219D</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>aACJMP</Name>
+      <Address>00541A92</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>fAPRJMP</Name>
+      <Address>00541C07</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>sAPRJMP</Name>
+      <Address>00541C23</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>flareSubJMP</Name>
+      <Address>00553194</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>minBattery</Name>
+      <Address>0B0C08B4</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>lFSJMP</Name>
+      <Address>004D4263</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>lBSJMP</Name>
+      <Address>004D4619</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>carLightSubJMP</Name>
+      <Address>00534E90</Address>
+    </SymbolEntry>
+  </UserdefinedSymbols>
+  <Structures StructVersion="2">
+    <Structure Name="ship" AutoFill="0" AutoCreate="1" DefaultHex="0" AutoDestroy="0" DoNotSaveLocal="0" AutoCreateStructsize="4096">
+      <Elements>
+        <Element Offset="24" Vartype="Pointer" Bytesize="4" ChildStruct="subsystems" Description="subsystems" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="36" Vartype="Pointer" Bytesize="4" ChildStruct="system" Description="Oxygen" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="40" Vartype="Pointer" Bytesize="4" ChildStruct="system" Description="Teleport" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="44" Vartype="Pointer" Bytesize="4" ChildStruct="system" Description="Cloak" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="48" Vartype="Pointer" Bytesize="4" ChildStruct="system" Description="Shields" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="52" Vartype="Pointer" Bytesize="4" ChildStruct="system" Description="Weapons" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="60" Vartype="Pointer" Bytesize="4" ChildStruct="system" Description="Engines" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="64" Vartype="Pointer" Bytesize="4" ChildStruct="system" Description="Med Bay" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="220" Vartype="4 Bytes" Bytesize="4" Description="hull hp" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="224" Vartype="4 Bytes" Bytesize="4" Description="hull hp max" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="816" Vartype="4 Bytes" Bytesize="4" Description="Fuel" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="880" Vartype="4 Bytes" Bytesize="4" Description="Scrap" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="1196" Vartype="4 Bytes" Bytesize="4" Description="Drone Parts" DisplayMethod="Unsigned Integer"/>
+      </Elements>
+    </Structure>
+    <Structure Name="system" AutoFill="0" AutoCreate="1" DefaultHex="0" AutoDestroy="0" DoNotSaveLocal="0" AutoCreateStructsize="4096">
+      <Elements>
+        <Element Offset="60" Vartype="4 Bytes" Bytesize="4" Description="Energy" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="64" Vartype="4 Bytes" Bytesize="4" Description="Level" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="136" Vartype="4 Bytes" Bytesize="4" Description="hp" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="140" Vartype="4 Bytes" Bytesize="4" Description="max hp" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="176" Vartype="4 Bytes" Bytesize="4" Description="cloak recharge step" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="268" Vartype="4 Bytes" Bytesize="4" Description="max upgrade" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="284" Vartype="4 Bytes" Bytesize="4" Description="drones" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="312" Vartype="4 Bytes" Bytesize="4" Description="missiles?" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="360" Vartype="4 Bytes" Bytesize="4" Description="missiles" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="376" Vartype="4 Bytes" Bytesize="4" Description="super shields" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="380" Vartype="4 Bytes" Bytesize="4" Description="super shields max" DisplayMethod="Unsigned Integer"/>
+      </Elements>
+    </Structure>
+    <Structure Name="subsystems" AutoFill="0" AutoCreate="1" DefaultHex="0" AutoDestroy="0" DoNotSaveLocal="0" AutoCreateStructsize="4096">
+      <Elements>
+        <Element Offset="0" Vartype="Pointer" Bytesize="4" ChildStruct="system" Description="Piloting" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="4" Vartype="Pointer" Bytesize="4" ChildStruct="system" Description="Doors" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="8" Vartype="Pointer" Bytesize="4" ChildStruct="system" Description="Sensors" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="28" Vartype="Pointer" Bytesize="4" ChildStruct="system" Description="Drones" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="32" Vartype="Pointer" Bytesize="4" ChildStruct="system" Description="Drone Control" DisplayMethod="Unsigned Integer"/>
+      </Elements>
+    </Structure>
+    <Structure Name="Weapon" AutoFill="0" AutoCreate="1" DefaultHex="0" AutoDestroy="0" DoNotSaveLocal="0" AutoCreateStructsize="4096">
+      <Elements>
+        <Element Offset="0" Vartype="4 Bytes" Bytesize="4" Description="clsid (6cca28)" DisplayMethod="Hexadecimal"/>
+        <Element Offset="4" Vartype="4 Bytes" Bytesize="4" Description="owner (0 = player)" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="8" Vartype="Float" Bytesize="4" Description="charge" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="12" Vartype="Float" Bytesize="4" Description="max charge" DisplayMethod="Unsigned Integer"/>
+      </Elements>
+    </Structure>
+    <Structure Name="Crew" AutoFill="0" AutoCreate="1" DefaultHex="0" AutoDestroy="0" DoNotSaveLocal="0" AutoCreateStructsize="4096">
+      <Elements>
+        <Element Offset="4" Vartype="4 Bytes" Bytesize="4" Description="bIsEnemy? (0/1)" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="40" Vartype="Float" Bytesize="4" Description="Health" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="44" Vartype="Float" Bytesize="4" Description="Max Health" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="384" Vartype="Pointer" Bytesize="4" ChildStruct="Skills" Description="Skills" DisplayMethod="Unsigned Integer"/>
+      </Elements>
+    </Structure>
+    <Structure Name="Skills" AutoFill="0" AutoCreate="1" DefaultHex="0" AutoDestroy="0" DoNotSaveLocal="0" AutoCreateStructsize="4096">
+      <Elements>
+        <Element Offset="0" Vartype="4 Bytes" Bytesize="4" Description="Piloting" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="4" Vartype="4 Bytes" Bytesize="4" Description="Piloting Max" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="8" Vartype="4 Bytes" Bytesize="4" Description="Engines" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="12" Vartype="4 Bytes" Bytesize="4" Description="Engines Max" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="16" Vartype="4 Bytes" Bytesize="4" Description="Shields" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="20" Vartype="4 Bytes" Bytesize="4" Description="Shields Max" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="24" Vartype="4 Bytes" Bytesize="4" Description="Weapons" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="28" Vartype="4 Bytes" Bytesize="4" Description="Weapons Max" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="32" Vartype="4 Bytes" Bytesize="4" Description="Repair" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="36" Vartype="4 Bytes" Bytesize="4" Description="Repair Max" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="40" Vartype="4 Bytes" Bytesize="4" Description="Combat" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="44" Vartype="4 Bytes" Bytesize="4" Description="Combat Max" DisplayMethod="Unsigned Integer"/>
+      </Elements>
+    </Structure>
+    <Structure Name="map system" AutoFill="0" AutoCreate="1" DefaultHex="0" AutoDestroy="0" DoNotSaveLocal="0" AutoCreateStructsize="4096">
+      <Elements>
+        <Element Offset="0" Vartype="Float" Bytesize="4" Description="X" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="4" Vartype="Float" Bytesize="4" Description="Y" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="20" Vartype="Byte" Bytesize="1" Description="bExit?" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="21" Vartype="Byte" Bytesize="1" Description="bShow Travel?" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="22" Vartype="Byte" Bytesize="1" Description="bVisited?" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="23" Vartype="Byte" Bytesize="1" Description="bRebel Control?" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="25" Vartype="Byte" Bytesize="1" Description="bNebula?" DisplayMethod="Unsigned Integer"/>
+      </Elements>
+    </Structure>
+  </Structures>
+</CheatTable>

@@ -1,0 +1,450 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="16">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>15</ID>
+      <Description>"[X] &lt;== Divinity Dragon Commander v1.0.12.0 Script 1.0 AOB"</Description>
+      <Options moHideChildren="1"/>
+      <Color>FF0000</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>{
+===========================================
+ Game Title    : Divinity Dragon Commander
+ Game Version  : 1.0.12.0
+ Game Sponsor  : FairLight
+ Proces Name   : DCApp.exe
+ Script Version: 1.0
+ CE Version    : 6.3
+ Release date  : 08-Aug-2013
+ Author        : Recifense
+ History:
+ 07-Aug-13: First Release
+ 08-Aug-13: AOB version of the script
+ Features:
+ - God Mode
+ - Minimum Population
+ - Some Pointers
+===========================================
+}
+
+//=========================================
+// Definitions
+define(LUDO,"DCApp.exe")
+
+//=========================================
+[ENABLE]
+//=========================================
+//LuaCall(CheckVersion())
+//=========================================
+// Check if script is compatible to this game version
+// If false the script will not be loaded
+
+AOBSCANMODULE(aobMSUN,DCApp.exe,83 be 10 02 00 00 00 7e 13 8b ce e8 ?? ?? ?? ?? 84 c0 ?? ?? 8b)
+AOBSCANMODULE(aobGDMD,DCApp.exe,89 88 10 02 00 00 59 c2 04 00 8d 0c 24 8b 11 89 90 10 02 00 00)
+AOBSCANMODULE(aobMPPP,DCApp.exe,8b 84 be 80 04 00 00 3b c1 ?? ?? 8b 0d ?? ?? ?? ?? e8 ?? ?? ??)
+AOBSCANMODULE(aobMPP1,DCApp.exe,83 bc b1 80 04 00 00 00 a1 ?? ?? ?? ?? 8b 78 0c ?? ?? 3b f7 ??)
+AOBSCANMODULE(aobMPRS,DCApp.exe,8b 47 3c 50 6a 01 8d 8c 24 b0 04 00 00 ff 15 ?? ?? ?? ?? 8b 3d)
+
+//=========================================
+alloc(MyCode,4096,LUDO)
+//=========================================
+// Declaration section
+label(_MonSelUnit)
+label(_BackMSU)
+label(_ExitMSU)
+label(_GodMode)
+label(_BackGMD)
+label(_ExitGMD)
+label(_MonPlayerPop)
+label(_BackMPP)
+label(_ExitMPP)
+label(_MonPlayerPop1)
+label(_BackMP1)
+label(_ExitMP1)
+label(_MonPlayerResources)
+label(_MonPR00)
+label(_BackMPR)
+label(_ExitMPR)
+label(pPlayer)
+label(pPop)
+label(pUnit)
+label(iEnableGMD)
+label(iEnableMPP)
+label(iEnableMGD)
+label(iEnableMRP)
+label(aLast)
+
+//=========================================
+// Registering Symbols
+registersymbol(MyCode)
+registersymbol(pPlayer)
+registersymbol(pPop)
+registersymbol(pUnit)
+registersymbol(iEnableGMD)
+registersymbol(iEnableMPP)
+registersymbol(iEnableMGD)
+registersymbol(iEnableMRP)
+registersymbol(aLast)
+registersymbol(aobMSUN)
+registersymbol(aobGDMD)
+registersymbol(aobMPPP)
+registersymbol(aobMPP1)
+registersymbol(aobMPRS)
+
+//=========================================
+MyCode:
+//=========================================
+// Selected Unit (all) (4debugging)
+_MonSelUnit:
+ mov [pUnit],esi
+
+_ExitMSU:
+ cmp dword ptr [esi+00000210],00   // Original code (rds cHP)
+ jmp _BackMSU                      // Back to main code
+
+//=========================================
+// During Combat
+_GodMode:
+ cmp dword ptr [iEnableGMD],0
+ je _ExitGMD                       // Jump if feature is disabled
+
+ cmp dword ptr [eax+00000228],0
+ jne _ExitGMD
+
+ mov ecx,[eax+00000214]
+
+_ExitGMD:
+ mov [eax+00000210],ecx            // Original code (upds HP)
+ jmp _BackGMD                      // Back to main code
+
+//=========================================
+// In Main Screen
+_MonPlayerPop:
+ mov [pPop],esi
+
+ cmp dword ptr [iEnableMPP],0
+ je _ExitMPP                       // Jump if feature is disabled
+
+ mov eax,#630
+ cmp eax,[esi+00000480]
+ jle _ExitMPP
+
+ mov [esi+00000480],eax
+
+_ExitMPP:
+ mov eax,[esi+edi*4+00000480]      // Original code (rds cPop)
+ jmp _BackMPP                      // Back to main code
+
+//=========================================
+// In Main Screen
+_MonPlayerPop1:
+ push eax
+
+ mov [pPop],ecx
+
+ cmp dword ptr [iEnableMPP],0
+ je _ExitMP1                       // Jump if feature is disabled
+
+ mov eax,#630
+ cmp eax,[ecx+00000480]
+ jle _ExitMP1
+
+ mov [ecx+00000480],eax
+
+_ExitMP1:
+ pop eax
+
+ cmp dword ptr [ecx+esi*4+00000480],00 // Original code (rds cPop)
+ jmp _BackMP1                      // Back to main code
+
+//=========================================
+// At Empire Overview
+_MonPlayerResources:
+ mov [pPlayer],edi
+
+ cmp dword ptr [edi+10],0
+ jne _ExitMPR
+
+ cmp dword ptr [iEnableMGD],0
+ je _MonPR00                      // Jump if feature is disabled
+
+ mov eax,#50
+ cmp eax,[edi+3C]
+ jle _MonPR00
+
+ mov [edi+3c],eax
+
+_MonPR00:
+ cmp dword ptr [iEnableMRP],0
+ je _ExitMPR                       // Jump if feature is disabled
+
+ mov eax,#30
+ cmp eax,[edi+44]
+ jle _ExitMPR
+
+ mov [edi+44],eax
+
+_ExitMPR:
+ mov eax,[edi+3C]                  // Original code (rds Gold)
+ push eax                          // Original code
+ db 6a 01                          // Original code (push 01)
+ jmp _BackMPR                      // Back to main code
+
+//=========================================
+ db '============================================&gt;'
+ db 'CE6.2 Script by Recifense 080813'
+//=========================================
+// Variables
+iEnableGMD:
+ dd 0
+iEnableMPP:
+ dd 0
+iEnableMGD:
+ dd 0
+iEnableMRP:
+ dd 0
+pPlayer:
+ dd 0
+pPop:
+ dd 0
+pUnit:
+ dd 0
+aLast:
+ db 'CE63'
+
+//=========================================
+// Hacking Points
+aobMSUN:
+ jmp _MonSelUnit
+ nop
+ nop
+_BackMSU:
+
+aobGDMD:
+ jmp _GodMode
+ nop
+_BackGMD:
+
+aobMPPP:
+ jmp _MonPlayerPop
+ nop
+ nop
+_BackMPP:
+
+aobMPP1:
+ jmp _MonPlayerPop1
+ nop
+ nop
+ nop
+_BackMP1:
+
+aobMPRS:
+ jmp _MonPlayerResources
+ nop
+_BackMPR:
+
+//=========================================
+// Script for Restoring Original Codes
+[DISABLE]
+aobMSUN:
+// cmp dword ptr [esi+00000210],00
+ db 83 be 10 02 00 00 00
+
+aobGDMD:
+// mov [eax+00000210],ecx
+ db 89 88 10 02 00 00
+
+aobMPPP:
+// mov eax,[esi+edi*4+00000480]
+ db 8b 84 be 80 04 00 00
+
+aobMPP1:
+// mcmp dword ptr [ecx+esi*4+00000480],00
+ db 83 bc b1 80 04 00 00 00
+
+aobMPRS:
+// mov eax,[edi+3C]
+// push eax
+// push 01
+ db 8b 47 3c 50 6a 01
+
+//=========================================
+// Unregistering Symbols
+unregistersymbol(MyCode)
+unregistersymbol(pPlayer)
+unregistersymbol(pPop)
+unregistersymbol(pUnit)
+unregistersymbol(iEnableGMD)
+unregistersymbol(iEnableMPP)
+unregistersymbol(iEnableMGD)
+unregistersymbol(iEnableMRP)
+unregistersymbol(aLast)
+unregistersymbol(aobMSUN)
+unregistersymbol(aobGDMD)
+unregistersymbol(aobMPPP)
+unregistersymbol(aobMPP1)
+unregistersymbol(aobMPRS)
+
+//=========================================
+dealloc(MyCode)
+//============= Scripts End ===============
+
+// ****************************************
+// NOTES
+// ****************************************
+{
+}
+
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>5</ID>
+          <Description>"Enable/Disable God Mode (RTS) =&gt; (1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableGMD</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>11</ID>
+          <Description>"Enable/Disable Minimum Population (RTS) =&gt; (1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMPP</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>33</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>34</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>16</ID>
+          <Description>"Enable/Disable Full Gold =&gt; (1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMGD</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>45</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>46</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>17</ID>
+          <Description>"Enable/Disable Full Research Points =&gt; (1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMRP</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>45</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>46</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols/>
+  <Comments>===========================================
+ Game Title    : Divinity Dragon Commander
+ Game Version  : 1.0.12.0
+ Game Sponsor  : FairLight
+ Proces Name   : DCApp.exe
+ Script Version: 1.0
+ CE Version    : 6.3 &lt;====================
+ Release date  : 08-Aug-2013
+ Author        : Recifense
+ History:
+ - God Mode                   [1](*)
+ - Minimum Population   (630) [2](*)
+ - Full Gold            (50)  [3](**)
+ - Full Research Points (30)  [4](**)
+ - Some Pointers
+===========================================
+[1] For player's units and buildings;
+[2] The available pop will not go under 630;
+(*) Only valid during RTS phase;
+[3] Minimum Gold will be 50;
+[4] Minimum Research Points will be 30;
+(**) You have to open the Empire Overview to update these values;
+===========================================
+HOTKEYS:
+CTRL+Home = Enable  God Mode cheat;
+CTRL+End  = Disable God Mode cheat;
+----------
+CTRL+PageUp   = Enable  Min POP cheat;
+CTRL+PageDown = Disable Min POP cheat
+----------
+CTRL+Insert   = Enable  Research and GOLD cheats;
+CTRL+Delete   = Disable Research and GOLD cheat
+===========================================
+[NOTE]
+This table was not fully tested.
+===========================================
+Cheers!
+</Comments>
+</CheatTable>

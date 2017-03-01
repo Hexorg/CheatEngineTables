@@ -1,0 +1,692 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="14">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>0</ID>
+      <Description>"Do NOT Starve :-)"</Description>
+      <Color>80000008</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>[ENABLE]
+aobscan(DoNOTStarve_AOB,8B 4D 00 8B 44 24 24 89 08 8b 55 04 5f 5e)
+label(DoNOTStarve)
+registersymbol(DoNOTStarve)
+
+alloc(newmem,2048)
+label(returnhere)
+label(originalcode)
+label(exit)
+
+// used for "search mechanism"
+label(str_current_First)  // 'current' found (first)
+label(str_DoDelta)        // 'DoDelta' found
+label(str_hungerrate)     // 'hungerrate' found
+label(str_period)         // 'period' found
+label(str_current_Second) // 'current' found (second)
+
+label(C_str_current_First)
+label(C_str_DoDelta)
+label(C_str_hungerrate)
+label(C_str_period)
+label(C_str_current_Second)
+
+label(str_owner)          // 'owner' found
+label(str_components)     // 'components' found
+label(str_health)         // 'health' found
+label(str_IsDead)         // 'IsDead' found
+label(str_currenthealth)  // 'currenthealth' found
+
+label(C_str_owner)
+label(C_str_components)
+label(C_str_health)
+label(C_str_IsDead)
+label(C_str_currenthealth)
+
+label(str_Use)            // 'Use' found
+label(str_SetUses)        // 'SetUses' found
+label(str_current_uses)   // 'current' found (threeTimes)
+label(counterForStrCurrent_uses)
+
+label(C_str_Use)
+label(C_str_SetUses)
+label(C_str_current_uses)
+
+label(str_SetQuantity)           // 'SetQuantity' found
+label(str_components_StackSize)  // 'components' found
+label(str_stackable)             // 'stackable' found
+label(str_StackSize_U)           // 'StackSize' found
+label(str_stacksize_L)           // 'stacksize' found
+
+label(C_str_SetQuantity)
+label(C_str_components_StackSize)
+label(C_str_stackable)
+label(C_str_StackSize_U)
+label(C_str_stacksize_L)
+
+label(str_maxfuel)                // 'maxfuel' found
+label(str_sections)               // 'sections' found (twoTimes)
+label(str_currentfuel_1)          // 'currentfuel' found
+label(str_rate)                   // 'rate' found
+label(str_currentfuel_2)          // 'currentfuel' found
+label(counterForStrSections_fuel)
+
+label(C_str_maxfuel)
+label(C_str_sections)
+label(C_str_currentfuel_1)
+label(C_str_rate)
+label(C_str_currentfuel_2)
+
+label(resetSearchMechanism)
+/////////////////////////////////////////////////////
+
+label(ValueTen)
+label(ValueSeventeen)
+label(oneHundred)
+label(twoHundreds)
+label(Zero)
+label(storedMaxFuel)
+
+label(hungerrateAddress)
+registersymbol(hungerrateAddress)
+
+label(StomachAlwaysFull)
+registersymbol(StomachAlwaysFull)
+
+label(HealthAlwaysFull)
+registersymbol(HealthAlwaysFull)
+
+label(Always10UsesLeft)
+registersymbol(Always10UsesLeft)
+
+label(StackFreeze)
+registersymbol(StackFreeze)
+
+label(InfiniteFuel)
+registersymbol(InfiniteFuel)
+
+newmem:
+pushfd
+pushad
+
+//can we even start anything ?
+lea eax,[ebp+18]
+push 00000004
+push eax
+call isbadreadptr
+cmp eax,0
+jne originalcode
+////////////////////////
+
+cmp dword ptr [ebp+18],04   // lua_tstring ???????
+jne originalcode
+
+mov eax,[ebp+10]
+
+//
+push 00000004
+push eax
+call isbadreadptr
+cmp eax,0
+jne originalcode
+////////////////////////
+
+mov eax,[ebp+10]
+
+cmp dword ptr [eax+0C],02 // all used strings are bigger than 2 chars, check that
+jle originalcode
+
+
+
+
+
+cmp byte ptr [str_rate],1
+je C_str_currentfuel_2
+
+cmp byte ptr [str_currentfuel_1],1
+je C_str_rate
+
+cmp byte ptr [str_sections],1
+je C_str_currentfuel_1
+
+cmp byte ptr [str_maxfuel],1
+je C_str_sections
+
+cmp byte ptr [str_StackSize_U],1
+je C_str_stacksize_L
+
+cmp byte ptr [str_stackable],1
+je C_str_StackSize_U
+
+cmp byte ptr [str_components_StackSize],1
+je C_str_stackable
+
+cmp byte ptr [str_SetQuantity],1
+je C_str_components_StackSize
+
+cmp byte ptr [str_SetUses],1
+je C_str_current_uses
+
+cmp byte ptr [str_Use],1
+je C_str_SetUses
+
+cmp byte ptr [str_IsDead],1
+je C_str_currenthealth
+
+cmp byte ptr [str_health],1
+je C_str_IsDead
+
+cmp byte ptr [str_components],1
+je C_str_health
+
+cmp byte ptr [str_owner],1
+je C_str_components
+
+cmp byte ptr [str_period],1
+je C_str_current_Second
+
+cmp byte ptr [str_hungerrate],1
+je C_str_period
+
+cmp byte ptr [str_DoDelta],1
+je C_str_hungerrate
+
+cmp byte ptr [str_current_First],1
+je C_str_DoDelta
+
+
+
+
+
+C_str_current_First:
+cmp dword ptr [eax+10],'curr'
+jne C_str_owner
+cmp dword ptr [eax+14],'ent'
+jne C_str_owner
+mov byte ptr [str_current_First],1
+jmp originalcode
+
+C_str_DoDelta:
+cmp dword ptr [eax+10],'DoDe'
+jne resetSearchMechanism
+cmp dword ptr [eax+14],'lta'
+jne resetSearchMechanism
+mov byte ptr [str_DoDelta],1
+jmp originalcode
+
+C_str_hungerrate:
+cmp dword ptr [eax+10],'hung'
+jne resetSearchMechanism
+cmp dword ptr [eax+14],'erra'
+jne resetSearchMechanism
+cmp  word ptr [eax+18],'te'
+jne resetSearchMechanism
+mov byte ptr [str_hungerrate],1
+mov [hungerrateAddress],ebp      // we have hungerrate address now ( value = 0.13(8) )
+jmp originalcode
+
+C_str_period:
+cmp dword ptr [eax+10],'peri'
+jne resetSearchMechanism
+cmp  word ptr [eax+14],'od'
+jne resetSearchMechanism
+mov byte ptr [str_period],1
+jmp originalcode
+
+C_str_current_Second:
+cmp dword ptr [eax+10],'curr'
+jne resetSearchMechanism
+cmp dword ptr [eax+14],'ent'
+jne resetSearchMechanism
+mov byte ptr [str_current_Second],1
+
+// we have current "stomach happines", value = (0.0 - 100.0)
+
+cmp [StomachAlwaysFull],0
+je resetSearchMechanism
+
+//change "stomach happines"
+mov ebx,[oneHundred]
+mov [ebp],ebx
+mov ebx,[oneHundred+4]
+mov [ebp+4],ebx
+jmp resetSearchMechanism
+
+
+
+C_str_owner:
+cmp dword ptr [eax+10],'owne'
+jne C_str_Use
+cmp  word ptr [eax+14],'r'
+jne C_str_Use
+mov byte ptr [str_owner],1
+jmp originalcode
+
+C_str_components:
+cmp dword ptr [eax+10],'comp'
+jne resetSearchMechanism
+cmp dword ptr [eax+14],'onen'
+jne resetSearchMechanism
+cmp  word ptr [eax+18],'ts'
+jne resetSearchMechanism
+mov byte ptr [str_components],1
+jmp originalcode
+
+C_str_health:
+cmp dword ptr [eax+10],'heal'
+jne resetSearchMechanism
+cmp  word ptr [eax+14],'th'
+jne resetSearchMechanism
+mov byte ptr [str_health],1
+jmp originalcode
+
+C_str_IsDead:
+cmp dword ptr [eax+10],'IsDe'
+jne resetSearchMechanism
+cmp  word ptr [eax+14],'ad'
+jne resetSearchMechanism
+mov byte ptr [str_IsDead],1
+jmp originalcode
+
+C_str_currenthealth:
+cmp dword ptr [eax+10],'curr'
+jne resetSearchMechanism
+cmp dword ptr [eax+14],'enth'
+jne resetSearchMechanism
+cmp dword ptr [eax+18],'ealt'
+jne resetSearchMechanism
+mov byte ptr [str_currenthealth],1
+
+// here we have current health address, value (0.0 - 100.0) by default
+//
+// maxhealth is 0x1c0 bytes before currenthealth (risky)
+//
+
+cmp [HealthAlwaysFull],0
+je resetSearchMechanism
+
+mov ebx,[twoHundreds]
+mov [ebp-1C0],ebx          // risky, probably it will crash on another game update
+mov ebx,[twoHundreds+4]
+mov [ebp-1BC],ebx
+
+mov ebx,[twoHundreds]
+mov [ebp],ebx
+mov ebx,[twoHundreds+4]
+mov [ebp+4],ebx
+
+jmp resetSearchMechanism
+
+
+
+
+C_str_Use:
+cmp dword ptr [eax+10],'Use'
+jne C_str_SetQuantity
+mov byte ptr [str_Use],1
+jmp originalcode
+
+C_str_SetUses:
+cmp dword ptr [eax+10],'SetU'
+jne resetSearchMechanism
+cmp dword ptr [eax+14],'ses'
+jne resetSearchMechanism
+mov byte ptr [str_SetUses],1
+jmp originalcode
+
+C_str_current_uses:
+cmp dword ptr [eax+10],'curr'
+jne resetSearchMechanism
+cmp dword ptr [eax+14],'ent'
+jne resetSearchMechanism
+inc byte ptr [counterForStrCurrent_uses]     // three times
+cmp byte ptr [counterForStrCurrent_uses],03  //
+jne originalcode
+mov byte ptr [str_current_uses],1
+
+// here we have current "uses left" address, set 10.0 uses
+
+cmp [Always10UsesLeft],0
+je resetSearchMechanism
+
+mov ebx,[ValueTen]
+mov [ebp],ebx
+mov ebx,[ValueTen+4]
+mov [ebp+4],ebx
+
+jmp resetSearchMechanism
+
+
+
+
+C_str_SetQuantity:
+cmp dword ptr [eax+10],'SetQ'
+jne C_str_maxfuel
+cmp dword ptr [eax+14],'uant'
+jne C_str_maxfuel
+cmp dword ptr [eax+18],'ity'
+jne C_str_maxfuel
+mov byte ptr [str_SetQuantity],1
+jmp originalcode
+
+C_str_components_StackSize:
+cmp dword ptr [eax+10],'comp'
+jne resetSearchMechanism
+cmp dword ptr [eax+14],'onen'
+jne resetSearchMechanism
+cmp  word ptr [eax+18],'ts'
+jne resetSearchMechanism
+mov byte ptr [str_components_StackSize],1
+jmp originalcode
+
+C_str_stackable:
+cmp dword ptr [eax+10],'stac'
+jne resetSearchMechanism
+cmp dword ptr [eax+14],'kabl'
+jne resetSearchMechanism
+cmp  word ptr [eax+18],'e'
+jne resetSearchMechanism
+mov byte ptr [str_stackable],1
+jmp originalcode
+
+C_str_StackSize_U:
+cmp dword ptr [eax+10],'Stac'
+jne resetSearchMechanism
+cmp dword ptr [eax+14],'kSiz'
+jne resetSearchMechanism
+cmp  word ptr [eax+18],'e'
+jne resetSearchMechanism
+mov byte ptr [str_StackSize_U],1
+jmp originalcode
+
+C_str_stacksize_L:
+cmp dword ptr [eax+10],'stac'
+jne resetSearchMechanism
+cmp dword ptr [eax+14],'ksiz'
+jne resetSearchMechanism
+cmp  word ptr [eax+18],'e'
+jne resetSearchMechanism
+mov byte ptr [str_stacksize_L],1
+
+// we have current "stack size", value = (0.0 - XXX.0)
+
+cmp [StackFreeze],0
+je resetSearchMechanism
+
+mov ebx,[ValueSeventeen]
+mov [ebp],ebx
+mov ebx,[ValueSeventeen+4]
+mov [ebp+4],ebx
+
+jmp resetSearchMechanism
+
+
+
+
+C_str_maxfuel:
+cmp dword ptr [eax+10],'maxf'
+jne originalcode
+cmp dword ptr [eax+14],'uel'
+jne originalcode
+mov byte ptr [str_maxfuel],1
+mov ebx,[ebp]
+mov [storedMaxFuel],ebx
+mov ebx,[ebp+4]
+mov [storedMaxFuel+4],ebx
+jmp originalcode
+
+C_str_sections:
+cmp dword ptr [eax+10],'sect'
+jne resetSearchMechanism
+cmp dword ptr [eax+14],'ions'
+jne resetSearchMechanism
+inc byte ptr [counterForStrSections_fuel]     // two times
+cmp byte ptr [counterForStrSections_fuel],02  //
+jne originalcode
+mov byte ptr [str_sections],1
+jmp originalcode
+
+C_str_currentfuel_1:
+cmp dword ptr [eax+10],'curr'
+jne resetSearchMechanism
+cmp dword ptr [eax+14],'entf'
+jne resetSearchMechanism
+cmp dword ptr [eax+18],'uel'
+jne resetSearchMechanism
+mov byte ptr [str_currentfuel_1],1
+jmp originalcode
+
+C_str_rate:
+cmp dword ptr [eax+10],'rate'
+jne resetSearchMechanism
+mov byte ptr [str_rate],1
+jmp originalcode
+
+C_str_currentfuel_2:
+cmp dword ptr [eax+10],'curr'
+jne resetSearchMechanism
+cmp dword ptr [eax+14],'entf'
+jne resetSearchMechanism
+cmp dword ptr [eax+18],'uel'
+jne resetSearchMechanism
+mov byte ptr [str_currentfuel_2],1
+
+// we have current "fuel", value = (fire pit has values from 0.0 to 360.0 )
+
+cmp [InfiniteFuel],0
+je resetSearchMechanism
+
+mov ebx,[storedMaxFuel]
+mov [ebp],ebx
+mov ebx,[storedMaxFuel+4]
+mov [ebp+4],ebx
+
+jmp resetSearchMechanism
+
+
+
+
+resetSearchMechanism:
+mov byte ptr [str_current_First],0
+mov byte ptr [str_DoDelta],0
+mov byte ptr [str_hungerrate],0
+mov byte ptr [str_period],0
+mov byte ptr [str_current_Second],0
+
+mov byte ptr [str_owner],0
+mov byte ptr [str_components],0
+mov byte ptr [str_health],0
+mov byte ptr [str_IsDead],0
+mov byte ptr [str_currenthealth],0
+
+mov byte ptr [str_Use],0
+mov byte ptr [str_SetUses],0
+mov byte ptr [str_current_uses],0
+mov byte ptr [counterForStrCurrent_uses],0
+
+mov byte ptr [str_SetQuantity],0
+mov byte ptr [str_components_StackSize],0
+mov byte ptr [str_stackable],0
+mov byte ptr [str_StackSize_U],0
+mov byte ptr [str_stacksize_L],0
+
+mov byte ptr [str_maxfuel],0
+mov byte ptr [str_sections],0
+mov byte ptr [str_currentfuel_1],0
+mov byte ptr [str_rate],0
+mov byte ptr [str_currentfuel_2],0
+mov byte ptr [counterForStrSections_fuel],0
+
+originalcode:
+popad
+popfd
+mov ecx,[ebp+00]
+mov eax,[esp+24]
+
+exit:
+jmp returnhere
+
+//check chain
+str_current_First:
+db 0
+str_DoDelta:
+db 0
+str_hungerrate:
+db 0
+str_period:
+db 0
+str_current_Second:
+db 0
+
+str_owner:
+db 0
+str_components:
+db 0
+str_health:
+db 0
+str_IsDead:
+db 0
+str_currenthealth:
+db 0
+
+str_Use:
+db 0
+str_SetUses:
+db 0
+str_current_uses:
+db 0
+counterForStrCurrent_uses:
+db 0
+
+str_SetQuantity:
+db 0
+str_components_StackSize:
+db 0
+str_stackable:
+db 0
+str_StackSize_U:
+db 0
+str_stacksize_L:
+db 0
+
+str_maxfuel:
+db 0
+str_sections:
+db 0
+str_currentfuel_1:
+db 0
+str_rate:
+db 0
+str_currentfuel_2:
+db 0
+counterForStrSections_fuel:
+db 0
+
+
+
+// constants variables
+ValueTen:
+dq (double)0010.00
+ValueSeventeen:
+dq (double)0017.00
+oneHundred:
+dq (double)0100.00
+twoHundreds:
+dq (double)0200.00
+Zero:
+dq (double)0000.00
+
+// variables
+storedMaxFuel:
+dq (double)0.0
+
+
+//available outside AA script
+hungerrateAddress:
+dd 0
+StomachAlwaysFull:
+dd 0
+HealthAlwaysFull:
+dd 0
+Always10UsesLeft:
+dd 0
+StackFreeze:
+dd 0
+InfiniteFuel:
+dd 0
+
+
+//"dontstarve_steam.exe"+C78FB:
+DoNOTStarve_AOB:
+DoNOTStarve:
+jmp newmem
+nop
+nop
+returnhere:
+
+
+[DISABLE]
+//"dontstarve_steam.exe"+C78FB:
+DoNOTStarve:
+//Alt: mov ecx,[ebp+00]
+//Alt: mov eax,[esp+24]
+db 8B 4D 00 8B 44 24 24
+
+unregistersymbol(hungerrateAddress)
+unregistersymbol(StomachAlwaysFull)
+unregistersymbol(HealthAlwaysFull)
+unregistersymbol(Always10UsesLeft)
+unregistersymbol(StackFreeze)
+unregistersymbol(InfiniteFuel)
+unregistersymbol(DoNOTStarve)
+
+dealloc(newmem)
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>1</ID>
+          <Description>"Hunger Rate"</Description>
+          <Color>80000008</Color>
+          <VariableType>Double</VariableType>
+          <Address>hungerrateAddress</Address>
+          <Offsets>
+            <Offset>0</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>2</ID>
+          <Description>"Stomach Always Full (enabled=1)"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>StomachAlwaysFull</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>3</ID>
+          <Description>"Health Always Full (enabled=1)"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>HealthAlwaysFull</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>4</ID>
+          <Description>"Always 10 Uses Left (enabled=1)"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>Always10UsesLeft</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>5</ID>
+          <Description>"Always 17 in Stack (enabled=1)"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>StackFreeze</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>6</ID>
+          <Description>"Fuel Always Full (enabled=1)"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>InfiniteFuel</Address>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+  </CheatEntries>
+</CheatTable>

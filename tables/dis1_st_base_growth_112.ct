@@ -1,0 +1,1116 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="19">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>77994</ID>
+      <Description>"Status Stats Base Address Scan Initialization (Activate This First)"</Description>
+      <Options moHideChildren="1"/>
+      <LastState Activated="1"/>
+      <Color>800000</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>[ENABLE]
+registersymbol(statusstats_basepointer)
+registersymbol(statusstats_update_enable)
+registersymbol(statusstats_set_enable)
+
+alloc(statusstats_basepointer, 4)
+alloc(statusstats_update_enable, 4)
+alloc(statusstats_set_enable, 4)
+
+
+[DISABLE]
+unregistersymbol(statusstats_basepointer)
+unregistersymbol(statusstats_update_enable)
+unregistersymbol(statusstats_set_enable)
+
+dealloc(statusstats_basepointer)
+dealloc(statusstats_update_enable)
+dealloc(statusstats_set_enable)
+
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>77995</ID>
+          <Description>"Status Stats Base Address Scan (To Update: View Status)"</Description>
+          <LastState Activated="1"/>
+          <Color>804000</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>{$lua}
+function SelectAobScan(labelAOB, searchAOB, numberAOB)
+  local resultsAOB = AOBScan(searchAOB)
+
+  if (resultsAOB ~= nil) then
+    local countAOB = stringlist_getCount(resultsAOB)
+    local positionAOB = numberAOB - 1
+
+    if (numberAOB == 0 or numberAOB &gt; countAOB) then
+      positionAOB = countAOB - 1
+    end
+
+    local selectedAOB = stringlist_getString(resultsAOB, positionAOB)
+
+    local script = 'label(' .. labelAOB .. ')\nregistersymbol(' .. labelAOB .. ')\n' .. selectedAOB .. ':\n' .. labelAOB .. ':'
+    autoAssemble(script)
+
+    object_destroy(resultsAOB)
+    resultsAOB = nil
+  end
+end
+{$asm}
+
+
+[ENABLE]
+label(statusstats_savedAOB)
+label(statusstats_returnhere)
+label(statusstats_originalcode)
+label(statusstats_exit)
+
+label(statusstats_update_exit)
+label(statusstats_set_exit)
+
+registersymbol(statusstats_savedAOB)
+
+//00AA6501 - 8B 97 C4050000        - mov edx,[edi+000005C4]
+//00AA6507 - 8B 80 C4050000        - mov eax,[eax+000005C4]
+//aobscan(statusstats_searchedAOB, 8B 97 C4 05 00 00 8B 80 C4 05 00 00)
+LuaCall(SelectAobScan("statusstats_searchedAOB", "8B 97 C4 05 00 00 8B 80 C4 05 00 00", 0))
+
+alloc(statusstats_newmem, 2048, statusstats_searchedAOB)
+
+
+statusstats_newmem:
+cmp dword ptr [statusstats_update_enable], #0
+je statusstats_update_exit
+mov [statusstats_basepointer], edi
+statusstats_update_exit:
+
+cmp dword ptr [statusstats_set_enable], #0
+je statusstats_set_exit
+statusstats_set_exit:
+
+
+statusstats_originalcode:
+db 8B 97 C4 05 00 00
+//mov edx,[edi+000005C4]
+
+
+statusstats_exit:
+jmp statusstats_returnhere
+
+
+statusstats_searchedAOB:
+statusstats_savedAOB:
+jmp statusstats_newmem
+nop
+statusstats_returnhere:
+
+
+[DISABLE]
+statusstats_savedAOB:
+db 8B 97 C4 05 00 00
+//mov edx,[edi+000005C4]
+
+unregistersymbol(statusstats_savedAOB)
+
+dealloc(statusstats_newmem)
+
+</AssemblerScript>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>77997</ID>
+          <Description>"Status Stats Update Base Address?"</Description>
+          <DropDownList DisplayValueAsItem="1">0:No
+1:Yes
+</DropDownList>
+          <LastState Value="1" RealAddress="03330004"/>
+          <Color>FF8000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>statusstats_update_enable</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>77998</ID>
+          <Description>"Status Stats"</Description>
+          <Options moHideChildren="1"/>
+          <LastState Value="" Activated="1" RealAddress="00000000"/>
+          <GroupHeader>1</GroupHeader>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>77999</ID>
+              <Description>"Base Address"</Description>
+              <LastState Value="0" RealAddress="01032F80"/>
+              <VariableType>4 Bytes</VariableType>
+              <Address>statusstats_basepointer</Address>
+              <Offsets>
+                <Offset>0</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>110294</ID>
+              <Description>"EXP"</Description>
+              <LastState Value="0" RealAddress="01032F80"/>
+              <VariableType>4 Bytes</VariableType>
+              <Address>statusstats_basepointer</Address>
+              <Offsets>
+                <Offset>0</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>110295</ID>
+              <Description>"Equipment"</Description>
+              <Options moHideChildren="1"/>
+              <LastState Value="" RealAddress="00000000"/>
+              <GroupHeader>1</GroupHeader>
+              <CheatEntries>
+                <CheatEntry>
+                  <ID>110285</ID>
+                  <Description>"Weapon"</Description>
+                  <LastState Value="0" RealAddress="01033000"/>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>statusstats_basepointer</Address>
+                  <Offsets>
+                    <Offset>80</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>110298</ID>
+                  <Description>"Other 1"</Description>
+                  <LastState Value="0" RealAddress="01033090"/>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>statusstats_basepointer</Address>
+                  <Offsets>
+                    <Offset>110</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>110296</ID>
+                  <Description>"Other 2"</Description>
+                  <LastState Value="0" RealAddress="01033120"/>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>statusstats_basepointer</Address>
+                  <Offsets>
+                    <Offset>1A0</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>110297</ID>
+                  <Description>"Other 3"</Description>
+                  <LastState Value="0" RealAddress="010331B0"/>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>statusstats_basepointer</Address>
+                  <Offsets>
+                    <Offset>230</Offset>
+                  </Offsets>
+                </CheatEntry>
+              </CheatEntries>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>110286</ID>
+              <Description>"Name"</Description>
+              <LastState RealAddress="010331C8"/>
+              <VariableType>String</VariableType>
+              <Length>32</Length>
+              <Unicode>0</Unicode>
+              <ZeroTerminate>1</ZeroTerminate>
+              <Address>statusstats_basepointer</Address>
+              <Offsets>
+                <Offset>248</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>110287</ID>
+              <Description>"Class Name"</Description>
+              <LastState RealAddress="010331E9"/>
+              <VariableType>String</VariableType>
+              <Length>32</Length>
+              <Unicode>0</Unicode>
+              <ZeroTerminate>1</ZeroTerminate>
+              <Address>statusstats_basepointer</Address>
+              <Offsets>
+                <Offset>269</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>110288</ID>
+              <Description>"Ailment Resistance"</Description>
+              <Options moHideChildren="1"/>
+              <LastState Value="" RealAddress="00000000"/>
+              <GroupHeader>1</GroupHeader>
+              <CheatEntries>
+                <CheatEntry>
+                  <ID>110289</ID>
+                  <Description>"PSN"</Description>
+                  <LastState Value="1" RealAddress="0103322C"/>
+                  <VariableType>2 Bytes</VariableType>
+                  <Address>statusstats_basepointer</Address>
+                  <Offsets>
+                    <Offset>2AC</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>110290</ID>
+                  <Description>"SLP"</Description>
+                  <LastState Value="1" RealAddress="0103322E"/>
+                  <VariableType>2 Bytes</VariableType>
+                  <Address>statusstats_basepointer</Address>
+                  <Offsets>
+                    <Offset>2AE</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>110291</ID>
+                  <Description>"PAR"</Description>
+                  <LastState Value="1" RealAddress="01033230"/>
+                  <VariableType>2 Bytes</VariableType>
+                  <Address>statusstats_basepointer</Address>
+                  <Offsets>
+                    <Offset>2B0</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>110292</ID>
+                  <Description>"FCT"</Description>
+                  <LastState Value="1" RealAddress="01033232"/>
+                  <VariableType>2 Bytes</VariableType>
+                  <Address>statusstats_basepointer</Address>
+                  <Offsets>
+                    <Offset>2B2</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>110293</ID>
+                  <Description>"DPR"</Description>
+                  <LastState Value="1" RealAddress="01033234"/>
+                  <VariableType>2 Bytes</VariableType>
+                  <Address>statusstats_basepointer</Address>
+                  <Offsets>
+                    <Offset>2B4</Offset>
+                  </Offsets>
+                </CheatEntry>
+              </CheatEntries>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>110226</ID>
+              <Description>"Attributes"</Description>
+              <Options moHideChildren="1"/>
+              <LastState Value="" Activated="1" RealAddress="00000000"/>
+              <GroupHeader>1</GroupHeader>
+              <CheatEntries>
+                <CheatEntry>
+                  <ID>110215</ID>
+                  <Description>"HP"</Description>
+                  <LastState Value="14" RealAddress="01033544"/>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>statusstats_basepointer</Address>
+                  <Offsets>
+                    <Offset>5C4</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>110216</ID>
+                  <Description>"SP"</Description>
+                  <LastState Value="4" RealAddress="01033548"/>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>statusstats_basepointer</Address>
+                  <Offsets>
+                    <Offset>5C8</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>110217</ID>
+                  <Description>"Max HP"</Description>
+                  <LastState Value="14" RealAddress="0103354C"/>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>statusstats_basepointer</Address>
+                  <Offsets>
+                    <Offset>5CC</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>110218</ID>
+                  <Description>"Max SP"</Description>
+                  <LastState Value="4" RealAddress="01033550"/>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>statusstats_basepointer</Address>
+                  <Offsets>
+                    <Offset>5D0</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>110219</ID>
+                  <Description>"ATK"</Description>
+                  <LastState Value="10" RealAddress="01033554"/>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>statusstats_basepointer</Address>
+                  <Offsets>
+                    <Offset>5D4</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>110220</ID>
+                  <Description>"DEF"</Description>
+                  <LastState Value="3" RealAddress="01033558"/>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>statusstats_basepointer</Address>
+                  <Offsets>
+                    <Offset>5D8</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>110221</ID>
+                  <Description>"INT"</Description>
+                  <LastState Value="5" RealAddress="0103355C"/>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>statusstats_basepointer</Address>
+                  <Offsets>
+                    <Offset>5DC</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>110222</ID>
+                  <Description>"SPD"</Description>
+                  <LastState Value="10" RealAddress="01033560"/>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>statusstats_basepointer</Address>
+                  <Offsets>
+                    <Offset>5E0</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>110223</ID>
+                  <Description>"HIT"</Description>
+                  <LastState Value="11" RealAddress="01033564"/>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>statusstats_basepointer</Address>
+                  <Offsets>
+                    <Offset>5E4</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>110224</ID>
+                  <Description>"RES"</Description>
+                  <LastState Value="3" RealAddress="01033568"/>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>statusstats_basepointer</Address>
+                  <Offsets>
+                    <Offset>5E8</Offset>
+                  </Offsets>
+                </CheatEntry>
+              </CheatEntries>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>110238</ID>
+              <Description>"Base Attributes"</Description>
+              <Options moHideChildren="1"/>
+              <LastState Value="" Activated="1" RealAddress="00000000"/>
+              <GroupHeader>1</GroupHeader>
+              <CheatEntries>
+                <CheatEntry>
+                  <ID>110239</ID>
+                  <Description>"HP"</Description>
+                  <LastState Value="14" RealAddress="0103356C"/>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>statusstats_basepointer</Address>
+                  <Offsets>
+                    <Offset>5EC</Offset>
+                  </Offsets>
+                  <Hotkeys>
+                    <Hotkey>
+                      <Action>Increase Value</Action>
+                      <Keys>
+                        <Key>113</Key>
+                      </Keys>
+                      <Value>100</Value>
+                      <Description>hp+</Description>
+                      <ID>0</ID>
+                    </Hotkey>
+                  </Hotkeys>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>110240</ID>
+                  <Description>"SP"</Description>
+                  <LastState Value="4" RealAddress="01033570"/>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>statusstats_basepointer</Address>
+                  <Offsets>
+                    <Offset>5F0</Offset>
+                  </Offsets>
+                  <Hotkeys>
+                    <Hotkey>
+                      <Action>Increase Value</Action>
+                      <Keys>
+                        <Key>113</Key>
+                      </Keys>
+                      <Value>100</Value>
+                      <Description>sp+</Description>
+                      <ID>0</ID>
+                    </Hotkey>
+                  </Hotkeys>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>110243</ID>
+                  <Description>"ATK"</Description>
+                  <LastState Value="10" RealAddress="01033574"/>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>statusstats_basepointer</Address>
+                  <Offsets>
+                    <Offset>5F4</Offset>
+                  </Offsets>
+                  <Hotkeys>
+                    <Hotkey>
+                      <Action>Increase Value</Action>
+                      <Keys>
+                        <Key>113</Key>
+                      </Keys>
+                      <Value>100</Value>
+                      <Description>atk</Description>
+                      <ID>0</ID>
+                    </Hotkey>
+                  </Hotkeys>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>110244</ID>
+                  <Description>"DEF"</Description>
+                  <LastState Value="3" RealAddress="01033578"/>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>statusstats_basepointer</Address>
+                  <Offsets>
+                    <Offset>5F8</Offset>
+                  </Offsets>
+                  <Hotkeys>
+                    <Hotkey>
+                      <Action>Increase Value</Action>
+                      <Keys>
+                        <Key>113</Key>
+                      </Keys>
+                      <Value>100</Value>
+                      <Description>def+</Description>
+                      <ID>0</ID>
+                    </Hotkey>
+                  </Hotkeys>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>110245</ID>
+                  <Description>"INT"</Description>
+                  <LastState Value="5" RealAddress="0103357C"/>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>statusstats_basepointer</Address>
+                  <Offsets>
+                    <Offset>5FC</Offset>
+                  </Offsets>
+                  <Hotkeys>
+                    <Hotkey>
+                      <Action>Increase Value</Action>
+                      <Keys>
+                        <Key>113</Key>
+                      </Keys>
+                      <Value>100</Value>
+                      <Description>int+</Description>
+                      <ID>0</ID>
+                    </Hotkey>
+                  </Hotkeys>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>110246</ID>
+                  <Description>"SPD"</Description>
+                  <LastState Value="10" RealAddress="01033580"/>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>statusstats_basepointer</Address>
+                  <Offsets>
+                    <Offset>600</Offset>
+                  </Offsets>
+                  <Hotkeys>
+                    <Hotkey>
+                      <Action>Increase Value</Action>
+                      <Keys>
+                        <Key>113</Key>
+                      </Keys>
+                      <Value>100</Value>
+                      <Description>spd+</Description>
+                      <ID>0</ID>
+                    </Hotkey>
+                  </Hotkeys>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>110247</ID>
+                  <Description>"HIT"</Description>
+                  <LastState Value="11" RealAddress="01033584"/>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>statusstats_basepointer</Address>
+                  <Offsets>
+                    <Offset>604</Offset>
+                  </Offsets>
+                  <Hotkeys>
+                    <Hotkey>
+                      <Action>Increase Value</Action>
+                      <Keys>
+                        <Key>113</Key>
+                      </Keys>
+                      <Value>100</Value>
+                      <Description>hit+</Description>
+                      <ID>0</ID>
+                    </Hotkey>
+                  </Hotkeys>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>110248</ID>
+                  <Description>"RES"</Description>
+                  <LastState Value="3" RealAddress="01033588"/>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>statusstats_basepointer</Address>
+                  <Offsets>
+                    <Offset>608</Offset>
+                  </Offsets>
+                  <Hotkeys>
+                    <Hotkey>
+                      <Action>Increase Value</Action>
+                      <Keys>
+                        <Key>113</Key>
+                      </Keys>
+                      <Value>100</Value>
+                      <Description>res+</Description>
+                      <ID>0</ID>
+                    </Hotkey>
+                  </Hotkeys>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>110299</ID>
+                  <Description>"hp base growth"</Description>
+                  <LastState Value="14" RealAddress="010335D8"/>
+                  <VariableType>Byte</VariableType>
+                  <Address>statusstats_basepointer</Address>
+                  <Offsets>
+                    <Offset>658</Offset>
+                  </Offsets>
+                  <Hotkeys>
+                    <Hotkey>
+                      <Action>Increase Value</Action>
+                      <Keys>
+                        <Key>113</Key>
+                      </Keys>
+                      <Value>100</Value>
+                      <Description>res+</Description>
+                      <ID>0</ID>
+                    </Hotkey>
+                  </Hotkeys>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>110300</ID>
+                  <Description>"sp base growth"</Description>
+                  <LastState Value="5" RealAddress="010335D9"/>
+                  <VariableType>Byte</VariableType>
+                  <Address>statusstats_basepointer</Address>
+                  <Offsets>
+                    <Offset>659</Offset>
+                  </Offsets>
+                  <Hotkeys>
+                    <Hotkey>
+                      <Action>Increase Value</Action>
+                      <Keys>
+                        <Key>113</Key>
+                      </Keys>
+                      <Value>100</Value>
+                      <Description>res+</Description>
+                      <ID>0</ID>
+                    </Hotkey>
+                  </Hotkeys>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>110301</ID>
+                  <Description>"atk base growth"</Description>
+                  <LastState Value="11" RealAddress="010335DA"/>
+                  <VariableType>Byte</VariableType>
+                  <Address>statusstats_basepointer</Address>
+                  <Offsets>
+                    <Offset>65A</Offset>
+                  </Offsets>
+                  <Hotkeys>
+                    <Hotkey>
+                      <Action>Increase Value</Action>
+                      <Keys>
+                        <Key>113</Key>
+                      </Keys>
+                      <Value>100</Value>
+                      <Description>res+</Description>
+                      <ID>0</ID>
+                    </Hotkey>
+                  </Hotkeys>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>110302</ID>
+                  <Description>"def base growth"</Description>
+                  <LastState Value="4" RealAddress="010335DB"/>
+                  <VariableType>Byte</VariableType>
+                  <Address>statusstats_basepointer</Address>
+                  <Offsets>
+                    <Offset>65B</Offset>
+                  </Offsets>
+                  <Hotkeys>
+                    <Hotkey>
+                      <Action>Increase Value</Action>
+                      <Keys>
+                        <Key>113</Key>
+                      </Keys>
+                      <Value>100</Value>
+                      <Description>res+</Description>
+                      <ID>0</ID>
+                    </Hotkey>
+                  </Hotkeys>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>110303</ID>
+                  <Description>"int base growth"</Description>
+                  <LastState Value="6" RealAddress="010335DC"/>
+                  <VariableType>Byte</VariableType>
+                  <Address>statusstats_basepointer</Address>
+                  <Offsets>
+                    <Offset>65C</Offset>
+                  </Offsets>
+                  <Hotkeys>
+                    <Hotkey>
+                      <Action>Increase Value</Action>
+                      <Keys>
+                        <Key>113</Key>
+                      </Keys>
+                      <Value>100</Value>
+                      <Description>res+</Description>
+                      <ID>0</ID>
+                    </Hotkey>
+                  </Hotkeys>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>110304</ID>
+                  <Description>"spd base growth"</Description>
+                  <LastState Value="11" RealAddress="010335DD"/>
+                  <VariableType>Byte</VariableType>
+                  <Address>statusstats_basepointer</Address>
+                  <Offsets>
+                    <Offset>65D</Offset>
+                  </Offsets>
+                  <Hotkeys>
+                    <Hotkey>
+                      <Action>Increase Value</Action>
+                      <Keys>
+                        <Key>113</Key>
+                      </Keys>
+                      <Value>100</Value>
+                      <Description>res+</Description>
+                      <ID>0</ID>
+                    </Hotkey>
+                  </Hotkeys>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>110305</ID>
+                  <Description>"hit base growth"</Description>
+                  <LastState Value="11" RealAddress="010335DE"/>
+                  <VariableType>Byte</VariableType>
+                  <Address>statusstats_basepointer</Address>
+                  <Offsets>
+                    <Offset>65E</Offset>
+                  </Offsets>
+                  <Hotkeys>
+                    <Hotkey>
+                      <Action>Increase Value</Action>
+                      <Keys>
+                        <Key>113</Key>
+                      </Keys>
+                      <Value>100</Value>
+                      <Description>res+</Description>
+                      <ID>0</ID>
+                    </Hotkey>
+                  </Hotkeys>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>110306</ID>
+                  <Description>"res base growth"</Description>
+                  <LastState Value="4" RealAddress="010335DF"/>
+                  <VariableType>Byte</VariableType>
+                  <Address>statusstats_basepointer</Address>
+                  <Offsets>
+                    <Offset>65F</Offset>
+                  </Offsets>
+                  <Hotkeys>
+                    <Hotkey>
+                      <Action>Increase Value</Action>
+                      <Keys>
+                        <Key>113</Key>
+                      </Keys>
+                      <Value>100</Value>
+                      <Description>res+</Description>
+                      <ID>0</ID>
+                    </Hotkey>
+                  </Hotkeys>
+                </CheatEntry>
+              </CheatEntries>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>110255</ID>
+              <Description>"Weapon Mastery Exp"</Description>
+              <Options moHideChildren="1"/>
+              <LastState Value="" RealAddress="00000000"/>
+              <GroupHeader>1</GroupHeader>
+              <CheatEntries>
+                <CheatEntry>
+                  <ID>110256</ID>
+                  <Description>"Fists"</Description>
+                  <LastState Value="0" RealAddress="0103358C"/>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>statusstats_basepointer</Address>
+                  <Offsets>
+                    <Offset>60C</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>110257</ID>
+                  <Description>"Sword"</Description>
+                  <LastState Value="0" RealAddress="01033590"/>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>statusstats_basepointer</Address>
+                  <Offsets>
+                    <Offset>610</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>110258</ID>
+                  <Description>"Spear"</Description>
+                  <LastState Value="0" RealAddress="01033594"/>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>statusstats_basepointer</Address>
+                  <Offsets>
+                    <Offset>614</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>110259</ID>
+                  <Description>"Bow"</Description>
+                  <LastState Value="0" RealAddress="01033598"/>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>statusstats_basepointer</Address>
+                  <Offsets>
+                    <Offset>618</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>110260</ID>
+                  <Description>"Gun"</Description>
+                  <LastState Value="0" RealAddress="0103359C"/>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>statusstats_basepointer</Address>
+                  <Offsets>
+                    <Offset>61C</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>110261</ID>
+                  <Description>"Axe"</Description>
+                  <LastState Value="0" RealAddress="010335A0"/>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>statusstats_basepointer</Address>
+                  <Offsets>
+                    <Offset>620</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>110262</ID>
+                  <Description>"Staff"</Description>
+                  <LastState Value="0" RealAddress="010335A4"/>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>statusstats_basepointer</Address>
+                  <Offsets>
+                    <Offset>624</Offset>
+                  </Offsets>
+                </CheatEntry>
+              </CheatEntries>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>110263</ID>
+              <Description>"Mana"</Description>
+              <LastState Value="0" RealAddress="010335AC"/>
+              <VariableType>4 Bytes</VariableType>
+              <Address>statusstats_basepointer</Address>
+              <Offsets>
+                <Offset>62C</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>110265</ID>
+              <Description>"Weapon Mastery Level"</Description>
+              <Options moHideChildren="1"/>
+              <LastState Value="" RealAddress="00000000"/>
+              <GroupHeader>1</GroupHeader>
+              <CheatEntries>
+                <CheatEntry>
+                  <ID>110266</ID>
+                  <Description>"Fists"</Description>
+                  <LastState Value="0" RealAddress="010335C8"/>
+                  <VariableType>Byte</VariableType>
+                  <Address>statusstats_basepointer</Address>
+                  <Offsets>
+                    <Offset>648</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>110267</ID>
+                  <Description>"Sword"</Description>
+                  <LastState Value="0" RealAddress="010335C9"/>
+                  <VariableType>Byte</VariableType>
+                  <Address>statusstats_basepointer</Address>
+                  <Offsets>
+                    <Offset>649</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>110268</ID>
+                  <Description>"Spear"</Description>
+                  <LastState Value="0" RealAddress="010335CA"/>
+                  <VariableType>Byte</VariableType>
+                  <Address>statusstats_basepointer</Address>
+                  <Offsets>
+                    <Offset>64A</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>110269</ID>
+                  <Description>"Bow"</Description>
+                  <LastState Value="0" RealAddress="010335CB"/>
+                  <VariableType>Byte</VariableType>
+                  <Address>statusstats_basepointer</Address>
+                  <Offsets>
+                    <Offset>64B</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>110270</ID>
+                  <Description>"Gun"</Description>
+                  <LastState Value="0" RealAddress="010335CC"/>
+                  <VariableType>Byte</VariableType>
+                  <Address>statusstats_basepointer</Address>
+                  <Offsets>
+                    <Offset>64C</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>110271</ID>
+                  <Description>"Axe"</Description>
+                  <LastState Value="0" RealAddress="010335CD"/>
+                  <VariableType>Byte</VariableType>
+                  <Address>statusstats_basepointer</Address>
+                  <Offsets>
+                    <Offset>64D</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>110272</ID>
+                  <Description>"Staff"</Description>
+                  <LastState Value="0" RealAddress="010335CE"/>
+                  <VariableType>Byte</VariableType>
+                  <Address>statusstats_basepointer</Address>
+                  <Offsets>
+                    <Offset>64E</Offset>
+                  </Offsets>
+                </CheatEntry>
+              </CheatEntries>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>110273</ID>
+              <Description>"Weapon Mastery Class"</Description>
+              <Options moHideChildren="1"/>
+              <LastState Value="" Activated="1" RealAddress="00000000"/>
+              <GroupHeader>1</GroupHeader>
+              <CheatEntries>
+                <CheatEntry>
+                  <ID>110274</ID>
+                  <Description>"Fists"</Description>
+                  <LastState Value="20" RealAddress="010335D0"/>
+                  <VariableType>Byte</VariableType>
+                  <Address>statusstats_basepointer</Address>
+                  <Offsets>
+                    <Offset>650</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>110275</ID>
+                  <Description>"Sword"</Description>
+                  <LastState Value="4" RealAddress="010335D1"/>
+                  <VariableType>Byte</VariableType>
+                  <Address>statusstats_basepointer</Address>
+                  <Offsets>
+                    <Offset>651</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>110276</ID>
+                  <Description>"Spear"</Description>
+                  <LastState Value="4" RealAddress="010335D2"/>
+                  <VariableType>Byte</VariableType>
+                  <Address>statusstats_basepointer</Address>
+                  <Offsets>
+                    <Offset>652</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>110277</ID>
+                  <Description>"Bow"</Description>
+                  <LastState Value="3" RealAddress="010335D3"/>
+                  <VariableType>Byte</VariableType>
+                  <Address>statusstats_basepointer</Address>
+                  <Offsets>
+                    <Offset>653</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>110278</ID>
+                  <Description>"Gun"</Description>
+                  <LastState Value="1" RealAddress="010335D4"/>
+                  <VariableType>Byte</VariableType>
+                  <Address>statusstats_basepointer</Address>
+                  <Offsets>
+                    <Offset>654</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>110279</ID>
+                  <Description>"Axe"</Description>
+                  <LastState Value="4" RealAddress="010335D5"/>
+                  <VariableType>Byte</VariableType>
+                  <Address>statusstats_basepointer</Address>
+                  <Offsets>
+                    <Offset>655</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>110280</ID>
+                  <Description>"Staff"</Description>
+                  <LastState Value="1" RealAddress="010335D6"/>
+                  <VariableType>Byte</VariableType>
+                  <Address>statusstats_basepointer</Address>
+                  <Offsets>
+                    <Offset>656</Offset>
+                  </Offsets>
+                </CheatEntry>
+              </CheatEntries>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>110264</ID>
+              <Description>"LV"</Description>
+              <LastState Value="1" RealAddress="010335E0"/>
+              <VariableType>2 Bytes</VariableType>
+              <Address>statusstats_basepointer</Address>
+              <Offsets>
+                <Offset>660</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>110284</ID>
+              <Description>"Elemental Resistance"</Description>
+              <Options moHideChildren="1"/>
+              <LastState Value="" RealAddress="00000000"/>
+              <GroupHeader>1</GroupHeader>
+              <CheatEntries>
+                <CheatEntry>
+                  <ID>110249</ID>
+                  <Description>"Fire"</Description>
+                  <LastState Value="50" RealAddress="010335F7"/>
+                  <VariableType>Byte</VariableType>
+                  <Address>statusstats_basepointer</Address>
+                  <Offsets>
+                    <Offset>677</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>110282</ID>
+                  <Description>"Wind"</Description>
+                  <LastState Value="206" RealAddress="010335F8"/>
+                  <VariableType>Byte</VariableType>
+                  <Address>statusstats_basepointer</Address>
+                  <Offsets>
+                    <Offset>678</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>110283</ID>
+                  <Description>"Ice"</Description>
+                  <LastState Value="0" RealAddress="010335F9"/>
+                  <VariableType>Byte</VariableType>
+                  <Address>statusstats_basepointer</Address>
+                  <Offsets>
+                    <Offset>679</Offset>
+                  </Offsets>
+                </CheatEntry>
+              </CheatEntries>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>110281</ID>
+              <Description>"JM"</Description>
+              <LastState Value="20" RealAddress="010335FA"/>
+              <VariableType>Byte</VariableType>
+              <Address>statusstats_basepointer</Address>
+              <Offsets>
+                <Offset>67A</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>110252</ID>
+              <Description>"Max JM"</Description>
+              <LastState Value="20" RealAddress="010335FB"/>
+              <VariableType>Byte</VariableType>
+              <Address>statusstats_basepointer</Address>
+              <Offsets>
+                <Offset>67B</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>110251</ID>
+              <Description>"MV"</Description>
+              <LastState Value="6" RealAddress="010335FC"/>
+              <VariableType>Byte</VariableType>
+              <Address>statusstats_basepointer</Address>
+              <Offsets>
+                <Offset>67C</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>110250</ID>
+              <Description>"Max MV"</Description>
+              <LastState Value="6" RealAddress="010335FD"/>
+              <VariableType>Byte</VariableType>
+              <Address>statusstats_basepointer</Address>
+              <Offsets>
+                <Offset>67D</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>110253</ID>
+              <Description>"Counter"</Description>
+              <LastState Value="2" RealAddress="010335FE"/>
+              <VariableType>Byte</VariableType>
+              <Address>statusstats_basepointer</Address>
+              <Offsets>
+                <Offset>67E</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>110254</ID>
+              <Description>"Max Counter"</Description>
+              <LastState Value="2" RealAddress="010335FF"/>
+              <VariableType>Byte</VariableType>
+              <Address>statusstats_basepointer</Address>
+              <Offsets>
+                <Offset>67F</Offset>
+              </Offsets>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols>
+    <SymbolEntry>
+      <Name>statusstats_searchedAOB</Name>
+      <Address>00EC6501</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>statusstats_savedAOB</Name>
+      <Address>00EC6501</Address>
+    </SymbolEntry>
+  </UserdefinedSymbols>
+</CheatTable>

@@ -1,0 +1,436 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="16">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>10</ID>
+      <Description>"[X] &lt;== Warcraft III  Gold v1.26.0.6401 Script v1.0"</Description>
+      <Options moHideChildren="1"/>
+      <Color>FF0000</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>{
+===========================================
+ Game Title    : Warcraft III Gold
+ Game Version  : 1.26.0.6401
+ Game Sponsor  : Torrent+Patches
+ Process Name  : war3.exe
+ Script Version: 1.0
+ CE Version    : 6.3
+ Release date  : 15-May-2014
+ Author        : Recifense
+ History:
+ 15-May-14: First Release
+ Features:
+ - God Mode
+ - Minimum Resources
+===========================================
+}
+
+//=========================================
+// Definitions
+define(LUDO,"war3.exe")
+define(FHPR,Game.dll+00397036)
+define(MOSO,Game.dll+004773eb)
+define(GDMD,Game.dll+004a90d1)
+define(MOPR,Game.dll+0047317b)
+define(GMD2,Game.dll+004a9304)
+
+define(RMSO,Game.dll+00358156)
+define(GOPR,Game.dll+00359263)
+define(LOPR,Game.dll+00340a88)
+define(RGMD,Game.dll+00477394)
+
+//=========================================
+// Constants used in the script (that can be changed)
+//define(ctMMON,#63000)  // Minimum Money
+//define(ctMATT,#10)     // Minimum Attributes
+
+//=========================================
+[ENABLE]
+//=========================================
+//LuaCall(CheckVersion())
+//=========================================
+// Check if script is compatible to this game version
+// If false the script will not be loaded
+
+assert(FHPR,85 db 8b 4c 24 68 8b 54 24 5c 89 0d ?? ?? ?? ?? a3 ?? ?? ?? ??)
+assert(MOSO,8b 88 84 00 00 00 8b 44 24 04 89 08 c2 04 00 cc cc cc cc cc cc)
+assert(GDMD,89 56 78 8b ce 5e 83 c4 08 e9 ?? ?? ?? ?? cc 51 85 d2 8b c1 ??)
+assert(MOPR,8b 40 78 c3 cc 51 53 56 57 8b f9 8b 07 8b 50 14 c7 44 24 0c 00)
+assert(GMD2,57 8b ce 89 17 e8 ?? ?? ?? ?? 5f 5e 59 c2 04 00 cc cc cc cc cc)
+
+//=========================================
+alloc(MyCode,4096,LUDO)
+//=========================================
+// Declaration section
+label(_FindHumanPlayer)
+label(_BackFHP)
+label(_ExitFHP)
+label(_MonSelObject)
+label(_BackMSO)
+label(_ExitMSO)
+label(_GodMode)
+label(_BackGMD)
+label(_ExitGMD)
+label(_MonPlayerRes)
+label(_MonPR00)
+label(_BackMPR)
+label(_ExitMPR)
+label(_GodMode2)
+label(_BackGM2)
+label(_ExitGM2)
+label(iEnableGMD)
+label(iEnableMPR)
+label(iPlayerID)
+label(pHero)
+label(pLast)
+
+//=========================================
+// Registering Symbols
+registersymbol(MyCode)
+registersymbol(iEnableGMD)
+registersymbol(iEnableMPR)
+registersymbol(iPlayerID)
+registersymbol(pHero)
+registersymbol(pLast)
+
+//=========================================
+MyCode:
+//=========================================
+// Main game screen
+_FindHumanPlayer:
+ test ebx,ebx                      // Original code
+ mov ecx,[esp+68]                  // Original code
+ mov edx,[esp+5C]                  // Original code
+
+_ExitFHP:
+ mov [iPlayerID],edx
+ jmp _BackFHP                      // Back to main code
+
+//=========================================
+// When object is selected
+_MonSelObject:
+ mov ecx,[esp+0c]
+ cmp ecx,RMSO
+ jne _ExitMSO
+
+ mov [pHero],eax
+
+_ExitMSO:
+ mov ecx,[eax+00000084]            // Original code (rd fmHP)
+ jmp _BackMSO                      // Back to main code
+
+//=========================================
+// During Combat
+_GodMode:
+ mov [pLast],esi
+
+ mov ecx,[esi]                     // just for debugging
+
+ mov ecx,[esp+1c]
+ cmp ecx,RGMD
+ jne _ExitGMD
+
+ cmp dword ptr [iEnableGMD],0
+ je _ExitGMD                       // Jump if feature is disabled
+
+ mov ecx,[esi+28]
+ test ecx,ecx
+ jz _ExitGMD
+
+ mov ecx,[esi+64]
+ test ecx,ecx
+ jz _ExitGMD
+
+ mov ecx,[esi+30]
+ test ecx,ecx
+ jz _ExitGMD
+
+ mov ecx,[ecx+54]
+ test ecx,ecx
+ jz _ExitGMD
+
+ mov ecx,[ecx+58]
+ cmp ecx,[iPlayerID]
+ jne _ExitGMD
+
+ mov ecx,[esi+00000084]
+ cmp ecx,(float)50.0
+ js _ExitGMD
+
+ cmp ecx,edx
+ js _ExitGMD
+
+ mov edx,ecx
+
+_ExitGMD:
+ mov [esi+78],edx                  // Original code (upd cHP)
+ mov ecx,esi                       // Original code
+ jmp _BackGMD                      // Back to main code
+
+//=========================================
+// When value is under cursor
+_MonPlayerRes:
+ push ecx
+
+ cmp dword ptr [iEnableMPR],0
+ je _ExitMPR                       // Jump if feature is disabled
+
+ mov ecx,[esp+04]
+ cmp ecx,GOPR
+ je _MonPR00
+
+ cmp ecx,LOPR
+ jne _ExitMPR
+
+_MonPR00:
+ mov ecx,#630000
+ cmp ecx,[eax+78]
+ js _ExitMPR
+
+ mov [eax+78],ecx
+
+_ExitMPR:
+ pop ecx
+
+ mov eax,[eax+78]                  // Original code (rd Res)
+ ret                               // Original code (rd Res)
+ int 3                             // Original code (rd Res)
+ jmp _BackMPR                      // Back to main code
+
+//=========================================
+// During Combat
+// ESI = Base
+_GodMode2:
+ mov ecx,[esp+18]
+ cmp ecx,RGMD
+ jne _ExitGM2
+
+ cmp dword ptr [iEnableGMD],0
+ je _ExitGM2                       // Jump if feature is disabled
+
+ mov ecx,[esi+28]
+ test ecx,ecx
+ jz _ExitGM2
+
+ mov ecx,[esi+64]
+ test ecx,ecx
+ jz _ExitGM2
+
+ mov ecx,[esi+30]
+ test ecx,ecx
+ jz _ExitGM2
+
+ mov ecx,[ecx+54]
+ test ecx,ecx
+ jz _ExitGM2
+
+ mov ecx,[ecx+58]
+ cmp ecx,[iPlayerID]
+ jne _ExitGM2
+
+ mov ecx,[esi+00000084]
+
+ cmp ecx,(float)50.0
+ js _ExitGM2
+
+ cmp ecx,edx
+ js _ExitGM2
+
+ mov edx,ecx
+
+_ExitGM2:
+ push edi                          // Original code
+ mov ecx,esi                       // Original code
+ mov [edi],edx                     // Original code
+ jmp _BackGM2                      // Back to main code
+
+//=========================================
+ db '=======================================&gt;'
+ db 'CE6.3 Script by Recifense 051514'
+//=========================================
+// Variables
+iEnableGMD:
+ dd 0
+iEnableMPR:
+ dd 0
+iPlayerID:
+ dd 0
+pHero:
+ dd 0
+pLast:
+ dd 0
+
+//=========================================
+// Hacking Points
+FHPR:
+ jmp _FindHumanPlayer
+ db 90 90 90 90 90
+_BackFHP:
+
+MOSO:
+ jmp _MonSelObject
+ nop
+_BackMSO:
+
+GDMD:
+ jmp _GodMode
+_BackGMD:
+
+MOPR:
+ jmp _MonPlayerRes
+_BackMPR:
+
+GMD2:
+ jmp _GodMode2
+_BackGM2:
+
+//=========================================
+// Script for Restoring Original Codes
+[DISABLE]
+FHPR:
+// test ebx,ebx
+// mov ecx,[esp+68]
+// mov edx,[esp+5C]
+ db 85 db 8b 4c 24 68 8b 54 24 5c
+
+MOSO:
+// mov ecx,[eax+00000084]
+ db 8b 88 84 00 00 00
+
+GDMD:
+// mov [esi+78],edx
+// mov ecx,esi
+ db 89 56 78 8b ce
+
+MOPR:
+// mov eax,[eax+78]
+// ret
+// int 3
+ db 8b 40 78 c3 cc
+
+GMD2:
+// push edi
+// mov ecx,esi
+// mov [edi],edx
+ db 57 8b ce 89 17
+
+//=========================================
+// Unregistering Symbols
+unregistersymbol(MyCode)
+unregistersymbol(iEnableGMD)
+unregistersymbol(iEnableMPR)
+unregistersymbol(iPlayerID)
+unregistersymbol(pHero)
+unregistersymbol(pLast)
+
+//=========================================
+dealloc(MyCode)
+//============= Scripts End ===============
+
+// ****************************************
+// NOTES
+// ****************************************
+{
+}
+
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>7</ID>
+          <Description>"Enable/Disable God Mode ==&gt; (1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableGMD</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>97</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>96</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>8</ID>
+          <Description>"Enable/Disable Minimum Resources ==&gt; (1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMPR</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>97</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>96</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols/>
+  <Comments>===========================================
+ Game Title    : Warcraft III Gold
+ Game Version  : 1.26.0.6401
+ Game Sponsor  : Torrent+Patches
+ Process Name  : war3.exe
+ Script Version: 1.0
+ CE Version    : 6.3
+ Release date  : 15-May-2014
+ Author        : Recifense
+ History:
+ 15-May-14: First Release
+ Features:
+ - God Mode            [1]
+ - Minimum Resources   [2] (*)
+===========================================
+[1] For player's buildings and soldiers;
+[2] For player only;
+(*) Pass the cursor over the value and make something for it to change;
+===========================================
+[USAGE]
+1) Run CE63;
+2) Run Game;
+3) Load the game process "war3.exe" in CE;
+4) Load the table;
+5) Activate the script for cheating (in Blue)
+6) Change the value to 1 of each cheat you want to use (in Green);
+7) Game On;
+===========================================
+[HOTKEYS]
+CTRL+mumeric 1 = Enable  MR/GM cheats;
+CTRL+mumeric 0 = Disable MR/GM cheats;
+===========================================
+[ADVICE]
+When you can,save the game before starting using table/cheat. So you can always come back in case you don't like the result.
+===========================================
+[INFO]
+Tested on Win 7 64bits
+===========================================
+Cheers!
+</Comments>
+</CheatTable>

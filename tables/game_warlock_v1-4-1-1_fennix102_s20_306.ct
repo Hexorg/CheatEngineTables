@@ -1,0 +1,1156 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="16">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>61</ID>
+      <Description>"[X] &lt;== Warlock - Master of the Arcane v1.4.1.1 Steam Script v2.0"</Description>
+      <Options moHideChildren="1"/>
+      <Color>FF0000</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>{
+===========================================
+ Game Title    : Warlock - Master of the Arcane
+ Game Version  : 1.4.1.1
+ Game Sponsor  : fennix102 (via gift)
+ Process Name  : Game.exe
+ Script Version: 2.0
+ CE Version    : 6.3
+ Release date  : 06-Nov-2013
+ Author        : Recifense
+ History:
+ 23-May-12: Release for Version 1.1.3.27 (CE61)
+ 25-May-12: Release for Version 1.1.4.28 (Russian)
+ 10-Feb-13: Release for Version 1.4.1.56 (Steam) +new features
+ 06-Nov-13: Release for Version 1.4.1.1 (Steam)
+ Features:
+ - Minimum Gold
+ - Minimum Mana
+ - Unlimited MP
+ - HP Recover (on move and after combat)
+ - One Day Recruitment
+ - Unlimited Combats (on move)
+ - Minimum Resistence (on move)
+ - Quick Level Up  (a level per fight/Turn) new
+ - Quick Spell Research (a spell per  turn) new
+ - Minimum population per town              new
+ - Minimum Points when creating a character new
+===========================================
+}
+
+//=========================================
+// Definitions
+define(LUDO,"Game.exe")
+
+define(MHPR,GameLogic.dll+00097c39)
+define(MOMP,GameLogic.dll+000b5b5e)
+define(MORT,GameLogic.dll+00037ad7)
+define(MCED,GameLogic.dll+0003e193)
+define(MCST,ScriptEngine.dll+0467c)
+define(MODE,GameLogic.dll+00041f0d)
+define(MOFT,GameLogic.dll+000b78d0)
+define(MOTN,GameLogic.dll+0009f97e)
+define(MUXP,GameLogic.dll+000b5ca0)
+define(MOSL,GameLogic.dll+0011afd8)
+define(MOPN,GameLogic.dll+0009de5e)
+define(MOPS,GameUI.dll+0025c123)
+
+define(RCED,GameLogic.dll+000b7003)
+define(RODE,GameLogic.dll+000b764f)
+define(ROPS,GameUI.dll+00261ae4)
+//=========================================
+// Constants used in the script (that can be changed)
+//define(ctMMON,#63000)  // Minimum Money
+
+//=========================================
+[ENABLE]
+//=========================================
+//LuaCall(CheckVersion())
+//=========================================
+// Check if script is compatible to this game version
+// If false the script will not be loaded
+
+assert(MHPR,d9 84 30 90 9c 00 00 8b 44 24 1c db 40 5c df f1 dd d8 ?? ?? 83 4b)
+assert(MOMP,d9 46 64 8d 44 24 14 d8 64 24 10 f3 0f 11 44 24 10 d9 5c 24 14 d9)
+assert(MORT,89 50 38 5b 59 c2 04 00 cc 8b 41 04 56 8b 71 08 3b c6 ?? ?? 8b d6)
+assert(MCED,8b 4e 48 89 4d 48 d9 46 4c d9 5d 4c 8b 56 50 89 55 50 8b 46 54 89)
+assert(MCST,8b 57 48 89 56 48 d9 47 4c d9 5e 4c 8b 47 50 89 46 50 8b 4f 54 89)
+assert(MODE,d9 87 84 05 00 00 d9 9e 84 05 00 00 bd 20 00 00 00 d9 87 88 05 00)
+assert(MOFT,8b 87 88 00 00 00 8d 0c c5 00 00 00 00 2b c8 8d 84 cf 90 00 00 00)
+assert(MOTN,8b 40 10 c2 04 00 33 c0 c2 04 00 cc cc cc ?? ?? ?? ?? ?? ?? ?? ??)
+assert(MUXP,8b 46 6c 3b 46 70 ?? ?? 8b 46 70 85 c0 ?? ?? 29 46 6c ff 46 68 8b)
+assert(MOSL,8b 80 d8 0a 00 00 39 46 30 0f 8c ?? ?? ?? ?? 85 c0 0f 8e ?? ?? ??)
+assert(MOPN,03 c2 89 45 34 8b 49 10 3b c1 ?? ?? 89 4d 34 3b d6 53 57 bf 25 00)
+assert(MOPS,8d 4c 24 24 89 04 17 c6 06 01 ?? ?? ?? ?? ?? 5d 5f 8b c6 5e 83 c4)
+
+//=========================================
+alloc(MyCode,4096,LUDO)
+//=========================================
+// Declaration section
+label(_MonHumanPlayer)
+label(_MonHP00)
+label(_BackMHP)
+label(_ExitMHP)
+label(_MonMovePoints)
+label(_MonMP00)
+label(_MonMP01)
+label(_MonMP02)
+label(_BackMMP)
+label(_ExitMMP)
+label(_MonRecruitment)
+label(_BackMRT)
+label(_ExitMRT)
+label(_MonCombatEnd)
+label(_MonMCE0)
+label(_BackMCE)
+label(_ExitMCE)
+label(_MonCombatStart)
+label(_BackMCS)
+label(_ExitMCS)
+label(_MonDefense)
+label(_BackMDE)
+label(_ExitMDE)
+label(_MonFight)
+label(_BackMFT)
+label(_ExitMFT)
+label(_MonTown)
+label(_BackMTN)
+label(_ExitMTN)
+label(_MonUnitXP)
+label(_BackMUX)
+label(_ExitMUX)
+label(_MonSpell)
+label(_BackMSL)
+label(_ExitMSL)
+label(_MonPop)
+label(_BackMPN)
+label(_ExitMPN)
+label(_MonPoints)
+label(_BackMPS)
+label(_ExitMPS)
+label(iEnableMGD)
+label(iEnableMMM)
+label(iEnableMMP)
+label(iEnableGMD)
+label(iEnableMRT)
+label(iEnableUCT)
+label(iEnableMDE)
+label(iEnableMUX)
+label(iEnableMSL)
+label(iEnableMPN)
+label(iEnableMPS)
+label(iPlayerID)
+label(fMinGold)
+label(fMinMana)
+label(fMinDefe)
+label(iMinPop)
+label(iMinPoints)
+label(pPlayer)
+label(pGold)
+label(pLast)
+label(pTown)
+
+//=========================================
+// Registering Symbols
+registersymbol(MyCode)
+registersymbol(iEnableMGD)
+registersymbol(iEnableMMM)
+registersymbol(iEnableMMP)
+registersymbol(iEnableGMD)
+registersymbol(iEnableMRT)
+registersymbol(iEnableUCT)
+registersymbol(iEnableMDE)
+registersymbol(iEnableMUX)
+registersymbol(iEnableMSL)
+registersymbol(iEnableMPN)
+registersymbol(iEnableMPS)
+registersymbol(iPlayerID)
+registersymbol(fMinGold)
+registersymbol(fMinMana)
+registersymbol(fMinDefe)
+registersymbol(iMinPop)
+registersymbol(iMinPoints)
+registersymbol(pPlayer)
+registersymbol(pGold)
+registersymbol(pLast)
+registersymbol(pTown)
+
+//=========================================
+MyCode:
+//========================================= 1.4.1.1
+// When changing gold
+_MonHumanPlayer:
+ push ecx
+
+ mov ecx,[iPlayerID]
+
+ cmp ecx,[edx+30]
+ jne _ExitMHP
+
+ mov [pPlayer],edx
+ mov ecx,[edx+30]
+
+ lea ecx,[eax+esi+00009C90]
+ lea ecx,[ecx-2c]
+ mov [pGold],ecx
+
+ cmp dword ptr [iEnableMGD],0
+ je _ExitMHP                       // Jump if feature is disabled
+
+ mov ecx,[fMinGold]
+ cmp ecx,[eax+esi+00009C90]
+ jle _MonHP00
+
+ mov [eax+esi+00009C90],ecx
+
+_MonHP00:
+ cmp dword ptr [iEnableMMM],0
+ je _ExitMHP                       // Jump if feature is disabled
+
+ mov ecx,[fMinMana]
+ cmp ecx,[eax+esi+00009Cac]
+ jle _ExitMHP
+
+ mov [eax+esi+00009Cac],ecx
+
+_ExitMHP:
+ pop ecx
+
+ fld dword ptr [eax+esi+00009C90]  // Original code (rds gold)
+ jmp _BackMHP                      // Back to main code
+
+//========================================= 1.4.1.1
+// When moving
+_MonMovePoints:
+ mov [pLast],esi
+
+ mov eax,[esi+5c]
+ cmp eax,[iPlayerID]
+ jne _ExitMMP
+
+ cmp dword ptr [iEnableMMP],0
+ je _MonMP01                       // Jump if feature is disabled
+
+ mov eax,(float)8.0
+ cmp eax,[esi+00000594] //564
+ jle _MonMP00
+
+ mov [esi+00000594],eax //564
+
+_MonMP00:
+ mov eax,[esi+00000594] //564      // get maximum MP
+ mov [esi+64],eax
+ xor eax,eax
+ mov [esp+10],eax                  // value2decrease  = 0
+
+_MonMP01:
+ cmp dword ptr [iEnableGMD],0
+ je _MonMP02                       // Jump if feature is disabled
+
+ mov eax,[esi+00000590] //560      // Get maximum HP
+ mov [esi+60],eax
+
+_MonMP02:
+ cmp dword ptr [iEnableUCT],0
+ je _ExitMMP                       // Jump if feature is disabled
+
+ xor eax,eax
+ mov [esi+00000098],eax
+
+_ExitMMP:
+ fld dword ptr [esi+64]            // Original code
+ lea eax,[esp+14]                  // Original code
+ jmp _BackMMP                      // Back to main code
+
+//========================================= 1.4.1.1
+_MonRecruitment:
+ cmp ebp,[esp+14]
+ jne _ExitMRT
+
+ mov [pTown],ebp
+
+ cmp dword ptr [iEnableMRT],0
+ je _ExitMRT                       // Jump if feature is disabled
+
+ mov ecx,[ebp+30]
+ cmp ecx,[iPlayerID]
+ jne _ExitMRT
+
+ mov edx,1
+ mov [eax+34],edx
+
+_ExitMRT:
+ mov [eax+38],edx                  // Original code
+ pop ebx                           // Original code
+ pop ecx                           // Original code
+ jmp _BackMRT                      // Back to main code
+
+ //========================================= 1.4.1.1
+_MonCombatEnd:
+ push edi
+
+ lea edi,[ebp-18]
+
+ lea ecx,[RCED]
+ cmp ecx,[esp+14]
+ jne _ExitMCE
+
+ mov ecx,[edi+5c]
+ cmp ecx,[iPlayerID]
+ jne _ExitMCE
+
+ cmp dword ptr [iEnableGMD],0
+ je _MonMCE0                       // Jump if feature is disabled
+
+ mov ecx,[edi+00000590]
+ mov [esi+48],ecx
+
+_MonMCE0:
+ cmp dword ptr [iEnableMMP],0
+ je _ExitMCE                       // Jump if feature is disabled
+
+ mov ecx,[edi+00000594]
+ mov [esi+4c],ecx
+
+_ExitMCE:
+ pop edi
+
+ mov ecx,[esi+48]                  // Original code
+ mov [ebp+48],ecx                  // Original code
+ jmp _BackMCE                      // Back to main code
+
+//========================================= 1.4.1.1
+_MonCombatStart:
+ push ebx
+
+ mov edx,[edi+48]                  // Original code
+
+ lea ebx,[edi-18]
+ mov ebx,[ebx+88]
+ test ebx,ebx
+ jz _ExitMCS
+
+ lea ebx,[edi-18]
+ mov ebx,[ebx+5c]
+ cmp ebx,[iPlayerID]
+ jne _ExitMCS
+
+ cmp dword ptr [iEnableGMD],0
+ je _ExitMCS                       // Jump if feature is disabled
+
+ mov ebx,#200
+ cmp ebx,edx
+ jle _ExitMCS
+
+ mov edx,ebx
+
+_ExitMCS:
+ pop ebx
+
+ mov [esi+48],edx                  // Original code
+ jmp _BackMCS                      // Back to main code
+
+//========================================= 1.4.1.1
+// When troop is moving
+_MonDefense:
+ lea eax,[RODE]
+ cmp eax,[esp+0c]
+ jne _ExitMDE
+
+ lea edx,[esi-00000584] //554
+ mov eax,[edx+5c]
+ cmp eax,[iPlayerID]
+ jne _ExitMDE
+
+ cmp dword ptr [iEnableMDE],0
+ je _ExitMDE                       // Jump if feature is disabled
+
+ mov eax,[fMinDefe]
+
+ mov edx,[edi+00000584]
+ cmp edx,eax
+ cmovl edx,eax
+ mov [edi+00000584],edx
+
+ mov edx,[edi+00000588]
+ cmp edx,eax
+ cmovl edx,eax
+ mov [edi+00000588],edx
+
+ mov edx,[edi+0000058c]
+ cmp edx,eax
+ cmovl edx,eax
+ mov [edi+0000058c],edx
+
+ mov edx,[edi+00000590]
+ cmp edx,eax
+ cmovl edx,eax
+ mov [edi+00000590],edx
+
+ mov edx,[edi+00000594]
+ cmp edx,eax
+ cmovl edx,eax
+ mov [edi+00000594],edx
+
+ mov edx,[edi+00000598]
+ cmp edx,eax
+ cmovl edx,eax
+ mov [edi+00000598],edx
+
+_ExitMDE:
+ fld dword ptr [edi+00000584]      // Original code //57c
+ jmp _BackMDE                      // Back to main code
+
+//========================================= 1.4.1.1
+_MonFight:
+ cmp dword ptr [iEnableUCT],0
+ je _ExitMFT                       // Jump if feature is disabled
+
+ mov eax,[edi+4c]
+ cmp eax,[iPlayerID]
+ jne _ExitMFT
+
+ xor eax,eax
+ mov [edi+00000088],eax
+
+_ExitMFT:
+ mov eax,[edi+00000088]            // Original code
+ jmp _BackMFT                      // Back to main code
+
+//========================================= 1.4.1.1
+// When troop moves in town
+_MonTown:
+ mov eax,[eax+10]                  // Original code
+
+ mov [pTown],eax
+
+_ExitMTN:
+ ret 0004                          // Original code
+ jmp _BackMTN                      // Back to main code
+
+//========================================= 1.4.1.1
+// a level per fight
+_MonUnitXP:
+ cmp dword ptr [iEnableMUX],0
+ je _ExitMUX                       // Jump if feature is disabled
+
+ mov eax,[esi+5c]
+ cmp eax,[iPlayerID]
+ jne _ExitMUX
+
+ mov eax,[esi+70]
+ test eax,eax                      // Already level 10?
+ js _ExitMUX                       // Jump if true
+
+ mov [esi+6c],eax
+
+_ExitMUX:
+ mov eax,[esi+6C]                  // Original code (cXP)
+ cmp eax,[esi+70]                  // Original code (mXP)
+ jmp _BackMUX                      // Back to main code
+
+//========================================= 1.4.1.1
+// A spell per turn
+// EBX is free
+_MonSpell:
+ mov eax,[eax+00000AD8]            // Original code (value_needed)
+
+ test eax,eax
+ jng _ExitMSL
+
+ cmp dword ptr [iEnableMSL],0
+ je _ExitMSL                       // Jump if feature is disabled
+
+ mov ebx,[esp+04]
+ cmp ebx,[esp+0c]
+ jne _ExitMSL
+
+ mov ebx,[ebx+18]
+ cmp ebx,[iPlayerID]
+ jne _ExitMSL
+
+ mov [esi+30],eax                  // Complete research
+
+_ExitMSL:
+ jmp _BackMSL                      // Back to main code
+
+//========================================= 1.4.1.1
+// When updating pop
+_MonPop:
+ push ebx
+
+ add eax,edx                       // Original code
+
+ cmp dword ptr [iEnableMPN],0
+ je _ExitMPN                       // Jump if feature is disabled
+
+ mov ebx,[ebp+30]
+ cmp ebx,[iPlayerID]
+ jne _ExitMPN
+
+ cmp eax,[iMinPop]
+ jge _ExitMPN
+
+ mov eax,[iMinPop]
+
+_ExitMPN:
+ pop ebx
+
+ mov [ebp+34],eax                  // Original code
+ jmp _BackMPN                      // Back to main code
+
+//========================================= 1.4.1.1
+// When restting points creating character
+_MonPoints:
+ mov ecx,[esp+1c]
+ cmp ecx,ROPS
+ jne _ExitMPS
+
+ mov ecx,[edi+edx]                 // debugging
+
+ cmp dword ptr [iEnableMPS],0
+ je _ExitMPS                       // Jump if feature is disabled
+
+ mov ecx,[iMinPoints]
+ cmp eax,ecx
+ jge _ExitMPS
+
+ mov eax,ecx
+
+_ExitMPS:
+ lea ecx,[esp+24]                  // Original code
+ mov [edi+edx],eax                 // Original code
+ jmp _BackMPS                      // Back to main code
+
+//=========================================
+ db '=====================================&gt;'
+ db 'CE6.3 Script by Recifense 110613'
+//=========================================
+// Variables
+iEnableMGD:
+ dd 0
+iEnableMMM:
+ dd 0
+iEnableMMP:
+ dd 0
+iEnableGMD:
+ dd 0
+iEnableMRT:
+ dd 0
+iEnableUCT:
+ dd 0
+iEnableMDE:
+ dd 0
+iEnableMUX:
+ dd 0
+iEnableMSL:
+ dd 0
+iEnableMPN:
+ dd 0
+iEnableMPS:
+ dd 0
+iPlayerID:
+ dd #2
+fMinGold:
+ dd (float)9000
+fMinMana:
+ dd (float)5000
+fMinDefe:
+ dd (float)30
+iMinPop:
+ dd #5000
+iMinPoints:
+ dd #20
+pPlayer:
+ dd 0
+pGold:
+ dd 0
+pLast:
+ dd 0
+pTown:
+ dd 0
+
+//=========================================
+// Hacking Points
+MHPR:
+ jmp _MonHumanPlayer
+ nop
+ nop
+_BackMHP:
+
+MOMP:
+ jmp _MonMovePoints
+ nop
+ nop
+_BackMMP:
+
+MORT:
+ jmp _MonRecruitment
+_BackMRT:
+
+MCED:
+ jmp _MonCombatEnd
+ nop
+_BackMCE:
+
+MCST:
+ jmp _MonCombatStart
+ nop
+_BackMCS:
+
+MODE:
+ jmp _MonDefense
+ nop
+_BackMDE:
+
+MOFT:
+ jmp _MonFight
+ nop
+_BackMFT:
+
+MOTN:
+ jmp _MonTown
+ nop
+_BackMTN:
+
+MUXP:
+ jmp _MonUnitXP
+ nop
+_BackMUX:
+
+MOSL:
+ jmp _MonSpell
+ nop
+_BackMSL:
+
+MOPN:
+ jmp _MonPop
+_BackMPN:
+
+MOPS:
+ jmp _MonPoints
+ nop
+ nop
+_BackMPS:
+
+//=========================================
+// Script for Restoring Original Codes
+[DISABLE]
+MHPR:
+// fld dword ptr [eax+esi+00009C90]
+ db d9 84 30 90 9c 00 00
+
+MOMP:
+// fld dword ptr [esi+64]
+// lea eax,[esp+14]
+ db d9 46 64 8d 44 24 14
+
+MORT:
+// mov [eax+38],edx
+// pop ebx
+// pop ecx
+ db 89 50 38 5b 59
+
+MCED:
+// mov ecx,[esi+48]
+// mov [ebp+48],ecx
+ db 8b 4e 48 89 4d 48
+
+MCST:
+// mov edx,[edi+48]
+// mov [esi+48],edx
+ db 8b 57 48 89 56 48
+
+MODE:
+// fld dword ptr [edi+00000584]
+ db d9 87 84 05 00 00
+
+MOFT:
+// mov eax,[edi+00000088]
+ db 8b 87 88 00 00 00
+
+MOTN:
+// mov eax,[eax+10]
+// ret 0004
+ db 8b 40 10 c2 04 00
+
+MUXP:
+// mov eax,[esi+6C]
+// cmp eax,[esi+70]
+ db 8b 46 6c 3b 46 70
+
+MOSL:
+// mov eax,[eax+00000AD8]
+ db 8b 80 d8 0a 00 00
+
+MOPN:
+// add eax,edx
+// mov [ebp+34],eax
+ db 03 c2 89 45 34
+
+MOPS:
+// lea ecx,[esp+24]
+// mov [edi+edx],eax
+ db 8d 4c 24 24 89 04 17
+
+//=========================================
+// Unregistering Symbols
+unregistersymbol(MyCode)
+unregistersymbol(iEnableMGD)
+unregistersymbol(iEnableMMM)
+unregistersymbol(iEnableMMP)
+unregistersymbol(iEnableGMD)
+unregistersymbol(iEnableMRT)
+unregistersymbol(iEnableUCT)
+unregistersymbol(iEnableMDE)
+unregistersymbol(iEnableMUX)
+unregistersymbol(iEnableMSL)
+unregistersymbol(iEnableMPN)
+unregistersymbol(iEnableMPS)
+unregistersymbol(iPlayerID)
+unregistersymbol(fMinGold)
+unregistersymbol(fMinMana)
+unregistersymbol(fMinDefe)
+unregistersymbol(iMinPop)
+unregistersymbol(iMinPoints)
+unregistersymbol(pPlayer)
+unregistersymbol(pGold)
+unregistersymbol(pLast)
+unregistersymbol(pTown)
+
+//=========================================
+dealloc(MyCode)
+//============= Scripts End ===============
+
+// ****************************************
+// NOTES
+// ****************************************
+{
+}
+
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>5</ID>
+          <Description>"Enable/Disable Minimum Gold =&gt; (1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMGD</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>7</ID>
+              <Description>"Minimum Gold Value"</Description>
+              <Color>0080FF</Color>
+              <VariableType>Float</VariableType>
+              <Address>fMinGold</Address>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>52</ID>
+          <Description>"Enable/Disable Minimum Mana =&gt; (1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMMM</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>8</ID>
+              <Description>"Minimum Mana Value"</Description>
+              <Color>0080FF</Color>
+              <VariableType>Float</VariableType>
+              <Address>fMinMana</Address>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>53</ID>
+          <Description>"Enable/Disable Unlimited Movement =&gt; (1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMMP</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>54</ID>
+          <Description>"Enable/Disable God Mode =&gt; (1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableGMD</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>55</ID>
+          <Description>"Enable/Disable One Day Recruitment =&gt; (1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMRT</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>56</ID>
+          <Description>"Enable/Disable Unlimited Combat per turn =&gt; (1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableUCT</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>58</ID>
+          <Description>"Enable/Disable Minimum Resistence =&gt; (1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMDE</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>59</ID>
+              <Description>"Minimum Resistence Value"</Description>
+              <Color>0080FF</Color>
+              <VariableType>Float</VariableType>
+              <Address>fMinDefe</Address>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>64</ID>
+          <Description>"Enable/Disable Quick Level Up =&gt; (1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMUX</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>65</ID>
+          <Description>"Enable/Disable Quick Spell Research =&gt; (1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMSL</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>66</ID>
+          <Description>"Enable/Disable Minimum Population per Town =&gt; (1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMPN</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>67</ID>
+              <Description>"Minimum Population Value"</Description>
+              <Color>0080FF</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>iMinPop</Address>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>68</ID>
+          <Description>"Enable/Disable Minimum Points Creating Char =&gt; (1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMPS</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>97</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>96</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>69</ID>
+              <Description>"Minimum Points Value"</Description>
+              <Color>0080FF</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>iMinPoints</Address>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>62</ID>
+          <Description>"=========== Town's Name ==========="</Description>
+          <Color>0000FF</Color>
+          <VariableType>String</VariableType>
+          <Length>16</Length>
+          <Unicode>0</Unicode>
+          <ZeroTerminate>1</ZeroTerminate>
+          <Address>pTown</Address>
+          <Offsets>
+            <Offset>324</Offset>
+          </Offsets>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>63</ID>
+              <Description>"Town Current Population =&gt;"</Description>
+              <Color>0000FF</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pTown</Address>
+              <Offsets>
+                <Offset>34</Offset>
+              </Offsets>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols/>
+  <Comments>===========================================
+ Game Title    : Warlock - Master of the Arcane
+ Game Version  : 1.4.1.1
+ Game Sponsor  : fennix102 (via gift)
+ Process Name  : Game.exe
+ Script Version: 2.0
+ CE Version    : 6.3
+ Release date  : 06-Nov-2013
+ Author        : Recifense
+ History:
+ 23-May-12: Release for Version 1.1.3.27 (CE61)
+ 25-May-12: Release for Version 1.1.4.28 (Russian)
+ 10-Feb-13: Release for Version 1.4.1.56 (Steam) +new features
+ 06-Nov-13: Release for Version 1.4.1.1 (Steam)
+ Features:
+ - Minimum Gold                                 [1]
+ - Minimum Mana                                 [2]
+ - Unlimited MP                                 [3]
+ - HP Recover (on move and after combat)        [4]
+ - One Day Recruitment                          [5]
+ - Unlimited Combats (on move)                  [6]
+ - Minimum Resistence (on move)                 [7]
+ - Quick Level Up  (a level per fight/Turn) new [8]
+ - Quick Spell Research (a spell per  turn) new [9]
+ - Minimum population per town              new [A]
+ - Minimum Points when creating a character new [B]
+===========================================
+[1] You have to make the gold change in order to work (default = 9000);
+[2] You have to make the gold change in order to work (default = 5000);
+[3] Unlimited Movement for all player's units (but if you move it to water or ground or defend mode (F), you have wait to next turn) ;
+[4] It is not really a god mode. It is infact, a stronger unit during battle and instant HP recover when the unit/group moves;
+[5] Any unit will only take one turn. But only one unit per town;
+[6] Unit/Group will be able to fight again and again. But you have to move it after each battle in order to make it to work;
+[7] The unit/group will have a minimum resistence. But you have to move it after each battle in order to make it to work (default 30);
+[8] Player's units will raise 1 level per turn and per fight;
+[9] A new spell per turn;
+[A] It is activated during turn changing; All player's towns will be checked and updated if needed; (Raise it at step of 1000)
+[B] It will set the points to a minimum when you RESET points when editing a character.
+[B*] [IMPORTANT] Only enable it when resetting points and disable it after selecting the percs and spells.
+[TOWN] You have recruit or unrecruit to see the town's population or change the town name (just a character) and then change it back. At the game start, if the script is active, it will point to one of the towns. If you have more than one town, when you use the arrows on the town view will also update the table.
+[MINIMUM VALUES] You can change any of them.
+====================================
+[NOTE] All feature are disabled by default. For enabling any of them, just change its value to 1.
+====================================
+HOTKEYS:
+CTRL+Home = Enable  all features (but Minimum Points);
+CTRL+End  = Disable all features (but Minimum Points);
+CTRL+Numeric 1 = Enable  Minimum Points cheat;
+CTRL+Numeric 0 = Disable Minimum Points cheat;
+[NOTE] You can change or create HOTKEYs.
+====================================
+Cheers!
+</Comments>
+</CheatTable>

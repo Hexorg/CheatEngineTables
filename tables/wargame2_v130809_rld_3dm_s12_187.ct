@@ -1,0 +1,917 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="16">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>151</ID>
+      <Description>"[X] &lt;== Wargame 2 Airland Battle v13.08.09.2100001439 Script v1.2"</Description>
+      <Options moHideChildren="1"/>
+      <Color>FF0000</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>{
+===========================================
+ Game Title    : Wargame 2 Airland Battle
+ Game Version  : 13.08.09.2100001439
+ Game Sponsor  : RELOADED+3DM
+ Proces Name   : wargame2.exe
+ Script Version: 1.2
+ CE Version    : 6.3
+ Release date  : 11-Aug-2013
+ Author        : Recifense
+ History:
+ 22-Jun-13: First Release
+ 23-Jun-13: Release for version 13.06.20.2100001337 (3DM)
+ 15-Jul-13: Release for version 13.07.10.2100001382 (3DM)
+ 08-Aug-13: Release for version 13.07.31.2100001420 (3DM)
+ 11-Aug-13: Release for version 13.08.09.2100001439 (3DM)
+ Features:
+ - Minimum Points to Spend
+ - Unlimited Fuel
+ - Will Power
+ - God Mode
+ - Unlimited Ammo
+ - Unlimited Resources
+===========================================
+}
+
+//=========================================
+// Definitions
+define(LUDO,wargame2.exe)
+define(MHRS,wargame2.exe+005954b0) //===
+define(MFFL,wargame2.exe+00722aac) //===
+define(FHUN,wargame2.exe+004deb40) //===
+define(GDMD,wargame2.exe+006f1dd3) //===
+define(MUWL,wargame2.exe+006f1eb0) //===
+define(MFAM,wargame2.exe+00625f75) //===
+define(MUSS,wargame2.exe+006f150f) //===
+define(MPRS,wargame2.exe+00724985) //*==
+define(MFA2,wargame2.exe+00626045) //===
+define(MSCE,wargame2.exe+00767e38) //=*=
+define(MFSU,wargame2.exe+0077b05d) //===
+
+define(FHUB,wargame2.exe+0153be64) // 0193be64
+
+define(MAXU,#1000)
+define(SIGN,55555555)
+
+//=========================================
+[ENABLE]
+//=========================================
+//LuaCall(CheckVersion())
+//=========================================
+// Check if script is compatible to this game version
+// If false the script will not be loaded
+
+assert(MHRS,8b 41 0c 56 8b 71 08 8b d6 83 e2 07 83 f8 03 ?? ?? ff 24 85)
+assert(MFFL,f3 0f 11 46 1c 85 c9 ?? ?? 8b 01 8b 40 20 ff d0 8b 4e 1c 0f)
+assert(FHUN,8b 01 ff 60 3c cc cc ?? ?? ?? ?? ?? ?? ?? ?? ?? ?? ?? ?? ??)
+assert(GDMD,f3 0f 10 87 b0 00 00 00 f3 0f 58 44 24 20 8d 47 08 50 0f 28)
+assert(MUWL,f3 0f 11 8f a4 00 00 00 e8 ?? ?? ?? ?? d9 44 24 0c 5f 5e 8b)
+assert(MFAM,89 46 08 89 0e c7 46 28 05 00 00 00 e9 ?? ?? ?? ?? 85 c9 ??)
+assert(MUSS,8b 87 b0 00 00 00 89 46 04 8b 87 a8 00 00 00 88 4e 18 0f b6)
+assert(MPRS,f3 0f 10 4f 18 f3 0f 5e 4f 14 85 c9 ?? ?? f3 0f 10 81 dc 00)
+assert(MFA2,89 46 08 89 0e c7 46 28 05 00 00 00 ?? ?? 0f 2f 46 20 ?? ??)
+assert(MSCE,8b 40 2c 89 41 34 89 84 24 4c 07 00 00 8b 46 0c 89 94 24 24)
+assert(MFSU,8b 42 08 89 46 18 0f b6 42 0c 88 46 1c 0f b6 42 0d 88 46 1d)
+
+//=========================================
+alloc(MyCode,4096,LUDO)
+alloc(Buffer,4096,LUDO)
+//=========================================
+// Declaration section
+label(_MonHumanRes)
+label(_MonHR00)
+label(_BackMHR)
+label(_ExitMHR)
+label(_MonFullFuel)
+label(_BackMFF)
+label(_ExitMFF)
+label(_FindHumanUnit)
+label(_BackFHU)
+label(_ExitFHU)
+label(_GodMode)
+label(_GodMD00)
+label(_BackGMD)
+label(_ExitGMD)
+label(_MonUnitWill)
+label(_MonUW00)
+label(_BackMUW)
+label(_ExitMUW)
+label(_MonFullAmmo)
+label(_BackMFA)
+label(_ExitMFA)
+label(_MonUnitStatus)
+label(_MonUS00)
+label(_BackMUS)
+label(_ExitMUS)
+label(_MonPlayerRes)
+label(_BackMPR)
+label(_ExitMPR)
+label(_MonFullAmmo2)
+label(_BackMA2)
+label(_ExitMA2)
+label(_MonScenarioEnd)
+label(_BackMSE)
+label(_ExitMSE)
+label(_MonFullSupport)
+label(_BackMFS)
+label(_ExitMFS)
+label(pRes)
+label(iIndex)
+label(iEnableMHR)
+label(iEnableMAR)
+label(iEnableMFF)
+label(iEnableGMD)
+label(iEnableMUW)
+label(iEnableMFA)
+label(iEnableMPR)
+label(iEnableMFS)
+label(iMinPoints)
+label(iMaxPoints)
+
+//=========================================
+// Registering Symbols
+registersymbol(MyCode)
+registersymbol(Buffer)
+registersymbol(pRes)
+registersymbol(iIndex)
+registersymbol(iEnableMHR)
+registersymbol(iEnableMAR)
+registersymbol(iEnableMFF)
+registersymbol(iEnableGMD)
+registersymbol(iEnableMUW)
+registersymbol(iEnableMFA)
+registersymbol(iEnableMPR)
+registersymbol(iEnableMFS)
+registersymbol(iMinPoints)
+registersymbol(iMaxPoints)
+
+//=========================================
+MyCode:
+//=========================================
+// When updating points (money)
+_MonHumanRes:
+ mov eax,[esp+04]
+ test eax,eax
+ jz _ExitMHR
+
+ mov eax,[ecx+34]
+ test eax,eax
+ jz _MonHR00
+
+ movzx eax,word ptr [ecx+04]
+ cmp eax,4
+ jne _MonHR00
+
+ mov [pRes],ecx
+ movzx eax,word ptr [ecx+04]
+ mov [iIndex],eax
+
+ cmp dword ptr [iEnableMHR],0
+ je _ExitMHR                       // Jump if feature is disabled
+
+ mov eax,[iMinPoints]
+ cmp eax,[esp+04]
+ jle _ExitMHR
+
+ mov [esp+04],eax
+ jmp _ExitMHR
+//=======
+_MonHR00:
+ mov [pRes+04],ecx
+
+ cmp dword ptr [iEnableMAR],0
+ je _ExitMHR                       // Jump if feature is disabled
+
+ mov eax,[iMaxPoints]
+ cmp eax,[esp+04]
+ jge _ExitMHR
+
+ mov [esp+04],eax
+
+_ExitMHR:
+ mov eax,[ecx+0C]                  // Original code
+ push esi                          // Original code
+ mov esi,[ecx+08]                  // Original code
+ jmp _BackMHR                      // Back to main code
+
+//=========================================
+// When updating fuel
+_MonFullFuel:
+ push eax
+ push ebx
+
+ cmp dword ptr [iEnableMFF],0
+ je _ExitMFF                       // Jump if feature is disabled
+
+ mov eax,[esi+08]
+ cmp eax,MAXU
+ jg _ExitMFF
+
+ mov ebx,SIGN
+ cmp ebx,[Buffer+eax*4]
+ jne _ExitMFF
+
+ movss xmm0,[esi+18]               // Original code
+
+_ExitMFF:
+ pop ebx
+ pop eax
+
+ movss [esi+1C],xmm0               // Original code
+ jmp _BackMFF                      // Back to main code
+
+//=========================================
+// Find Human player`s Units
+_FindHumanUnit:
+ push ebx
+
+ mov eax,[ecx]
+ cmp eax,FHUB
+ jne _ExitFHU
+
+ mov ebx,[ecx+10]
+ test ebx,ebx
+ jz _ExitFHU
+
+ mov eax,[ecx+08]
+ cmp eax,MAXU
+ jg _ExitFHU
+
+ mov dword ptr [Buffer+eax*4],00
+
+ movzx eax,word ptr [ebx+20]
+ cmp eax,[iIndex]
+ jne _ExitFHU
+
+ mov eax,[ecx+08]
+ mov ebx,SIGN
+ mov [Buffer+eax*4],ebx
+
+_ExitFHU:
+ pop ebx
+
+ mov eax,[ecx]                     // Original code
+ jmp dword ptr [eax+3C]            // Original code
+ jmp _BackFHU                      // Back to main code
+
+//=========================================
+_GodMode:
+ mov eax,[edi+08]
+ cmp eax,MAXU
+ jg _ExitGMD
+
+ push ebx
+ mov ebx,SIGN
+ cmp ebx,[Buffer+eax*4]
+ pop ebx
+ jne _ExitGMD
+
+ xor eax,eax
+
+ cmp dword ptr [iEnableGMD],0
+ je _GodMD00                       // Jump if feature is disabled
+
+ mov [esp+20],eax
+ mov [edi+000000b0],eax
+ mov [edi+000000d4],eax
+
+_GodMD00:
+ cmp dword ptr [iEnableMUW],0
+ je _ExitGMD                       // Jump if feature is disabled
+
+ mov [edi+000000a4],eax
+
+_ExitGMD:
+ movss xmm0,[edi+000000B0]         // Original code
+ jmp _BackGMD                      // Back to main code
+
+//=========================================
+_MonUnitWill:
+ push eax
+
+ movss [edi+000000A4],xmm1         // Original code
+
+ mov eax,[edi+08]
+ cmp eax,MAXU
+ jg _ExitMUW
+
+ push ebx
+ mov ebx,SIGN
+ cmp ebx,[Buffer+eax*4]
+ pop ebx
+ jne _ExitMUW
+
+ xor eax,eax
+
+ cmp dword ptr [iEnableGMD],0
+ je _MonUW00                       // Jump if feature is disabled
+
+ mov [edi+000000b0],eax
+ mov [edi+000000d4],eax
+
+_MonUW00:
+ cmp dword ptr [iEnableMUW],0
+ je _ExitMUW                       // Jump if feature is disabled
+
+ mov [edi+000000a4],eax
+
+_ExitMUW:
+ pop eax
+ jmp _BackMUW                      // Back to main code
+
+//=========================================
+// When loading ammo (Player and AI)
+_MonFullAmmo:
+ cmp dword ptr [iEnableMFA],0
+ je _ExitMFA                       // Jump if feature is disabled
+
+ mov ecx,[esi+18]                  // Max Ammo
+ sub ecx,eax                       // Max - Loaded
+
+_ExitMFA:
+ mov [esi+08],eax                  // Original code (loaded ammo)
+ mov [esi],ecx                     // Original code (Remaining Ammo)
+ jmp _BackMFA                      // Back to main code
+
+//=========================================
+_MonUnitStatus:
+ mov eax,[edi+08]
+ cmp eax,MAXU
+ jg _ExitMUS
+
+ push ebx
+ mov ebx,SIGN
+ cmp ebx,[Buffer+eax*4]
+ pop ebx
+ jne _ExitMUS
+
+ cmp dword ptr [iEnableGMD],0
+ je _MonUS00                       // Jump if feature is disabled
+
+ xor eax,eax
+ mov [edi+000000b0],eax
+ mov [edi+000000d4],eax
+
+ mov eax,(float)20.0
+ cmp eax,[edi+000000a8]
+ jle _MonUS00
+
+ mov [edi+000000a8],eax
+
+_MonUS00:
+ cmp dword ptr [iEnableMUW],0
+ je _ExitMUS                       // Jump if feature is disabled
+
+ xor eax,eax
+ mov [edi+000000A4],eax
+
+_ExitMUS:
+ mov eax,[edi+000000B0]
+ jmp _BackMUS                      // Back to main code
+
+//=========================================
+_MonPlayerRes:
+ push eax
+
+ mov eax,[edi+08]
+ cmp eax,[iIndex]
+ jne _ExitMPR
+
+ mov [pRes+08],edi
+
+ cmp dword ptr [iEnableMPR],0
+ je _ExitMPR                       // Jump if feature is disabled
+
+ mov eax,[edi+14]
+ mov [edi+18],eax
+
+_ExitMPR:
+ pop eax
+
+ movss xmm1,[edi+18]               // Original code
+ jmp _BackMPR                      // Back to main code
+
+//=========================================
+// When loading ammo (Player and AI)
+_MonFullAmmo2:
+ cmp dword ptr [iEnableMFA],0
+ je _ExitMA2                       // Jump if feature is disabled
+
+ mov ecx,[esi+18]                  // Max Ammo
+ sub ecx,eax                       // Max - Loaded
+
+_ExitMA2:
+ mov [esi+08],eax                  // Original code (loaded ammo)
+ mov [esi],ecx                     // Original code (Remaining Ammo)
+ jmp _BackMA2                      // Back to main code
+
+//=========================================
+// When a scenario ends
+_MonScenarioEnd:
+ push eax
+ push ecx
+
+ xor eax,eax
+ mov ecx,MAXU
+
+_ExitMSE:
+ mov [Buffer+ecx*4],eax
+ loop _ExitMSE
+
+ mov [Buffer+ecx*4],eax
+
+ mov eax,#99
+ mov [iIndex],eax
+
+ pop ecx
+ pop eax
+
+ mov eax,[eax+2C]                  // Original code (loaded ammo)
+ mov [ecx+34],eax                  // Original code (Remaining Ammo)
+ jmp _BackMSE                      // Back to main code
+
+ //=========================================
+_MonFullSupport:
+ cmp dword ptr [iEnableMFS],0
+ je _ExitMFS                       // Jump if feature is disabled
+
+ mov eax,[esi+08]
+ cmp eax,MAXU
+ jg _ExitMFS
+
+ push ebx
+ mov ebx,SIGN
+ cmp ebx,[Buffer+eax*4]
+ pop ebx
+ jne _ExitMFS
+
+ mov eax,[esi+14]
+ mov [edx+08],eax
+
+_ExitMFS:
+ mov eax,[edx+08]                  // Original code
+ mov [esi+18],eax                  // Original code
+ jmp _BackMFS                      // Back to main code
+
+//=========================================
+ db '========================================&gt;'
+ db 'CE6.3 Script by Recifense 081113'
+//=========================================
+// Variables
+iEnableMHR:
+ dd 0
+iEnableMFF:
+ dd 0
+iEnableGMD:
+ dd 0
+iEnableMUW:
+ dd 0
+iEnableMFA:
+ dd 0
+iEnableMPR:
+ dd 0
+iEnableMFS:
+ dd 0
+iEnableMAR:
+ dd 0
+pRes:
+ dd 0
+ dd 0
+ dd 0
+iIndex:
+ dd #99
+iMinPoints:
+ dd #2000
+iMaxPoints:
+ dd #300
+
+//=========================================
+// Hacking Points
+MHRS:
+ jmp _MonHumanRes
+ nop
+ nop
+_BackMHR:
+
+MFFL:
+ jmp _MonFullFuel
+_BackMFF:
+
+FHUN:
+ jmp _FindHumanUnit
+_BackFHU:
+
+GDMD:
+ jmp _GodMode
+ nop
+ nop
+ nop
+_BackGMD:
+
+MUWL:
+ jmp _MonUnitWill
+ nop
+ nop
+ nop
+_BackMUW:
+
+MFAM:
+ jmp _MonFullAmmo
+_BackMFA:
+
+MUSS:
+ jmp _MonUnitStatus
+ nop
+_BackMUS:
+
+MPRS:
+ jmp _MonPlayerRes
+_BackMPR:
+
+MFA2:
+ jmp _MonFullAmmo2
+_BackMA2:
+
+MSCE:
+ jmp _MonScenarioEnd
+ nop
+_BackMSE:
+
+MFSU:
+ jmp _MonFullSupport
+ nop
+_BackMFS:
+
+//=========================================
+// Script for Restoring Original Codes
+[DISABLE]
+MHRS:
+// mov eax,[ecx+0C]
+// push esi
+// mov esi,[ecx+08]
+ db 8b 41 0c 56 8b 71 08
+
+MFFL:
+// movss [esi+1C],xmm0
+ db f3 0f 11 46 1c
+
+FHUN:
+// mov eax,[ecx]
+// jmp dword ptr [eax+3C]
+ db 8b 01 ff 60 3c
+
+GDMD:
+// movss xmm0,[edi+000000B0]
+ db f3 0f 10 87 b0 00 00 00
+
+MUWL:
+// movss [edi+000000A4],xmm1
+ db f3 0f 11 8f a4 00 00 00
+
+MFAM:
+// mov [esi+08],eax
+// mov [esi],ecx
+ db 89 46 08 89 0e
+
+MUSS:
+// mov eax,[edi+000000B0]
+ db 8b 87 b0 00 00 00
+
+MPRS:
+// movss xmm1,[edi+18]
+ db f3 0f 10 4f 18
+
+MFA2:
+// mov [esi+08],eax
+// mov [esi],ecx
+ db 89 46 08 89 0e
+
+MSCE:
+// mov eax,[eax+2C]
+// mov [ecx+34],eax
+ db 8b 40 2c 89 41 34
+
+MFSU:
+// mov eax,[edx+08]
+// mov [esi+18],eax
+ db 8b 42 08 89 46 18
+
+//=========================================
+// Unregistering Symbols
+unregistersymbol(MyCode)
+unregistersymbol(Buffer)
+unregistersymbol(pRes)
+unregistersymbol(iIndex)
+unregistersymbol(iEnableMHR)
+unregistersymbol(iEnableMAR)
+unregistersymbol(iEnableMFF)
+unregistersymbol(iEnableGMD)
+unregistersymbol(iEnableMUW)
+unregistersymbol(iEnableMFA)
+unregistersymbol(iEnableMPR)
+unregistersymbol(iEnableMFS)
+unregistersymbol(iMinPoints)
+unregistersymbol(iMaxPoints)
+
+//=========================================
+dealloc(MyCode)
+dealloc(Buffer)
+//============= Scripts End ===============
+
+// ****************************************
+// NOTES
+// ****************************************
+{
+13.07.31.2100001420:
+define(MHRS,wargame2.exe+00594e60) //==
+define(MFFL,wargame2.exe+00721cfc) //==
+define(FHUN,wargame2.exe+004dda50) //==
+define(GDMD,wargame2.exe+006f1023) //==
+define(MUWL,wargame2.exe+006f1100) //==
+define(MFAM,wargame2.exe+00625f15) //==
+define(MUSS,wargame2.exe+006f075f) //==
+define(MPRS,wargame2.exe+00723bd5) //*=
+define(MFA2,wargame2.exe+00625fe5) //==
+define(MSCE,wargame2.exe+00765b98) //=*
+define(MFSU,wargame2.exe+00778dbd) //==
+
+define(FHUB,wargame2.exe+01539e64) // 01939e64
+-------------------------------------------
+13.06.20.2100001337:
+define(MHRS,wargame2.exe+0059cc70) //=
+define(MFFL,wargame2.exe+0072f4bc) //=
+define(FHUN,wargame2.exe+004e6030) //=
+define(GDMD,wargame2.exe+006ffc83) //=
+define(MUWL,wargame2.exe+006ffd60) //=
+define(MFAM,wargame2.exe+0062d1d5) //=
+define(MUSS,wargame2.exe+006ff3bf) //=
+define(MPRS,wargame2.exe+00731395) //*
+define(MFA2,wargame2.exe+0062d2a5) //=
+define(MSCE,wargame2.exe+006bff36) //=
+define(MFSU,wargame2.exe+006d1cad) //=
+
+define(FHUB,wargame2.exe+0150bd04) // 0190bd04
+-------------------------------------------
+13.05.29.2060001225:
+define(MHRS,wargame2.exe+0059c030)
+define(MFFL,wargame2.exe+0072f724)
+define(FHUN,wargame2.exe+004e5b70)
+define(GDMD,wargame2.exe+006ffef3)
+define(MUWL,wargame2.exe+006fffd0)
+define(MFAM,wargame2.exe+0062c3f5)
+define(MUSS,wargame2.exe+006ff62f)
+define(MPRS,wargame2.exe+006d54bc)
+define(MFA2,wargame2.exe+0062c4c5)
+define(MSCE,wargame2.exe+006C0276)
+define(MFSU,wargame2.exe+006d1f2d)
+
+define(FHUB,wargame2.exe+01507b84)
+}
+
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>6</ID>
+          <Description>"Enable/Disable Minimum Strategic Points =&gt; (1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMHR</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>7</ID>
+              <Description>"Minimum Points ==&gt;"</Description>
+              <Color>0080FF</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>iMinPoints</Address>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>90</ID>
+          <Description>"Enable/Disable Unlimited Fuel =&gt; (1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMFF</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>82</ID>
+          <Description>"Enable/Disable God Mode =&gt; (1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableGMD</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>89</ID>
+          <Description>"Enable/Disable Full Will Power =&gt; (1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMUW</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>106</ID>
+          <Description>"Enable/Disable Unlimited Ammo =&gt; (1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMFA</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>116</ID>
+          <Description>"Enable/Disable Base Unlimited Resources =&gt; (1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMPR</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>152</ID>
+          <Description>"Enable/Disable Unlimited Support Resources =&gt; (1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMFS</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols/>
+  <Comments>===========================================
+ Game Title    : Wargame 2 Airland Battle
+ Game Version  : 13.08.09.2100001439
+ Game Sponsor  : RELOADED+3DM
+ Proces Name   : wargame2.exe
+ Script Version: 1.2
+ CE Version    : 6.3
+ Release date  : 11-Aug-2013
+ Author        : Recifense
+ History:
+ 22-Jun-13: First Release
+ 23-Jun-13: Release for version 13.06.20.2100001337 (3DM)
+ 15-Jul-13: Release for version 13.07.10.2100001382 (3DM)
+ 08-Aug-13: Release for version 13.07.31.2100001420 (3DM)
+ 11-Aug-13: Release for version 13.08.09.2100001439 (3DM)
+ Features:
+ - Minimum Points to Spend [1]
+ - Unlimited Fuel          [2]
+ - Will Power              [3]
+ - God Mode                [4]
+ - Unlimited Ammo          [5]
+ - Unlimited Resources     [6]
+===========================================
+[1] Human Player's strategic points will not go under minimum value (default = 2000);
+[2] Human Player's units's fuel will not decrease;
+[3] Human Player's units will always be CALM;
+[4] Human Player's units will not die;(*)
+[5] This will work for human and AI players's units; (**)
+[6] Human Player's support units will have unlimited supply;
+(* ) But they can get stunned, etc;
+(**) Some units can have damaged parts. If the part is related to ammo, so the ammo will be decreased (You can see that in helicopters);
+===========================================
+HOTKEYS:
+CTRL+Home = Enable  all cheats;
+CTRL+End  = Disable all cheats;
+===========================================
+[NOTE] This game is complicated, so I don't intend to add any additional cheat.
+===========================================
+[NOTE] This was my first script/table for CE6.3.
+===========================================
+Cheers 
+</Comments>
+</CheatTable>

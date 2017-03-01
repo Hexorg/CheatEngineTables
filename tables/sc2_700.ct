@@ -1,0 +1,1003 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="20">
+ <Author>SunBeam</Author>
+  <CheatEntries>
+    <CheatEntry>
+      <ID>15</ID>
+      <Description>"God Mode"</Description>
+      <LastState/>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>[ENABLE]
+
+alloc( God, 128, SC2.exe )
+label( back )
+label( God_ )
+registersymbol( God_ )
+
+God:
+cmp byte ptr [edi+86A],1
+jne short @f
+jmp back+24
+@@:
+test [eax+1C],esi
+jmp back+4
+
+SC2.exe+6AEF27:
+God_:
+jmp God
+back:
+
+[DISABLE]
+
+God_:
+db 85 70 1C EB 04
+
+unregistersymbol( God_ )
+dealloc( God )
+</AssemblerScript>
+      <Hotkeys>
+        <Hotkey>
+          <Action>Activate</Action>
+          <Keys>
+            <Key>111</Key>
+          </Keys>
+          <ID>0</ID>
+        </Hotkey>
+        <Hotkey>
+          <Action>Deactivate</Action>
+          <Keys>
+            <Key>106</Key>
+          </Keys>
+          <ID>1</ID>
+        </Hotkey>
+      </Hotkeys>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>47</ID>
+      <Description>"Increased Damage (x10) + 5000 x Resources + Reveal Map"</Description>
+      <Options moHideChildren="1"/>
+      <LastState/>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>[ENABLE]
+
+alloc( Damage, 2048, SC2.exe )
+label( back )
+label( Damage_exit )
+label( Player_do )
+label( Damage_next )
+label( bResources )
+registersymbol( bResources )
+label( bMap )
+registersymbol( bMap )
+label( pResources )
+registersymbol( pResources )
+label( rAmount )
+registersymbol( rAmount )
+label( dwMapVal )
+registersymbol( dwMapVal )
+label( GetResPtrToDword )
+label( GetResPtrFromDword )
+label( DecryptAddEncryptResource )
+label( DecryptAddEncryptResource_exit )
+label( GetMapPtr )
+label( DecryptMapVal )
+label( EncryptMapVal )
+label( lResources )
+label( Damage_ )
+registersymbol( Damage_ )
+
+Damage:
+cmp byte ptr [edi+86A],1
+jne Damage_exit
+	cmp byte ptr [bResources],1
+	jne Damage_next
+		pushad
+		movzx ebx,[edi+86A]
+		call GetResPtrToDword
+		push pResources
+		call GetResPtrFromDword
+		xor esi,esi
+		mov edi,[pResources]
+        lResources:
+		    mov eax,esi
+		    mov ecx,edi
+		    lea ecx,[ecx+eax*8+340]
+		    call DecryptAddEncryptResource
+            inc esi
+            cmp esi,2 // Minerals and Vespene Gas (change to 4 if you want Biomass as well)
+            jb lResources
+		popad
+		mov byte ptr [bResources],0
+		jmp Player_do
+	Damage_next:
+	cmp byte ptr [bMap],1
+	jne Player_do
+		pushad
+		call GetMapPtr
+        push edx // store ptr for later
+		push dwMapVal
+		call DecryptMapVal
+        mov eax,[dwMapVal]
+		cmp eax,-1
+		setne bl
+		movzx eax,bl
+		neg eax
+		sbb eax,eax
+        pop ecx // then pop it here
+        push eax
+		call EncryptMapVal
+		popad
+		mov byte ptr [bMap],0
+	Player_do:
+	jmp back+24
+Damage_exit:
+test [eax+1C],esi
+jmp back+4
+
+GetResPtrToDword:
+mov eax,[SC2.exe+21E52F8]
+sub eax,[SC2.exe+1B14014]
+mov edx,[eax]
+movzx ecx,bl
+lea edx,[edx+ecx*4]
+ret
+
+GetResPtrFromDword:
+push ebp
+mov ebp,esp
+push esi
+push edi
+mov edi,[ebp+8]
+mov esi,edx
+movzx eax,word ptr [esi]
+movzx ecx,word ptr [esi+2]
+mov edx,eax
+and edx,FFF
+mov esi,SC2.exe+1B112F0 // added by me
+//movzx edx,word ptr [edx*4+SC2.exe+1B112F0]
+movzx edx,word ptr [edx*4+esi]
+sub ecx,edx
+mov edx,ecx
+and edx,FFF
+//movzx edx,word ptr [edx*4+SC2.exe+1B112F0]
+movzx edx,word ptr [edx*4+esi]
+sub eax,edx
+not eax
+mov [edi],ax
+mov [edi+2],cx
+pop edi
+pop esi
+pop ebp
+ret 4
+
+DecryptAddEncryptResource:
+push ebp
+mov ebp,esp
+push esi
+push edi
+// decrypt
+mov esi,ecx
+mov eax,[ecx]
+mov edx,[ecx+4]
+mov esi,eax
+shr esi,C
+mov edi,eax
+not edi
+add esi,edi
+and esi,FFF
+mov ebx,SC2.exe+1B112F0 // added by me
+//add edx,dword ptr [esi*4+SC2.exe+1B112F0]
+add edx,dword ptr [esi*4+ebx]
+mov esi,edx
+shr esi,C
+mov edi,edx
+not edi
+add esi,edi
+and esi,FFF
+//sub eax,dword ptr [esi*4+SC2.exe+1B112F0]
+sub eax,dword ptr [esi*4+ebx]
+mov esi,eax
+xor esi,edx
+and esi,55555555
+xor esi,eax
+xor eax,edx
+and eax,55555555
+xor eax,edx
+// add
+mov edi,eax
+add esi,[rAmount]
+mov eax,esi
+or eax,edi
+jne short @f
+	// if 0, set value to encrypted NULL, already calculated in pointers below
+	mov edx,[SC2.exe+21E69E0]
+	mov [ecx],edx
+	mov eax,[SC2.exe+21E69E4]
+	mov [ecx+04],eax
+	jmp DecryptAddEncryptResource_exit
+@@:
+// encrypt
+mov eax,esi
+mov edx,esi
+xor eax,edi
+xor edx,edi
+and eax,55555555
+xor eax,edi
+and edx,55555555
+xor edx,esi
+mov esi,eax
+shr esi,C
+mov edi,eax
+not edi
+add esi,edi
+and esi,FFF
+mov ebx,SC2.exe+1B112F0 // added by me
+//add edx,dword ptr [esi*4+SC2.exe+1B112F0]
+add edx,dword ptr [esi*4+ebx]
+mov esi,edx
+shr esi,C
+mov edi,edx
+not edi
+add esi,edi
+and esi,FFF
+//sub eax,dword ptr [esi*4+SC2.exe+1B112F0]
+sub eax,dword ptr [esi*4+ebx]
+mov [ecx],edx
+mov [ecx+4],eax
+DecryptAddEncryptResource_exit:
+pop edi
+pop esi
+pop ebp
+ret
+
+GetMapPtr:
+mov eax,[SC2.exe+1F9F384]
+mov ecx,[SC2.exe+1B145F8]
+lea edx,[ecx+eax+14]
+ret
+
+DecryptMapVal:
+push ebp
+mov ebp,esp
+push esi
+push edi
+mov edi,[ebp+8]
+mov esi,edx
+movzx ecx,word ptr [esi]
+movzx eax,word ptr [esi+2]
+mov edx,ecx
+and edx,FFF
+mov esi,SC2.exe+1B112F0 // added by me
+//movzx edx,word ptr [edx*4+SC2.exe+1B112F0]
+movzx edx,word ptr [edx*4+esi]
+sub eax,edx
+not eax
+movzx eax,ax
+mov edx,eax
+and edx,FFF
+//movzx edx,word ptr [edx*4+SC2.exe+1B112F0]
+movzx edx,word ptr [edx*4+esi]
+add edx,ecx
+mov [edi],dx
+mov [edi+2],ax
+pop edi
+pop esi
+pop ebp
+ret 4
+
+EncryptMapVal:
+push ebp
+mov ebp,esp
+lea edx,[ebp+8]
+movzx eax,word ptr [edx+02]
+movzx edx,word ptr [edx]
+push esi
+mov esi,eax
+and esi,FFF
+mov edi,SC2.exe+1B112F0 // added by me
+//movzx esi,word ptr [esi*4+SC2.exe+1B112F0]
+movzx esi,word ptr [esi*4+edi]
+sub edx,esi
+mov esi,edx
+and esi,FFF
+//movzx esi,word ptr [esi*4+SC2.exe+1B112F0]
+movzx esi,word ptr [esi*4+edi]
+not eax
+add eax,esi
+movzx eax,ax
+mov [ecx],dx
+mov [ecx+2],ax
+pop esi
+pop ebp
+ret 4
+
+bResources:
+db 0
+bMap:
+db 0
+pResources:
+dd 0
+rAmount:
+dd (int)5000
+dwMapVal:
+dd 0
+
+SC2.exe+6AEE87:
+Damage_:
+jmp Damage
+back:
+
+[DISABLE]
+
+Damage_:
+db 85 70 1C EB 04
+
+unregistersymbol( Damage_ )
+unregistersymbol( dwMapVal )
+unregistersymbol( rAmount )
+unregistersymbol( pResources )
+unregistersymbol( bMap )
+unregistersymbol( bResources )
+dealloc( Damage )
+</AssemblerScript>
+      <Hotkeys>
+        <Hotkey>
+          <Action>Activate</Action>
+          <Keys>
+            <Key>111</Key>
+          </Keys>
+          <ID>0</ID>
+        </Hotkey>
+        <Hotkey>
+          <Action>Deactivate</Action>
+          <Keys>
+            <Key>106</Key>
+          </Keys>
+          <ID>1</ID>
+        </Hotkey>
+      </Hotkeys>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>48</ID>
+          <Description>"bResources"</Description>
+          <VariableType>Byte</VariableType>
+          <Address>bResources</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>103</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+              <ActivateSound>Activate</ActivateSound>
+              <DeactivateSound/>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>49</ID>
+          <Description>"bMap"</Description>
+          <VariableType>Byte</VariableType>
+          <Address>bMap</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>104</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+              <ActivateSound>Activate</ActivateSound>
+              <DeactivateSound/>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>50</ID>
+          <Description>"pResources"</Description>
+          <ShowAsHex>1</ShowAsHex>
+          <VariableType>4 Bytes</VariableType>
+          <Address>pResources</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>51</ID>
+          <Description>"dwMapVal"</Description>
+          <ShowAsHex>1</ShowAsHex>
+          <VariableType>4 Bytes</VariableType>
+          <Address>dwMapVal</Address>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>22</ID>
+      <Description>"Unlimited Unit Energy"</Description>
+      <LastState/>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>[ENABLE]
+
+alloc( Energy, 128, SC2.exe )
+label( back )
+label( Energy_ )
+registersymbol( Energy_ )
+
+Energy:
+cmp byte ptr [ebx+32],1
+jne short @f
+jmp back+A0
+@@:
+test [eax+18],edx
+jmp back+4
+
+SC2.exe+6CCE8D:
+Energy_:
+jmp Energy
+back:
+
+[DISABLE]
+
+Energy_:
+db 85 50 18 EB 04
+
+unregistersymbol( Energy_ )
+dealloc( Energy )
+</AssemblerScript>
+      <Hotkeys>
+        <Hotkey>
+          <Action>Activate</Action>
+          <Keys>
+            <Key>111</Key>
+          </Keys>
+          <ID>0</ID>
+        </Hotkey>
+        <Hotkey>
+          <Action>Deactivate</Action>
+          <Keys>
+            <Key>106</Key>
+          </Keys>
+          <ID>1</ID>
+        </Hotkey>
+      </Hotkeys>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>24</ID>
+      <Description>"No Cooldown"</Description>
+      <LastState/>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>[ENABLE]
+
+alloc( NoCooldown, 128, SC2.exe )
+label( back )
+label( Cooldown_ )
+registersymbol( Cooldown_ )
+
+NoCooldown:
+cmp byte ptr [ebp+8],1
+jne short @f
+jmp back+C
+@@:
+test [eax+08],edx
+setne al
+jmp back
+
+SC2.exe+6CBAD5:
+Cooldown_:
+jmp NoCooldown
+nop
+back:
+
+[DISABLE]
+
+Cooldown_:
+db 85 50 08 0F 95 C0
+
+unregistersymbol( Cooldown_ )
+dealloc( NoCooldown )
+</AssemblerScript>
+      <Hotkeys>
+        <Hotkey>
+          <Action>Activate</Action>
+          <Keys>
+            <Key>111</Key>
+          </Keys>
+          <ID>0</ID>
+        </Hotkey>
+        <Hotkey>
+          <Action>Deactivate</Action>
+          <Keys>
+            <Key>106</Key>
+          </Keys>
+          <ID>1</ID>
+        </Hotkey>
+      </Hotkeys>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>45</ID>
+      <Description>"Get Credits"</Description>
+      <Options moHideChildren="1"/>
+      <LastState/>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>[ENABLE]
+
+aobscan( Credits_AOB, 4372656469747300????????????????0000000000000000000000000000000000000000???????? )
+label( Credits )
+registersymbol( Credits )
+
+Credits_AOB+24:
+Credits:
+
+[DISABLE]
+
+unregistersymbol( Credits )
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>46</ID>
+          <Description>"Credits"</Description>
+          <VariableType>4 Bytes</VariableType>
+          <Address>Credits</Address>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>42</ID>
+      <Description>"[Debug]"</Description>
+      <Options moHideChildren="1"/>
+      <LastState Value="" Activated="1" RealAddress="00000000"/>
+      <Color>C0C0C0</Color>
+      <GroupHeader>1</GroupHeader>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>16</ID>
+          <Description>"Increased Damage (x10)"</Description>
+          <Options moHideChildren="1"/>
+          <LastState/>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[ENABLE]
+
+alloc( Damage, 128, SC2.exe )
+label( back )
+
+Damage:
+cmp byte ptr [edi+86A],1
+jne short @f
+jmp back+24
+@@:
+test [eax+1C],esi
+jmp back+4
+
+SC2.exe+6AEE87:
+jmp Damage
+back:
+
+[DISABLE]
+
+SC2.exe+6AEE87:
+db 85 70 1C EB 04
+
+dealloc( Damage )
+</AssemblerScript>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>28</ID>
+          <Description>"Increased Damage (x10) + 5000 x Resources"</Description>
+          <Options moHideChildren="1"/>
+          <LastState/>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[ENABLE]
+
+alloc( Damage, 1024, SC2.exe )
+label( p )
+registersymbol( p )
+label( bResources )
+registersymbol( bResources )
+label( rAmount )
+registersymbol( rAmount )
+label( back )
+label( next )
+label( enemy )
+label( loc_a )
+label( x )
+registersymbol( x )
+label( xa )
+label( xb )
+label( xc )
+label( xd )
+label( r_loop )
+
+Damage:
+cmp byte ptr [edi+86A],1
+jne enemy
+cmp [bResources],1
+jne next
+pushad
+movzx eax,[edi+86A]
+mov edi,p
+// get the pointer to our Resources pointer
+mov edx,[SC2.exe+1B11624]
+mov ecx,[SC2.exe+21E53B8]
+mov ecx,[edx+ecx+60CE6B8C]
+lea edx,[ecx+eax*4]
+// get our Resources pointer
+mov esi,edx
+movzx eax,word ptr [esi]
+movzx ecx,word ptr [esi+2]
+mov esi,SC2.exe+1B112F0
+mov edx,eax
+and edx,FFF
+movzx edx,word ptr [edx*4+esi]
+sub ecx,edx
+not ecx
+movzx ecx,cx
+mov edx,ecx
+and edx,FFF
+movzx edx,word ptr [edx*4+esi]
+sub eax,edx
+not eax
+mov [edi],ax
+mov [edi+2],cx
+// set-up parameters
+mov edi,[edi]
+xor esi,esi
+r_loop:
+pushad
+mov eax,esi
+mov ecx,edi
+lea ecx,[ecx+eax*8+340]
+mov [xd],ecx
+mov eax,SC2.exe+1C47D10
+mov edx,ecx
+sub edx,eax
+@@:
+mov esi,[edx+eax]
+cmp esi,[eax]
+jne short @f
+add eax,4
+cmp eax,SC2.exe+1C47D18
+jl @b
+xor esi,esi            // ebp-10
+xor eax,eax            // ebp-C
+/*
+xorpd xmm0,xmm0
+movlpd [ebp-10],xmm0   // check
+mov esi,[ebp-10]       // check
+mov eax,[ebp-C]        // check
+*/
+jmp loc_a
+@@:
+mov esi,[ecx]
+mov edx,[ecx+4]
+mov ecx,esi
+mov eax,esi
+shr ecx,C
+sub eax,ecx
+and eax,FFF
+mov edi,SC2.exe+1B112F0
+xor edx,[eax*4+edi]
+mov eax,edx
+shr eax,C
+add eax,edx
+not eax
+and eax,FFF
+sub esi,[eax*4+edi]
+mov eax,esi
+xor esi,edx
+// decrypted
+mov [x],esi
+// here
+and esi,55555555
+xor esi,eax
+xor eax,edx
+and eax,55555555
+xor eax,edx
+//
+mov [xa],esi    // [ebp-10]
+mov [xb],eax    // [ebp-C]
+//
+push ebx
+or ecx,FFFFFFFF
+sub ecx,esi
+push edi
+mov edx,7FFFFFFF
+sbb edx,eax
+mov edi,esi
+mov ebx,eax
+mov eax,[rAmount]
+neg edi
+adc ebx,0
+mov [xc],edx     // [ebp-14]
+cdq
+neg ebx
+cmp edx,ebx
+jg short loc_b
+jl short loc_c
+cmp eax,edi
+jb short loc_c
+loc_b:
+mov ebx,[xc]     // mov ebx,[ebp-14]
+cmp edx,ebx
+jl short loc_d
+jg short loc_e
+cmp eax,ecx
+jna short loc_d
+loc_e:
+mov edi,ecx
+jmp short loc_c
+loc_d:
+mov edi,eax
+mov ebx,edx
+loc_c:
+add edi,esi
+adc ebx,[xb]     // adc ebx,[ebp-C]
+mov edx,edi
+or edx,ebx
+jne loc_f
+mov ecx,[xd]     // mov ecx,[ebp-4]
+mov edx,[SC2.exe+21E6AA0]
+mov [ecx],edx
+mov eax,[SC2.exe+21E6AA4]
+mov [ecx+04],eax
+loc_f:
+// encrypt
+mov edx,edi
+xor edx,ebx
+and edx,55555555
+xor edx,ebx
+mov esi,edx
+shr esi,C
+add esi,edx
+not esi
+mov eax,edi
+xor eax,ebx
+and esi,FFF
+and eax,55555555
+xor eax,edi
+mov edi,SC2.exe+1B112F0
+add eax,[esi*4+edi]
+mov ecx,eax
+shr ecx,C
+mov esi,eax
+sub esi,ecx
+mov ecx,[xd]       // mov ecx,[ebp-04]
+and esi,FFF
+mov esi,[esi*4+edi]
+xor esi,edx
+mov [ecx+04],esi
+mov [ecx],eax
+add esp,8
+popad
+inc esi
+cmp esi,4
+jb r_loop
+loc_a:
+popad
+mov [bResources],0
+next:
+jmp back+2F
+enemy:
+test [edx+ecx+1C],eax
+jmp back+10
+
+p:
+dd 0
+
+x:
+dd 0
+
+xa:
+dd 0
+xb:
+dd 0
+xc:
+dd 0
+xd:
+dd 0
+
+bResources:
+dd 0
+
+rAmount:
+dd (int)5000
+
+SC2.exe+6AF757:
+jmp Damage
+nop
+back:
+
+[DISABLE]
+
+SC2.exe+6AF757:
+db 85 44 0A 1C EB 10
+
+unregistersymbol( x )
+unregistersymbol( rAmount )
+unregistersymbol( bResources )
+unregistersymbol( p )
+dealloc( Damage )
+</AssemblerScript>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>29</ID>
+              <Description>"Resources Base Pointer"</Description>
+              <ShowAsHex>1</ShowAsHex>
+              <VariableType>4 Bytes</VariableType>
+              <Address>p</Address>
+              <CheatEntries>
+                <CheatEntry>
+                  <ID>31</ID>
+                  <Description>"Minerals"</Description>
+                  <ShowAsHex>1</ShowAsHex>
+                  <VariableType>8 Bytes</VariableType>
+                  <Address>p</Address>
+                  <Offsets>
+                    <Offset>340</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>32</ID>
+                  <Description>"Vespene Gas"</Description>
+                  <ShowAsHex>1</ShowAsHex>
+                  <VariableType>8 Bytes</VariableType>
+                  <Address>p</Address>
+                  <Offsets>
+                    <Offset>348</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>34</ID>
+                  <Description>"??"</Description>
+                  <ShowAsHex>1</ShowAsHex>
+                  <VariableType>8 Bytes</VariableType>
+                  <Address>p</Address>
+                  <Offsets>
+                    <Offset>350</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>33</ID>
+                  <Description>"Biomas"</Description>
+                  <ShowAsHex>1</ShowAsHex>
+                  <VariableType>8 Bytes</VariableType>
+                  <Address>p</Address>
+                  <Offsets>
+                    <Offset>358</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>30</ID>
+                  <Description>"Toggle"</Description>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>bResources</Address>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>35</ID>
+                  <Description>"Amount To Add"</Description>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>rAmount</Address>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>43</ID>
+                  <Description>"Minerals Decrypted"</Description>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>x</Address>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>44</ID>
+                  <Description>"Vespene Decrypted"</Description>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>y</Address>
+                </CheatEntry>
+              </CheatEntries>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>41</ID>
+          <Description>"Instant Build (Units)"</Description>
+          <LastState/>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[ENABLE]
+
+stealtheditex( BuildFunc, SC2.exe+7EFDF7, 2 )
+label( FastBuild_hook )
+registersymbol( FastBuild_hook )
+alloc( FastBuild, 256, SC2.exe)
+label( back )
+
+FastBuild:
+cmp byte [esi+6C],1
+jne short @f
+mov [esi+84],1000
+@@:
+sub [esi+84],eax
+jmp back
+
+BuildFunc:
+FastBuild_hook:
+jmp FastBuild
+nop
+back:
+
+[DISABLE]
+
+00000000:
+nop
+
+dealloc( FastBuild )
+unregistersymbol( FastBuild_hook )
+</AssemblerScript>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>25</ID>
+          <Description>"Resources_prologue"</Description>
+          <LastState Value="6A" RealAddress="018892C0"/>
+          <ShowAsHex>1</ShowAsHex>
+          <VariableType>Byte</VariableType>
+          <Address>SC2.exe+6D92C0</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>52</ID>
+          <Description>"E9AE"</Description>
+          <LastState Value="AEE9" RealAddress="022ED1B0"/>
+          <ShowAsHex>1</ShowAsHex>
+          <VariableType>2 Bytes</VariableType>
+          <Address>SC2.exe+113D1B0</Address>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols>
+    <SymbolEntry>
+      <Name>y</Name>
+      <Address>0BDB0115</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>p</Name>
+      <Address>44C101E4</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>x</Name>
+      <Address>44C101E8</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>pMap</Name>
+      <Address>247A0244</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>God_</Name>
+      <Address>00A8EF27</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>Energy_</Name>
+      <Address>00AACE8D</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>Cooldown_</Name>
+      <Address>00AABAD5</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>bResources</Name>
+      <Address>373E024F</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>bMap</Name>
+      <Address>373E0250</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>pResources</Name>
+      <Address>373E0251</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>rAmount</Name>
+      <Address>373E0255</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>dwMapVal</Name>
+      <Address>373E0259</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>Damage_</Name>
+      <Address>00A8EE87</Address>
+    </SymbolEntry>
+  </UserdefinedSymbols>
+</CheatTable>

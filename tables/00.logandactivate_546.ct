@@ -1,0 +1,246 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="18">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>0</ID>
+      <Description>"test direct aa (only click when paste manually from lua output)"</Description>
+      <LastState Activated="1"/>
+      <Color>80000008</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>[ENABLE]
+ // ACTIVATE SCRIPT
+  define(hackpoint,7FEFDA562E0)
+  alloc(cave_1_x,$400,hackpoint)
+  cave_1_x:
+  dq cave_1_x
+  cave_1_x+10:
+  readmem(hackpoint,16) -- decimal 16
+  cave_1_x+40:
+       reassemble(7FEFDA562E0)
+
+     reassemble(7FEFDA562E4)
+
+    define(len_1,9)
+
+      mov [__+100],rcx
+
+  jmp hackpoint+09
+
+  hackpoint:
+  jmp cave_1_x+40
+      nop
+        nop
+        nop
+        nop
+
+  registersymbol(cave_1_x)
+
+[DISABLE]
+ // DEACTIVATE SCRIPT
+7FEFDA562E0:
+readmem(cave_1_x+10,16)
+
+dealloc(cave_1_x)
+
+unregistersymbol(cave_1_x)
+
+
+
+</AssemblerScript>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols>
+    <SymbolEntry>
+      <Name>__</Name>
+      <Address>041C0000</Address>
+    </SymbolEntry>
+  </UserdefinedSymbols>
+  <LuaScript>--
+
+-- _G._alreadyLogged = nil  -- uncomment to force log an already logged address-
+
+openProcess('cheatengine-x86_64.exe')
+
+local addr = getAddress("readProcessMemory")
+
+function debugPrint(OnOff)
+  return OnOff==true and print or function()end
+end
+
+dp = debugPrint(true) -- false to suppress debug output
+
+function hx(n)return string.format("%02X",n)end
+
+function reAssemble(addy,minLen,lenId)
+-- return a string of aa script that at least reassemble of length minLen
+  local e = errorOnLookupFailure(false)
+  addy = type(addy)=='string' and getAddress(addy) or addy
+  errorOnLookupFailure(e)
+  assert(type(addy)=='number' and addy &gt; 0,"address input not valid")
+  lenId = type(lenId)=='string' and lenId or '_LastReassembleLength'
+  local al,acc = {},0
+  while acc&lt;minLen do
+    local len = getInstructionSize(addy)
+    al[1+#al],addy,acc= string.format([[
+     reassemble(%X)
+    ]],addy),addy+len,acc+len
+  end
+  if #al&gt;0 then
+    al[1+#al]=string.format([[
+    define(%s,%X)
+    ]],lenId,acc)
+  end
+  return #al&gt;0 and table.concat(al,"\n") or '',acc
+end
+
+function getUid() _G._uid = type(_G._uid)=='number' and _G._uid+1 or 0 return _G._uid end
+
+function sinterpolate(s,t)
+  return s:gsub("%^([_%a][%w_]*)",function(n)
+    if type(t[n])=='string' then return t[n]
+    elseif type(t[n])=='number' then return hx(t[n])
+    else return '^'..n end -- no change
+  end)
+end
+
+function alreadyLogged(addy,value)
+  _G._alreadyLogged = _G._alreadyLogged~=nil and _G._alreadyLogged or {lastPid=0}
+
+  local g = _G._alreadyLogged
+  local pidnow = getOpenedProcessID()
+  if pidnow &gt; 0 then
+    if pidnow ~= g.lastPid and  g.lastPid &gt; 0 then -- process changed, clear logged table
+      for k,_ in pairs(g) do if type(k)=='number' then g[k]=nil end end
+    end
+    g.lastPid = pidnow
+    g[pidnow] = g[pidnow]~=nil and g[pidnow] or {}
+
+    local e = errorOnLookupFailure(false)
+    addy = type(addy)=='string' and getAddress(addy) or addy
+    errorOnLookupFailure(e)
+    assert(type(addy)=='number' and addy &gt; 0,"address input not valid")
+
+    if value~=nil then g[pidnow][addy]=value~=false and value or nil end
+    return g[pidnow][addy]
+  else
+    error("No target process")
+  end
+end
+
+function logAndActivate(addy,logscript,checkAddress,callback,checkInterval)
+
+  local e = errorOnLookupFailure(false)
+  addy = type(addy)=='string' and getAddress(addy) or addy
+  checkAddress = type(checkAddress)=='string' and getAddress(checkAddress) or checkAddress
+  if type(checkAddress)~='number' or checkAddress == 0 then checkAddress = nil end
+  errorOnLookupFailure(e)
+  assert(type(addy)=='number' and addy &gt; 0,"address input not valid")
+--  assert(type(checkAddress)=='number' and checkAddress &gt; 0,"checkAddress should be defined")
+
+--  _G._alreadyLogged = _G._alreadyLogged or {}
+  assert(alreadyLogged(addy)==nil,"already logged "..hx(addy))
+  local uid = getUid()
+  local vars = {Cave='code_'..uid.."_cave",HackPoint=addy,LogScript=logscript}
+  vars.ReAssemble,vars.HackLength=reAssemble(addy,5,"len_"..uid)
+  assert(vars.HackLength&gt;=5,"hack length less than 5, something wrong")
+  vars.NOPs = ''
+  if vars.HackLength&gt;5 then
+    vars.NOPs = string.rep([[
+    nop
+    ]],vars.HackLength-5)
+  end
+  local script = {[[ // ACTIVATE SCRIPT
+  define(hackpoint,^HackPoint)
+  alloc(^Cave,$400,hackpoint)
+  ^Cave:
+  dq ^Cave
+  ^Cave+10:
+  readmem(hackpoint,16) -- decimal 16
+  ^Cave+40:
+  ^ReAssemble
+  ^LogScript
+  jmp hackpoint+^HackLength
+
+  hackpoint:
+  jmp ^Cave+40
+  ^NOPs
+  registersymbol(^Cave)
+  ]],[[ // DEACTIVATE SCRIPT
+^HackPoint:
+readmem(^Cave+10,16)
+
+dealloc(^Cave)
+
+unregistersymbol(^Cave)
+
+
+  ]]}
+  for i=1,#script do script[i]=sinterpolate(script[i],vars) end
+
+
+  dp("[ENABLE]\n"..script[1].."\n[DISABLE]\n"..script[2])
+
+  local releaseFunc
+  if autoAssemble(script[1]) then -- activate success
+     dp("======CHECK this Address!!! symbol is unregistered, but memroy cannot dealloc!?")
+     dp("[",vars.Cave,"] allocated at ",hx(getAddress(vars.Cave)))
+     local timer
+    releaseFunc = function()
+      if autoAssemble(script[2]) then -- deactivate success
+        alreadyLogged(addy,false) -- set it to nil
+        if timer and type(timer)=='userdata' then
+          if timer.Destroy then dp("timer end from release")timer.Destroy() end
+          timer = nil
+        end
+        dp("release success")
+      else-- deactivate fail
+        error("deactivate failed, check script:\n"..script[2])
+      end
+    end
+    alreadyLogged(addy,releaseFunc)
+     if type(checkAddress)=='number' and type(callback)=='function' then -- setup timer check
+       dp('createTimer')
+       writeQword(checkAddress,0)
+       timer = createTimer()
+       timer.Interval = type(checkInterval)=='number' and checkInterval or 250
+       timer.OnTimer = function(sender)
+         if alreadyLogged(addy)==nil then dp("timer release end")return sender.Destroy() end -- already released
+         local checkAddy = readQword(checkAddress)
+         --print(tostring(checkAddy))
+         if checkAddy~=nil and checkAddy&gt;0 then -- target address logged
+           sender.Destroy()
+           dp('timer callback end, content logged')
+           return callback(checkAddy,releaseFunc,addy)
+         end
+       end
+     end
+     dp("actiavte success")
+  else -- activate fail
+    error("activate failed, check script:\n"..script[1])
+  end
+
+  return releaseFunc
+end
+
+autoAssemble([[
+ globalalloc(__,$4000)
+ __:
+ dq __
+]])
+
+df = logAndActivate(addr,[[
+    mov [__+100],rcx
+  ]],
+  "__+100",
+  function(addrContent,releaseFn,addr)
+    print("content logged at ",hx(addr)," is ",hx(addrContent))
+    releaseFn()
+  end)
+
+assert(type(df)=='function',"return non function")
+
+
+-- type "df()" at debug console and execute to release script
+
+</LuaScript>
+</CheatTable>

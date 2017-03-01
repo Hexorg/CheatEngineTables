@@ -1,0 +1,275 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="24">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>0</ID>
+      <Description>"Initialize"</Description>
+      <Options moHideChildren="1"/>
+      <LastState Activated="1"/>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>[ENABLE]
+{$lua}
+function _readInteger(Input)
+  local Value = readInteger(Input)
+  if Value &lt; 0x80000000 then return Value
+  else return Value - 0x100000000 end
+end
+
+function ParamIndexer()
+  MasterParamTable = {}
+  local Param = getAddress("ParamPatch")
+  local Start = readQword(Param)
+  local End = readQword(Param+8)
+  local Count = (End-Start)/8
+  for i=0,Count-1 do
+    local ParamOffset = readQword(Start+i*8)
+    local ParamString = "Unknown"
+    if readInteger(ParamOffset+0x20) &gt; 7 then
+       ParamString = readString(readQword(ParamOffset+0x10),90,true)
+    else
+       ParamString = readString(ParamOffset+0x10,90,true)
+    end
+    MasterParamTable[ParamString] = ParamOffset
+  end
+end
+
+
+function ParamIterator(ParamName,ChangeTable) --Param Offset is in decimal
+  local ParamAddr = readQword(readQword(MasterParamTable[ParamName]+0x68)+0x68)
+  local IDTable = {}
+  local TableCount = byteTableToWord(readBytes(ParamAddr+0xa,2,true))
+  for i=0,TableCount-1 do
+    local PID = readInteger(ParamAddr+0x40+0x18*i)
+    local IDO = readInteger(ParamAddr+0x48+0x18*i)
+    local POffset = ParamAddr+IDO
+    IDTable[PID] = POffset
+  end
+  for k,v in pairs(ChangeTable) do
+    ParamPatcher(IDTable[v[1]],v[2],v[3])
+  end
+end
+
+function ParamPatcher(IDOffset,DataOffset,Data) --seperated for now in case i need to update something
+  local WriteAddr = IDOffset+DataOffset
+  local HexTable = {}
+  for word in string.gmatch(Data, "%x+") do table.insert(HexTable,tonumber(word,16)) end
+  writeBytes(WriteAddr,HexTable)
+end
+{$asm}
+{$lua}
+  if not syntaxcheck then
+  autoAssemble([[
+  aobscanmodule(ParamPatchAOB,DarkSoulsIII.exe,48 8b 05 * * * * e9 * * * * 48 8d 94 24)
+  registersymbol(ParamPatchAOB)
+  ]])
+
+  local addr = getAddress("ParamPatchAOB")
+  addr = addr + _readInteger(addr+0x3) + 7
+  addr = readQword(addr)+0x10
+  unregisterSymbol("ParamPatch")
+  registerSymbol("ParamPatch", addr, true)
+  ParamIndexer()
+  end
+
+{$asm}
+{$lua}
+autoAssemble([[
+aobscanmodule(SomeAOB2,DarkSoulsIII.exe,48 8B 1D ?? ?? ?? 04 48 8B F9 48 85 DB 74 76 8B 11 85 D2 78 70)
+registersymbol(SomeAOB2)
+]])
+local addr = getAddress("SomeAOB2")
+addr = addr + readInteger(addr + 3) + 7
+unregisterSymbol("Somesymbol")
+registerSymbol("Somesymbol", addr, true)
+
+{$asm}
+{$lua}
+
+autoAssemble([[
+aobscanmodule(Somebytes,DarkSoulsIII.exe,48 8B 05 ?? ?? ?? ?? 48 8B 80 58 0C 00 00)
+registersymbol(Somebytes)
+]])
+local addr = getAddress("Somebytes")
+addr = addr + readInteger(addr + 3) + 7
+unregisterSymbol("SomeAddress2")
+registerSymbol("SomeAddress2", addr, true)
+
+{$asm}
+
+
+[DISABLE]
+
+unregistersymbol(ParamPatch)
+unregistersymbol(ParamPatchAOB)
+unregisterSymbol(BaseB)
+unregisterSymbol(SomeAOB2)
+unregisterSymbol(Somesymbol)
+unregisterSymbol(Somebytes)
+unregisterSymbol(SomeAddress2)
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>86529</ID>
+          <Description>"Auto-Save"</Description>
+          <DropDownList ReadOnly="1" DescriptionOnly="1" DisplayValueAsItem="1">1:Enabled
+0:Disabled
+</DropDownList>
+          <LastState Value="1" RealAddress="7FFA0960070"/>
+          <Color>000000</Color>
+          <VariableType>Byte</VariableType>
+          <Address>someaddress2</Address>
+          <Offsets>
+            <Offset>B10</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>4</ID>
+          <Description>"Restrict Effects"</Description>
+          <LastState/>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[ENABLE]
+{$lua}
+if not syntaxcheck then
+local stopeffect = {
+  {13,0x16c,"04"}, --13
+  {33,0x16c,"04"}, --33
+  {34,0x16c,"04"}, --34
+  {45,0x16c,"04"}, --45
+  {7020,0x16c,"04"}, --7020
+  {7030,0x16c,"04"}, --7030
+  {7080,0x16c,"04"}, --7080
+  {7092,0x16c,"04"}, --7092
+  {7130,0x16c,"04"}, --7130
+  {7135,0x16c,"04"}, --7135
+  {7120,0x16c,"04"}, --7120
+  {7140,0x16c,"04"}, --7140
+  {7150,0x16c,"04"}, --7150
+  {7160,0x16c,"04"}, --7160
+  {7300,0x16c,"04"}, --7300
+  {7400,0x16c,"04"}, --7400
+  {1600,0x16c,"04"}, --1600
+  {1610,0x16c,"04"}, --1610
+  {1620,0x16c,"04"}, --1620
+  {11013,0x16c,"04"}, --11013
+  {12150,0x16c,"04"}, --12150
+  {12153,0x16c,"04"}, --12153
+  {103750410,0x16c,"04"}, --103750410
+  {5100,0x16c,"04"}, --5100
+  {5101,0x16c,"04"}, --5101
+  {4902,0x156,"00"}, --4902
+  {3121,0x156,"04"}, --3121
+}
+ParamIterator("SpEffectParam",stopeffect)
+end
+
+{$asm}
+[DISABLE]
+{$lua}
+if not syntaxcheck then
+local stopeffect = {
+  {13,0x16c,"07"}, --13
+  {33,0x16c,"07"}, --33
+  {34,0x16c,"07"}, --34
+  {45,0x16c,"07"}, --45
+  {7020,0x16c,"07"}, --7020
+  {7030,0x16c,"07"}, --7030
+  {7080,0x16c,"07"}, --7080
+  {7092,0x16c,"07"}, --7092
+  {7130,0x16c,"07"}, --7130
+  {7135,0x16c,"07"}, --7135
+  {7120,0x16c,"07"}, --7120
+  {7140,0x16c,"07"}, --7140
+  {7150,0x16c,"07"}, --7150
+  {7160,0x16c,"07"}, --7160
+  {7300,0x16c,"07"}, --7300
+  {7400,0x16c,"07"}, --7400
+  {1600,0x16c,"07"}, --1600
+  {1610,0x16c,"07"}, --1610
+  {1620,0x16c,"07"}, --1620
+  {11013,0x16c,"07"}, --11013
+  {12150,0x16c,"07"}, --12150
+  {12153,0x16c,"07"}, --12153
+  {103750410,0x16c,"07"}, --103750410
+  {5100,0x16c,"07"}, --5100
+  {5101,0x16c,"07"}, --5101
+  {4902,0x156,"00"}, --4902
+  {3121,0x156,"07"}, --3121
+}
+ParamIterator("SpEffectParam",stopeffect)
+end
+
+</AssemblerScript>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>86289</ID>
+          <Description>"Prevent One-Hit Death (Unsafe)"</Description>
+          <Options moHideChildren="1"/>
+          <LastState/>
+          <Color>0000FF</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[ENABLE]
+aobscanmodule(SomeAob,DarkSoulsIII.exe,8D 0C 38 89 4C 24 48)
+alloc(newmem,$1000,SomeAob)
+label(code)
+label(return)
+
+newmem:
+  mov ecx,[rdx]
+  mov ecx,fa
+  shl ecx,3
+  neg ecx
+  cmp edi,ecx
+  jg code
+  mov rcx,Somesymbol
+  mov rcx,[rcx]
+  mov rcx,[rcx+80]
+  mov rcx,[rcx+1F80]
+  cmp rbx,[rcx+18]
+  jne code
+  xor rdi,rdi
+code:
+  lea ecx,[rax+rdi]
+  mov [rsp+48],ecx
+  jmp return
+
+SomeAob:
+  jmp newmem
+  nop
+  nop
+return:
+registersymbol(SomeAob)
+
+[DISABLE]
+SomeAob:
+  db 8D 0C 38 89 4C 24 48
+unregistersymbol(SomeAob)
+dealloc(newmem)
+
+</AssemblerScript>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols>
+    <SymbolEntry>
+      <Name>Findit2</Name>
+      <Address>1404C0DDA</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>SomeAob</Name>
+      <Address>144BEB887</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>ParamPatchAOB</Name>
+      <Address> 145D1040F</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>SomeAOB2</Name>
+      <Address> 1404C0DDA</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>Somebytes</Name>
+      <Address> 140622130</Address>
+    </SymbolEntry>
+  </UserdefinedSymbols>
+</CheatTable>

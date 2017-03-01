@@ -1,0 +1,246 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="24">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>0</ID>
+      <Description>"AoE 3 - The Asian Dynasties Script AOB"</Description>
+      <LastState/>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>{
+===========================================
+ Age of Empires III - The Asian Dynasties
+ Game Version  : 1.00-1.02
+ Script Version: 1.0
+ CE Version    : 5.6
+ GodMode, Resources
+ 25-Jul-2008 V1.0
+ 06-Oct-2010 AOB Version
+===========================================
+}
+
+[ENABLE]
+//=========================================
+alloc(MyCode,1024)
+//=========================================
+
+aobscan(aobGodMode,8b 97 b4 00 00 00 89 4f 64)
+aobscan(aobMonResource,33 04 8a 89 44 24 14 d9 44 24 14)
+aobscan(aobMonPlayer,8b 0a 8b 54 24 20 51 8b 88 c0 00 00 00)
+
+//=========================================
+// Declaration section
+label(pGodMode)
+label(pMonResource)
+label(pMonPlayer)
+label(_GodMode)
+label(_GodM1)
+label(_BackGM)
+label(_ExitGM)
+label(_MonResource)
+label(_MonR0)
+label(_MonR1)
+label(_BackMR)
+label(_ExitMR)
+label(_MonPlayer)
+label(_BackMP)
+label(_ExitMP)
+label(iPlayerID)
+label(pResource)
+label(pPlayer)
+label(pLastOne)
+label(iEnableGM)
+label(iEnableMR)
+label(fMinRes)
+
+registersymbol(MyCode)
+registersymbol(pLastOne)
+registersymbol(pResource)
+registersymbol(pPlayer)
+registersymbol(iPlayerID)
+registersymbol(iEnableGM)
+registersymbol(iEnableMR)
+registersymbol(pGodMode)
+registersymbol(pMonResource)
+registersymbol(pMonPlayer)
+registersymbol(fMinRes)
+
+//=========================================
+MyCode:
+//=========================================
+_GodMode:
+ mov [pLastOne],edi             // Save structure address for debugging
+
+ cmp dword ptr [iEnableGM],0
+ je _ExitGM                     // Jump if feature is disabled
+
+ mov edx,[edi+44]               // Read ptr to Player ID 
+ or edx,edx                     // Valid Ptr?
+ jz _ExitGM                     // Jump if false
+
+ mov edx,[edx]                  // Read Player ID
+ cmp edx,[iPlayerID]            // Player�s? 
+ jne _ExitGM                    // Jump if false
+
+ mov eax,[edi+64]               // Read current HP
+ cmp eax,[esp+14]               // Current HP &lt;= New HP?
+ jle _GodM1                     // Jump if true
+
+ mov [esp+14],eax               // Update stack with current HP
+
+_GodM1:
+ mov ecx,[esp+14]               // Read new HP
+
+_ExitGM:
+ mov edx,[edi+000000b4]         // Original code
+ jmp _BackGM                    // Back to main code
+
+//=========================================
+// Minimum Resource = 15000
+_MonResource:
+ push ebx                       // Save EBX
+
+ cmp dword ptr [iEnableMR],0
+ je _ExitMR                     // Jump if feature is disabled
+
+ cmp edx,[pResource]            // Is it the player�s?
+ jne _MonR1                     // Jump if false
+
+ cmp ecx,7                      // Is it Export?
+ je _MonR0                      // Jump if true
+
+ cmp ecx,3                      // Is it coin, wood or food? 
+ jge _MonR1                     // Jump if false
+
+_MonR0:
+ mov ebx,eax                    // Save encription
+ xor eax,[edx+ecx*4]            // Decript resource
+
+ cmp eax,[fMinRes]               // Greater than 15000?
+ jge _ExitMR                    // Jump if true
+
+ mov eax,[fMinRes]               // Make eax = 15000
+ xor eax,ebx                    // Encript resource
+ mov [edx+ecx*4],eax            // Update resource
+
+ mov eax,ebx                    // Restore encription
+
+_MonR1:
+ xor eax,[edx+ecx*4]            // Decript resource
+
+_ExitMR:
+ pop ebx                        // Restore EBX
+ mov [esp+14],eax               // Original code
+ jmp _BackMR                    // Back to main code
+
+//=========================================
+// Monitor player structure address
+_MonPlayer:
+ mov ecx,[edx]                  // Read ID
+ cmp ecx,[iPlayerID]            // Is it the player�s?
+ jne _ExitMP                    // Jump if false
+
+ mov ecx,[edx+00000230]         // Read ptr to resource
+
+ mov [pResource],ecx            // Save ptr to further use
+ mov [pPlayer],edx              // Save player struct address for debugging
+
+ mov ecx,[edx]                  // Read ID
+
+_ExitMP:
+ mov edx,[esp+20]               // Original code
+ jmp _BackMP                    // Back to main code
+
+//=========================================
+// Variables
+pLastOne:
+ dd 0
+pResource:
+ dd 0
+pPlayer:
+ dd 0
+iEnableGM:
+ dd 1
+iEnableMR:
+ dd 1
+iPlayerID:
+ dd 1
+fMinRes:
+ dd (float)1000
+
+//=========================================
+// Hacking Points
+//age3y.exe+4f449:
+aobGodMode:
+pGodMode:
+ jmp _GodMode
+ nop
+_BackGM:
+
+//age3y.exe+3cef8:
+aobMonResource:
+pMonResource:
+ jmp _MonResource
+ nop
+ nop
+_BackMR:
+
+//age3y.exe+4337d:
+aobMonPlayer:
+pMonPlayer:
+ jmp _MonPlayer
+ nop
+_BackMP:
+
+//=========================================
+// Original Codes
+[DISABLE]
+//age3y.exe+4f449:
+pGodMode:
+ mov edx,[edi+000000b4]
+ 
+//age3y.exe+3cef8:
+pMonResource:
+ xor eax,[edx+ecx*4]
+ mov [esp+14],eax
+
+//age3y.exe+4337d:
+pMonPlayer:
+ mov ecx,[edx]
+ mov edx,[esp+20] 
+
+unregistersymbol(MyCode)
+unregistersymbol(pLastOne)
+unregistersymbol(iPlayerID)
+unregistersymbol(pResource)
+unregistersymbol(pPlayer)
+unregistersymbol(iEnableGM)
+unregistersymbol(iEnableMR)
+unregistersymbol(pGodMode)
+unregistersymbol(pMonResource)
+unregistersymbol(pMonPlayer)
+unregistersymbol(fMinRes)
+
+dealloc(MyCode)
+</AssemblerScript>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>1</ID>
+      <Description>"Enable/Disable God Mode"</Description>
+      <VariableType>4 Bytes</VariableType>
+      <Address>iEnableGM</Address>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>2</ID>
+      <Description>"Enable/Disable Unlimited Resources"</Description>
+      <VariableType>4 Bytes</VariableType>
+      <Address>iEnableMR</Address>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>3</ID>
+      <Description>"Minimum Resource Value"</Description>
+      <VariableType>Float</VariableType>
+      <Address>fMinRes</Address>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols/>
+</CheatTable>

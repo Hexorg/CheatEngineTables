@@ -1,0 +1,1422 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="19">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>98</ID>
+      <Description>"[X] &lt;== Fallen Enchantress v1.32 steam Script v1.2 AOB"</Description>
+      <Options moHideChildren="1" moDeactivateChildrenAsWell="1"/>
+      <LastState/>
+      <Color>FF0000</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>{
+===========================================
+ Game Title    : Elemental - Fallen Enchantress
+ Game Version  : 1.32
+ Game Sponsor  : fennix102 (GIFT)
+ Proces Name   : FallenEnchantress.exe
+ Relevant Info : 32bits/TBRPG
+ Script Version: 1.2
+ CE Version    : 6.5
+ Release date  : 23-Feb-2016
+ Author        : Recifense
+ History:
+ 05-May-13: First Release (S1.0)
+ 07-May-13: Fixed a BUG on the Full Mana script. (S1.1)
+ 23-Feb-16: Release for v1.32 (CE65+AOB)
+ Features:
+ - Minimum Existing Resources:
+   - Gold
+   - Mana
+   - Crystal
+   - Metal
+ - Unlimited Movement for player's troops
+ - Quick Level Up for player's heroes
+ - Fast Research (1 turn)
+ - Fast Construction/Improvement (1 turn/3 turns)
+   - Side effect -&gt; Quick City Growth
+ - Fast Production (1 turn/3 turns)
+ - God Mode
+ - Pointers to selected Character's Attributes:
+   - Moves
+   - Strength
+   - Dexterity
+   - Hit Points
+   - Intelligence
+   - Accuracy
+   - Weight Capacity
+   - Combat Speed
+ - Pointer to available points when creating a faction
+===========================================
+}
+
+//=========================================
+// Checking CE version
+{$lua}
+  if(getCEVersion() &lt; 6.5) then
+    ShowMessage('Sorry. CE version should be 6.5 or above')
+  end
+{$asm}
+
+//=========================================
+// Checking Selected Process
+{$lua}
+  if(process == nil) then
+    ShowMessage('No process was selected')
+  elseif (process ~= "FallenEnchantress.exe") then
+    ShowMessage('Error. Expected Process = FallenEnchantress.exe')
+  end
+{$asm}
+
+//=========================================
+// Definitions
+define(LUDO,"FallenEnchantress.exe")
+define(CE65,(float)6.5)
+
+//=========================================
+[ENABLE]
+//=========================================
+// Check if script is compatible to running game version
+// If false the script will not be loaded
+
+AOBScanModule(MSUN,FallenEnchantress.exe,89 9f a0 03 00 00 8b 8c 24 f8 00 00 00 64 89 0d 00 00 00 00 59 5f)
+AOBScanModule(MSCY,FallenEnchantress.exe,89 86 20 03 00 00 8b ce e8 ?? ?? ?? ?? 83 3d ?? ?? ?? ?? 00 ?? ??)
+AOBScanModule(MHPR,FallenEnchantress.exe,8b 04 b8 85 c0 ?? ?? 83 b8 54 01 00 00 00 ?? ?? 83 b8 58 01 00 00)
+AOBScanModule(MMPT,FallenEnchantress.exe,89 81 04 02 00 00 ?? ?? 8b 11 8b 82 bc 01 00 00 ff d0 c2 04 00 ??)
+AOBScanModule(MGRE,FallenEnchantress.exe,d9 47 20 5f 5b 5e 5d c2 04 00 d9 ee 5f 5b 5e 5d c2 04 00 ?? ?? ??)
+AOBScanModule(MUAT,FallenEnchantress.exe,d9 46 28 d9 5c 24 30 d9 44 24 30 8b 44 24 34 d9 18 5e 5f 83 c4 24)
+AOBScanModule(MUXP,FallenEnchantress.exe,8b 80 cc 04 00 00 c3 b8 01 00 00 00 c3 ?? ?? ?? ?? ?? ?? ?? ?? ??)
+AOBScanModule(GDMD,FallenEnchantress.exe,89 96 cc 00 00 00 e9 ?? ?? ?? ?? 8b 06 8b 50 60 ff d2 2b c7 0f 84)
+AOBScanModule(MBMA,FallenEnchantress.exe,d9 5c 24 04 d9 44 24 04 d9 51 20 ?? ?? d9 41 28 de d9 df e0 f6 c4)
+AOBScanModule(MRPR,FallenEnchantress.exe,d9 44 24 7c d9 47 28 de d9 df e0 f6 c4 01 ?? ?? 3b 7e 04 ?? ?? e8)
+AOBScanModule(MCPR,FallenEnchantress.exe,d9 86 c0 02 00 00 83 86 f4 02 00 00 01 d8 44 24 0c d9 9e c0 02 00)
+AOBScanModule(MPPR,FallenEnchantress.exe,d9 46 34 d9 44 24 04 de d9 df e0 f6 c4 41 ?? ?? 8b 56 30 a1 ?? ??)
+AOBScanModule(MCRH,FallenEnchantress.exe,39 9e e0 02 00 00 ?? ?? 8b 0d ?? ?? ?? ?? 6a 01 53 68 ?? ?? ?? ??)
+AOBScanModule(MFCP,FallenEnchantress.exe,8b 91 00 05 00 00 33 ff 89 5c 24 34 89 54 24 24 89 7c 24 3c 89 7c)
+
+//=========================================
+alloc(MyCode,4096,$process)
+//=========================================
+// Declaration section
+label(_MonSelUnit)
+label(_BackMSU)
+label(_ExitMSU)
+label(_MonSelCity)
+label(_BackMSC)
+label(_ExitMSC)
+label(_MonHumanPlayer)
+label(_BackMHP)
+label(_ExitMHP)
+label(_MonMovePoint)
+label(_MonMP00)
+label(_MonMP01)
+label(_BackMMP)
+label(_ExitMMP)
+label(_MonGlobalResources)
+label(_MonGR00)
+label(_BackMGR)
+label(_ExitMGR)
+label(_MonUnitAttributes)
+label(_MonUA00)
+label(_MonUA01)
+label(_BackMUA)
+label(_ExitMUA)
+label(_MonUnitXP)
+label(_MonUX00)
+label(_BackMUX)
+label(_ExitMUX)
+label(_GodMode)
+label(_BackGMD)
+label(_ExitGMD)
+label(_MonBattleMana)
+label(_BackMBM)
+label(_ExitMBM)
+label(_MonResearchProgress)
+label(_BackMRP)
+label(_ExitMRP)
+label(_MonConstrucProgress)
+label(_BackMCP)
+label(_ExitMCP)
+label(_MonProductiProgress)
+label(_BackMPP)
+label(_ExitMPP)
+label(_MonFactionPoints)
+label(_BackMFP)
+label(_ExitMFP)
+label(_MonCityRush)
+label(_BackMCR)
+label(_ExitMCR)
+
+label(pHero)
+label(pHero1)
+label(pStatus)
+label(pSel)
+label(pSelU)
+label(pSelC)
+label(pPlayer)
+label(pFaction)
+label(pAttributes)
+label(iEnableMMP)
+label(iEnableMGR)
+label(iEnableGMD)
+label(iEnableUXP)
+label(iEnableMBM)
+label(iEnableMRP)
+label(iEnableMCP)
+label(iEnableMPP)
+label(iEnableMCR)
+label(iECX)
+label(iCount)
+label(iEBP)
+
+//=========================================
+// Registering Symbols
+registersymbol(MyCode)
+registersymbol(pHero)
+registersymbol(pHero1)
+registersymbol(pStatus)
+registersymbol(pSel)
+registersymbol(pSelU)
+registersymbol(pSelC)
+registersymbol(pPlayer)
+registersymbol(pFaction)
+registersymbol(pAttributes)
+registersymbol(iEnableMMP)
+registersymbol(iEnableMGR)
+registersymbol(iEnableGMD)
+registersymbol(iEnableUXP)
+registersymbol(iEnableMBM)
+registersymbol(iEnableMRP)
+registersymbol(iEnableMCP)
+registersymbol(iEnableMPP)
+registersymbol(iEnableMCR)
+registersymbol(iCount)
+registersymbol(iEBP)
+
+registersymbol(MSUN)
+registersymbol(MSCY)
+registersymbol(MHPR)
+registersymbol(MMPT)
+registersymbol(MGRE)
+registersymbol(MUAT)
+registersymbol(MUXP)
+registersymbol(GDMD)
+registersymbol(MBMA)
+registersymbol(MRPR)
+registersymbol(MCPR)
+registersymbol(MPPR)
+registersymbol(MCRH)
+registersymbol(MFCP)
+
+//=========================================
+MyCode:
+//========================================= FE ok
+// At Detail Screen
+_MonSelUnit:
+ mov [pSelU],ebx
+
+ test ebx,ebx
+ jz _ExitMSU
+
+ cmp dword ptr [ebx+74],0
+ jne _ExitMSU
+
+ push ebx
+ lea ebx,[ebx+000004d8]
+ mov [pSel],ebx
+ pop ebx
+
+_ExitMSU:
+ mov [edi+000003A0],ebx         // Original code
+ jmp _BackMSU                   // Back to main code
+
+//========================================= LH ok
+// At Detail Screen
+_MonSelCity:
+ mov [pSelC],eax
+
+_ExitMSC:
+ mov [esi+00000320],eax          // Original code
+ jmp _BackMSC                    // Back to main code
+
+//========================================= LH ok
+// At main screen
+_MonHumanPlayer:
+ push ebx
+
+ mov ebx,[eax]
+ mov [pPlayer],ebx
+
+_ExitMHP:
+ pop ebx
+
+ mov eax,[eax+edi*4]             // Original code
+ test eax,eax                    // Original code
+ jmp _BackMHP                    // Back to main code
+
+//========================================= FE ok
+_MonMovePoint:
+ pushfd
+
+ cmp dword ptr [iEnableMMP],0
+ je _ExitMMP                    // Jump if feature is disabled
+
+ cmp dword ptr [ecx+74],0
+ jne _ExitMMP
+
+ mov [pHero1],ecx
+
+ cmp dword ptr [iEnableUXP],0
+ je _MonMP00                    // Jump if feature is disabled
+
+ mov eax,[ecx+000004d4]         // Get XP for next level
+ or eax,eax                     // Valid?
+ jz _MonMP00                    // Jump if false
+
+ dec eax
+ mov [ecx+000004d0],eax         // Update current XP
+
+_MonMP00:
+ cmp dword ptr [iEnableGMD],0
+ je _MonMP01                    // Jump if feature is disabled
+
+ cmp dword ptr [ecx+000000d0],#100
+ jge _MonMP01
+
+ mov dword ptr [ecx+000000d0],#100
+ mov dword ptr [ecx+000000cc],#100
+
+_MonMP01:
+ mov eax,[ecx+000004dc]
+ mov [pStatus],eax
+
+ mov eax,[ecx+00000200]
+
+_ExitMMP:
+ popfd
+
+ mov [ecx+00000204],eax         // Original code
+ jmp _BackMMP                   // Back to main code
+
+//========================================= LH ok
+_MonGlobalResources:
+ cmp esi,[pPlayer]
+ jne _ExitMGR
+
+ cmp dword ptr [iEnableMGR],0
+ je _ExitMGR                    // Jump if feature is disabled
+
+ mov ebx,[edi+08]
+ cmp ebx,'Mana'
+ je _MonGR00
+
+ cmp ebx,'Meta'
+ je _MonGR00
+
+ cmp ebx,'Crys'
+ je _MonGR00
+
+ cmp ebx,'Gold'
+ je _MonGR00
+ jmp _ExitMGR
+
+_MonGR00:
+ mov ebx,(float)5000.0
+
+ cmp ebx,[edi+20]
+ jle _ExitMGR
+
+ mov [edi+20],ebx
+
+_ExitMGR:
+ fld dword ptr [edi+20]         // Original code
+ pop edi                        // Original code
+ pop ebx                        // Original code
+ jmp _BackMGR                   // Back to main code
+
+//========================================= LH ok
+// Attribute Name = UnitStat_&lt;name&gt;
+// Valid on the attribute screen
+_MonUnitAttributes:
+ mov [iECX],ecx
+
+ cmp edi,[pSel]                 // Is it a Player's selected unit?
+ jne _ExitMUA                   // Jump if false
+
+ lea ecx,[esi+10]
+
+ cmp dword ptr [esi+24],#15
+ je _MonUA00
+
+ cmp dword ptr [esi+24],#31
+ jne _ExitMUA
+
+ mov ecx,[esi+10]               // Point to attrib name
+ test ecx,ecx
+ jz _ExitMUA
+
+_MonUA00:
+ mov eax,[ecx]
+
+ cmp eax,'Unit'                 // Is it an attribute name?
+ jne _ExitMUA                   // Jump if false
+
+ mov eax,[ecx+10]
+ cmp eax,'hMod'                 // Is it a valid attribute name?
+ je _ExitMUA                    // Jump if false
+
+ mov eax,[ecx+09]               // Get the 1st 4 characters of the attribute
+
+ xor ecx,ecx                    // Make index = 0
+ cmp eax,'Move'                 // Is it 'Moves'?
+ je _MonUA01                    // jump if true
+
+ inc ecx
+ cmp eax,'Stre'                 // Strength
+ je _MonUA01
+
+ inc ecx
+ cmp eax,'Dext'                 // Dexterity
+ je _MonUA01
+
+ inc ecx
+ cmp eax,'HitP'                 // Hit Points
+ je _MonUA01
+
+ inc ecx
+ cmp eax,'Inte'                 // Intelligence
+ je _MonUA01
+
+ inc ecx
+ cmp eax,'Accu'                 // Accuracy
+ je _MonUA01
+
+ inc ecx
+ cmp eax,'Weig'                 // Weight Capacity
+ je _MonUA01
+
+ inc ecx
+ cmp eax,'Comb'                 // Combat Speed
+ jne _ExitMUA                   // jump if none of them
+
+_MonUA01:
+ mov [pAttributes+ecx*4],esi    // Save pointer for use in a table
+
+_ExitMUA:
+ mov ecx,[iECX]
+
+ fld dword ptr [esi+28]         // Original code
+ fstp dword ptr [esp+30]        // Original code
+ jmp _BackMUA                   // Back to main code
+
+//========================================= FE ok
+// Unit under cursor or on click
+_MonUnitXP:
+ push eax
+ push edi
+
+ mov edi,eax
+
+ cmp dword ptr [edi+74],0       // Is it a player's unit?
+ jne _ExitMUX                   // Jump if false
+
+ cmp dword ptr [iEnableUXP],0
+ je _MonUX00                    // Jump if feature is disabled
+
+ mov eax,[edi+000004d4]         // Get XP for next level
+ test eax,eax                   // Valid?
+ jz _MonUX00                    // Jump if false
+
+ dec eax
+ mov [edi+000004d0],eax         // Update current XP
+
+_MonUX00:
+ cmp dword ptr [iEnableGMD],0
+ je _ExitMUX                    // Jump if feature is disabled
+
+ cmp dword ptr [edi+000000d0],#100
+ jge _ExitMUX
+
+ mov dword ptr [edi+000000d0],#100
+ mov dword ptr [edi+000000cc],#100
+
+_ExitMUX:
+ pop edi
+ pop eax
+
+ mov eax,[eax+000004CC]         // Original code (rds cur level)
+ jmp _BackMUX                   // Back to main code
+
+//========================================= LH ok
+// During battle phase (on the copy)
+_GodMode:
+ cmp dword ptr [iEnableGMD],0
+ je _ExitGMD                    // Jump if feature is disabled
+
+ cmp dword ptr [esi+74],0
+ jne _ExitGMD
+
+ cmp edx,#100
+ jge _ExitGMD
+
+ mov edx,#100
+
+ cmp edx,[esi+000000CC]
+ jns _ExitGMD
+
+ mov edx,[esi+000000CC]
+
+_ExitGMD:
+ mov [esi+000000CC],edx         // Original code
+ jmp _BackGMD                   // Back to main code
+
+//========================================= LH ok NHP (aob)
+_MonBattleMana:
+ fstp dword ptr [esp+04]        // Original code
+
+ pushfd
+
+ mov eax,[esp+10]
+ cmp eax,[pPlayer]
+ jne _ExitMBM
+
+ cmp dword ptr [iEnableMBM],0
+ je _ExitMBM                    // Jump if feature is disabled
+
+ mov eax,[ecx+20]
+ mov [esp+08],eax
+
+_ExitMBM:
+ popfd
+
+ fld dword ptr [esp+04]         // Original code
+ jmp _BackMBM                   // Back to main code
+
+//========================================= LH ok
+// During turn (1 turn research)
+_MonResearchProgress:
+ cmp dword ptr [iEnableMRP],0
+ je _ExitMRP                    // Jump if feature is disabled
+
+ lea eax,[esi-000000bc]
+ mov eax,[eax+08]
+ cmp eax,[pPlayer]
+ jne _ExitMRP
+
+ mov eax,[esp+7C]
+ mov [edi+28],eax
+
+_ExitMRP:
+ fld dword ptr [esp+7C]         // Original code
+ fld dword ptr [edi+28]         // Original code
+ jmp _BackMRP                   // Back to main code
+
+//========================================= FE ok
+// During turn (1 turn construction/improvement)
+_MonConstrucProgress:
+ push eax
+
+ cmp dword ptr [iEnableMCP],0
+ je _ExitMCP                    // Jump if feature is disabled
+
+ mov eax,[ebp+38]               // Get pCity
+ test eax,eax
+ jz _ExitMCP
+
+ mov eax,[eax+5c]               // Get pOwner
+ cmp eax,[pPlayer]
+ jne _ExitMCP
+
+ mov eax,[esi+000002C4]
+ add eax,00100000
+ mov [esi+000002C0],eax
+
+_ExitMCP:
+ pop eax
+
+ fld dword ptr [esi+000002C0]   // Original code (upds max value)
+ jmp _BackMCP                   // Back to main code
+
+//========================================= LH ok
+// During turn (1 turn production/reinforcement)
+_MonProductiProgress:
+ cmp dword ptr [iEnableMPP],0
+ je _ExitMPP                    // Jump if feature is disabled
+
+ mov eax,[esi+1c]               // Get pCity
+ mov eax,[eax+5c]               // Get pOwner
+ cmp eax,[pPlayer]
+ jne _ExitMPP
+
+ mov eax,[esp+04]
+ add eax,00100000
+ mov [esi+34],eax
+
+_ExitMPP:
+ fld dword ptr [esi+34]         // Original code
+ fld dword ptr [esp+04]         // Original code
+ jmp _BackMPP                   // Back to main code
+
+//========================================= FE ok
+// On selecting city
+_MonCityRush:
+ push eax
+
+ cmp dword ptr [iEnableMCR],0
+ je _ExitMCR                    // Jump if feature is disabled
+
+ mov eax,[esi+5c]               // Get pOwner
+ cmp eax,[pPlayer]
+ jne _ExitMCR
+
+ mov [esi+000002E0],ebx         // Enable Rush Option
+
+_ExitMCR:
+ pop eax
+
+ cmp [esi+000002E0],ebx         // Original code
+ jmp _BackMCR                   // Back to main code
+
+//========================================= LH ok
+// When customizing a faction
+_MonFactionPoints:
+ mov [pFaction],ecx
+
+_ExitMFP:
+ mov edx,[ecx+00000500]         // Original code (get points)
+ jmp _BackMFP                   // Back to main code
+
+//=========================================
+ db '====================================&gt;'
+ db 'CE6.5 Script by Recifense 022316'
+//=========================================
+// Variables
+iEnableMMP:
+ dd 0
+iEnableMGR:
+ dd 0
+iEnableGMD:
+ dd 0
+iEnableUXP:
+ dd 0
+iEnableMBM:
+ dd 0
+iEnableMRP:
+ dd 0
+iEnableMCP:
+ dd 0
+iEnableMPP:
+ dd 0
+iEnableMCR:
+ dd 0
+pHero:
+ dd 0
+pHero1:
+ dd 0
+pStatus:
+ dd 0
+pSel:
+ dd 0
+pSelU:
+ dd 0
+pSelC:
+ dd 0
+pPlayer:
+ dd MyCode
+pFaction:
+ dd 0
+iECX:
+ dd 0
+iEBP:
+ dd 0
+iCount:
+ dd 0
+pAttributes:
+ dd 0,0,0,0,0,0,0,0             // Array of pointers
+
+//=========================================
+// Hacking Points
+MSUN:
+ jmp _MonSelUnit
+ nop
+_BackMSU:
+
+MSCY:
+ jmp _MonSelCity
+ nop
+_BackMSC:
+
+MHPR:
+ jmp _MonHumanPlayer
+_BackMHP:
+
+MMPT:
+ jmp _MonMovePoint
+ nop
+_BackMMP:
+
+MGRE:
+ jmp _MonGlobalResources
+_BackMGR:
+
+MUAT:
+ jmp _MonUnitAttributes
+ nop
+ nop
+_BackMUA:
+
+MUXP:
+ jmp _MonUnitXP
+ nop
+_BackMUX:
+
+GDMD:
+ jmp _GodMode
+ nop
+_BackGMD:
+
+MBMA:
+ jmp _MonBattleMana
+ nop
+ nop
+ nop
+_BackMBM:
+
+MRPR:
+ jmp _MonResearchProgress
+ nop
+ nop
+_BackMRP:
+
+MCPR:
+ jmp _MonConstrucProgress
+ nop
+_BackMCP:
+
+MPPR:
+ jmp _MonProductiProgress
+ nop
+ nop
+_BackMPP:
+
+MCRH:
+ jmp _MonCityRush
+ nop
+_BackMCR:
+
+MFCP:
+ jmp _MonFactionPoints
+ nop
+_BackMFP:
+
+//=========================================
+// Script for Restoring Original Codes
+[DISABLE]
+MSUN:
+// mov [edi+000003A0],ebx
+ db 89 9f a0 03 00 00
+
+MSCY:
+// mov [esi+00000320],eax
+ db 89 86 20 03 00 00
+
+MHPR:
+// mov eax,[eax+edi*4]
+// test eax,eax
+ db 8b 04 b8 85 c0
+
+MMPT:
+// mov [ecx+00000214],eax
+ db 89 81 04 02 00 00
+
+MGRE:
+// fld dword ptr [edi+20]
+// pop edi
+// pop ebx
+ db d9 47 20 5f 5b
+
+MUAT:
+// fld dword ptr [esi+28]
+// fstp dword ptr [esp+30]
+ db d9 46 28 d9 5c 24 30
+
+MUXP:
+// mov eax,[eax+000004CC]
+ db 8b 80 cc 04 00 00
+
+GDMD:
+// mov [esi+000000CC],edx
+ db 89 96 cc 00 00 00
+
+MBMA:
+// fstp dword ptr [esp+04]
+// fld dword ptr [esp+04]
+ db d9 5c 24 04 d9 44 24 04
+
+MRPR:
+// fld dword ptr [esp+7C]
+// fld dword ptr [edi+28]
+ db d9 44 24 7c d9 47 28
+
+MCPR:
+// fld dword ptr [esi+000002C0]
+ db d9 86 c0 02 00 00
+
+MPPR:
+// fld dword ptr [esi+34]
+// fld dword ptr [esp+04]
+ db d9 46 34 d9 44 24 04
+
+MCRH:
+// cmp [esi+000002E0],ebx
+ db 39 9e e0 02 00 00
+
+MFCP:
+// mov edx,[ecx+00000500]
+ db 8b 91 00 05 00 00
+
+//=========================================
+// Unregistering Symbols
+unregistersymbol(MyCode)
+unregistersymbol(pHero)
+unregistersymbol(pHero1)
+unregistersymbol(pStatus)
+unregistersymbol(pSel)
+unregistersymbol(pSelU)
+unregistersymbol(pSelC)
+unregistersymbol(pPlayer)
+unregistersymbol(pFaction)
+unregistersymbol(pAttributes)
+unregistersymbol(iEnableMMP)
+unregistersymbol(iEnableMGR)
+unregistersymbol(iEnableGMD)
+unregistersymbol(iEnableUXP)
+unregistersymbol(iEnableMBM)
+unregistersymbol(iEnableMRP)
+unregistersymbol(iEnableMCP)
+unregistersymbol(iEnableMPP)
+unregistersymbol(iEnableMCR)
+unregistersymbol(iCount)
+unregistersymbol(iEBP)
+
+unregistersymbol(MSUN)
+unregistersymbol(MSCY)
+unregistersymbol(MHPR)
+unregistersymbol(MMPT)
+unregistersymbol(MGRE)
+unregistersymbol(MUAT)
+unregistersymbol(MUXP)
+unregistersymbol(GDMD)
+unregistersymbol(MBMA)
+unregistersymbol(MRPR)
+unregistersymbol(MCPR)
+unregistersymbol(MPPR)
+unregistersymbol(MCRH)
+unregistersymbol(MFCP)
+
+//=========================================
+dealloc(MyCode)
+//============= Scripts End ===============
+
+// ****************************************
+// NOTES
+// ****************************************
+{
+}
+
+
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>96</ID>
+          <Description>"[X] &lt;== Unlimited Movement ----------------------------------------------&gt; (HK: CTRL+Home / CTRL+End)"</Description>
+          <LastState/>
+          <Color>C08000</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[enable]
+define(test,LUDO)
+
+{$LUA}
+writeInteger("iEnableMMP",1)
+getAddressList().getMemoryRecordByID(96).Color=0x0008000
+{$ASM}
+
+[disable]
+{$LUA}
+writeInteger("iEnableMMP",0)
+getAddressList().getMemoryRecordByID(96).Color=0x0c08000
+{$ASM}
+
+</AssemblerScript>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Activate</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Deactivate</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>102</ID>
+          <Description>"[X] &lt;== Minimum Global Resources -----------------------------------&gt; (HK: CTRL+Home / CTRL+End)"</Description>
+          <LastState/>
+          <Color>C08000</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[enable]
+define(test,LUDO)
+
+{$LUA}
+writeInteger("iEnableMGR",1)
+getAddressList().getMemoryRecordByID(102).Color=0x0008000
+{$ASM}
+
+[disable]
+{$LUA}
+writeInteger("iEnableMGR",0)
+getAddressList().getMemoryRecordByID(102).Color=0x0c08000
+{$ASM}
+
+</AssemblerScript>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Activate</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Deactivate</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>103</ID>
+          <Description>"[X] &lt;== God Mode -------------------------------------------------------------&gt; (HK: CTRL+Home / CTRL+End)"</Description>
+          <LastState/>
+          <Color>C08000</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[enable]
+define(test,LUDO)
+
+{$LUA}
+writeInteger("iEnableGMD",1)
+getAddressList().getMemoryRecordByID(103).Color=0x0008000
+{$ASM}
+
+[disable]
+{$LUA}
+writeInteger("iEnableGMD",0)
+getAddressList().getMemoryRecordByID(103).Color=0x0c08000
+{$ASM}
+
+</AssemblerScript>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Activate</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Deactivate</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>104</ID>
+          <Description>"[X] &lt;== Quick Level Up -----------------------------------------------------&gt; (HK: CTRL+Home / CTRL+End)"</Description>
+          <LastState/>
+          <Color>C08000</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[enable]
+define(test,LUDO)
+
+{$LUA}
+writeInteger("iEnableUXP",1)
+getAddressList().getMemoryRecordByID(104).Color=0x0008000
+{$ASM}
+
+[disable]
+{$LUA}
+writeInteger("iEnableUXP",0)
+getAddressList().getMemoryRecordByID(104).Color=0x0c08000
+{$ASM}
+
+</AssemblerScript>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Activate</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Deactivate</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>105</ID>
+          <Description>"[X] &lt;== Full Mana on Battle -----------------------------------------------&gt; (HK: CTRL+Home / CTRL+End)"</Description>
+          <LastState/>
+          <Color>C08000</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[enable]
+define(test,LUDO)
+
+{$LUA}
+writeInteger("iEnableMBM",1)
+getAddressList().getMemoryRecordByID(105).Color=0x0008000
+{$ASM}
+
+[disable]
+{$LUA}
+writeInteger("iEnableMBM",0)
+getAddressList().getMemoryRecordByID(105).Color=0x0c08000
+{$ASM}
+
+</AssemblerScript>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Activate</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Deactivate</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>106</ID>
+          <Description>"[X] &lt;== Research in 1 Turn -----------------------------------------------&gt; (HK: CTRL+Home / CTRL+End)"</Description>
+          <LastState/>
+          <Color>C08000</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[enable]
+define(test,LUDO)
+
+{$LUA}
+writeInteger("iEnableMRP",1)
+getAddressList().getMemoryRecordByID(106).Color=0x0008000
+{$ASM}
+
+[disable]
+{$LUA}
+writeInteger("iEnableMRP",0)
+getAddressList().getMemoryRecordByID(106).Color=0x0c08000
+{$ASM}
+
+</AssemblerScript>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Activate</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Deactivate</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>107</ID>
+          <Description>"[X] &lt;== Quick Construction -----------------------------------------------&gt; (HK: CTRL+Home / CTRL+End)"</Description>
+          <LastState/>
+          <Color>C08000</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[enable]
+define(test,LUDO)
+
+{$LUA}
+writeInteger("iEnableMCP",1)
+getAddressList().getMemoryRecordByID(107).Color=0x0008000
+{$ASM}
+
+[disable]
+{$LUA}
+writeInteger("iEnableMCP",0)
+getAddressList().getMemoryRecordByID(107).Color=0x0c08000
+{$ASM}
+
+</AssemblerScript>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Activate</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Deactivate</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>108</ID>
+          <Description>"[X] &lt;== Quick Production --------------------------------------------------&gt; (HK: CTRL+Home / CTRL+End)"</Description>
+          <LastState/>
+          <Color>C08000</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[enable]
+define(test,LUDO)
+
+{$LUA}
+writeInteger("iEnableMPP",1)
+getAddressList().getMemoryRecordByID(108).Color=0x0008000
+{$ASM}
+
+[disable]
+{$LUA}
+writeInteger("iEnableMPP",0)
+getAddressList().getMemoryRecordByID(108).Color=0x0c08000
+{$ASM}
+
+</AssemblerScript>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Activate</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Deactivate</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>109</ID>
+          <Description>"[X] &lt;== Unlimited Rushes --------------------------------------------------&gt; (HK: CTRL+Home / CTRL+End)"</Description>
+          <LastState/>
+          <Color>C08000</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[enable]
+define(test,LUDO)
+
+{$LUA}
+writeInteger("iEnableMCR",1)
+getAddressList().getMemoryRecordByID(109).Color=0x0008000
+{$ASM}
+
+[disable]
+{$LUA}
+writeInteger("iEnableMCR",0)
+getAddressList().getMemoryRecordByID(109).Color=0x0c08000
+{$ASM}
+
+</AssemblerScript>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Activate</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Deactivate</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>110</ID>
+          <Description>"[X] &lt;============== Selected Hero Info =============="</Description>
+          <Options moHideChildren="1"/>
+          <LastState Value="" RealAddress="00000000"/>
+          <Color>000080</Color>
+          <GroupHeader>1</GroupHeader>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>78</ID>
+              <Description>"Hero Name (DONNOT CHANGE IT)"</Description>
+              <Color>FF80FF</Color>
+              <VariableType>String</VariableType>
+              <Length>16</Length>
+              <Unicode>0</Unicode>
+              <ZeroTerminate>1</ZeroTerminate>
+              <Address>pSelU</Address>
+              <Offsets>
+                <Offset>20</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>13</ID>
+              <Description>"Selected Unit Attribute Moves"</Description>
+              <Color>0000FF</Color>
+              <VariableType>Float</VariableType>
+              <Address>pAttributes</Address>
+              <Offsets>
+                <Offset>28</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>14</ID>
+              <Description>"Selected Unit Attribute Strength"</Description>
+              <Color>0000FF</Color>
+              <VariableType>Float</VariableType>
+              <Address>pAttributes+04</Address>
+              <Offsets>
+                <Offset>28</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>15</ID>
+              <Description>"Selected Unit Attribute Dexterity"</Description>
+              <Color>0000FF</Color>
+              <VariableType>Float</VariableType>
+              <Address>pAttributes+08</Address>
+              <Offsets>
+                <Offset>28</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>16</ID>
+              <Description>"Selected Unit Attribute Hit Points"</Description>
+              <Color>0000FF</Color>
+              <VariableType>Float</VariableType>
+              <Address>pAttributes+0c</Address>
+              <Offsets>
+                <Offset>28</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>17</ID>
+              <Description>"Selected Unit Attribute Intelligence"</Description>
+              <Color>0000FF</Color>
+              <VariableType>Float</VariableType>
+              <Address>pAttributes+10</Address>
+              <Offsets>
+                <Offset>28</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>18</ID>
+              <Description>"Selected Unit Attribute Accuracy"</Description>
+              <Color>0000FF</Color>
+              <VariableType>Float</VariableType>
+              <Address>pAttributes+14</Address>
+              <Offsets>
+                <Offset>28</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>19</ID>
+              <Description>"Selected Unit Attribute Weight Capacity"</Description>
+              <Color>0000FF</Color>
+              <VariableType>Float</VariableType>
+              <Address>pAttributes+18</Address>
+              <Offsets>
+                <Offset>28</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>20</ID>
+              <Description>"Selected Unit Attribute Combat Speed"</Description>
+              <Color>0000FF</Color>
+              <VariableType>Float</VariableType>
+              <Address>pAttributes+1c</Address>
+              <Offsets>
+                <Offset>28</Offset>
+              </Offsets>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>111</ID>
+          <Description>"[X] &lt;============= Customizing Faction =============="</Description>
+          <Options moHideChildren="1"/>
+          <LastState Value="" RealAddress="00000000"/>
+          <Color>000080</Color>
+          <GroupHeader>1</GroupHeader>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>100</ID>
+              <Description>"Faction Name (DONNOT CHANGE IT)"</Description>
+              <Color>000080</Color>
+              <VariableType>String</VariableType>
+              <Length>16</Length>
+              <Unicode>0</Unicode>
+              <ZeroTerminate>1</ZeroTerminate>
+              <Address>pFaction</Address>
+              <Offsets>
+                <Offset>D4</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>101</ID>
+              <Description>"Available Points"</Description>
+              <Color>0000FF</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pFaction</Address>
+              <Offsets>
+                <Offset>500</Offset>
+              </Offsets>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>228</ID>
+      <Description>"[X] &lt;== Table/Script Information"</Description>
+      <Options moHideChildren="1"/>
+      <LastState/>
+      <Color>0000FF</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>[enable]
+define(test,LUDO)
+
+{$LUA}
+getMainForm().CommentButton.doClick()
+{$ASM}
+
+[disable]
+
+</AssemblerScript>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols>
+    <SymbolEntry>
+      <Name>Recifense</Name>
+      <Address>20160223</Address>
+    </SymbolEntry>
+  </UserdefinedSymbols>
+  <Comments>===========================================
+ Game Title    : Elemental - Fallen Enchantress
+ Game Version  : 1.32
+ Game Sponsor  : fennix102 (GIFT)
+ Proces Name   : FallenEnchantress.exe
+ Relevant Info : 32bits/TBRPG
+ Script Version: 1.2
+ CE Version    : 6.5
+ Release date  : 23-Feb-2016
+ Author        : Recifense
+ History:
+ 05-May-13: First Release (S1.0)
+ 07-May-13: Fixed a BUG on the Full Mana script. (S1.1)
+ 23-Feb-16: Release for v1.32 (CE65+AOB)
+ Features:
+ - Unlimited Movement for player's troops [1]
+ - Minimum Existing Resources:            [2]
+   - Gold
+   - Mana
+   - Crystal
+   - Metal
+ - God Mode                               [3]
+ - Quick Level Up for player's heroes     [4]
+ - Full Mana during Battle                [5]
+ - Fast Research (1 turn)                 [6]
+ - Fast Construction/Improvement (1 turn/3 turns) [7]
+   - Side effect -&gt; Quick City Growth
+ - Fast Production (1 turn/3 turns)       [8]
+ - Pointers to selected Character's Attributes:   [9]
+   - Moves
+   - Strength
+   - Dexterity
+   - Hit Points
+   - Intelligence
+   - Accuracy
+   - Weight Capacity
+   - Combat Speed
+ - Pointer to available points when creating a faction [A]
+===========================================
+[1] Valid on the strategic view. Sometimes, after fighting spiders, your army cannot move until next turn.
+[2] Existing resources will be set to minimum value 5000;
+[3] That's it. Side effect: HP is set to minimum 100;
+[4] Player's heroes will level up after a battle or a quest;
+[5] That's it.
+[6] A research per turn. During normal game or scenario.
+[7] Construction/improvement in 1 turn during normal game. It could take 3 turns in scenario games.
+[8] Production/Reinforcement in 1 turn during normal game. It could take 3 turns in scenario games.
+[9] The values are valid when you are at the detail screen of a hero and (plus) after changing tabs.
+[A] The value is valid when you are at the Faction Custumization screen and (plus) after changing tabs.
+===========================================
+[USAGE]
+1) Run CE64;
+2) Run Game;
+3) Load the game process "FallenEnchantress.exe" in CE;
+4) Load this table and activate the main script;
+5) Now Activate the script of each cheat you want to use;
+6) Game On;
+===========================================
+[HOTKEYS]
+CTRL+Home = Enable  all cheats;
+CTRL+End  = Disable all cheats;
+===========================================
+[ADVICE]
+When you can,save the game before starting using table/cheat. So you can always come back in case you don't like the result.
+===========================================
+[INFO]
+Tested on Win 10 64bits
+===========================================
+Cheers!
+</Comments>
+</CheatTable>

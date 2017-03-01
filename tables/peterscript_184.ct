@@ -1,0 +1,732 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="18">
+  <CheatEntries/>
+  <UserdefinedSymbols/>
+  <LuaScript>
+if (getCEVersion==nil) or (getCEVersion()&amp;lt;RequiredCEVersion) then
+  messageDialog('Please install Cheat Engine '..RequiredCEVersion, mtError, mbOK)
+  closeCE()
+end
+function pidDialog(doPid,autoSelectFirst,pn,dn)
+  autoSelectFirst = autoSelectFirst or false
+  local plugname = {"iexplore","flashplayerplugin","plugin-container","opera","chrome","awesomium_process","torch","dragon","maxthon","palemoon","safari" }
+  CETrainer.lab1.caption ='Ingreso a PidDialog'
+   if pn ~= nil  then -- or pn.getcount() &amp;gt; 0 then
+      CETrainer.lab1.caption ='add al plugname'
+      pname.clear()
+      pname.add(pn)
+ else
+     pname.clear()
+     pname.add("Todos")
+     pname.add("iexplore")
+     pname.add("flashplayer")
+     pname.add("plugin")
+     pname.add("opera")
+     pname.add("chrome")
+     pname.add("awesomium_process")
+     pname.add("torch")
+     pname.add("dragon")
+     pname.add("maxthon")
+     pname.add("palemoon")
+     pname.add("safari" )
+     pname.add("adobe" )
+
+    CETrainer.lab1.caption ='defino plugname'
+  end
+
+  local dllname  = type(dn)=='table' and dn or {"flash","unity" }
+
+CETrainer.lab1.caption = "...... No conectado ....... !!!!!"
+conectado = false
+  if type(dn)=='string' then table.insert(dllname,dn) end
+  local indexOf = function(s,m) for i=1,#m do if string.find(string.lower(s),string.lower(m[i]),1,true) then return i end end end -- cave insensitive find
+  local function tmerge(t,o,...) for k,v in pairs(o) do t[k]=v end if select('#',...)&amp;gt;0 then return tmerge(t,...) else return t end end
+  local function callLater(f,...)
+    local a,n = {...},select('#',...)
+    local t = tmerge(createTimer(),{Interval=1,Enabled=true,OnTimer=function(sender) sender.Enabled=false sender.Destroy() f(unpack(a,1,n)) end})
+    return t
+  end
+  local function parseProc(i,s)
+    local dll=' ... '
+    for pid,name in string.gmatch(s,'([0-9A-F]+)-(.*)') do
+      local weight,pid = 0,tonumber(pid,16)
+      for _,v in ipairs(plugname) do
+        if indexOf(name,plugname) then
+          weight = weight + 1
+          local m = enumModules(pid)
+          for i=1,#m do
+            local ix = indexOf(m[i].Name,dllname)
+            if ix then
+              weight = weight + 1
+              dll = dllname[ix]
+              break
+            end
+          end
+          break
+        end
+      end
+      return {pid=pid,desc=string.format('%5d %04X &amp;lt;%5s&amp;gt; %s',pid,pid,string.sub(dll.."     ",1,5):upper(),name),name=name,w=weight+i/2048,dll=dll}
+    end
+  end
+
+  tmerge(CETrainer.LB,{MultiSelect=false,AutoSize=true})
+
+    CETrainer.LB.OnDblClick = function()
+    local idx,PID,NAME = CETrainer.LB.ItemIndex,nil,''
+
+    if idx &amp;gt;= 0 then
+      DESC = CETrainer.LB.Items[idx]
+      for pid,pID,name in string.gmatch(DESC,"([0-9]+) ([0-9A-F]+) &amp;lt;.-&amp;gt; (.*)") do
+
+        PID = tonumber(pid,10)
+        NAME = name
+      end
+    end
+    if PID ~= nil then callLater(doPid,PID,NAME,DESC)
+       CETrainer.lab1.caption = "Process:",pid,name,'attached successfully!'
+       openProcess(PID)
+       conectado = true
+    else
+       CETrainer.lab1.caption = "...... No gfdgconectado ....... !!!!!"
+       conectado = false
+     end
+
+      end
+
+
+local tmpitems=createStringlist()
+CETrainer.LB.Items=createStringlist()
+
+  tmpitem2 = CETrainer.LB.Items
+CETrainer.LB.Items.clear()
+
+  getProcesslist(tmpitems)
+  for i=1,tmpitems.getCount() do
+     for h=1, pname.count do
+      if string.find( string.lower(tmpitems[i-1]) , string.lower(pname[h-1]) ) == nil then --or string.find( LB.Items[i-1] , pn )  &amp;lt; 1 then
+
+      else
+         CETrainer.LB.Items.add( tmpitems[i-1] )
+       end
+     end
+  end
+  local plist = {}
+  for i=1,CETrainer.LB.Items.getCount() do
+       table.insert(plist,parseProc(i,CETrainer.LB.Items[i-1]))
+  end
+  table.sort(plist,function(a,b) return a.w &amp;gt; b.w end)
+  local currProcId = getOpenedProcessID()
+  for i=1,CETrainer.LB.Items.getCount() do
+    CETrainer.LB.Items.setString(i-1,plist[i].desc)
+    if plist[i].pid == currProcId then CETrainer.LB.setItemIndex(i-1) end
+--    if i &amp;lt; 6 and type(autoSelectFirst)=='string' then print(plist[i].dll,indexOf(plist[i].dll,{autoSelectFirst}) or 'NIL') end
+    if i==1 and autoSelectFirst == true or type(autoSelectFirst)=='string' and indexOf(plist[i].dll,{autoSelectFirst}) ~=nil then
+      CETrainer.LB.setItemIndex(i-1) CETrainer.LB.OnDblClick() return
+    end
+  end
+end
+
+
+function AoBSwapEx(nombre , search, patch, proctect, loop, ...) -- alignment omit as it is ok to be default
+  Res='No Viable'
+  proctect = type(proctect) ~= 'string' and '' or proctect
+  loop     = type(loop) == 'number' and loop &amp;gt; 0 and math.floor(loop) == loop and loop or 0
+
+  assert(type(search)=='string' and type(patch)=='string', '1st 2 parameters has to be aob string')
+  local mask,wn = {},0
+  for i = 1,string.len(patch),3 do
+    local n = tonumber(string.sub(patch,i,i+2),16)
+    if type(n)=='number' and n&amp;gt;= 0 and n &amp;lt; 256 then
+      table.insert(mask,n)
+    else
+      table.insert(mask,-1)
+      wn = wn + 1
+    end
+  end
+  assert(#mask &amp;gt; wn,'nothing to patch')
+  local range,rn = {}, 0
+  for i=1,select('#',...) do
+    local p = select(i,...)
+    if type(p)=='number' and p&amp;gt;0 and math.floor(p) == p and not range[p] then
+      range[p] = true
+      rn = rn + 1
+    end
+  end
+  local r = AOBScan(search, proctect)
+
+   if r ~= nil and r.count &amp;gt; 0 then
+    local cant = r.count
+    if cant &amp;lt; 2 then
+   --  print ('coincidencias :' ,cant)
+       local success = 0
+       for i=1,r.Count do
+           local order = loop == 0 and i or 1 + ((i-1) % loop)
+
+           if rn == 0 or range[order] then
+             local addy = tonumber(r[i-1],16)
+             for j=1,#mask do
+               if mask[j] &amp;gt;= 0 then writeBytes(addy+j-1,mask[j]) end
+             end
+             success = success + 1
+           end
+       end
+       r.destroy()
+
+       if success &amp;gt; 0 then
+          evento = 'Cambio Activado'
+          Res='Activo'
+       end
+    else
+       evento ='Mas de una coincidencia'
+       Res='No viable(1)'
+    end
+   else
+     Cant=0
+     evento = 'Cambio no encontrado'
+     Res='No viable'
+   end
+   return Res
+ --  print( nombre , 'Coincidencias :' , cant , ' Final :' , evento )
+end
+
+
+
+
+function FormShow2(sender)
+ pname2=createStringlist()
+print('FormShow2')
+
+pname2.clear()
+     pname2.add("Todos")
+     pname2.add("iexplore")
+     pname2.add("flashplayer")
+     pname2.add("plugin")
+     pname2.add("opera")
+     pname2.add("chrome")
+     pname2.add("awesomium_process")
+     pname2.add("torch")
+     pname2.add("dragon")
+     pname2.add("maxthon")
+     pname2.add("palemoon")
+     pname2.add("safari" )
+     pname2.add("adobe" )
+
+ pname=createStringlist()
+
+pname.clear()
+     pname.add("Todos")
+     pname.add("iexplore")
+     pname.add("flashplayer")
+     pname.add("plugin")
+     pname.add("opera")
+     pname.add("chrome")
+     pname.add("awesomium_process")
+     pname.add("torch")
+     pname.add("dragon")
+     pname.add("maxthon")
+     pname.add("palemoon")
+     pname.add("safari" )
+     pname.add("adobe" )
+
+CETrainer.lb2.items.clear()
+
+
+  for h=1, pname2.count do
+     --    print( 'valor indicdlg e :',h)
+        CETrainer.lb2.items.add(pname2[h-1] )
+
+    end
+   CETrainer.lb2.setItemIndex(0)
+print('SHOWjkj')
+end
+
+function FormShow(sender)
+
+
+
+print('SHOW1')
+
+
+ pname=createStringlist()
+ pname2=createStringlist()
+
+pname2.clear()
+     pname2.add("Todos")
+     pname2.add("iexplore")
+     pname2.add("flashplayer")
+     pname2.add("plugin")
+     pname2.add("opera")
+     pname2.add("chrome")
+     pname2.add("awesomium_process")
+     pname2.add("torch")
+     pname2.add("dragon")
+     pname2.add("maxthon")
+     pname2.add("palemoon")
+     pname2.add("safari" )
+     pname2.add("adobe" )
+CETrainer.lb2.items.clear()
+
+  for h=1, pname2.count do
+        CETrainer.lb2.items.add(pname2[h-1] )
+  end
+
+print('SHOW')
+CETrainer.lb2.setindex(0)
+ CETrainer.lb2.selected.add(0)
+ CETrainer.lb2.setItemIndex(0)
+ CEButton1Click()
+
+end
+
+
+function lb2SelectionChange(sender, user)
+
+cant = CETrainer.lb2.ItemIndex
+if CETrainer.lb2.itemindex ~= nil then
+
+else
+  CETrainer.lb2.itemindex =0
+end
+if cant &amp;gt; 0 then
+   pr =  pname2[cant]
+else
+   pr = nil
+end
+pidDialog(
+      function(pid,name)
+               openProcess(pid)
+               CETrainer.lab1.caption = string.format('%s %04X-%s %s',"Proceso :",pid,name,'Tomado con exito  successfully!')
+      end, true ,pr , "unity")
+      x=alv4()
+
+end
+
+function FormCreate(sender)
+print('create')
+   CETrainer.lb2.setItemIndex(2)
+     CETrainer.lb2.itemindex=c0
+   CETrainer.lb.setItemIndex(0)
+     CETrainer.lb.itemindex=c0
+
+print('Form create')
+
+
+FormShow2()
+
+end
+
+
+
+
+function alv()
+
+if alvcreado == false then
+
+-- Base reapir
+-- --   E:\personal\FFDec\bp_orig1_ant1\scripts\com\waterworld\entities\catchup\Â§--_-_----_---Â§.as
+
+--      public static function catchUp(param1:BuildingFoundation) : Boolean
+--      {
+--         var _loc3_:* = NaN;
+--         var _loc4_:* = NaN;
+--         var _loc2_:* = NaN;
+--         if(param1.isRepairing)
+--         {
+--            _loc3_ = getHPPerSecond(param1);
+--            _loc4_ = param1.hpMax - param1.hp;  /  param1.hpMax - param1.hp;
+--            _loc2_ = _loc4_ / _loc3_;
+-----------------------------------------------------------
+table.insert(ltrick,{'Base Repair' , 'd1 66 e0 03 d1 66 dc 02 a1' , 'd1 66 e0 03 d1 66 e0 03 a1' , '237.61854' , '2015-07-28', 'Reapara la base al iniciar la partida'} )
+
+-- points add
+-- -- core-&amp;gt;base-&amp;gt; PointsAdd(
+-- add1  point add a 0
+-----------------------------------------------------------
+table.insert(ltrick,{'Points add1' , '60 47 66 c5 16 62 05 4f cb' , '60 47 66 c5 16 24 00 4f cb' , '237.61854' , '2015-07-28', 'Impide la acumulacion de puntos de Vida , con esta opcion activada no ganara niveles manteniendo el nivel actual , evitaremos el banned'} )
+--------------------------------------------------------
+
+
+-- Base build
+-- --
+--construccion
+--getBuildingCosts
+-----------------------------------------------------------
+table.insert(ltrick,{'Base_build' , 'd3 66 74 a2 75 d6' , '24 03 02 a2 75 d6' , '237.61854' , '2015-07-28', 'Impide la acumulacion de puntos de Vida , con esta opcion activada no ganara niveles manteniendo el nivel actual , evitaremos el banned'} )
+--------------------------------------------------------
+-- Base Upgrade
+-- --
+--construccion
+--GetBuildTime  //build upgrade
+-----------------------------------------------------------
+table.insert(ltrick,{'Base_build_upg' , 'd0 30 60 85 01 d1 24 01 a1 66 bb 69 66 c1 e9 01 60 a0 03' , 'd0 30 24 03 02 02 02 02 02 02 02 02 02 02 02 02 60 a0 03' , '237.61854' , '2015-07-28', 'Impide la acumulacion de puntos de Vida , con esta opcion activada no ganara niveles manteniendo el nivel actual , evitaremos el banned'} )
+--------------------------------------------------------
+
+
+
+
+--disable raknk check
+--core-&amp;gt;checker-&amp;gt; check()
+--if(param1.nextLevel &amp;gt; param1.previousLevel + 2) --+20
+-----------------------------------------------------------
+table.insert(ltrick,{'disable_vxp_check' , 'd1 66 ed 50 d1 66 dd 70 24 02 a0 0e' , 'd1 66 ed 50 d1 66 dd 70 24 20 a0 0e', '237.61854' , '2015-07-28', 'Desabilita el chequeo de incremento masivo de ranking por VXP'} )
+---------------------------------------------------------
+--disable global check
+--core-&amp;gt;checker-&amp;gt; check()
+-----------------------------------------------------------
+--if(GLOBAL.baseMode == "build" &amp;amp;&amp;amp; BASE.hpCredits != BASE.credits) // hpcredits != hpcred
+--temporal desact table.insert(ltrick,{'disable_hpcred_check' , '29 60 22 66 f2 15 60 22 66 9e 04 ab 96 12 2d 00 00' , '29 60 22 66 f2 15 60 22 66 f2 12 ab 96 12 2d 00 00', '237.61854' , '2015-07-22',''} )
+--if(GLOBAL.baseMode == "build" &amp;amp;&amp;amp; GlobalProperties.currency == "fbc" &amp;amp;&amp;amp; BASE.hpFbCredits != BASE.fbCredits) -- hpfbcredd
+--- temporal descac table.insert(ltrick,{'disable_fpfbccred_check' , '29 60 22 66 d6 13 60 22 66 b5 13 ab 96 12 2d 00 00' , '29 60 22 66 d6 13 60 22 66 d6 13 ab 96 12 2d 00 00', '237.61854' , '2015-07-22',''} )
+--var o:Object = buildingFoundation.check();
+--               if(o != null) / null != null
+---temporal desact table.insert(ltrick,{'disable_all_check_comapre' , '2b 6d 03 60 d8 63 20 13 26 01 00 60 d8 63' , '2b 6d 03 20 02 02 20 13 26 01 00 60 d8 63', '237.61854' , '2015-07-22',''} )
+
+-- temporal desact table.insert(ltrick,{'disable_Logremote' , 'd0 30 20 60 fc 16 13 13 00 00 60 fc' , 'd0 30 20 20 02 02 13 13 00 00 60 fc', '237.61854' , '2015-07-22',''} )
+table.insert(ltrick,{'check_hack' , '11 d1 ff ff d1 2e 8b 01' , '11 d1 ff ff d1 d1 01 02', '237.61854' , '2015-07-28',''} )
+
+
+
+---------------------------------------------------------
+--instant fleet build
+--
+--entities-&amp;gt;shipdock-&amp;gt; get shipBuildTimeRemaining()
+--
+--if(buildEndTime &amp;gt; 0) // CAMBIA A &amp;lt;0
+-----------------------------------------------------------
+--table.insert(ltrick,{'instfleetbuild' ,'d0 30 60 a4 09 24 00 0e 0d 00 00' , 'd0 30 60 a4 09 24 00 17 0d 00 00', '237.61854' , '2015-07-22','Creacion instantanea de barcos'} )
+--table.insert(ltrick,{'instfleetbuild_and_refit' , 'd0 30 60 ae 09 24 00 0e 0d 00 00 60 ae 09 60 31 66 79 a1 60 d1 10 a1 48 24 00 48' , 'd0 30 60 ae 09 24 00 0e 0d 00 00 24 00 02 02 02 02 02 02 02 02 02 02 48 24 00 48' , '237.61854' , '2015-07-25','Creacion instantanea de barcos'} )
+
+--getbuildtime()
+table.insert(ltrick,{'instfleet_build' , 'd0 30 60 85 01 66 74 60 a0 03' , 'd0 30 24 03 02 02 02 60 a0 03' , '237.61854' , '2015-07-28','Creacion instantanea de barcos'} )
+--shipBuildStart
+--                  Â§-__----_-___-Â§.Set(Â§-____-____---_Â§ + _loc17_); //+0
+
+
+
+-----------------------------------------------------------
+-- Instant Repair
+-- -- entities-&amp;gt;shipdock-&amp;gt; startDockFleet(
+--           _loc9_.activeArmorPoints = _loc12_.activeArmorPoints;  armorpints
+--               _loc9_.activeDroneAmmo = _loc12_.activeDroneAmmo;  armorpoints
+-----------------------------------------------------------
+table.insert(ltrick,{'ondock_fleet_repair' , '62 09 62 0c 66 bf 03 61 bf 03 62 09 62 0c 66 c0 04 61 c0 04 62 0c' , '62 09 62 0c 66 a9 02 61 bf 03 62 09 62 0c 66 a9 02 61 c0 04 62 0c', '237.61854' , '2015-07-25','On Dock Fleet Reapir , repara instantaneamente la flota al volver a casa'} )
+
+--barco
+--getrefitcost  //solo refit
+table.insert(ltrick,{'instfleet_refit' , '62 05 66 74 a2 75 63 04' , '24 03 02 02 a2 75 63 04' , '237.61854' , '2015-07-28','Modificacion instantanea de barcos'} )
+
+
+-----------------------------------------------------------
+-- Instant Retrofit
+-- entities-&amp;gt;retrofitlab-&amp;gt; researchStart(
+-- Â§-__-____-___--Â§.Set(Â§--_----_--_-_Â§.Get() + _loc8_.time);  ( loc8time = 0 )
+-----------------------------------------------------------
+table.insert(ltrick,{'Instant_Retrofit' , '46 4b 00 62 08 66 74 a0 4f 61 01' , '46 4b 00 24 00 02 02 a0 4f 61 01', '237.61854', '2015-07-28','Termina inmediatamente los retrofit iniciados , no funciona con retrofit que ya esten en desarrollo'} )
+
+
+-----------------------------------------------------------
+-- vxp 100
+-- entities-&amp;gt;shipdock-&amp;gt; startDockFleet(
+--  _loc9_.vxp = _loc9_.vxp + 100;
+-----------------------------------------------------------
+table.insert(ltrick,{'vxp1000' , '66 a9 0a 62 08 a0 62 09 2b' , '66 a9 0a 24 64 a0 62 09 2b', '237.61854' , '2015-07-28','Aumenta los vxp de 10 a 1000 por cada retorno a la base'} )
+
+
+
+
+-- Rocket instant build
+-- -- entities-&amp;gt;rocketlaunchpad-&amp;gt; startrocketbuild(
+-- add1  point add a 0
+-----------------------------------------------------------
+table.insert(ltrick,{'Instan_rocket_build' ,  '60 83 28 60 8e 25 62 0c a0 4f 61 01' ,'60 83 28 60 8e 25 24 00 a0 4f 61 01'  , '237.61854' , '2015-07-25','Construye instantaneamente los rocket'} )
+--  rocketBuildTimeRemaining()
+-- return Math.max(0,rocketEndTime - (GlobalProperties.gameTime + rocketSpeedUpTime)); // llevar a 0
+table.insert(ltrick,{'Instan_rocket_build2' , '60 26 24 00 60 f5 1a 60 31 66 79 60 b1 51 a0 a1 46 e4 01 02 48' , '60 26 24 00 24 00 02 60 31 66 79 60 b1 51 a0 a1 46 e4 01 02 48', '236.61854' , '2015-07-25','Construye instantaneamente los rocket'} )
+
+-- submarineVisibility
+-- -- E:\personal\FFDec\bp_act_hoy\scripts\com\waterworld\managers\worldmap\FleetObject submarineVisibilityUpdate()
+-- original  :  _loc1_ = Â§-___--__-_-_-Â§.engageId != 0 || Â§-___--__-_-_-Â§.isDefending;
+-- Modificado:  _loc1_ = Â§-___--__-_-_-Â§.engageId != 0 || Â§-___--__-_-_-Â§.visible;
+-----------------------------------------------------------
+--table.insert(ltrick,{'submarineVisibilityMap' , '29 60 99 02 66 dd 62 76' , '29 60 99 02 61 15 02 76', '236.61854' , '2015-07-25','Hace nigthaws visibles en el mapa'} )
+
+
+
+-- isFirstTime()
+-- --
+-- original  :  return GLOBAL.statGet("hasChangedName") == 0;
+-- Modificado:  return GLOBAL.statGet("hasChangedName") == 0;
+-----------------------------------------------------------
+table.insert(ltrick,{'Name_change_Free' , '46 b9 0c 01 24 00 ab 48' , '46 b9 0c 01 24 01 ab 48', '236.61854' , '2015-07-25','Permite el cambio de nombre free'} )
+
+
+
+   x=alv2()
+else
+
+end
+
+end
+
+
+function alv2()
+
+lv=createListView(CETrainer)
+setProperty(lv, 'ViewStyle', 'vsReport')
+setProperty(lv, 'RowSelect', 'True')
+setProperty(lv, 'ReadOnly', 'True')
+setProperty(lv, 'Height', 290)
+setProperty(lv, 'Left', '183')
+setProperty(lv, 'Width', '400')
+setProperty(lv, 'top', '72')
+setProperty(lv, 'checkboxes', 'true')
+
+lvc=listview_getColumns( lv)
+
+
+column1=listcolumns_add(lvc)
+setProperty(column1, 'width', '150')
+column2=listcolumns_add(lvc)
+setProperty(column2, 'autosize', 'true')
+column3=listcolumns_add(lvc)
+setProperty(column3, 'autosize', 'true')
+column4=listcolumns_add(lvc)
+setProperty(column4, 'autosize', 'true')
+column5=listcolumns_add(lvc)
+setProperty(column5, 'autosize', 'true')
+column6=listcolumns_add(lvc)
+setProperty(column6, 'autosize', 'true')
+
+listcolumn_setCaption(column1, 'Activo')
+listcolumn_setCaption(column2, 'Viable')
+listcolumn_setCaption(column3, 'Estado')
+listcolumn_setCaption(column4, 'Version')
+listcolumn_setCaption(column5, 'Fecha')
+
+lvi=listview_getItems(lv );
+
+
+local hh=0
+for hh=1,#ltrick do
+   row1=listitems_add(lvi)
+   listitem_setCaption(row1, ltrick[hh][1] ); --rw 1 column a
+   row1_subitems=listitem_getSubItems(row1) --returns a Strings object
+   s={'','',''}
+
+      s[3]='Varificar ..'
+      s[2]='Verificar ..'
+
+
+   strings_add(row1_subitems, s[2]) --row 1 column b
+   strings_add(row1_subitems, s[3]) --row 1 column b
+   strings_add(row1_subitems, ltrick[hh][4]) --row 1 column b
+   strings_add(row1_subitems, ltrick[hh][5]) --row 1 column b
+   setProperty(row1, 'Checked', false)
+   row1.setChecked(row1,'True')
+ --  lv.OnDblClick=lvSelectItem(sender, listitem, selected)
+ --  lv.OnSelectItem=lvSelectItem(sender, listitem, selected)
+ --  lv.OnClick=lvSelectItem(sender, listitem, selected)
+ --  lv.OnDblClick=lvSelectItem(sender, listitem, selected)
+--   getProperty(lvi, "Checked")
+   setProperty(lv, 'OnSelectItem','lvSelectItem2')
+ end
+   alvcreado = true
+  x= alv4()
+end
+
+
+
+function alv4()
+
+if alvcreado==false then
+   x=alv()
+else
+
+ c=lv.getItems()
+for m=1, #ltrick do
+  rs=listitem_getSubItems(c[m-1])
+   s={'','',''}
+   s[1]=verifica(ltrick[m][1] , ltrick[m][2] , ltrick[m][3])
+   if s[1]=="No Viable" then
+      s[3]='Inactivo'
+      s[2]='No Viable'
+   elseif s[1]=='Activo' then
+      s[3]='Activo'
+      s[2]='Viable'
+   else
+      s[3]='Inactivo'
+      s[2]='Viable'
+   end
+   rs[0] = s[2]
+   rs[1] = s[3]
+   pba = (m*100)/#ltrick
+
+   CETrainer.pb1.setPosition(CETrainer.pb1, pba)
+   CETrainer.pb1.text='gbhgfhfhfg'
+
+   setProperty(lv, 'OnSelectItem','lvSelectItem2')
+end
+
+end
+ CETrainer.lab2.caption = 'Verificacion Finalizada ...'
+
+end
+
+
+
+
+function alv5(u)
+u = u or 0
+if alvcreado==false then
+   x=alv()
+else
+   c=lv.getItems()
+  CETrainer.pb1.setPosition(CETrainer.pb1, 5)
+  for m=1, #ltrick do
+    CETrainer.lab2.caption = 'Realizando parche de ' .. ltrick[m][1]
+    if ((c[m-1].getChecked(c[m-1]) and u == 1 ) or u == 0)  then
+        rs=listitem_getSubItems(c[m-1])
+        if rs[0] == 'Viable' and rs[1] == 'Inactivo' then
+           s={'','',''}
+
+           s[1]=AoBSwapEx(ltrick[m][1] , ltrick[m][2] , ltrick[m][3])
+           if s[1]=='Activo' then
+              s[3]='Activo'
+              s[2]='Viable'
+           else
+              s[3]='Inactivo'
+              s[2]= s[1]
+           end
+           rs[0] = s[2]
+           rs[1] = s[3]
+
+        else
+          --  print( ' no ejecuto en :' , ltrick[m][1] , ' Viable o activo' )
+        end
+      else
+        --print( ' no ejecuto en :' , ltrick[m][1] , ' sin marca')
+      end
+   pba = (m*100)/#ltrick
+  CETrainer.pb1.setPosition(CETrainer.pb1, pba)
+  CETrainer.pb1.text='gbhgfhfhfg'
+   end
+
+end
+  CETrainer.lab2.caption = 'Ejecucion Finalizada ....'
+end
+
+
+
+function verifica(nombre ,origen , destino )
+  ret='No Viable'
+  CETrainer.lab2.caption = 'Verificando Estado de ' .. nombre
+if conectado then
+  local r = AOBScan(origen)
+  if r == nil then
+--     print (nombre , ' 1ra busqueda :nil  proceso :' ,  getOpenedProcessID()  )
+  end
+  if r ~= nil and r.count == 1 then
+     ret = 'Viable'
+  else
+     r = AOBScan(destino)
+     if r == nil then
+   --    print (nombre , ' 2ra busqueda :nil ')
+     end
+
+       if r ~= nil and r.count == 1 then
+  --        print (nombre , '2ra busqueda :' ,r.count)
+          ret ='Activo'
+       end
+   end
+else
+--   print('Proceso no adjunto')
+ --  messageDialog('Navegador no adjunto')
+
+end
+--print( nombre , ' retorna :' , ret )
+return ret
+end
+
+
+function FormActivate(sender)
+print('Form activate')
+end
+
+function CloseClick(sender)
+  closeCE()
+  CCETrainer.TTrainerForm.close()
+end
+
+
+function but1Click(sender)
+   x=alv5(0)
+end
+function but2Click(sender)
+   x=alv5(1)
+end
+
+function lvSelectItem2(sender, listitem, selected)
+
+ CETrainer.CEEdit1.Text = 'hola'
+ if lv.ItemIndex &amp;gt; -1 then
+--    print( ltrick[lv.ItemIndex+1][1] )
+  CETrainer.CEEdit1.Text = ltrick[lv.ItemIndex+1][6]
+else
+--    print('nada')
+end
+
+
+end
+-----------------------------------
+-----------------------------------
+--inicio
+--------------------------------------
+
+RequiredCEVersion=6.2
+if (getCEVersion==nil) or (getCEVersion()&amp;lt;RequiredCEVersion) then
+ messageDialog('Please install Cheat Engine b', mtError, mbOK)
+ closeCE()
+end
+
+ pba=1
+ pname=createStringlist()
+ pname2=createStringlist()
+ conectado = False
+ alvcreado = false
+ ltrick={}
+     a={}
+
+     pname2.clear()
+     pname2.add("Todos")
+     pname2.add("iexplore")
+     pname2.add("flashplayer")
+     pname2.add("plugin")
+     pname2.add("opera")
+     pname2.add("chrome")
+     pname2.add("awesomium_process")
+     pname2.add("torch")
+     pname2.add("dragon")
+     pname2.add("maxthon")
+     pname2.add("palemoon")
+     pname2.add("safari" )
+     pname2.add("adobe" )
+     CETrainer.lb2.items.clear()
+
+     for h=1, pname2.count do
+--         print( 'valor indicdlg e :',h)
+        CETrainer.lb2.items.add(pname2[h-1] )
+
+    end
+  CETrainer.lab1.caption = "...... No conectado ....... !!!!!"
+  CETrainer.lb2.setItemIndex(0)
+  CETrainer.lb2.itemindex=0
+  x=alv()
+ lv.ItemIndex=0
+  lv.setItemIndex(0)
+----------------------------------------------------------------
+
+
+
+&lt;/LuaScript&gt;
+</LuaScript>
+</CheatTable>

@@ -1,0 +1,883 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable>
+  <Forms>
+    <UDF1 Class="TCEForm" Encoding="Ascii85">t)V[!)oh)^3y0BC#,Vw7$(!tDv1qa:LI(HelsfiD7Kp^^W.X;6qgm-8=IDaSjlO]/#0y]+#Kgoz/Bf?LpeDvQF!33TSGI6Y3-dFub:/Ut@80.X]/=Hc@JPvDs,D3_tSXyDVzna:=-g%HO1Mc.J]}-=]eBQrKOs}l9rRR},1DGig]S7v1!6U?wNodi9iOe}YTu?}y?$:NASzmi;cor:P[v4mW0QKI]0$!?qzbWh[ik}nL*5y3v8gyeV?r@nfJ#}o8xlJXqYBF]sBprKDJ%}_3h#Q[gxYgrvs25/DNO5fk)l)RO8W,mN1Jwm7!4s[)JV*z5QA8fJiKsklZ1b+8PK{Otk_/(QmNK#uB4Qf-p1$T(Vud=b02u[WP$WtrD74:u903*=/)jmGw+fJE2:FW8x1=CF9-Te:F53LX(-BrRx?x:VIC5qC#/{}D/c@atB$RHP}jRVe9473eBqvMY4zY4u7koiTzJP5#wvY[v@BGS/^V;ue5OI=XYRb;Ing#g4r}M40s78uOP,1!fo;k!fqh@jK*/,e!S_]O,iV8+frB4KLd/vH@TidX2Y1]/xCovlIP{pqZq52+aSPkDYn[7/9Q]QAm5U/{mUNBN]eKf,)4}{@F?C{-:a;sG5892$d;PLdZR(/I6OHnus#Ytz6JJ.W)HRiE?ISPV3xT+Sh]Tiz7Y1;wAg)kShd@8o#2rn;ML:90#66mfn+nia5DvW%Ci9^oZyn@lo]NTi?=?[H).*EE6hH_Ef[06*O#zI-K)Lz8(nbX13/T;Lg,h}oaTo_zG,LShI12.8nnu_vfC*ix+U+}^or:Q*dmqVh*=;}xq[U}BH1iOP3HFEKrO%v$]eptEcGxeEIJW37gsc4yZlsEXKsQd:H*YqW,q6KAW$%n[4BiWTWAH3A,B=w=LEdq.0W2]VPb3K=!bWI)Jdt-ik=oNgu0=EYrd.,Z);U:.SVbR/zmm61iGB.x1FSX5rqPf2!Oz2]!rsFiXI(kzzH-)Fe/OrcOrf_%rvMDSek3M,:-;-?%DDhNM0laM%OB!}ztFo_Dy4R,n_tb,XHY,PxVdgkF-$IwBq6IU)lZCA!?}L}jHmI61JfRGK6T/V7P(Jk^^.</UDF1>
+  </Forms>
+  <CheatEntries>
+    <CheatEntry>
+      <ID>0</ID>
+      <Description>"ItemSwap - when grabbing any item"</Description>
+      <Options moHideChildren="1" moManualExpandCollapse="1" moAllowManualCollapseAndExpand="1"/>
+      <LastState Activated="0"/>
+      <Color>80000008</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>{ Game   : DarkSoulsII.exe
+  Version:
+  Date   : 2014-05-02
+  Author : mgr.inz.Player
+
+  ItemSwap - when grabbing any item
+
+  1. set desired ItemID,
+  2. in game, pick up whatever item from the ground (you can drop whatever item you want)
+  3. don't forget to disable this cheat when not needed anymore
+
+}
+
+[ENABLE]
+
+aobscanmodule(BetterItemSwap,DarkSoulsII.exe,8D 70 40 B9 21 00 00 00 8D) // should be unique
+alloc(newmem,$1000)
+label(return)
+
+
+alloc(myDesiredItemID,128)
+registersymbol(myDesiredItemID)
+
+label(myDesiredLevel)
+registersymbol(myDesiredLevel)
+
+label(myDesiredInfusion)
+registersymbol(myDesiredInfusion)
+
+label(myDesiredQuantity)
+registersymbol(myDesiredQuantity)
+
+label(divisor)
+
+myDesiredItemID:
+dd 0
+myDesiredLevel:
+db FF
+myDesiredInfusion:
+db FF
+myDesiredQuantity:
+db FF
+
+divisor:
+dd (int)100000
+
+
+newmem:
+  mov esi,eax  // backup EAX
+  mov edi,edx  // backup EDX
+
+  // divide ID by 100'000, to get group ID
+  mov eax,[myDesiredItemID]
+  cmp eax,0
+  jnz @f
+  mov eax,[esi+44] // get original ID
+  @@:
+  xor edx,edx
+  div dword ptr [divisor]
+
+  // set quantity
+  cmp eax,#611
+  jg @f        // is it consumable item
+  cmp eax,#600
+  jl @f        // is it consumable item
+    mov cl,[myDesiredQuantity]
+    cmp cl,FF
+    je @f
+    cmp cl,14
+    ja @f
+    cmp cl,0
+    je @f
+      mov [esi+4C],cl
+  @@:
+
+  // set durability to something bigger than 0, so it can be repaired with powder
+  cmp eax,#279
+  jg @f        // is it an item with durability or not ?
+    mov [esi+48],(float)500.0
+  @@:
+
+  // durability for rings
+  cmp eax,#400
+  jl @f
+  cmp eax,#407
+  jg @f
+    mov [esi+48],(float)500.0
+  @@:
+
+  // set infusion
+  cmp eax,#118
+  jg @f        // is it an infusion-able item or not ?
+
+    mov cl,[myDesiredInfusion]
+    cmp cl,FF
+    je  @f
+    cmp cl,09     // must be 0 - 9
+    ja  @f
+      mov byte ptr [esi+4F],cl     //infusion
+  @@:
+
+
+  // set level
+  cmp eax,#279
+  jg @f
+    mov cl,[myDesiredLevel]
+    cmp cl,FF
+    je  @f
+    cmp cl,0A    // must be 0 - 10
+    ja  @f
+      mov byte ptr [esi+4E],cl     //level
+  @@:
+
+
+
+  // get desiredID
+  mov ecx,[myDesiredItemID]
+
+  // swap item
+  cmp ecx,0
+  je @f
+  mov [esi+44],ecx // swap ID
+  @@:
+
+  mov eax,esi       // restore EAX
+  mov edx,edi       // restore EDX
+
+  lea esi,[eax+40]  // orig
+  mov ecx,00000021  // orig
+  jmp return
+
+BetterItemSwap:
+  jmp newmem
+  nop
+  nop
+  nop
+return:
+registersymbol(BetterItemSwap)
+
+[DISABLE]
+
+BetterItemSwap:
+  db 8D 70 40 B9 21 00 00 00
+
+unregistersymbol(BetterItemSwap)
+unregistersymbol(myDesiredItemID)
+unregistersymbol(myDesiredLevel)
+unregistersymbol(myDesiredInfusion)
+unregistersymbol(myDesiredQuantity)
+
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: "DarkSoulsII.exe"+2190E5
+
+"DarkSoulsII.exe"+2190C4: 83 F9 03              -  cmp ecx,03
+"DarkSoulsII.exe"+2190C7: 0F 87 2F FF FF FF     -  ja DarkSoulsII.exe+218FFC
+"DarkSoulsII.exe"+2190CD: 8B 46 04              -  mov eax,[esi+04]
+"DarkSoulsII.exe"+2190D0: 8B 0C 88              -  mov ecx,[eax+ecx*4]
+"DarkSoulsII.exe"+2190D3: 8D 55 08              -  lea edx,[ebp+08]
+"DarkSoulsII.exe"+2190D6: 52                    -  push edx
+"DarkSoulsII.exe"+2190D7: E8 14 C9 FF FF        -  call DarkSoulsII.exe+2159F0
+"DarkSoulsII.exe"+2190DC: 3B C3                 -  cmp eax,ebx
+"DarkSoulsII.exe"+2190DE: 0F 84 18 FF FF FF     -  je DarkSoulsII.exe+218FFC
+"DarkSoulsII.exe"+2190E4: 57                    -  push edi
+// ---------- INJECTING HERE ----------
+"DarkSoulsII.exe"+2190E5: 8D 70 40              -  lea esi,[eax+40]
+"DarkSoulsII.exe"+2190E8: B9 21 00 00 00        -  mov ecx,00000021
+// ---------- DONE INJECTING  ----------
+"DarkSoulsII.exe"+2190ED: 8D BD 78 FF FF FF     -  lea edi,[ebp-00000088]
+"DarkSoulsII.exe"+2190F3: F3 A5                 - repe  movsd
+"DarkSoulsII.exe"+2190F5: 0F B6 4D F8           -  movzx ecx,byte ptr [ebp-08]
+"DarkSoulsII.exe"+2190F9: 5F                    -  pop edi
+"DarkSoulsII.exe"+2190FA: 51                    -  push ecx
+"DarkSoulsII.exe"+2190FB: 8B 8D 70 FF FF FF     -  mov ecx,[ebp-00000090]
+"DarkSoulsII.exe"+219101: 8D 95 78 FF FF FF     -  lea edx,[ebp-00000088]
+"DarkSoulsII.exe"+219107: 52                    -  push edx
+"DarkSoulsII.exe"+219108: C6 85 77 FF FF FF 01  -  mov byte ptr [ebp-00000089],01
+"DarkSoulsII.exe"+21910F: E8 4C 30 FD FF        -  call DarkSoulsII.exe+1EC160
+}
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>1</ID>
+          <Description>"Desired Item ID"</Description>
+          <LastState Value="??" Activated="0" RealAddress="18CA1000"/>
+          <ShowAsHex>1</ShowAsHex>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>myDesiredItemID</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>2</ID>
+          <Description>"Desired Level (weapons and wearables)"</Description>
+          <LastState Value="??" Activated="0" RealAddress="18CA1004"/>
+          <ShowAsSigned>1</ShowAsSigned>
+          <Color>80000008</Color>
+          <VariableType>Byte</VariableType>
+          <Address>myDesiredLevel</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>3</ID>
+          <Description>"Desired Infusion (weapons)"</Description>
+          <LastState Value="??" Activated="0" RealAddress="18CA1005"/>
+          <ShowAsSigned>1</ShowAsSigned>
+          <Color>80000008</Color>
+          <VariableType>Byte</VariableType>
+          <Address>myDesiredInfusion</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>4</ID>
+          <Description>"Desired Quantity (consumables)"</Description>
+          <LastState Value="??" Activated="0" RealAddress="18CA1006"/>
+          <ShowAsSigned>1</ShowAsSigned>
+          <Color>80000008</Color>
+          <VariableType>Byte</VariableType>
+          <Address>myDesiredQuantity</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>5</ID>
+          <Description>"helper"</Description>
+          <LastState Activated="0"/>
+          <Color>80000008</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[ENABLE]
+LuaCall(showHelper())
+
+[DISABLE]
+LuaCall(hideHelper())
+</AssemblerScript>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>6</ID>
+      <Description>"highlighted item"</Description>
+      <Options moHideChildren="1" moManualExpandCollapse="1" moAllowManualCollapseAndExpand="1"/>
+      <LastState Activated="0"/>
+      <Color>80000008</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>{ Game   : DarkSoulsII.exe
+  Version:
+  Date   : 2014-05-04
+  Author : mgr.inz.Player
+}
+
+[ENABLE]
+
+aobscanmodule(highlightedItem,DarkSoulsII.exe,8A 48 16 84 C9 74 0F) // should be unique
+alloc(newmem,$1000)
+
+label(pItem)
+registersymbol(pItem)
+
+label(previous)
+
+label(code)
+label(return)
+
+newmem:
+
+code:
+
+  cmp [previous],eax
+  mov [previous],eax
+  jne @f
+
+  mov [pItem],eax
+
+  @@:
+  mov cl,[eax+16]
+  test cl,cl
+  jmp return
+
+pItem:
+dq 0
+previous:
+dq 0
+
+
+highlightedItem:
+  jmp code
+return:
+registersymbol(highlightedItem)
+
+[DISABLE]
+
+highlightedItem:
+  db 8A 48 16 84 C9
+
+unregistersymbol(highlightedItem)
+unregistersymbol(pItem)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: "DarkSoulsII.exe"+E1209
+
+"DarkSoulsII.exe"+E11F1: 8B 49 60              -  mov ecx,[ecx+60]
+"DarkSoulsII.exe"+E11F4: 85 C9                 -  test ecx,ecx
+"DarkSoulsII.exe"+E11F6: 74 34                 -  je DarkSoulsII.exe+E122C
+"DarkSoulsII.exe"+E11F8: 8B 49 08              -  mov ecx,[ecx+08]
+"DarkSoulsII.exe"+E11FB: 85 C9                 -  test ecx,ecx
+"DarkSoulsII.exe"+E11FD: 74 2D                 -  je DarkSoulsII.exe+E122C
+"DarkSoulsII.exe"+E11FF: 50                    -  push eax
+"DarkSoulsII.exe"+E1200: E8 6B AE 10 00        -  call DarkSoulsII.exe+1EC070
+"DarkSoulsII.exe"+E1205: 85 C0                 -  test eax,eax
+"DarkSoulsII.exe"+E1207: 74 23                 -  je DarkSoulsII.exe+E122C
+// ---------- INJECTING HERE ----------
+"DarkSoulsII.exe"+E1209: 8A 48 16              -  mov cl,[eax+16]
+"DarkSoulsII.exe"+E120C: 84 C9                 -  test cl,cl
+// ---------- DONE INJECTING  ----------
+"DarkSoulsII.exe"+E120E: 74 0F                 -  je DarkSoulsII.exe+E121F
+"DarkSoulsII.exe"+E1210: 80 F9 01              -  cmp cl,01
+"DarkSoulsII.exe"+E1213: 74 0A                 -  je DarkSoulsII.exe+E121F
+"DarkSoulsII.exe"+E1215: 32 C0                 -  xor al,al
+"DarkSoulsII.exe"+E1217: 88 85 3F FF FF FF     -  mov [ebp-000000C1],al
+"DarkSoulsII.exe"+E121D: EB 14                 -  jmp DarkSoulsII.exe+E1233
+"DarkSoulsII.exe"+E121F: 8A 40 1E              -  mov al,[eax+1E]
+"DarkSoulsII.exe"+E1222: 24 0F                 -  and al,0F
+"DarkSoulsII.exe"+E1224: 88 85 3F FF FF FF     -  mov [ebp-000000C1],al
+"DarkSoulsII.exe"+E122A: EB 07                 -  jmp DarkSoulsII.exe+E1233
+}
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>7</ID>
+          <Description>"start"</Description>
+          <LastState Value="??" Activated="0" RealAddress="00000000"/>
+          <ShowAsHex>1</ShowAsHex>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>pItem</Address>
+          <Offsets>
+            <Offset>0</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>8</ID>
+          <Description>"ID 1/2"</Description>
+          <LastState Value="??" Activated="0" RealAddress="00000000"/>
+          <ShowAsHex>1</ShowAsHex>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>pItem</Address>
+          <Offsets>
+            <Offset>C</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>9</ID>
+          <Description>"ID 2/2"</Description>
+          <LastState Value="??" Activated="0" RealAddress="00000000"/>
+          <ShowAsHex>1</ShowAsHex>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>pItem</Address>
+          <Offsets>
+            <Offset>10</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>10</ID>
+          <Description>"type"</Description>
+          <LastState Value="??" Activated="0" RealAddress="00000000"/>
+          <ShowAsHex>1</ShowAsHex>
+          <Color>80000008</Color>
+          <VariableType>2 Bytes</VariableType>
+          <Address>pItem</Address>
+          <Offsets>
+            <Offset>16</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>11</ID>
+          <Description>"Quantity (consumable only)"</Description>
+          <LastState Value="??" Activated="0" RealAddress="00000000"/>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>pItem</Address>
+          <Offsets>
+            <Offset>18</Offset>
+          </Offsets>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>100</Key>
+              </Keys>
+              <Value>60</Value>
+              <ID>0</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>12</ID>
+          <Description>"Durability (armor, weapons)"</Description>
+          <LastState Value="??" Activated="0" RealAddress="00000000"/>
+          <Color>80000008</Color>
+          <VariableType>Float</VariableType>
+          <Address>pItem</Address>
+          <Offsets>
+            <Offset>18</Offset>
+          </Offsets>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>105</Key>
+              </Keys>
+              <Value>10</Value>
+              <ID>0</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>13</ID>
+          <Description>"damaged (0=damaged)"</Description>
+          <LastState Value="??" Activated="0" RealAddress="00000000"/>
+          <Color>80000008</Color>
+          <VariableType>Byte</VariableType>
+          <Address>pItem</Address>
+          <Offsets>
+            <Offset>1C</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>14</ID>
+          <Description>"level (max 10)"</Description>
+          <LastState Value="??" Activated="0" RealAddress="00000000"/>
+          <Color>80000008</Color>
+          <VariableType>Byte</VariableType>
+          <Address>pItem</Address>
+          <Offsets>
+            <Offset>1D</Offset>
+          </Offsets>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>103</Key>
+              </Keys>
+              <Value>10</Value>
+              <ID>0</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>15</ID>
+          <Description>"Infusion (max 9)"</Description>
+          <LastState Value="??" Activated="0" RealAddress="00000000"/>
+          <Color>80000008</Color>
+          <VariableType>Byte</VariableType>
+          <Address>pItem</Address>
+          <Offsets>
+            <Offset>1E</Offset>
+          </Offsets>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>104</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>16</ID>
+      <Description>"Freeze HP and Stamina"</Description>
+      <LastState Activated="0"/>
+      <Color>80000008</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>{ Game   : DarkSoulsII.exe
+  Version:
+  Date   : 2014-05-03
+  Author : mgr.inz.Player
+
+  This script does blah blah blah
+}
+
+[ENABLE]
+
+aobscanmodule(health,DarkSoulsII.exe,39 81 FC 00 00 00 0F 9F C0 5D) // should be unique
+alloc(newmem,$1000)
+
+label(code)
+label(return)
+
+newmem:
+
+code:
+  mov eax,[ecx+00000108]
+  mov [ecx+000000FC],eax
+
+  mov eax,[ecx+00000148]
+  mov [ecx+00000140],eax
+
+  xor eax,eax
+  cmp [ecx+000000FC],eax
+
+
+  jmp return
+
+health:
+  jmp code
+  nop
+return:
+registersymbol(health)
+
+[DISABLE]
+
+health:
+  db 39 81 FC 00 00 00
+
+unregistersymbol(health)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: "DarkSoulsII.exe"+26CE58
+
+"DarkSoulsII.exe"+26CE4A: CC                    -  int 3
+"DarkSoulsII.exe"+26CE4B: CC                    -  int 3
+"DarkSoulsII.exe"+26CE4C: CC                    -  int 3
+"DarkSoulsII.exe"+26CE4D: CC                    -  int 3
+"DarkSoulsII.exe"+26CE4E: CC                    -  int 3
+"DarkSoulsII.exe"+26CE4F: CC                    -  int 3
+"DarkSoulsII.exe"+26CE50: 55                    -  push ebp
+"DarkSoulsII.exe"+26CE51: 8B EC                 -  mov ebp,esp
+"DarkSoulsII.exe"+26CE53: 8B 4D 08              -  mov ecx,[ebp+08]
+"DarkSoulsII.exe"+26CE56: 33 C0                 -  xor eax,eax
+// ---------- INJECTING HERE ----------
+"DarkSoulsII.exe"+26CE58: 39 81 FC 00 00 00     -  cmp [ecx+000000FC],eax
+// ---------- DONE INJECTING  ----------
+"DarkSoulsII.exe"+26CE5E: 0F 9F C0              -  setg al
+"DarkSoulsII.exe"+26CE61: 5D                    -  pop ebp
+"DarkSoulsII.exe"+26CE62: C3                    -  ret
+"DarkSoulsII.exe"+26CE63: CC                    -  int 3
+"DarkSoulsII.exe"+26CE64: CC                    -  int 3
+"DarkSoulsII.exe"+26CE65: CC                    -  int 3
+"DarkSoulsII.exe"+26CE66: CC                    -  int 3
+"DarkSoulsII.exe"+26CE67: CC                    -  int 3
+"DarkSoulsII.exe"+26CE68: CC                    -  int 3
+"DarkSoulsII.exe"+26CE69: CC                    -  int 3
+}
+</AssemblerScript>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>17</ID>
+      <Description>"Endless Mobs (fools the game only)"</Description>
+      <LastState Activated="0"/>
+      <Color>80000008</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>{ Game   : DarkSoulsII.exe
+  Version:
+  Date   : 2014-05-06
+  Author : mgr.inz.Player
+}
+
+[ENABLE]
+aobscanmodule(endlessMobs2,DarkSoulsII.exe,8A 84 01 10 02 00 00)
+alloc(newmem,$1000)
+label(return)
+
+newmem:
+  xor al,al
+  jmp return
+
+endlessMobs2:
+  jmp newmem
+  nop
+  nop
+return:
+registersymbol(endlessMobs2)
+
+[DISABLE]
+
+endlessMobs2:
+  db 8A 84 01 10 02 00 00
+
+unregistersymbol(endlessMobs2)
+dealloc(newmem)
+
+</AssemblerScript>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols/>
+  <LuaScript>DEBUG=0    -- change to 1 to get debug Info
+
+mrDesiredID=getAddressList().getMemoryRecordByDescription('Desired Item ID')
+mrHelper=getAddressList().getMemoryRecordByDescription('helper')
+
+function printdebug(what)
+  if DEBUG==1 then print(what) end
+end
+
+function findPointer()
+ if neededPointer == nil then
+   local fl = AOBScan('55 8B EC 8B 0D xx xx xx xx 85 C9 74 48 33 C0','+X-W*C')
+
+   if fl~=nil and fl.getCount()==1 then               -- fl.Count==1 doesn't work with "no setup" CE
+    neededPointer = readInteger( fl[0]..'+5' )
+    return true
+   end
+   printdebug('Signature not found')
+   return false
+ end
+ return true
+end
+
+
+function tadd(T,what)
+  T[#T+1]=what
+end
+
+
+function fillListComponent(listComp,T)
+
+  listComp.Items.clear()
+
+  if T==nil then return end
+
+  for _,v in ipairs(T) do
+    listComp.Items.add( v.name )
+  end
+
+  if listComp.ClassName == 'TCEListBox' then
+   listComp.OnSelectionChange = userChoseItemFromList
+  else
+   listComp.OnSelect = userChoseItemFromList
+  end
+
+end
+
+function assignButtonToTable(btn,T)
+
+  local compID = userDataToInteger(btn)
+  compAndTable[compID] = {tab=T, comp=btn} -- so we can find ItemTable from this component
+  btn.OnClick = onlyFromThisGroupClick
+end
+
+function onlyFromThisGroupClick(sender)
+  local compID = userDataToInteger(sender)
+  local T = compAndTable[compID].tab
+
+  for k,v in pairs(compAndTable) do
+    if k~=compID then v.comp.Font.Style = '[]' end
+  end
+
+  sender.Font.Style = '[fsBold]'
+
+  showTable = {}
+
+  for i,v in ipairs(T) do
+    showTable[#showTable+1]=v
+  end
+
+  CEEdit1Change(nil)
+
+end
+
+function CEEdit1Change(sender)
+  if showTable==nil then return end
+
+  filteredTable = {}
+
+  local filter = UDF1.CEEdit1.Text
+
+  for i,v in ipairs(showTable) do
+    if v.name:upper():match(filter:upper()) then
+     filteredTable[#filteredTable+1] = v
+    end
+  end
+
+  UDF1.ShownLabel.Caption = 'count: '..#filteredTable
+
+  fillListComponent(UDF1.CEListBox1,filteredTable)
+end
+
+
+function userChoseItemFromList(sender)
+  if sender.ItemIndex &lt;0 then return end
+
+  local pair  = filteredTable[sender.ItemIndex+1]
+
+  printdebug('control '..sender.Name..'   '..'index '..sender.ItemIndex)
+  printdebug('chosen item name: '..(pair.name)..'   ID: '..pair.ID)
+
+  choice = string.format("%08X",pair.ID)
+
+  UDF1.CEEdit2.Text = pair.name..' - '..string.format("%08X",pair.ID)
+end
+
+-- user wants this ID
+function CEButton17Click(sender)
+
+  if choice==nil then
+    mrDesiredID.Value = '0'
+  else
+    mrDesiredID.Value = choice
+  end
+end
+
+
+scannedForItems = false
+function prepareUI_and_getItems()
+
+  if scannedForItems then return end
+  if not findPointer() then return end
+
+
+  Object = readInteger(neededPointer)
+  if Object==nil or Object==0 then
+  printdebug('stage1, error')
+  return
+  end
+
+  List = readInteger(Object+8*16+0xE4)
+  if List==nil or List==0 then
+  printdebug('stage2, error')
+  return
+  end
+
+  numberOfItems = readInteger(List+0xC)
+  if numberOfItems==nil or numberOfItems==0 then
+  printdebug('stage3, error')
+  return
+  end
+
+  scannedForItems = true
+  totalItems = 0
+
+  compAndTable = {}
+
+  ALL           = {}
+  swordsAndEtc  = {}
+  staffChime    = {}
+  bowCrossbow   = {}
+  shields       = {}
+  wearable      = {}
+  sorcery       = {}
+  miracle       = {}
+  pyromancy     = {}
+  hex           = {}
+  rings         = {}
+  stuff         = {}
+  consumables   = {}
+  gestures      = {}
+  souls         = {}
+
+  -- loop over all items
+  for listID=0,numberOfItems-1 do
+
+    local offset          = readInteger( List + listID * 0xC + 0x1C )
+    local minSubItemID    = readInteger( List + listID * 0xC + 0x20 )
+    local maxSubItemID    = readInteger( List + listID * 0xC + 0x24 )
+    local addressOfList_2 = readInteger( List + 0x14 )
+
+    for itemID=minSubItemID,maxSubItemID do
+
+     local index = (offset + itemID - minSubItemID)
+     local offset_text = readInteger(addressOfList_2 + index*4 )
+
+     if offset_text ~= 0 then
+
+       local address = List + offset_text
+       local string = ansiToUtf8(readString( address, 500, true ))
+
+       local upper = math.floor(itemID / 100000)
+
+       if itemID ~= 0xA and itemID ~= 0x14 and upper~= 9000 and upper~= 8920 and
+          itemID ~= 0x0399B512 and
+          itemID ~= 0x0399B8FA and
+          itemID ~= 0x01410FCC and
+          itemID ~= 0x015F944D and itemID ~= 0x015F9835
+       then
+
+         printdebug( string.format("hex: %08X",itemID)..'  decimal: '..
+                                   itemID..'   Name: '..
+                                   (string)
+                   )
+
+         local pair = {ID=itemID, name=string}
+
+         tadd(ALL,pair)
+
+         if upper&gt;=10 and upper&lt;=36   then tadd( swordsAndEtc , pair) end
+
+         if (upper&gt;=38 and upper&lt;=41) or upper  == 54
+                                      or itemID == 0x005488A0
+                                      then tadd( staffChime   , pair) end
+
+         if upper&gt;=42 and upper&lt;=46   then tadd( bowCrossbow  , pair) end
+
+         if upper&gt;=50 and upper&lt;=55 and upper ~= 54
+                                    and itemID ~= 0x005488A0
+                                      then tadd( swordsAndEtc , pair) end
+
+         if upper&gt;=110 and upper&lt;=118 then tadd( shields      , pair) end
+
+         if upper&gt;=210 and upper&lt;=279 then tadd( wearable     , pair) end
+
+         if upper&gt;=310 and upper&lt;=312 then tadd( sorcery      , pair) end
+         if upper&gt;=320 and upper&lt;=322 then tadd( miracle      , pair) end
+         if upper&gt;=330 and upper&lt;=332 then tadd( pyromancy    , pair) end
+         if upper&gt;=340 and upper&lt;=350 then tadd( hex          , pair) end
+         if upper&gt;=400 and upper&lt;=407 then tadd( rings        , pair) end
+
+         if upper&gt;=506 and upper&lt;=510 then tadd( stuff        , pair) end
+
+         if upper&gt;=600 and upper&lt;=611 then tadd( consumables  , pair) end
+         if upper&gt;=620 and upper&lt;=621 then tadd( stuff        , pair) end
+         if upper==630                then tadd( gestures     , pair) end
+         if upper&gt;=640 and upper&lt;=643 then tadd( souls        , pair) end
+
+         totalItems = totalItems + 1
+       end
+     end
+    end
+  end
+
+  printdebug('\r\nTotal items: '..totalItems)
+  printdebug("\r\n\r\nDark Souls II Item List by mgr.inz.Player")
+
+
+  assignButtonToTable( UDF1.CEButton1, swordsAndEtc)
+  assignButtonToTable( UDF1.CEButton2, staffChime)
+  assignButtonToTable( UDF1.CEButton3, bowCrossbow)
+
+  assignButtonToTable( UDF1.CEButton5, shields)
+  assignButtonToTable( UDF1.CEButton6, wearable)
+  assignButtonToTable( UDF1.CEButton7, sorcery)
+  assignButtonToTable( UDF1.CEButton8, miracle)
+
+  assignButtonToTable( UDF1.CEButton9, pyromancy)
+  assignButtonToTable( UDF1.CEButton10, hex)
+  assignButtonToTable( UDF1.CEButton11, rings)
+  assignButtonToTable( UDF1.CEButton12, stuff)
+
+  assignButtonToTable( UDF1.CEButton13, consumables)
+  assignButtonToTable( UDF1.CEButton15, gestures)
+  assignButtonToTable( UDF1.CEButton16, souls)
+
+  assignButtonToTable( UDF1.CEButton18, ALL)
+
+  onlyFromThisGroupClick(UDF1.CEButton18)
+
+  UDF1.Caption = 'Dark Souls II Item List, items count: '..totalItems
+  UDF1.OnClose = function () mrHelper.Active = false return caNone end
+
+end
+
+function showHelper()
+  prepareUI_and_getItems()
+  UDF1.show()
+end
+
+function hideHelper()
+  UDF1.hide()
+end
+
+
+</LuaScript>
+</CheatTable>

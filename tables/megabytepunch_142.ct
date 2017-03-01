@@ -1,0 +1,2468 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="24">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>0</ID>
+      <Description>"&gt;&gt;&gt; ACTIVATE &lt;&lt;&lt;"</Description>
+      <Options moHideChildren="1" moDeactivateChildrenAsWell="1"/>
+      <LastState/>
+      <Color>FF0000</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>{ ################################################## }
+
+[ENABLE]
+
+{ ##### Mono/Scans ################################# }
+
+{$lua}
+LaunchMonoDataCollector()
+--will cause function to be created if not already existing
+mono_symbolLookupCallback("CollisionScript::DoCollision")
+mono_symbolLookupCallback("DynamicObject::GiveDamage")
+mono_symbolLookupCallback("DynamicObject::GiveBits")
+mono_symbolLookupCallback("DynamicObject::SetLives")
+mono_symbolLookupCallback("DynamicObject::AddToShield")
+mono_symbolLookupCallback("GameHandler::GetTotalBits")
+mono_symbolLookupCallback("Movement::GetMaxMoveSpeed")
+mono_symbolLookupCallback("ShopAbilityScript::Buy")
+{$asm}
+
+//aobscan(AOB_DoCollision,0F B6 40 6F 85 C0)
+//aobscan(AOB_GiveDamage,D9 46 64 D9 45 0C DE C1 D9 5E 64)
+//aobscan(AOB_GiveBits,8B 46 3C 03 45 0C 89 46 3C)
+//aobscan(AOB_GetMaxMoveSpeed,8B 45 08 D9 40 08 D9 40)
+//aobscan(AOB_AddTotalBits,8B 88 D4 00 00 00 03 4D 0C 89)
+//aobscan(AOB_Buy,8D 4C 91 10 8B 09 8B 49 0C 3B C1)
+//aobscan(AOB_AddToShield,D9 47 68 D9 45 0C DE C1 D9 5F 68)
+//aobscan(AOB_SetLives,8B 4D 08 89 81 A0 00 00 00 85 C0)
+
+
+{ ##### Allocate ################################### }
+
+// new memory
+alloc(newmem,$1000)
+// pointers
+globalalloc(pDynamicObject,4)
+globalalloc(pGameHandler,4)
+globalalloc(pMovement,4)
+// booleans
+globalalloc(pGodModeCheat,4) // godmode
+globalalloc(pGiveDamageCheat,4) // unlimited health
+globalalloc(pShieldCheat,4) // unlimited shield
+globalalloc(pLivesCheat,4) // unlimited lives
+globalalloc(pMoreDamageCheat,4) // more damage
+globalalloc(pAlwaysDropsCheat,4) // always drops
+globalalloc(pGiveBitsCheat,4) // more bits
+globalalloc(pBuyCheat,4) // shop costs
+
+
+
+{ ##### Labels ##################################### }
+
+label(newDoCollision)
+label(codeDoCollision)
+label(returnDoCollision)
+
+label(newGiveDamage)
+label(codeGiveDamage)
+label(returnGiveDamage)
+label(More_Damage_Cheat)
+label(Always_Drops_Cheat)
+
+label(newAddToShield)
+label(codeAddToShield)
+label(returnAddToShield)
+
+label(newSetLives)
+label(codeSetLives)
+label(returnSetLives)
+
+label(codeAddTotalBits)
+label(returnAddTotalBits)
+
+label(newGiveBits)
+label(codeGiveBits)
+label(returnGiveBits)
+
+label(codeGetMaxMoveSpeed)
+label(returnGetMaxMoveSpeed)
+
+label(newBuy)
+label(codeBuy)teAbility")
+label(returnBuy)
+
+
+{ ##### Symbols #################################### }
+
+//registersymbol(AOB_DoCollision)
+//registersymbol(AOB_GiveDamage)
+//registersymbol(AOB_AddToShield)
+//registersymbol(AOB_SetLives)
+//registersymbol(AOB_GiveBits)
+//registersymbol(AOB_AddTotalBits)
+//registersymbol(AOB_GetMaxMoveSpeed)
+//registersymbol(AOB_Buy)
+
+
+
+{ ##### New Memory Start ########################### }
+
+newmem:
+
+
+{ ##### AOB_DoCollision ############################ }
+
+newDoCollision:
+  //mov [pDynamicObject],eax // read here
+  cmp byte ptr [eax+97],1 // human check
+  jne codeDoCollision
+  mov [pDynamicObject],eax // read here
+  cmp dword ptr [pGodModeCheat],1 // cheat check
+  jne codeDoCollision
+  //mov [eax+6E],01 // indestructible
+  mov [eax+6F],01 // unHittable
+  //mov [eax+70],01 // unshootable
+  //mov [eax+71],00 // stunnable
+  //mov [eax+72],00 // pushable
+  //mov [eax+78],00000000 // shieldBreakStunDuration
+  //mov [eax+7D],01 // redPoisonImmunity
+  jmp codeDoCollision
+
+codeDoCollision:
+  movzx eax,byte ptr [eax+6F]
+  test eax,eax
+  jmp returnDoCollision
+
+
+{ ##### AOB_GiveDamage ############################# }
+
+newGiveDamage:
+  cmp byte ptr [esi+97],1 // human check
+  jne More_Damage_Cheat
+  cmp dword ptr [pGiveDamageCheat],1 // cheat check
+  jne codeGiveDamage
+  fldz // load incoming damage (0.0)
+  fstp dword ptr [ebp+0C] // store incoming damage
+  jmp codeGiveDamage
+
+More_Damage_Cheat:
+  cmp dword ptr [pMoreDamageCheat],1 // cheat check
+  jne Always_Drops_Cheat
+  fld dword ptr [ebp+0C] // load incoming
+  fmul dword ptr [ebp+0C] // multiply by incoming
+  fstp dword ptr [ebp+0C] // store incoming damage
+  jmp Always_Drops_Cheat
+
+Always_Drops_Cheat:
+  cmp dword ptr [pAlwaysDropsCheat],1 // cheat check
+  jne codeGiveDamage
+  mov [esi+AB],01 // alwaysDrops
+  jmp codeGiveDamage
+
+codeGiveDamage:
+  fld dword ptr [esi+64] // load damage
+  fld dword ptr [ebp+0C] // load incoming damage
+  faddp // add incoming to damage and pop
+  fstp dword ptr [esi+64] // store damage
+  jmp returnGiveDamage
+
+
+{ ##### AOB_AddToShield ############################ }
+
+newAddToShield:
+  cmp dword ptr [pShieldCheat],1 // cheat check
+  jne codeAddToShield
+  cmp byte ptr [edi+97],1 // human check
+  jne codeAddToShield
+  fld dword ptr [edi+4C] // load max shield
+  //fld dword ptr [ebp+0C]
+  //faddp
+  fstp dword ptr [edi+68] // store shield
+  jmp returnAddToShield
+
+codeAddToShield:
+  fld dword ptr [edi+68]
+  fld dword ptr [ebp+0C]
+  faddp
+  fstp dword ptr [edi+68]
+  jmp returnAddToShield
+
+
+{ ##### AOB_SetLives ############################### }
+
+newSetLives:
+  cmp dword ptr [pLivesCheat],1 // cheat check
+  jne codeSetLives
+  cmp byte ptr [ecx+97],1 // human check
+  jne codeSetLives
+  mov eax,[ecx+000000A0] // move lives to eax
+  jmp codeSetLives
+
+codeSetLives:
+  mov [ecx+000000A0],eax // move eax to lives
+  jmp returnSetLives
+
+
+{ ##### AOB_GiveBits ############################### }
+
+newGiveBits:
+  cmp dword ptr [pGiveBitsCheat],1 // cheat check
+  jne codeGiveBits
+  mov eax,[ebp+0C] // get amount
+  add eax,[ebp+0C] // add amount
+  add eax,[ebp+0C] // add amount
+  add eax,[ebp+0C] // add amount
+  mov [ebp+0C],eax // set bits
+  jmp codeGiveBits
+
+codeGiveBits:
+  mov eax,[esi+3C] // get bits
+  add eax,[ebp+0C] // add amount
+  mov [esi+3C],eax // set bits
+  jmp returnGiveBits
+
+
+{ ##### AOB_AddTotalBits ########################### }
+
+codeAddTotalBits:
+  mov [pGameHandler],eax // read here
+  mov ecx,[eax+000000D4]
+  jmp returnAddTotalBits
+
+
+{ ##### AOB_Buy #################################### }
+
+newBuy:
+  cmp dword ptr [pBuyCheat],1 // cheat check
+  jne codeBuy
+  mov [ecx+0C],00000000 // set cost
+  jmp codeBuy
+
+codeBuy:
+  mov ecx,[ecx+0C] // get cost
+  cmp eax,ecx // compare totalBits and cost
+  jmp returnBuy
+
+
+{ ##### AOB_GetMaxMoveSpeed ######################## }
+
+codeGetMaxMoveSpeed:
+  mov eax,[ebp+08]
+  mov [pMovement],eax // read here
+  fld dword ptr [eax+08]
+  jmp returnGetMaxMoveSpeed
+
+
+{ ##### AOB Inject ################################# }
+
+CollisionScript::DoCollision+A0: //AOB_DoCollision:
+  jmp newDoCollision
+  nop
+returnDoCollision:
+
+DynamicObject::GiveDamage+FE: //AOB_GiveDamage:
+  jmp newGiveDamage
+  nop
+  nop
+  nop
+  nop
+  nop
+  nop
+returnGiveDamage:
+
+DynamicObject::AddToShield+A: //AOB_AddToShield:
+  jmp newAddToShield
+  nop
+  nop
+  nop
+  nop
+  nop
+  nop
+returnAddToShield:
+
+DynamicObject::SetLives+C: //AOB_SetLives+3:
+  jmp newSetLives
+  nop
+returnSetLives:
+
+DynamicObject::GiveBits+C: //AOB_GiveBits:
+  jmp newGiveBits
+  nop
+  nop
+  nop
+  nop
+returnGiveBits:
+
+GameHandler::AddTotalBits+9: //AOB_AddTotalBits:
+  jmp codeAddTotalBits
+  nop
+returnAddTotalBits:
+
+Movement::GetMaxMoveSpeed+6: //AOB_GetMaxMoveSpeed:
+  jmp codeGetMaxMoveSpeed
+  nop
+returnGetMaxMoveSpeed:
+
+ShopAbilityScript::Buy+35: //AOB_Buy+6:
+  jmp newBuy
+returnBuy:
+
+
+{ ##### Change 'Activate' View ############## }
+
+{$lua}
+addressList = getAddressList()
+thisRecord = addressList.getMemoryRecordByID(0)
+thisRecord.Color = 0x0000FF -- red
+thisRecord.Description = "&gt;&gt;&gt; DEACTIVATE &lt;&lt;&lt;"
+{$asm}
+
+
+{ ##### Play Confirmation Sound #################### }
+
+{$lua}
+soundstream = createMemoryStream()
+soundstream.loadFromFile("C:\\Windows\\Media\\ir_begin.wav")
+playSound(soundstream)
+soundstream.destroy()
+{$asm}
+
+
+{ ################################################## }
+
+[DISABLE]
+
+{ ##### AOB Restore ################################ }
+
+CollisionScript::DoCollision+A0: //AOB_DoCollision:
+  db 0F B6 40 6F 85 C0
+
+DynamicObject::GiveDamage+FE: //AOB_GiveDamage:
+  db D9 46 64 D9 45 0C DE C1 D9 5E 64
+
+DynamicObject::AddToShield+A: //AOB_AddToShield:
+  db D9 47 68 D9 45 0C DE C1 D9 5F 68
+
+DynamicObject::SetLives+C: //AOB_SetLives+3:
+  db 89 81 A0 00 00 00
+
+DynamicObject::GiveBits+C: //AOB_GiveBits:
+  db 8B 46 3C 03 45 0C 89 46 3C
+
+GameHandler::AddTotalBits+9: //AOB_AddTotalBits:
+  db 8B 88 D4 00 00 00
+
+Movement::GetMaxMoveSpeed+6: //AOB_GetMaxMoveSpeed:
+  db 8B 45 08 D9 40 08
+
+ShopAbilityScript::Buy+35: //AOB_Buy+6:
+  db 8B 49 0C 3B C1
+
+
+
+{ ##### Symbols #################################### }
+
+// aobscans
+//unregistersymbol(AOB_DoCollision)
+//unregistersymbol(AOB_GiveDamage)
+//unregistersymbol(AOB_AddToShield)
+//unregistersymbol(AOB_SetLives)
+//unregistersymbol(AOB_GiveBits)
+//unregistersymbol(AOB_AddTotalBits)
+//unregistersymbol(AOB_GetMaxMoveSpeed)
+//unregistersymbol(AOB_Buy)
+// pointers
+unregistersymbol(pDynamicObject)
+unregistersymbol(pMovement)
+unregistersymbol(pGameHandler)
+// booleans
+unregistersymbol(pGodModeCheat)
+unregistersymbol(pMoreDamageCheat)
+unregistersymbol(pAlwaysDropsCheat)
+unregistersymbol(pGiveDamageCheat)
+unregistersymbol(pGiveBitsCheat)
+unregistersymbol(pBuyCheat)
+unregistersymbol(pShieldCheat)
+unregistersymbol(pLivesCheat)
+
+
+{ ##### Deallocate ################################# }
+
+// pointers
+dealloc(pDynamicObject)
+dealloc(pMovement)
+dealloc(pGameHandler)
+// booleans
+dealloc(pGodModeCheat)
+dealloc(pGiveDamageCheat)
+dealloc(pShieldCheat)
+dealloc(pLivesCheat)
+dealloc(pMoreDamageCheat)
+dealloc(pAlwaysDropsCheat)
+dealloc(pGiveBitsCheat)
+dealloc(pBuyCheat)
+
+// new memory
+dealloc(newmem)
+
+
+{ ##### Change 'Activate' Description ############## }
+
+{$lua}
+addressList = getAddressList()
+thisRecord = addressList.getMemoryRecordByID(0)
+thisRecord.Color = 0xFF0000 -- blue
+thisRecord.Description = "&gt;&gt;&gt; ACTIVATE &lt;&lt;&lt;"
+{$asm}
+
+{ ##### Play Confirmation Sound #################### }
+
+{$lua}
+soundstream = createMemoryStream()
+soundstream.loadFromFile("C:\\Windows\\Media\\ir_end.wav")
+playSound(soundstream)
+soundstream.destroy()
+{$asm}
+
+
+{ ################################################## }
+
+
+{ ##### AOB_DoCollision
+// ORIGINAL CODE - INJECTION POINT: 07BEEE88
+""+7BEEE6F: 8B 4F 34           -  mov ecx,[edi+34]
+""+7BEEE72: 8B 49 20           -  mov ecx,[ecx+20]
+""+7BEEE75: 51                 -  push ecx
+""+7BEEE76: FF 75 10           -  push [ebp+10]
+""+7BEEE79: 56                 -  push esi
+""+7BEEE7A: 50                 -  push eax
+""+7BEEE7B: 39 00              -  cmp [eax],eax
+""+7BEEE7D: E8 3E 9A FF FF     -  call 07BE88C0
+""+7BEEE82: 83 C4 10           -  add esp,10
+""+7BEEE85: 8B 47 34           -  mov eax,[edi+34]
+// ---------- INJECTING HERE ----------
+""+7BEEE88: 0F B6 40 6F        -  movzx eax,byte ptr [eax+6F]
+""+7BEEE8C: 85 C0              -  test eax,eax
+// ---------- DONE INJECTING  ----------
+""+7BEEE8E: 0F 85 3B 00 00 00  -  jne CollisionScript:DoCollision+e7
+""+7BEEE94: 8B 47 30           -  mov eax,[edi+30]
+""+7BEEE97: 6A 06              -  push 06
+""+7BEEE99: FF 75 10           -  push [ebp+10]
+""+7BEEE9C: 56                 -  push esi
+""+7BEEE9D: 50                 -  push eax
+""+7BEEE9E: 39 00              -  cmp [eax],eax
+""+7BEEEA0: E8 33 9A FF FF     -  call LevelScript:GetBlockInteractsOn
+""+7BEEEA5: 83 C4 10           -  add esp,10
+""+7BEEEA8: 85 C0              -  test eax,eax
+}
+
+
+{ ##### AOB_GiveDamage
+// ORIGINAL CODE - INJECTION POINT: 07CA055E
+""+7CA0544: 8B C8                 -  mov ecx,eax
+""+7CA0546: 8B 45 F0              -  mov eax,[ebp-10]
+""+7CA0549: 8B 55 EC              -  mov edx,[ebp-14]
+""+7CA054C: 89 51 10              -  mov [ecx+10],edx
+""+7CA054F: 83 EC 08              -  sub esp,08
+""+7CA0552: 51                    -  push ecx
+""+7CA0553: 50                    -  push eax
+""+7CA0554: 39 00                 -  cmp [eax],eax
+""+7CA0556: E8 C5 0C FA FF        -  call UnityEngine:MonoBehaviour:StartCoroutine
+""+7CA055B: 83 C4 10              -  add esp,10
+// ---------- INJECTING HERE ----------
+""+7CA055E: D9 46 64              -  fld dword ptr [esi+64]
+""+7CA0561: D9 45 0C              -  fld dword ptr [ebp+0C]
+""+7CA0564: DE C1                 -  faddp
+""+7CA0566: D9 5E 64              -  fstp dword ptr [esi+64]
+// ---------- DONE INJECTING  ----------
+""+7CA0569: 0F B6 46 71           -  movzx eax,byte ptr [esi+71]
+""+7CA056D: 85 C0                 -  test eax,eax
+""+7CA056F: 0F 85 4A 00 00 00     -  jne DynamicObject:GiveDamage+15f
+""+7CA0575: 8B 46 74              -  mov eax,[esi+74]
+""+7CA0578: 85 C0                 -  test eax,eax
+""+7CA057A: 0F 8E 3F 00 00 00     -  jng DynamicObject:GiveDamage+15f
+""+7CA0580: D9 46 64              -  fld dword ptr [esi+64]
+""+7CA0583: 8B 46 74              -  mov eax,[esi+74]
+}
+
+
+{ ##### AOB_GiveBits
+// ORIGINAL CODE - INJECTION POINT: 07C8F3CC
+""+7C8F3BB: C3                 -  ret
+""+7C8F3BC: 00 00              -  add [eax],al
+""+7C8F3BE: 00 00              -  add [eax],al
+""+7C8F3C0: 55                 -  push ebp
+""+7C8F3C1: 8B EC              -  mov ebp,esp
+""+7C8F3C3: 53                 -  push ebx
+""+7C8F3C4: 57                 -  push edi
+""+7C8F3C5: 56                 -  push esi
+""+7C8F3C6: 83 EC 3C           -  sub esp,3C
+""+7C8F3C9: 8B 75 08           -  mov esi,[ebp+08]
+// ---------- INJECTING HERE ----------
+""+7C8F3CC: 8B 46 3C           -  mov eax,[esi+3C]
+""+7C8F3CF: 03 45 0C           -  add eax,[ebp+0C]
+""+7C8F3D2: 89 46 3C           -  mov [esi+3C],eax
+// ---------- DONE INJECTING  ----------
+""+7C8F3D5: E8 A6 28 FB FF     -  call GameHandler:get_Instance
+""+7C8F3DA: 83 EC 08           -  sub esp,08
+""+7C8F3DD: 6A 23              -  push 23
+""+7C8F3DF: 50                 -  push eax
+""+7C8F3E0: 39 00              -  cmp [eax],eax
+""+7C8F3E2: E8 D1 44 FD FF     -  call GameHandler:PlayClip
+""+7C8F3E7: 83 C4 10           -  add esp,10
+""+7C8F3EA: 8B 05 E8 BE 68 07  -  mov eax,[0768BEE8]
+""+7C8F3F0: 83 EC 08           -  sub esp,08
+}
+
+
+{ ##### AOB_GetMaxMoveSpeed
+// ORIGINAL CODE - INJECTION POINT: 07C35B8E
+""+7C35B74: 83 EC 0C           -  sub esp,0C
+""+7C35B77: 50                 -  push eax
+""+7C35B78: E8 FB B1 BF FF     -  call 07830D78
+""+7C35B7D: E8 1E A8 F6 FF     -  call 07BA03A0
+""+7C35B82: EB D3              -  jmp UnityEngine:AudioSource:set_pitch+3f
+""+7C35B84: 00 00              -  add [eax],al
+""+7C35B86: 00 00              -  add [eax],al
+""+7C35B88: 55                 -  push ebp
+""+7C35B89: 8B EC              -  mov ebp,esp
+""+7C35B8B: 83 EC 08           -  sub esp,08
+// ---------- INJECTING HERE ----------
+""+7C35B8E: 8B 45 08           -  mov eax,[ebp+08]
+""+7C35B91: D9 40 08           -  fld dword ptr [eax+08]
+// ---------- DONE INJECTING  ----------
+""+7C35B94: D9 40 08           -  fld dword ptr [eax+08]
+""+7C35B97: D9 40 44           -  fld dword ptr [eax+44]
+""+7C35B9A: DE C9              -  fmulp st(1),st(0)
+""+7C35B9C: DE C1              -  faddp
+""+7C35B9E: C9                 -  leave
+""+7C35B9F: C3                 -  ret
+""+7C35BA0: 55                 -  push ebp
+""+7C35BA1: 8B EC              -  mov ebp,esp
+""+7C35BA3: 83 EC 08           -  sub esp,08
+""+7C35BA6: 83 EC 04           -  sub esp,04
+}
+
+
+{ ##### AOB_AddTotalBits
+// ORIGINAL CODE - INJECTION POINT: 07C61A81
+""+7C61A6B: 83 EC 08                       -  sub esp,08
+""+7C61A6E: 8B 45 08                       -  mov eax,[ebp+08]
+""+7C61A71: 8B 40 08                       -  mov eax,[eax+08]
+""+7C61A74: C9                             -  leave
+""+7C61A75: C3                             -  ret
+""+7C61A76: 00 00                          -  add [eax],al
+""+7C61A78: 55                             -  push ebp
+""+7C61A79: 8B EC                          -  mov ebp,esp
+""+7C61A7B: 83 EC 08                       -  sub esp,08
+""+7C61A7E: 8B 45 08                       -  mov eax,[ebp+08]
+// ---------- INJECTING HERE ----------
+""+7C61A81: 8B 88 D4 00 00 00              -  mov ecx,[eax+000000D4]
+// ---------- DONE INJECTING  ----------
+""+7C61A87: 03 4D 0C                       -  add ecx,[ebp+0C]
+""+7C61A8A: 89 88 D4 00 00 00              -  mov [eax+000000D4],ecx
+""+7C61A90: 8B 05 34 3F 0B 04              -  mov eax,[040B3F34]
+""+7C61A96: 89 48 1C                       -  mov [eax+1C],ecx
+""+7C61A99: C9                             -  leave
+""+7C61A9A: C3                             -  ret
+""+7C61A9B: 00 00                          -  add [eax],al
+""+7C61A9D: 00 00                          -  add [eax],al
+""+7C61A9F: 00 55 8B                       -  add [ebp-75],dl
+""+7C61AA2: EC                             -  in al,dx
+}
+
+
+{ ##### AOB_Buy
+// ORIGINAL CODE - INJECTION POINT: 07987408
+079873E0: 8B C8              -  mov ecx,eax
+079873E2: 39 09              -  cmp [ecx],ecx
+079873E4: 8B 80 D4 00 00 00  -  mov eax,[eax+000000D4]
+079873EA: 8B 8F AC 00 00 00  -  mov ecx,[edi+000000AC]
+079873F0: 8B 97 0C 01 00 00  -  mov edx,[edi+0000010C]
+079873F6: 39 51 0C           -  cmp [ecx+0C],edx
+079873F9: 0F 86 1E 02 00 00  -  jbe ShopAbilityScript:Buy+24d
+079873FF: 8D 4C 91 10        -  lea ecx,[ecx+edx*4+10]
+07987403: 8B 09              -  mov ecx,[ecx]
+// ---------- INJECTING HERE ----------
+07987405: 8B 49 0C           -  mov ecx,[ecx+0C]
+07987408: 3B C1              -  cmp eax,ecx
+// ---------- DONE INJECTING  ----------
+0798740A: 7D 0A              -  jnl ShopAbilityScript:Buy+46
+0798740C: B8 01 00 00 00     -  mov eax,00000001
+07987411: E9 CE 01 00 00     -  jmp ShopAbilityScript:Buy+214
+07987416: 8B 47 7C           -  mov eax,[edi+7C]
+07987419: 8B 40 20           -  mov eax,[eax+20]
+0798741C: 8B 40 38           -  mov eax,[eax+38]
+0798741F: 89 45 D8           -  mov [ebp-28],eax
+07987422: 8B 87 B4 00 00 00  -  mov eax,[edi+000000B4]
+07987428: 8B 8F 0C 01 00 00  -  mov ecx,[edi+0000010C]
+0798742E: 39 48 0C           -  cmp [eax+0C],ecx
+07987431: 0F 86 DF 01 00 00  -  jbe ShopAbilityScript:Buy+246
+07987437: 8D 44 88 10        -  lea eax,[eax+ecx*4+10]
+}
+
+
+{ ##### AOB_AddToShield
+// ORIGINAL CODE - INJECTION POINT: 0796B852
+""+796B83C: 00 00                 -  add [eax],al
+""+796B83E: 00 00                 -  add [eax],al
+""+796B840: 55                    -  push ebp
+""+796B841: 8B EC                 -  mov ebp,esp
+""+796B843: 57                    -  push edi
+""+796B844: 83 EC 04              -  sub esp,04
+""+796B847: 8B 7D 08              -  mov edi,[ebp+08]
+""+796B84A: D9 47 68              -  fld dword ptr [edi+68]
+""+796B84D: D9 45 0C              -  fld dword ptr [ebp+0C]
+""+796B850: DE C1                 -  faddp
+// ---------- INJECTING HERE ----------
+""+796B852: D9 5F 68              -  fstp dword ptr [edi+68]
+""+796B855: D9 47 68              -  fld dword ptr [edi+68]
+// ---------- DONE INJECTING  ----------
+""+796B858: D9 EE                 -  fldz
+""+796B85A: DF F1                 -  fcomip st(0),st(1)
+""+796B85C: DD D8                 -  fstp st(0)
+""+796B85E: 72 16                 -  jb DynamicObject:AddToShield+36
+""+796B860: 8B 47 20              -  mov eax,[edi+20]
+""+796B863: 8B 40 40              -  mov eax,[eax+40]
+""+796B866: 83 EC 0C              -  sub esp,0C
+""+796B869: 50                    -  push eax
+""+796B86A: 39 00                 -  cmp [eax],eax
+""+796B86C: E8 B7 C4 05 00        -  call ShieldAbilityScript:BreakShield
+}
+
+
+{ ##### AOB_SetLives
+// ORIGINAL CODE - INJECTION POINT: 079AB554
+""+79AB535: E9 EE 4A 9D FF                 -  jmp 07380028
+""+79AB53A: 00 00                          -  add [eax],al
+""+79AB53C: 68 B8 D3 CD 11                 -  push 11CDD3B8
+""+79AB541: E9 E2 4A 9D FF                 -  jmp 07380028
+""+79AB546: 00 00                          -  add [eax],al
+""+79AB548: 55                             -  push ebp
+""+79AB549: 8B EC                          -  mov ebp,esp
+""+79AB54B: 83 EC 08                       -  sub esp,08
+""+79AB54E: 8B 45 0C                       -  mov eax,[ebp+0C]
+""+79AB551: 8B 4D 08                       -  mov ecx,[ebp+08]
+// ---------- INJECTING HERE ----------
+""+79AB554: 89 81 A0 00 00 00              -  mov [ecx+000000A0],eax
+// ---------- DONE INJECTING  ----------
+""+79AB55A: 85 C0                          -  test eax,eax
+""+79AB55C: 7D 0D                          -  jnl DynamicObject:SetLives+23
+""+79AB55E: 8B 45 08                       -  mov eax,[ebp+08]
+""+79AB561: C7 80 A0 00 00 00 00 00 00 00  -  mov [eax+000000A0],00000000
+""+79AB56B: C9                             -  leave
+""+79AB56C: C3                             -  ret
+""+79AB56D: 00 00                          -  add [eax],al
+""+79AB56F: 00 55 8B                       -  add [ebp-75],dl
+""+79AB572: EC                             -  in al,dx
+""+79AB573: 57                             -  push edi
+}
+
+
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>1</ID>
+          <Description>"+ Globals"</Description>
+          <Options moHideChildren="1" moDeactivateChildrenAsWell="1"/>
+          <LastState Value="" RealAddress="00000000"/>
+          <Color>FF0000</Color>
+          <GroupHeader>1</GroupHeader>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>76</ID>
+              <Description>"pDynamicObject"</Description>
+              <LastState Value="124AF4B0" RealAddress="121F00B0"/>
+              <ShowAsHex>1</ShowAsHex>
+              <Color>008000</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pDynamicObject</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>105</ID>
+              <Description>"pGameHandler"</Description>
+              <LastState Value="00000000" RealAddress="121F00C0"/>
+              <ShowAsHex>1</ShowAsHex>
+              <Color>008000</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pGameHandler</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>78</ID>
+              <Description>"pMovement"</Description>
+              <LastState Value="124BED70" RealAddress="121F00D0"/>
+              <ShowAsHex>1</ShowAsHex>
+              <Color>008000</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pMovement</Address>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>3</ID>
+          <Description>"+ Cheats"</Description>
+          <Options moHideChildren="1" moDeactivateChildrenAsWell="1"/>
+          <LastState Value="" RealAddress="00000000"/>
+          <Color>FF0000</Color>
+          <GroupHeader>1</GroupHeader>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>177</ID>
+              <Description>"+ Quick Access"</Description>
+              <Options moHideChildren="1" moDeactivateChildrenAsWell="1"/>
+              <LastState Value="" RealAddress="00000000"/>
+              <Color>FF0000</Color>
+              <GroupHeader>1</GroupHeader>
+              <CheatEntries>
+                <CheatEntry>
+                  <ID>186</ID>
+                  <Description>"maxMoveSpeed"</Description>
+                  <LastState Value="10" RealAddress="124BED78"/>
+                  <VariableType>Float</VariableType>
+                  <Address>pMovement</Address>
+                  <Offsets>
+                    <Offset>8</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>187</ID>
+                  <Description>"maxAirMoveSpeed"</Description>
+                  <LastState Value="9" RealAddress="124BED7C"/>
+                  <VariableType>Float</VariableType>
+                  <Address>pMovement</Address>
+                  <Offsets>
+                    <Offset>C</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>185</ID>
+                  <Description>"bits"</Description>
+                  <LastState Value="0" RealAddress="124AF4EC"/>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pDynamicObject</Address>
+                  <Offsets>
+                    <Offset>3C</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>98</ID>
+                  <Description>"airJumpsAmount"</Description>
+                  <DropDownList DisplayValueAsItem="1">1:JUMPS_2
+99:JUMPS_100
+</DropDownList>
+                  <LastState Value="1" RealAddress="124BEDAC"/>
+                  <Color>000000</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pMovement</Address>
+                  <Offsets>
+                    <Offset>3C</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>101</ID>
+                  <Description>"canFly"</Description>
+                  <DropDownList DisplayValueAsItem="1">0:FALSE
+1:TRUE
+</DropDownList>
+                  <LastState Value="0" RealAddress="124BEDB0"/>
+                  <Color>000000</Color>
+                  <VariableType>Byte</VariableType>
+                  <Address>pMovement</Address>
+                  <Offsets>
+                    <Offset>40</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>178</ID>
+                  <Description>"extraDamage"</Description>
+                  <LastState Value="1" RealAddress="124AF508"/>
+                  <VariableType>Float</VariableType>
+                  <Address>pDynamicObject</Address>
+                  <Offsets>
+                    <Offset>58</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>179</ID>
+                  <Description>"minusDamage"</Description>
+                  <LastState Value="1" RealAddress="124AF50C"/>
+                  <VariableType>Float</VariableType>
+                  <Address>pDynamicObject</Address>
+                  <Offsets>
+                    <Offset>5C</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>180</ID>
+                  <Description>"atkSpeed"</Description>
+                  <LastState Value="1.120000005" RealAddress="124AF510"/>
+                  <VariableType>Float</VariableType>
+                  <Address>pDynamicObject</Address>
+                  <Offsets>
+                    <Offset>60</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>181</ID>
+                  <Description>"damage"</Description>
+                  <LastState Value="0" RealAddress="124AF514"/>
+                  <VariableType>Float</VariableType>
+                  <Address>pDynamicObject</Address>
+                  <Offsets>
+                    <Offset>64</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>184</ID>
+                  <Description>"shieldLife"</Description>
+                  <LastState Value="4" RealAddress="124AF518"/>
+                  <VariableType>Float</VariableType>
+                  <Address>pDynamicObject</Address>
+                  <Offsets>
+                    <Offset>68</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>182</ID>
+                  <Description>"lives"</Description>
+                  <LastState Value="3" RealAddress="124AF550"/>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pDynamicObject</Address>
+                  <Offsets>
+                    <Offset>A0</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>183</ID>
+                  <Description>"totalBits"</Description>
+                  <ShowAsSigned>1</ShowAsSigned>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pGameHandler</Address>
+                  <Offsets>
+                    <Offset>D4</Offset>
+                  </Offsets>
+                </CheatEntry>
+              </CheatEntries>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>74</ID>
+              <Description>"Can't Touch This"</Description>
+              <DropDownList ReadOnly="1" DescriptionOnly="1" DisplayValueAsItem="1">0:DISABLE
+1:ENABLE
+</DropDownList>
+              <LastState Value="0" RealAddress="121F00E0"/>
+              <Color>FF00FF</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pGodModeCheat</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>14</ID>
+              <Description>"Unlimited Health"</Description>
+              <DropDownList ReadOnly="1" DescriptionOnly="1" DisplayValueAsItem="1">0:DISABLE
+1:ENABLE
+</DropDownList>
+              <LastState Value="1" RealAddress="121F00F0"/>
+              <Color>FF00FF</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pGiveDamageCheat</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>188</ID>
+              <Description>"Unlimited Shield"</Description>
+              <DropDownList ReadOnly="1" DescriptionOnly="1" DisplayValueAsItem="1">0:DISABLE
+1:ENABLE
+</DropDownList>
+              <LastState Value="1" RealAddress="121F0100"/>
+              <Color>FF00FF</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pShieldCheat</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>189</ID>
+              <Description>"Unlimited Lives"</Description>
+              <DropDownList ReadOnly="1" DescriptionOnly="1" DisplayValueAsItem="1">0:DISABLE
+1:ENABLE
+</DropDownList>
+              <LastState Value="1" RealAddress="121F0110"/>
+              <Color>FF00FF</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pLivesCheat</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>77</ID>
+              <Description>"Deal More Damage"</Description>
+              <DropDownList ReadOnly="1" DescriptionOnly="1" DisplayValueAsItem="1">0:DISABLE
+1:ENABLE
+</DropDownList>
+              <LastState Value="1" RealAddress="121F0120"/>
+              <Color>FF00FF</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pMoreDamageCheat</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>75</ID>
+              <Description>"Parts Always Drop"</Description>
+              <DropDownList ReadOnly="1" DescriptionOnly="1" DisplayValueAsItem="1">0:DISABLE
+1:ENABLE
+</DropDownList>
+              <LastState Value="1" RealAddress="121F0130"/>
+              <Color>FF00FF</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pAlwaysDropsCheat</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>7</ID>
+              <Description>"More Bits Drop"</Description>
+              <DropDownList ReadOnly="1" DescriptionOnly="1" DisplayValueAsItem="1">0:DISABLE
+1:ENABLE
+</DropDownList>
+              <LastState Value="1" RealAddress="121F0140"/>
+              <Color>FF00FF</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pGiveBitsCheat</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>176</ID>
+              <Description>"No Shop Cost"</Description>
+              <DropDownList ReadOnly="1" DescriptionOnly="1" DisplayValueAsItem="1">0:DISABLE
+1:ENABLE
+</DropDownList>
+              <LastState Value="1" RealAddress="121F0150"/>
+              <Color>FF00FF</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pBuyCheat</Address>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>97</ID>
+          <Description>"+ Structs"</Description>
+          <Options moHideChildren="1" moDeactivateChildrenAsWell="1"/>
+          <LastState Value="" RealAddress="00000000"/>
+          <Color>FF0000</Color>
+          <GroupHeader>1</GroupHeader>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>15</ID>
+              <Description>"+ DynamicObject"</Description>
+              <Options moHideChildren="1" moDeactivateChildrenAsWell="1"/>
+              <LastState Value="" RealAddress="00000000"/>
+              <Color>FF0000</Color>
+              <GroupHeader>1</GroupHeader>
+              <CheatEntries>
+                <CheatEntry>
+                  <ID>16</ID>
+                  <Description>"destroyEffect"</Description>
+                  <LastState Value="11D92AC0" RealAddress="124AF4C0"/>
+                  <ShowAsHex>1</ShowAsHex>
+                  <Color>008000</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pDynamicObject</Address>
+                  <Offsets>
+                    <Offset>10</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>17</ID>
+                  <Description>"explosionHitbox"</Description>
+                  <LastState Value="00000000" RealAddress="124AF4C4"/>
+                  <ShowAsHex>1</ShowAsHex>
+                  <Color>008000</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pDynamicObject</Address>
+                  <Offsets>
+                    <Offset>14</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>18</ID>
+                  <Description>"shieldEffect"</Description>
+                  <LastState Value="11D92B40" RealAddress="124AF4C8"/>
+                  <ShowAsHex>1</ShowAsHex>
+                  <Color>008000</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pDynamicObject</Address>
+                  <Offsets>
+                    <Offset>18</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>19</ID>
+                  <Description>"isBeingHitBy"</Description>
+                  <LastState Value="137E7550" RealAddress="124AF4CC"/>
+                  <ShowAsHex>1</ShowAsHex>
+                  <Color>008000</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pDynamicObject</Address>
+                  <Offsets>
+                    <Offset>1C</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>20</ID>
+                  <Description>"creature"</Description>
+                  <LastState Value="137F0E70" RealAddress="124AF4D0"/>
+                  <ShowAsHex>1</ShowAsHex>
+                  <Color>008000</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pDynamicObject</Address>
+                  <Offsets>
+                    <Offset>20</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>21</ID>
+                  <Description>"ctrl"</Description>
+                  <LastState Value="072DB860" RealAddress="124AF4D4"/>
+                  <ShowAsHex>1</ShowAsHex>
+                  <Color>008000</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pDynamicObject</Address>
+                  <Offsets>
+                    <Offset>24</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>22</ID>
+                  <Description>"motion"</Description>
+                  <LastState Value="124A3770" RealAddress="124AF4D8"/>
+                  <ShowAsHex>1</ShowAsHex>
+                  <Color>008000</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pDynamicObject</Address>
+                  <Offsets>
+                    <Offset>28</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>23</ID>
+                  <Description>"damageMat"</Description>
+                  <LastState Value="11D92B30" RealAddress="124AF4DC"/>
+                  <ShowAsHex>1</ShowAsHex>
+                  <Color>008000</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pDynamicObject</Address>
+                  <Offsets>
+                    <Offset>2C</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>24</ID>
+                  <Description>"bitsIndicator"</Description>
+                  <LastState Value="00000000" RealAddress="124AF4E0"/>
+                  <ShowAsHex>1</ShowAsHex>
+                  <Color>008000</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pDynamicObject</Address>
+                  <Offsets>
+                    <Offset>30</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>25</ID>
+                  <Description>"bitsIndicatorPrefab"</Description>
+                  <LastState Value="11D92AB0" RealAddress="124AF4E4"/>
+                  <ShowAsHex>1</ShowAsHex>
+                  <Color>008000</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pDynamicObject</Address>
+                  <Offsets>
+                    <Offset>34</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>26</ID>
+                  <Description>"minionOwner"</Description>
+                  <LastState Value="00000000" RealAddress="124AF4E8"/>
+                  <ShowAsHex>1</ShowAsHex>
+                  <Color>008000</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pDynamicObject</Address>
+                  <Offsets>
+                    <Offset>38</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>27</ID>
+                  <Description>"bits"</Description>
+                  <LastState Value="0" RealAddress="124AF4EC"/>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pDynamicObject</Address>
+                  <Offsets>
+                    <Offset>3C</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>28</ID>
+                  <Description>"lifeRecievedAtBits"</Description>
+                  <LastState Value="0" RealAddress="124AF4F0"/>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pDynamicObject</Address>
+                  <Offsets>
+                    <Offset>40</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>29</ID>
+                  <Description>"lethalVelocity"</Description>
+                  <LastState Value="50" RealAddress="124AF4F4"/>
+                  <VariableType>Float</VariableType>
+                  <Address>pDynamicObject</Address>
+                  <Offsets>
+                    <Offset>44</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>30</ID>
+                  <Description>"breakBlocksVelocity"</Description>
+                  <LastState Value="55" RealAddress="124AF4F8"/>
+                  <VariableType>Float</VariableType>
+                  <Address>pDynamicObject</Address>
+                  <Offsets>
+                    <Offset>48</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>31</ID>
+                  <Description>"fullShieldLife"</Description>
+                  <LastState Value="4" RealAddress="124AF4FC"/>
+                  <VariableType>Float</VariableType>
+                  <Address>pDynamicObject</Address>
+                  <Offsets>
+                    <Offset>4C</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>32</ID>
+                  <Description>"negateShieldDamage"</Description>
+                  <LastState Value="0" RealAddress="124AF500"/>
+                  <VariableType>Byte</VariableType>
+                  <Address>pDynamicObject</Address>
+                  <Offsets>
+                    <Offset>50</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>33</ID>
+                  <Description>"handicap"</Description>
+                  <LastState Value="10" RealAddress="124AF504"/>
+                  <VariableType>Float</VariableType>
+                  <Address>pDynamicObject</Address>
+                  <Offsets>
+                    <Offset>54</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>34</ID>
+                  <Description>"extraDamage"</Description>
+                  <LastState Value="1" RealAddress="124AF508"/>
+                  <VariableType>Float</VariableType>
+                  <Address>pDynamicObject</Address>
+                  <Offsets>
+                    <Offset>58</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>35</ID>
+                  <Description>"minusDamage"</Description>
+                  <LastState Value="1" RealAddress="124AF50C"/>
+                  <VariableType>Float</VariableType>
+                  <Address>pDynamicObject</Address>
+                  <Offsets>
+                    <Offset>5C</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>36</ID>
+                  <Description>"atkSpeed"</Description>
+                  <LastState Value="1.120000005" RealAddress="124AF510"/>
+                  <VariableType>Float</VariableType>
+                  <Address>pDynamicObject</Address>
+                  <Offsets>
+                    <Offset>60</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>37</ID>
+                  <Description>"damage"</Description>
+                  <LastState Value="0" RealAddress="124AF514"/>
+                  <VariableType>Float</VariableType>
+                  <Address>pDynamicObject</Address>
+                  <Offsets>
+                    <Offset>64</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>38</ID>
+                  <Description>"shieldLife"</Description>
+                  <LastState Value="4" RealAddress="124AF518"/>
+                  <VariableType>Float</VariableType>
+                  <Address>pDynamicObject</Address>
+                  <Offsets>
+                    <Offset>68</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>39</ID>
+                  <Description>"shielding"</Description>
+                  <LastState Value="0" RealAddress="124AF51C"/>
+                  <VariableType>Byte</VariableType>
+                  <Address>pDynamicObject</Address>
+                  <Offsets>
+                    <Offset>6C</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>40</ID>
+                  <Description>"reflecting"</Description>
+                  <LastState Value="0" RealAddress="124AF51D"/>
+                  <VariableType>Byte</VariableType>
+                  <Address>pDynamicObject</Address>
+                  <Offsets>
+                    <Offset>6D</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>41</ID>
+                  <Description>"indestructible"</Description>
+                  <LastState Value="0" RealAddress="124AF51E"/>
+                  <VariableType>Byte</VariableType>
+                  <Address>pDynamicObject</Address>
+                  <Offsets>
+                    <Offset>6E</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>42</ID>
+                  <Description>"unHittable"</Description>
+                  <LastState Value="1" RealAddress="124AF51F"/>
+                  <VariableType>Byte</VariableType>
+                  <Address>pDynamicObject</Address>
+                  <Offsets>
+                    <Offset>6F</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>43</ID>
+                  <Description>"unshootable"</Description>
+                  <LastState Value="0" RealAddress="124AF520"/>
+                  <VariableType>Byte</VariableType>
+                  <Address>pDynamicObject</Address>
+                  <Offsets>
+                    <Offset>70</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>44</ID>
+                  <Description>"stunnable"</Description>
+                  <LastState Value="0" RealAddress="124AF521"/>
+                  <VariableType>Byte</VariableType>
+                  <Address>pDynamicObject</Address>
+                  <Offsets>
+                    <Offset>71</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>45</ID>
+                  <Description>"pushable"</Description>
+                  <LastState Value="0" RealAddress="124AF522"/>
+                  <VariableType>Byte</VariableType>
+                  <Address>pDynamicObject</Address>
+                  <Offsets>
+                    <Offset>72</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>46</ID>
+                  <Description>"breakUnstunnableDamage"</Description>
+                  <LastState Value="0" RealAddress="124AF524"/>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pDynamicObject</Address>
+                  <Offsets>
+                    <Offset>74</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>47</ID>
+                  <Description>"shieldBreakStunDuration"</Description>
+                  <LastState Value="5" RealAddress="124AF528"/>
+                  <VariableType>Float</VariableType>
+                  <Address>pDynamicObject</Address>
+                  <Offsets>
+                    <Offset>78</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>48</ID>
+                  <Description>"diedInTournament"</Description>
+                  <LastState Value="0" RealAddress="124AF52C"/>
+                  <VariableType>Byte</VariableType>
+                  <Address>pDynamicObject</Address>
+                  <Offsets>
+                    <Offset>7C</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>49</ID>
+                  <Description>"redPoisonImmunity"</Description>
+                  <LastState Value="0" RealAddress="124AF52D"/>
+                  <VariableType>Byte</VariableType>
+                  <Address>pDynamicObject</Address>
+                  <Offsets>
+                    <Offset>7D</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>50</ID>
+                  <Description>"respawn"</Description>
+                  <LastState Value="1" RealAddress="124AF52E"/>
+                  <VariableType>Byte</VariableType>
+                  <Address>pDynamicObject</Address>
+                  <Offsets>
+                    <Offset>7E</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>51</ID>
+                  <Description>"respawnTime"</Description>
+                  <LastState Value="2" RealAddress="124AF530"/>
+                  <VariableType>Float</VariableType>
+                  <Address>pDynamicObject</Address>
+                  <Offsets>
+                    <Offset>80</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>52</ID>
+                  <Description>"faction"</Description>
+                  <LastState Value="0" RealAddress="124AF534"/>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pDynamicObject</Address>
+                  <Offsets>
+                    <Offset>84</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>53</ID>
+                  <Description>"respawnPos"</Description>
+                  <LastState Value="0" RealAddress="124AF538"/>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pDynamicObject</Address>
+                  <Offsets>
+                    <Offset>88</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>54</ID>
+                  <Description>"isDead"</Description>
+                  <LastState Value="0" RealAddress="124AF544"/>
+                  <VariableType>Byte</VariableType>
+                  <Address>pDynamicObject</Address>
+                  <Offsets>
+                    <Offset>94</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>55</ID>
+                  <Description>"isBuried"</Description>
+                  <LastState Value="1" RealAddress="124AF545"/>
+                  <VariableType>Byte</VariableType>
+                  <Address>pDynamicObject</Address>
+                  <Offsets>
+                    <Offset>95</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>56</ID>
+                  <Description>"isInGame"</Description>
+                  <LastState Value="0" RealAddress="124AF546"/>
+                  <VariableType>Byte</VariableType>
+                  <Address>pDynamicObject</Address>
+                  <Offsets>
+                    <Offset>96</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>57</ID>
+                  <Description>"human"</Description>
+                  <LastState Value="1" RealAddress="124AF547"/>
+                  <VariableType>Byte</VariableType>
+                  <Address>pDynamicObject</Address>
+                  <Offsets>
+                    <Offset>97</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>58</ID>
+                  <Description>"playerNum"</Description>
+                  <LastState Value="0" RealAddress="124AF548"/>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pDynamicObject</Address>
+                  <Offsets>
+                    <Offset>98</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>59</ID>
+                  <Description>"fullLives"</Description>
+                  <LastState Value="3" RealAddress="124AF54C"/>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pDynamicObject</Address>
+                  <Offsets>
+                    <Offset>9C</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>60</ID>
+                  <Description>"lives"</Description>
+                  <LastState Value="3" RealAddress="124AF550"/>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pDynamicObject</Address>
+                  <Offsets>
+                    <Offset>A0</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>61</ID>
+                  <Description>"isTalking"</Description>
+                  <LastState Value="0" RealAddress="124AF554"/>
+                  <VariableType>Byte</VariableType>
+                  <Address>pDynamicObject</Address>
+                  <Offsets>
+                    <Offset>A4</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>62</ID>
+                  <Description>"shieldHit"</Description>
+                  <LastState Value="0" RealAddress="124AF555"/>
+                  <VariableType>Byte</VariableType>
+                  <Address>pDynamicObject</Address>
+                  <Offsets>
+                    <Offset>A5</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>63</ID>
+                  <Description>"hideStatusGUI"</Description>
+                  <LastState Value="0" RealAddress="124AF556"/>
+                  <VariableType>Byte</VariableType>
+                  <Address>pDynamicObject</Address>
+                  <Offsets>
+                    <Offset>A6</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>64</ID>
+                  <Description>"damageChange"</Description>
+                  <LastState Value="0" RealAddress="124AF557"/>
+                  <VariableType>Byte</VariableType>
+                  <Address>pDynamicObject</Address>
+                  <Offsets>
+                    <Offset>A7</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>65</ID>
+                  <Description>"livesChange"</Description>
+                  <LastState Value="0" RealAddress="124AF558"/>
+                  <VariableType>Byte</VariableType>
+                  <Address>pDynamicObject</Address>
+                  <Offsets>
+                    <Offset>A8</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>66</ID>
+                  <Description>"bitsChange"</Description>
+                  <LastState Value="0" RealAddress="124AF559"/>
+                  <VariableType>Byte</VariableType>
+                  <Address>pDynamicObject</Address>
+                  <Offsets>
+                    <Offset>A9</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>67</ID>
+                  <Description>"dummy"</Description>
+                  <LastState Value="0" RealAddress="124AF55A"/>
+                  <VariableType>Byte</VariableType>
+                  <Address>pDynamicObject</Address>
+                  <Offsets>
+                    <Offset>AA</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>68</ID>
+                  <Description>"alwaysDrops"</Description>
+                  <LastState Value="0" RealAddress="124AF55B"/>
+                  <VariableType>Byte</VariableType>
+                  <Address>pDynamicObject</Address>
+                  <Offsets>
+                    <Offset>AB</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>69</ID>
+                  <Description>"clone"</Description>
+                  <LastState Value="0" RealAddress="124AF55C"/>
+                  <VariableType>Byte</VariableType>
+                  <Address>pDynamicObject</Address>
+                  <Offsets>
+                    <Offset>AC</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>70</ID>
+                  <Description>"softKill"</Description>
+                  <LastState Value="0" RealAddress="124AF55D"/>
+                  <VariableType>Byte</VariableType>
+                  <Address>pDynamicObject</Address>
+                  <Offsets>
+                    <Offset>AD</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>71</ID>
+                  <Description>"dontShowStatus"</Description>
+                  <LastState Value="0" RealAddress="124AF55E"/>
+                  <VariableType>Byte</VariableType>
+                  <Address>pDynamicObject</Address>
+                  <Offsets>
+                    <Offset>AE</Offset>
+                  </Offsets>
+                </CheatEntry>
+              </CheatEntries>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>106</ID>
+              <Description>"+ GameHandler"</Description>
+              <Options moHideChildren="1" moDeactivateChildrenAsWell="1"/>
+              <LastState Value="" RealAddress="00000000"/>
+              <Color>FF0000</Color>
+              <GroupHeader>1</GroupHeader>
+              <CheatEntries>
+                <CheatEntry>
+                  <ID>107</ID>
+                  <Description>"playerPrefab"</Description>
+                  <ShowAsHex>1</ShowAsHex>
+                  <Color>008000</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pGameHandler</Address>
+                  <Offsets>
+                    <Offset>10</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>108</ID>
+                  <Description>"playerMats"</Description>
+                  <ShowAsHex>1</ShowAsHex>
+                  <Color>008000</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pGameHandler</Address>
+                  <Offsets>
+                    <Offset>14</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>109</ID>
+                  <Description>"startPositions"</Description>
+                  <ShowAsHex>1</ShowAsHex>
+                  <Color>008000</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pGameHandler</Address>
+                  <Offsets>
+                    <Offset>18</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>110</ID>
+                  <Description>"players"</Description>
+                  <ShowAsHex>1</ShowAsHex>
+                  <Color>008000</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pGameHandler</Address>
+                  <Offsets>
+                    <Offset>1C</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>111</ID>
+                  <Description>"creatures"</Description>
+                  <ShowAsHex>1</ShowAsHex>
+                  <Color>008000</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pGameHandler</Address>
+                  <Offsets>
+                    <Offset>20</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>112</ID>
+                  <Description>"playerIndicatorEffects"</Description>
+                  <ShowAsHex>1</ShowAsHex>
+                  <Color>008000</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pGameHandler</Address>
+                  <Offsets>
+                    <Offset>24</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>113</ID>
+                  <Description>"factions"</Description>
+                  <ShowAsHex>1</ShowAsHex>
+                  <Color>008000</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pGameHandler</Address>
+                  <Offsets>
+                    <Offset>28</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>114</ID>
+                  <Description>"cam"</Description>
+                  <ShowAsHex>1</ShowAsHex>
+                  <Color>008000</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pGameHandler</Address>
+                  <Offsets>
+                    <Offset>2C</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>115</ID>
+                  <Description>"loadingScreen"</Description>
+                  <ShowAsHex>1</ShowAsHex>
+                  <Color>008000</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pGameHandler</Address>
+                  <Offsets>
+                    <Offset>30</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>116</ID>
+                  <Description>"MBPcrest"</Description>
+                  <ShowAsHex>1</ShowAsHex>
+                  <Color>008000</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pGameHandler</Address>
+                  <Offsets>
+                    <Offset>34</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>117</ID>
+                  <Description>"partDescriptionDataFile"</Description>
+                  <ShowAsHex>1</ShowAsHex>
+                  <Color>008000</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pGameHandler</Address>
+                  <Offsets>
+                    <Offset>38</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>118</ID>
+                  <Description>"partDescriptionData"</Description>
+                  <ShowAsHex>1</ShowAsHex>
+                  <Color>008000</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pGameHandler</Address>
+                  <Offsets>
+                    <Offset>3C</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>119</ID>
+                  <Description>"dialogDataFile"</Description>
+                  <ShowAsHex>1</ShowAsHex>
+                  <Color>008000</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pGameHandler</Address>
+                  <Offsets>
+                    <Offset>40</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>120</ID>
+                  <Description>"dialogData"</Description>
+                  <ShowAsHex>1</ShowAsHex>
+                  <Color>008000</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pGameHandler</Address>
+                  <Offsets>
+                    <Offset>44</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>121</ID>
+                  <Description>"sceneFader"</Description>
+                  <ShowAsHex>1</ShowAsHex>
+                  <Color>008000</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pGameHandler</Address>
+                  <Offsets>
+                    <Offset>48</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>122</ID>
+                  <Description>"playerBattleWinPlaces"</Description>
+                  <ShowAsHex>1</ShowAsHex>
+                  <Color>008000</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pGameHandler</Address>
+                  <Offsets>
+                    <Offset>4C</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>123</ID>
+                  <Description>"matchFinishedEffectPrefab"</Description>
+                  <ShowAsHex>1</ShowAsHex>
+                  <Color>008000</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pGameHandler</Address>
+                  <Offsets>
+                    <Offset>50</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>124</ID>
+                  <Description>"updateVersion"</Description>
+                  <ShowAsHex>1</ShowAsHex>
+                  <Color>008000</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pGameHandler</Address>
+                  <Offsets>
+                    <Offset>54</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>125</ID>
+                  <Description>"latestUpdateVersion"</Description>
+                  <ShowAsHex>1</ShowAsHex>
+                  <Color>008000</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pGameHandler</Address>
+                  <Offsets>
+                    <Offset>58</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>126</ID>
+                  <Description>"emailFilter"</Description>
+                  <ShowAsHex>1</ShowAsHex>
+                  <Color>008000</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pGameHandler</Address>
+                  <Offsets>
+                    <Offset>5C</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>127</ID>
+                  <Description>"customLevels"</Description>
+                  <ShowAsHex>1</ShowAsHex>
+                  <Color>008000</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pGameHandler</Address>
+                  <Offsets>
+                    <Offset>60</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>128</ID>
+                  <Description>"allowedCustomLevelBlocks"</Description>
+                  <ShowAsHex>1</ShowAsHex>
+                  <Color>008000</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pGameHandler</Address>
+                  <Offsets>
+                    <Offset>64</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>129</ID>
+                  <Description>"triggerPrefab"</Description>
+                  <ShowAsHex>1</ShowAsHex>
+                  <Color>008000</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pGameHandler</Address>
+                  <Offsets>
+                    <Offset>68</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>130</ID>
+                  <Description>"spawnMarkerPrefab"</Description>
+                  <ShowAsHex>1</ShowAsHex>
+                  <Color>008000</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pGameHandler</Address>
+                  <Offsets>
+                    <Offset>6C</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>131</ID>
+                  <Description>"checkPointMarkerPrefab"</Description>
+                  <ShowAsHex>1</ShowAsHex>
+                  <Color>008000</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pGameHandler</Address>
+                  <Offsets>
+                    <Offset>70</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>132</ID>
+                  <Description>"close1MarkerPrefab"</Description>
+                  <ShowAsHex>1</ShowAsHex>
+                  <Color>008000</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pGameHandler</Address>
+                  <Offsets>
+                    <Offset>74</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>133</ID>
+                  <Description>"close2MarkerPrefab"</Description>
+                  <ShowAsHex>1</ShowAsHex>
+                  <Color>008000</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pGameHandler</Address>
+                  <Offsets>
+                    <Offset>78</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>134</ID>
+                  <Description>"close1"</Description>
+                  <ShowAsHex>1</ShowAsHex>
+                  <Color>008000</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pGameHandler</Address>
+                  <Offsets>
+                    <Offset>7C</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>135</ID>
+                  <Description>"close1End"</Description>
+                  <ShowAsHex>1</ShowAsHex>
+                  <Color>008000</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pGameHandler</Address>
+                  <Offsets>
+                    <Offset>80</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>136</ID>
+                  <Description>"close2"</Description>
+                  <ShowAsHex>1</ShowAsHex>
+                  <Color>008000</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pGameHandler</Address>
+                  <Offsets>
+                    <Offset>84</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>137</ID>
+                  <Description>"close2End"</Description>
+                  <ShowAsHex>1</ShowAsHex>
+                  <Color>008000</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pGameHandler</Address>
+                  <Offsets>
+                    <Offset>88</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>138</ID>
+                  <Description>"spawns"</Description>
+                  <ShowAsHex>1</ShowAsHex>
+                  <Color>008000</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pGameHandler</Address>
+                  <Offsets>
+                    <Offset>8C</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>139</ID>
+                  <Description>"checkpoint"</Description>
+                  <ShowAsHex>1</ShowAsHex>
+                  <Color>008000</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pGameHandler</Address>
+                  <Offsets>
+                    <Offset>90</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>140</ID>
+                  <Description>"teleport"</Description>
+                  <ShowAsHex>1</ShowAsHex>
+                  <Color>008000</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pGameHandler</Address>
+                  <Offsets>
+                    <Offset>94</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>141</ID>
+                  <Description>"playersToSpawn"</Description>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pGameHandler</Address>
+                  <Offsets>
+                    <Offset>98</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>142</ID>
+                  <Description>"deathTimeOut"</Description>
+                  <VariableType>Float</VariableType>
+                  <Address>pGameHandler</Address>
+                  <Offsets>
+                    <Offset>9C</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>143</ID>
+                  <Description>"muteSounds"</Description>
+                  <VariableType>Byte</VariableType>
+                  <Address>pGameHandler</Address>
+                  <Offsets>
+                    <Offset>A0</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>144</ID>
+                  <Description>"muteMusic"</Description>
+                  <VariableType>Byte</VariableType>
+                  <Address>pGameHandler</Address>
+                  <Offsets>
+                    <Offset>A1</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>145</ID>
+                  <Description>"soundVolume"</Description>
+                  <VariableType>Float</VariableType>
+                  <Address>pGameHandler</Address>
+                  <Offsets>
+                    <Offset>A4</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>146</ID>
+                  <Description>"musicVolume"</Description>
+                  <VariableType>Float</VariableType>
+                  <Address>pGameHandler</Address>
+                  <Offsets>
+                    <Offset>A8</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>147</ID>
+                  <Description>"forceLowFps"</Description>
+                  <VariableType>Byte</VariableType>
+                  <Address>pGameHandler</Address>
+                  <Offsets>
+                    <Offset>AC</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>148</ID>
+                  <Description>"useSeed"</Description>
+                  <VariableType>Byte</VariableType>
+                  <Address>pGameHandler</Address>
+                  <Offsets>
+                    <Offset>AD</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>149</ID>
+                  <Description>"seed"</Description>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pGameHandler</Address>
+                  <Offsets>
+                    <Offset>B0</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>150</ID>
+                  <Description>"hideMouse"</Description>
+                  <VariableType>Byte</VariableType>
+                  <Address>pGameHandler</Address>
+                  <Offsets>
+                    <Offset>B4</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>151</ID>
+                  <Description>"atLevel"</Description>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pGameHandler</Address>
+                  <Offsets>
+                    <Offset>B8</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>152</ID>
+                  <Description>"demoGameProgress"</Description>
+                  <VariableType>Byte</VariableType>
+                  <Address>pGameHandler</Address>
+                  <Offsets>
+                    <Offset>BC</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>153</ID>
+                  <Description>"levelProgress"</Description>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pGameHandler</Address>
+                  <Offsets>
+                    <Offset>C0</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>154</ID>
+                  <Description>"maxFactions"</Description>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pGameHandler</Address>
+                  <Offsets>
+                    <Offset>C4</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>155</ID>
+                  <Description>"gameState"</Description>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pGameHandler</Address>
+                  <Offsets>
+                    <Offset>C8</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>156</ID>
+                  <Description>"forceLowFpsOn"</Description>
+                  <VariableType>Byte</VariableType>
+                  <Address>pGameHandler</Address>
+                  <Offsets>
+                    <Offset>CC</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>157</ID>
+                  <Description>"gameProgress"</Description>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pGameHandler</Address>
+                  <Offsets>
+                    <Offset>D0</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>158</ID>
+                  <Description>"totalBits"</Description>
+                  <ShowAsSigned>1</ShowAsSigned>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pGameHandler</Address>
+                  <Offsets>
+                    <Offset>D4</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>159</ID>
+                  <Description>"AIcheck"</Description>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pGameHandler</Address>
+                  <Offsets>
+                    <Offset>D8</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>160</ID>
+                  <Description>"levelEndDecided"</Description>
+                  <VariableType>Byte</VariableType>
+                  <Address>pGameHandler</Address>
+                  <Offsets>
+                    <Offset>DC</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>161</ID>
+                  <Description>"fightWinnerDetermined"</Description>
+                  <VariableType>Byte</VariableType>
+                  <Address>pGameHandler</Address>
+                  <Offsets>
+                    <Offset>DD</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>162</ID>
+                  <Description>"winCamPos"</Description>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pGameHandler</Address>
+                  <Offsets>
+                    <Offset>E0</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>163</ID>
+                  <Description>"winCamRot"</Description>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pGameHandler</Address>
+                  <Offsets>
+                    <Offset>EC</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>164</ID>
+                  <Description>"createBGInEditor"</Description>
+                  <VariableType>Byte</VariableType>
+                  <Address>pGameHandler</Address>
+                  <Offsets>
+                    <Offset>F8</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>165</ID>
+                  <Description>"useInspectorBuild"</Description>
+                  <VariableType>Byte</VariableType>
+                  <Address>pGameHandler</Address>
+                  <Offsets>
+                    <Offset>F9</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>166</ID>
+                  <Description>"tournamentProgress"</Description>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pGameHandler</Address>
+                  <Offsets>
+                    <Offset>FC</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>167</ID>
+                  <Description>"playerBattleDroppedOutCount"</Description>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pGameHandler</Address>
+                  <Offsets>
+                    <Offset>100</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>168</ID>
+                  <Description>"collectionOpen"</Description>
+                  <VariableType>Byte</VariableType>
+                  <Address>pGameHandler</Address>
+                  <Offsets>
+                    <Offset>104</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>169</ID>
+                  <Description>"versusLives"</Description>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pGameHandler</Address>
+                  <Offsets>
+                    <Offset>108</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>170</ID>
+                  <Description>"versusTimeLimit"</Description>
+                  <VariableType>Float</VariableType>
+                  <Address>pGameHandler</Address>
+                  <Offsets>
+                    <Offset>10C</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>171</ID>
+                  <Description>"versusTimer"</Description>
+                  <VariableType>Float</VariableType>
+                  <Address>pGameHandler</Address>
+                  <Offsets>
+                    <Offset>110</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>172</ID>
+                  <Description>"versusTimerGo"</Description>
+                  <VariableType>Byte</VariableType>
+                  <Address>pGameHandler</Address>
+                  <Offsets>
+                    <Offset>114</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>173</ID>
+                  <Description>"SteamVersion"</Description>
+                  <VariableType>Byte</VariableType>
+                  <Address>pGameHandler</Address>
+                  <Offsets>
+                    <Offset>115</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>174</ID>
+                  <Description>"trigToolActive"</Description>
+                  <VariableType>Byte</VariableType>
+                  <Address>pGameHandler</Address>
+                  <Offsets>
+                    <Offset>116</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>175</ID>
+                  <Description>"levelStartTime"</Description>
+                  <VariableType>Float</VariableType>
+                  <Address>pGameHandler</Address>
+                  <Offsets>
+                    <Offset>118</Offset>
+                  </Offsets>
+                </CheatEntry>
+              </CheatEntries>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>79</ID>
+              <Description>"+ Movement"</Description>
+              <Options moHideChildren="1" moDeactivateChildrenAsWell="1"/>
+              <LastState Value="" RealAddress="00000000"/>
+              <Color>FF0000</Color>
+              <GroupHeader>1</GroupHeader>
+              <CheatEntries>
+                <CheatEntry>
+                  <ID>80</ID>
+                  <Description>"maxMoveSpeed"</Description>
+                  <LastState Value="10" RealAddress="124BED78"/>
+                  <VariableType>Float</VariableType>
+                  <Address>pMovement</Address>
+                  <Offsets>
+                    <Offset>8</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>81</ID>
+                  <Description>"maxAirMoveSpeed"</Description>
+                  <LastState Value="9" RealAddress="124BED7C"/>
+                  <VariableType>Float</VariableType>
+                  <Address>pMovement</Address>
+                  <Offsets>
+                    <Offset>C</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>82</ID>
+                  <Description>"groundAcc"</Description>
+                  <LastState Value="95" RealAddress="124BED80"/>
+                  <VariableType>Float</VariableType>
+                  <Address>pMovement</Address>
+                  <Offsets>
+                    <Offset>10</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>83</ID>
+                  <Description>"airAcc"</Description>
+                  <LastState Value="68" RealAddress="124BED84"/>
+                  <VariableType>Float</VariableType>
+                  <Address>pMovement</Address>
+                  <Offsets>
+                    <Offset>14</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>84</ID>
+                  <Description>"groundFriction"</Description>
+                  <LastState Value="85" RealAddress="124BED88"/>
+                  <VariableType>Float</VariableType>
+                  <Address>pMovement</Address>
+                  <Offsets>
+                    <Offset>18</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>85</ID>
+                  <Description>"airFriction"</Description>
+                  <LastState Value="20" RealAddress="124BED8C"/>
+                  <VariableType>Float</VariableType>
+                  <Address>pMovement</Address>
+                  <Offsets>
+                    <Offset>1C</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>86</ID>
+                  <Description>"jumpStartVelocity"</Description>
+                  <LastState Value="28" RealAddress="124BED90"/>
+                  <VariableType>Float</VariableType>
+                  <Address>pMovement</Address>
+                  <Offsets>
+                    <Offset>20</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>87</ID>
+                  <Description>"wallJumpStartVelocity"</Description>
+                  <LastState Value="12" RealAddress="124BED94"/>
+                  <VariableType>Float</VariableType>
+                  <Address>pMovement</Address>
+                  <Offsets>
+                    <Offset>24</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>88</ID>
+                  <Description>"wallJumpSimulatedMoveDuration"</Description>
+                  <LastState Value="0.5" RealAddress="124BED9C"/>
+                  <VariableType>Float</VariableType>
+                  <Address>pMovement</Address>
+                  <Offsets>
+                    <Offset>2C</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>89</ID>
+                  <Description>"gravity"</Description>
+                  <LastState Value="80" RealAddress="124BEDA0"/>
+                  <VariableType>Float</VariableType>
+                  <Address>pMovement</Address>
+                  <Offsets>
+                    <Offset>30</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>90</ID>
+                  <Description>"maxFallingSpeed"</Description>
+                  <LastState Value="-18" RealAddress="124BEDA4"/>
+                  <VariableType>Float</VariableType>
+                  <Address>pMovement</Address>
+                  <Offsets>
+                    <Offset>34</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>91</ID>
+                  <Description>"canWalljump"</Description>
+                  <LastState Value="1" RealAddress="124BEDA8"/>
+                  <VariableType>Byte</VariableType>
+                  <Address>pMovement</Address>
+                  <Offsets>
+                    <Offset>38</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>92</ID>
+                  <Description>"airJumpsAmount"</Description>
+                  <LastState Value="1" RealAddress="124BEDAC"/>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pMovement</Address>
+                  <Offsets>
+                    <Offset>3C</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>93</ID>
+                  <Description>"canFly"</Description>
+                  <LastState Value="0" RealAddress="124BEDB0"/>
+                  <VariableType>Byte</VariableType>
+                  <Address>pMovement</Address>
+                  <Offsets>
+                    <Offset>40</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>94</ID>
+                  <Description>"canWallSlide"</Description>
+                  <LastState Value="0" RealAddress="124BEDB1"/>
+                  <VariableType>Byte</VariableType>
+                  <Address>pMovement</Address>
+                  <Offsets>
+                    <Offset>41</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>95</ID>
+                  <Description>"canSprint"</Description>
+                  <LastState Value="1" RealAddress="124BEDB2"/>
+                  <VariableType>Byte</VariableType>
+                  <Address>pMovement</Address>
+                  <Offsets>
+                    <Offset>42</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>96</ID>
+                  <Description>"movementSpeedModifier"</Description>
+                  <LastState Value="0" RealAddress="124BEDB4"/>
+                  <VariableType>Float</VariableType>
+                  <Address>pMovement</Address>
+                  <Offsets>
+                    <Offset>44</Offset>
+                  </Offsets>
+                </CheatEntry>
+              </CheatEntries>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols/>
+  <Comments>********************************************************************************
+Game    : MegabytePunch
+Version : (Steam 01-15-2017)
+Date    : 01-15-2017
+Author  : JizzaBeez
+********************************************************************************
+Cheats:
+  * God Mode (unhittable)
+  * Unlimited Health
+  * Unlimited Shield
+  * Unlimited Lives
+  * Deal More Damage
+  * Parts Always Drop
+  * More Bits Drop
+  * No Shop Cost (no bits needed and no cost)
+********************************************************************************
+How to use the table:
+  1) Run the game 'MegabytePunch.exe'.
+  2) Open Cheat Engine 6.6+ (below not tested).
+  3) Select the process 'MegabytePunch.exe'.
+  4) Open the table 'MegabytePunch.ct'.
+  5) Click '&gt;&gt;&gt; ACTIVATE &lt;&lt;&lt;' to enable the table.
+  6) See below how to use 'Cheats' and 'Structs'.
+  7) Play the game and win!!!1!!1!1 ...
+  8) Click '&gt;&gt;&gt; DEACTIVATE &lt;&lt;&lt;' before closing or the game will crash!
+********************************************************************************
+How to use 'Cheats':
+  1) Enable: select the item and change its value to 'ENABLE'.
+  2) Disable: select the item and change its value to 'DISABLE'.
+********************************************************************************
+How to edit 'DynamicObject': (pointer IS player-specific)
+  *) This pointer comes from the method 'DoCollision'.
+  1) No special interactions are needed - the correct address/values will load.
+********************************************************************************
+How to edit 'GameHandler': (pointer IS player-specific)
+  *) The pointer comes from the method 'AddTotalBits'.
+  1) Just collect some bits or buy something and the address/values will load.
+********************************************************************************
+How to edit 'Movement': (pointer IS NOT player-specific)
+  *) This pointer comes from the method 'GetMaxMoveSpeed' and accesses other objects.
+  *) If enemies/etc are nearby and moving then the pointer may point to them...
+  1) While in-game, 'Move-And-Pause' so that the player's correct address/values will load.
+  2) This needs to be done before editing or else incorrect addresses could be changed!!!
+********************************************************************************
+</Comments>
+</CheatTable>

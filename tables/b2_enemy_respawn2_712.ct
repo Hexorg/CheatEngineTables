@@ -1,0 +1,244 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="14">
+  <Forms>
+    <Swapper>9593CD4EE33010C79DA43469C2B242E2C081834F88035AED2B6CBBEDB612559112C4D949DDC6221D679D894AF795F6C213F0241C7904F6BE763EF8281CCACD331ECDFCFEFFB14B8790E872F4DD8D06C391542B375CB33CE7AA73C117E8FCB5BA632E96293AF79613C9DCFEBD772DE6983A8F76D0976ACED524915004FBB1083705F2D59443E9C7622A40ACC41F4E9AAA10371977BDB808052CF569C0721412BA5F86C0571BDACCDC1F6482033E4F0CEAB89D487CCD78210AECCB5B7708BF942CF30AD33E6A2923AB331680DD535346E582F2AAFFD2941614538674234B9A30A0859E5949BA6A243D90602401BFD5ADEC7FFE44EB6902E2CE40C32437EED766F0CF38AB1207974C69C6BE988BA99C73AF89C354AE0D89E7D7B1E9EC796DB6E7452C9E19636C425ECBEA0EC19C6AF33BD6B6AC9390673C41BA6E85AC192045F949319F65B4B619CDBE6AC6A7778CE7A6414119CD5EAFE003F3E942AADD99FD19B496BB0735C1D60A7696A33DEF6939FD125182AFF7A90915435E2B3A6E15D96715DD61437747DC1F90A45215C11EBBD137E4E515B71DA8B1E8CD53692EAAC40B81FE73E43F</Swapper>
+  </Forms>
+  <CheatEntries>
+    <CheatEntry>
+      <ID>1</ID>
+      <Description>"Enemy Respawn/Swapper"</Description>
+      <Color>80000008</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>[ENABLE]
+//code from here to '[DISABLE]' will be used to enable the cheat
+aobscan(EnemyDenAOB,8b 0d ?? ?? ?? ?? 85 c9 74 1c 8b 46 50)
+aobscan(PointDefAOB,8b 0d ?? ?? ?? ?? 85 db 0f 84)
+aobscan(StringAOB,83 c4 10 8b 0d ?? ?? ?? ?? 8b 0c b9 68 00 10 00 00)
+
+label(EnemyDen)
+label(PointDef)
+label(StringPoint)
+registersymbol(StringPoint)
+registersymbol(EnemyDen)
+registersymbol(PointDef)
+
+StringAOB+5:
+StringPoint:
+
+PointDefAOB+2:
+PointDef:
+
+EnemyDenAOB+2:
+EnemyDen:
+
+luacall(DenFindEnable())
+ 
+ 
+[DISABLE]
+//code from here till the end of the code will be used to disable the cheat
+unregistersymbol(EnemyDen)
+unregistersymbol(PointDef)
+unregistersymbol(StringPoint)
+
+luacall(DenFindDisable())
+</AssemblerScript>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols>
+    <SymbolEntry>
+      <Name>StringPoint</Name>
+      <Address>007A664B</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>EnemyDen</Name>
+      <Address>00BC03DF</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>PointDef</Name>
+      <Address>00FAFED4</Address>
+    </SymbolEntry>
+  </UserdefinedSymbols>
+  <LuaScript>BaseEntityTable = nil
+BaseDen = nil
+BaseEnList = nil
+BaseEnemy = nil
+DenResults = nil
+DenCount = nil
+STable = nil
+
+function DenFindEnable()
+  if ResetButton ~= nil then object_destroy(ResetButton);ResetButton=nil end
+  if IncreaseButton ~= nil then object_destroy(IncreaseButton);IncreaseButton=nil end
+  if DecreaseButton ~= nil then object_destroy(DecreaseButton);DecreaseButton=nil end
+  if DenFindButton ~= nil then object_destroy(DenFindButton);DenFindButton=nil end
+  if SwapperButton ~= nil then object_destroy(SwapperButton);SwapperButton=nil end
+  DenFindButton = createHotkey("FindDens",45)
+  ResetButton = createHotkey("KillReset",36)
+  IncreaseButton = createHotkey("MaxUp",33)
+  DecreaseButton = createHotkey("MaxDown",34)
+  SwapperButton = createHotkey("SwapOpen",46)
+end
+
+function SwapOpen()
+form_show(Swapper)
+end
+
+function DenFindDisable()
+  if ResetButton ~= nil then object_destroy(ResetButton);ResetButton=nil end
+  if IncreaseButton ~= nil then object_destroy(IncreaseButton);IncreaseButton=nil end
+  if DecreaseButton ~= nil then object_destroy(DecreaseButton);DecreaseButton=nil end
+  if DenFindButton ~= nil then object_destroy(DenFindButton);DenFindButton=nil end
+  if SwapperButton ~= nil then object_destroy(SwapperButton);SwapperButton=nil end
+end
+
+function FindDens()
+  if BaseDenTable == nil then
+    local EntAOB = '[[[[[EnemyDen]+4]+158]+38]+0]+0'
+    BaseDenTable = getAddress(EntAOB)
+  end
+  BaseDen = BaseDenTable
+  local DenScan = createMemScan()
+  memscan_firstScan(DenScan,soExactValue,vtDword,"",BaseDen,"0","0x00000000","0x70000000","+W",fsmAligned,"4",false,false,true,false)
+  memscan_waitTillDone(DenScan)
+  DenResults = createFoundList(DenScan)
+  foundlist_initialize(DenResults)
+  DenCount = foundlist_getCount(DenResults) - 1
+  beep()
+end
+
+function KillReset()
+  for i=1,DenCount do
+   local offset = foundlist_getAddress(DenResults,i)
+   local address = getAddress(offset .. "+268")
+   writeInteger(address,0)
+  end
+end
+
+function MaxUp()
+  for i=1,DenCount do
+   local offset = foundlist_getAddress(DenResults,i)
+   local address = getAddress(offset .. "+244")
+   local CurVal = readInteger(address)
+   writeInteger(address,CurVal + 1)
+  end
+end
+
+function MaxDown()
+  for i=1,DenCount do
+   local offset = foundlist_getAddress(DenResults,i)
+   local address = getAddress(offset .. "+244")
+   local CurVal = readInteger(address)
+   if CurVal &gt; 1 then
+     writeInteger(address,CurVal - 1)
+   end
+  end
+end
+
+function EnGenerateClick(sender)
+  if BaseEntityTable == nil then
+    local EntAOB = strings_getString(AOBScan('74 14 51 b9 ?? ?? ?? ?? e8'),0)
+    BaseEntityTable = '[[' .. EntAOB .. '+4]]'
+  end
+  if STable == nil then
+    --local STableAOB = strings_getString(AOBScan('83 c4 10 8b 0d ?? ?? ?? ?? 8b 0c b9 68 00 10 00 00'),0)
+    STable = getAddress('[StringPoint]+0')
+    --showMessage(STable) return
+  end
+  local Finder = 0
+  for i=0,9000 do
+  --showMessage(readString(readInteger((readInteger(readInteger(getAddress(BaseEntityTable)+(i*4)) + 44) * 4) + readInteger(STable))+16,90))
+    if readString(readInteger((readInteger(readInteger(getAddress(BaseEntityTable)+(i*4)) + 44) * 4) + readInteger(STable))+16,90) == "Default__WillowPopulationDefinition" then
+      Finder = Finder + 1
+      BaseEnList = readInteger(readInteger(getAddress(BaseEntityTable)+(i*4)))
+    elseif readString(readInteger((readInteger(readInteger(getAddress(BaseEntityTable)+(i*4)) + 44) * 4) + readInteger(STable))+16,90) == "Default__PopulationFactoryBalancedAIPawn" then
+      BaseEnemy = readInteger(readInteger(getAddress(BaseEntityTable)+(i*4)))
+      Finder = Finder + 1
+    elseif readString(readInteger((readInteger(readInteger(getAddress(BaseEntityTable)+(i*4)) + 44) * 4) + readInteger(STable))+16,90) == "Default__WillowPopulationPoint" then
+      BasePointDef = readInteger(readInteger(getAddress(BaseEntityTable)+(i*4)))
+      Finder = Finder + 1
+    end
+    if Finder == 3 then break end
+  end
+  --BaseEnList = readInteger(readInteger(BaseEntityTable + 18508))
+  --BaseEnemy = readInteger(readInteger(BaseEntityTable + 20180))
+  --BasePointDef = readInteger('[[[PointDef]+c]+158]+0')
+  --showMessage(BasePointDef)
+
+  local PointScan = createMemScan()
+  memscan_firstScan(PointScan,soExactValue,vtDword,"",BasePointDef,"0","0x00000000","0x70000000","+W",fsmAligned,"4",false,false,true,false)
+  memscan_waitTillDone(PointScan)
+  PointResults = createFoundList(PointScan)
+  foundlist_initialize(PointResults)
+  local PointCount = foundlist_getCount(PointResults) - 1
+  for i=1,PointCount do
+    local PointOffset = foundlist_getAddress(PointResults,i)
+    local PointAddress = getAddress(PointOffset)+476
+    writeInteger(PointAddress,0)
+  end
+
+  local EnListScan = createMemScan()
+  memscan_firstScan(EnListScan,soExactValue,vtDword,"",BaseEnList,"0","0x00000000","0x70000000","+W",fsmAligned,"4",false,false,true,false)
+  memscan_waitTillDone(EnListScan)
+  EnListResults = createFoundList(EnListScan)
+  foundlist_initialize(EnListResults)
+  EnListCount = foundlist_getCount(EnListResults) - 1
+
+  local EnListItems = listbox_getItems(Swapper_EnGroup)
+  strings_clear(EnListItems)
+  for i=1,EnListCount do
+    local EnListOffset = foundlist_getAddress(EnListResults,i)
+    local EnListAddress = getAddress(EnListOffset)
+    StringGetter(EnListAddress,EnListItems)
+  end
+
+  local EnemyScan = createMemScan()
+  memscan_firstScan(EnemyScan,soExactValue,vtDword,"",BaseEnemy,"0","0x00000000","0x70000000","+W",fsmAligned,"4",false,false,true,false)
+  memscan_waitTillDone(EnemyScan)
+  EnemyResults = createFoundList(EnemyScan)
+  foundlist_initialize(EnemyResults)
+  EnemyCount = foundlist_getCount(EnemyResults) - 1
+  local EnemyItems = listbox_getItems(Swapper_EnSwap)
+  strings_clear(EnemyItems)
+  for i=1,EnemyCount do
+    local EnemyOffset = foundlist_getAddress(EnemyResults,i)
+    local EnemyAddress = readInteger(getAddress(EnemyOffset .. "+AC"))
+    StringGetter(EnemyAddress,EnemyItems)
+  end
+end
+
+function StringGetter(Address,listbox)
+   local string = readInteger((readInteger(Address + 44) * 4) + readInteger(STable))+16
+   strings_add(listbox,readString(string,80))
+end
+
+function EnGroupDblClick(sender)
+  local EnListTable = listbox_getItems(Swapper_EnList)
+  strings_clear(EnListTable)
+  EnGroupIndex = listbox_getItemIndex(sender)
+  local EnAddr = foundlist_getAddress(EnListResults,EnGroupIndex + 1)
+  local EnCounter = readInteger(getAddress(EnAddr .. '+44'))
+  for i=0,EnCounter-1 do -- i need to fix vehicle base spawns
+    local EnCheck =readInteger(readInteger(getAddress(EnAddr .. '+40'))+(40*i))
+    local string = readInteger((readInteger(EnCheck + 44) * 4) + readInteger(STable))+16
+    if readString(string,80) == "PopulationFactoryWillowVehicle" then
+      strings_add(EnListTable,"Vehicle")
+    else
+      local EnSlot = readInteger(readInteger(readInteger(getAddress(EnAddr .. '+40'))+(40*i))+172)
+      StringGetter(EnSlot,EnListTable)
+    end
+  end
+end
+
+function EnSwapDblClick(sender)
+  local current = listbox_getItemIndex(sender)
+  local Enlist = listbox_getItemIndex(Swapper_EnList)
+  local EnListTable = listbox_getItems(Swapper_EnList)
+  local EnSwapTable = listbox_getItems(sender)
+  local EnSwapAddr = getAddress(foundlist_getAddress(EnemyResults,current + 1))
+  local EnAddr = foundlist_getAddress(EnListResults,EnGroupIndex + 1)
+  local EnReciever = readInteger(getAddress(EnAddr .. '+40'))+(40*Enlist)
+  writeInteger(EnReciever,EnSwapAddr)
+end
+
+</LuaScript>
+</CheatTable>

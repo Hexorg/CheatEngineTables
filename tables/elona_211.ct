@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="14">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>0</ID>
+      <Description>"freeze skill potential"</Description>
+      <Color>80000008</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>[ENABLE]
+luacall(StartFreezer())
+
+ 
+ 
+[DISABLE]
+luacall(StopFreezer())
+</AssemblerScript>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>2</ID>
+      <Description>"Elona skill potential 1"</Description>
+      <Color>80000008</Color>
+      <VariableType>4 Bytes</VariableType>
+      <Address>400000</Address>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols/>
+  <LuaScript>addresslist=getAddressList()
+
+AdressesToFreeze= {}
+FreezeValue= {}
+
+-- Create a Timer, that will freeze the skill potentials
+timer = createTimer(nil,true)
+timer_setEnabled(timer,false) --disabled for now
+timer_onTimer(timer, FreezePotential)
+
+
+function FreezePotential()
+    --overwrite the 3 least significant deciman digits of all AdressesToFreeze
+    for i,MemRec in ipairs(AddressesToFreeze) do
+        local FullValue=memoryrecord_getValue(MemRec)
+        memoryrecord_setValue(MemRec,math.floor(FullValue/1000)*1000+FreezeValue[i])
+    end
+end
+
+function StartFreezer()
+    AddressesToFreeze[1]=addresslist_getMemoryRecordByDescription(addresslist, "Elona skill potential 1")
+    --AddressesToFreeze[2]=addresslist_getMemoryRecordByDescription(addresslist, "Elona skill potential 2")
+
+    --remember the "potential" value
+    for i,MemRec in ipairs(AddressesToFreeze) do
+        local FullValue=memoryrecord_getValue(MemRec)
+        --FreezeValue[i]=the 3 least significant decimal digits of AdressesToFreeze[i]
+        FreezeValue[i]=FullValue-(math.floor(FullValue/1000)*1000)
+    end
+
+
+    timer_setInterval(timer,100) --cannot be done at timer creation (why??)
+    timer_setEnabled(timer,true)
+
+end
+
+function StopFreezer()
+    timer_setEnabled(timer,false)
+end
+</LuaScript>
+</CheatTable>

@@ -1,0 +1,216 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="19">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>7</ID>
+      <Description>"Inventory"</Description>
+      <Options moHideChildren="1"/>
+      <LastState/>
+      <Color>FF0000</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>[ENABLE]
+aobscanmodule(aob_inventory_pointerbase,ROTTR.exe,4C 8B 81 A8 03 00 00 49 83 78 38 00 74) // should be unique
+registersymbol(aob_inventory_pointerbase)
+alloc(newmem_inventory_pointerbase,$1000,ROTTR.exe)
+label(return_inventory_pointerbase)
+
+label(inventory_pointerbase)
+registersymbol(inventory_pointerbase)
+
+newmem_inventory_pointerbase:
+  mov r8,[rcx+000003A8]
+  mov [inventory_pointerbase],r8
+  jmp return_inventory_pointerbase
+
+inventory_pointerbase:
+dq 0
+
+aob_inventory_pointerbase:
+  jmp newmem_inventory_pointerbase
+  nop
+  nop
+return_inventory_pointerbase:
+
+[DISABLE]
+aob_inventory_pointerbase:
+  db 4C 8B 81 A8 03 00 00
+
+unregistersymbol(aob_inventory_pointerbase)
+unregistersymbol(inventory_pointerbase)
+dealloc(newmem_inventory_pointerbase)
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>8</ID>
+          <Description>"Compact View Mode"</Description>
+          <LastState/>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[ENABLE]
+{$lua}
+function cycleFullCompact(sender,force)
+  local state = not(compactmenuitem.Caption == 'Compact View Mode')
+  if force~=nil then state = not force end
+  compactmenuitem.Caption = state and 'Compact View Mode' or 'Full View Mode'
+  getMainForm().Splitter1.Visible = state
+  getMainForm().Panel4.Visible    = state
+  getMainForm().Panel5.Visible    = state
+end
+function addCompactMenu()
+  if compactmenualreadyexists then return end
+  local parent = getMainForm().Menu.Items
+  compactmenuitem = createMenuItem(parent); parent.add(compactmenuitem)
+  compactmenuitem.Caption = 'Compact View Mode'
+  compactmenuitem.OnClick = cycleFullCompact
+  compactmenualreadyexists = 'yes'
+end
+addCompactMenu()
+cycleFullCompact(nil,true)
+{$asm}
+
+[DISABLE]
+{$lua}
+cycleFullCompact(nil,false)
+{$asm}
+</AssemblerScript>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>9</ID>
+          <Description>"inventory_pointerbase"</Description>
+          <ShowAsHex>1</ShowAsHex>
+          <VariableType>8 Bytes</VariableType>
+          <Address>inventory_pointerbase</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>10</ID>
+          <Description>"Prepare Inventory Map"</Description>
+          <LastState/>
+          <Color>008000</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[ENABLE]
+{$lua}
+
+ItemList_ID_Name = [[
+1300392505:Cloth
+1596491239:Herbs
+1596518693:Hide
+73319806:Salvage
+1860591193:Mushrooms
+516527174:Hardwood
+2432172444:Feather
+4200658040:Oil
+3305195250:Boar Fat
+4011968730:Deer Antler
+1353721286:Exotic Hide
+1358162264:Magnesite Ore
+273513695:Bear Hide
+1439296855:Technical Parts
+3827729073:Byzantine Coins
+2546518011:Chromite Ore
+54359098:Cluster Arrow
+911311014:Bear Trap
+1014797730:Explosive Arrow
+1410284630:Fire Arrow
+1548887417:SMG Bullets
+1563807238:Bandage
+1764654631:Flashbang
+1941840742:Sapling
+2288237209:Arrows
+2363594663:Handgun Bullet Hollow Point
+2631568530:Poison Arrow
+2721112983:Shotgun Bullets
+2862006737:Grenade
+3056299628:Pistol Bullets
+3094493228:Endurance Food
+3459366600:Spike Trap
+4021324121:Fire Shotgun Bullets]]
+
+if syntaxcheck then return end
+
+local al=getAddressList()
+local mrPrepareInventory=al.getMemoryRecordByDescription('Prepare Inventory Map')
+
+function prepareInventoryMap()
+  Inventory_ArrayOfPointers = readQword('[inventory_pointerbase]+28')
+  Inventory_totalCount = readInteger('[inventory_pointerbase]+38')
+
+  while mrPrepareInventory.Count&gt;0 do mrPrepareInventory[0].destroy() end
+
+  local function addmemrec(name,parent,address)
+    local newmrID=al.createMemoryRecord()
+    local newmrCount=al.createMemoryRecord()
+    newmrID.Address = string.format('%X',address+0x8)
+    newmrID.Description = name
+    newmrID.ShowAsSigned = false
+    newmrID.DropDownList.Text = ItemList_ID_Name
+    newmrID.DropDownReadOnly = true
+    newmrID.DropDownDescriptionOnly = true
+    newmrID.DisplayAsDropDownListItem = true
+    newmrID.appendToEntry(parent)
+    newmrCount.Address = string.format('%X',address+0xC)
+    newmrCount.Description = 'count:'
+    newmrCount.appendToEntry(newmrID)
+    return newmrID
+  end
+
+  local counter=0
+  local counter2=0
+  for i=Inventory_ArrayOfPointers,Inventory_ArrayOfPointers+800,8 do
+  repeat
+    local innerArray = readQword(i)
+    counter=counter+1
+    if innerArray==0 or readInteger(innerArray)==nil then break end --continue
+    counter2=counter2+1
+    local newmrID=addmemrec('item'..counter..'  ID/Name:',mrPrepareInventory,innerArray)
+
+    for j=1,10 do -- max deep: 10
+      local innerInnerArray = readQword(innerArray)
+      if innerInnerArray==0 or innerInnerArray==nil then break end
+      counter2=counter2+1
+      addmemrec('subitem'..j..'  ID/Name:',newmrID,innerInnerArray)
+      innerArray = innerInnerArray
+    end
+  until true
+  if counter2==Inventory_totalCount then break end
+  end
+end
+
+Inventory_ArrayOfPointers = 0
+
+if timerPrepareInventory==nil then timerPrepareInventory=createTimer(nil,false) end
+timerPrepareInventory.OnTimer =
+  function (t)
+    local tmp=readQword('[inventory_pointerbase]+28')
+    if (tmp == nil) or (tmp == 0) then return end
+
+    if (Inventory_ArrayOfPointers == tmp ) and
+       (Inventory_totalCount == readQword('[inventory_pointerbase]+38'))
+    then return end
+
+    prepareInventoryMap()
+  end
+timerPrepareInventory.Interval=500
+timerPrepareInventory.Enabled=true
+
+local mr1=al.createMemoryRecord()
+local mr2=al.createMemoryRecord()
+mr1.appendToEntry(mrPrepareInventory)
+mr2.appendToEntry(mrPrepareInventory)
+mr1.Description = "Do something in game:"
+mr2.Description = "aim, open inventory, etc."
+{$asm}
+
+[DISABLE]
+{$lua}
+if syntaxcheck then return end
+timerPrepareInventory.Enabled=false
+local al=getAddressList()
+local mrPrepareInventory=al.getMemoryRecordByDescription('Prepare Inventory Map')
+while mrPrepareInventory.Count&gt;0 do mrPrepareInventory[0].destroy() end
+{$asm}
+</AssemblerScript>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols/>
+</CheatTable>

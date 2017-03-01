@@ -1,0 +1,470 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="16">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>15</ID>
+      <Description>"[X] &lt;== Genesis Rising v1.044 Steam Script v1.0"</Description>
+      <Options moHideChildren="1"/>
+      <Color>FF0000</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>{
+===========================================
+ Game Title    : Genesis Rising
+ Game Version  : 1.044
+ Game Sponsor  : Myself
+ Proces Name   : GenesisRising.exe
+ Script Version: 1.0
+ CE Version    : 6.3
+ Release date  : 21-Jan-2014
+ Author        : Recifense
+ History:
+ 21-Jan-14: First Release for steam
+ Features:
+ - Minimum Harvested Resource
+ - God Mode
+ - Unlimited Produced Resource
+ - Minimum Maintenance Value
+ - Some Pointers
+===========================================
+}
+
+//=========================================
+// Definitions
+define(LUDO,"GenesisRising.exe")
+define(MHPR,game.dll+000cf573)
+define(GDMD,game.dll+00062282)
+define(GDM1,game.dll+0006b6ce)
+define(GDM2,game.dll+0006b13b)
+define(PPRE,game.dll+000362d6)
+
+//=========================================
+// Constants used in the script (that can be changed)
+//define(ctMMON,#63000)  // Minimum Money
+
+//=========================================
+[ENABLE]
+//=========================================
+//LuaCall(CheckVersion())
+//=========================================
+// Check if script is compatible to this game version
+// If false the script will not be loaded
+
+assert(MHPR,d9 86 d4 00 00 00 8b d9 57 89 5c 24 14 e8 ?? ?? ?? ?? 8b 7d 0c)
+assert(GDMD,d9 98 44 38 02 00 8b 8d 60 0d 00 00 d9 ee d8 99 44 38 02 00 df)
+assert(GDM1,d9 99 44 38 02 00 d9 44 24 18 8b 8e 60 0d 00 00 d9 81 44 38 02)
+assert(GDM2,d9 98 44 38 02 00 a1 ?? ?? ?? ?? 8b 08 8b 81 d8 01 00 00 8b 96)
+assert(PPRE,d9 9e 74 38 02 00 ?? ?? 80 be ca 00 00 00 00 ?? ?? d8 ae 44 38)
+
+//=========================================
+alloc(MyCode,4096,LUDO)
+//=========================================
+// Declaration section
+label(_MonHumanPlayer)
+label(_MonHP00)
+label(_BackMHP)
+label(_ExitMHP)
+label(_GodMode)
+label(_BackGMD)
+label(_ExitGMD)
+label(_GodMode1)
+label(_BackGM1)
+label(_ExitGM1)
+label(_GodMode2)
+label(_BackGM2)
+label(_ExitGM2)
+label(_PlayerProdRes)
+label(_BackPPR)
+label(_ExitPPR)
+label(iEnableMPR)
+label(iEnableGMD)
+label(iEnablePPR)
+label(iEnableMMV)
+label(iPlayerID)
+label(pPlayer)
+
+//=========================================
+// Registering Symbols
+registersymbol(MyCode)
+registersymbol(iEnableMPR)
+registersymbol(iEnableGMD)
+registersymbol(iEnablePPR)
+registersymbol(iEnableMMV)
+registersymbol(iPlayerID)
+registersymbol(pPlayer)
+
+//=========================================
+MyCode:
+//=========================================
+// Main game screen
+_MonHumanPlayer:
+ push eax
+
+ cmp dword ptr [esi],0
+ jne _ExitMHP
+
+ mov eax,[esi+10]
+ mov [iPlayerID],eax
+
+ mov [pPlayer],esi
+
+ cmp dword ptr [iEnableMPR],0
+ je _MonHP00                       // Jump if feature is disabled
+
+ mov eax,(float)10000.0
+
+ cmp eax,[esi+000000d4]
+ js _MonHP00
+
+ mov [esi+000000d4],eax
+
+_MonHP00:
+ cmp dword ptr [iEnableMMV],0
+ je _ExitMHP                       // Jump if feature is disabled
+
+ mov eax,#50
+
+ cmp eax,[esi+000000f4]
+ js _ExitMHP
+
+ mov [esi+000000f4],eax
+ mov [esi+000000f8],eax
+
+_ExitMHP:
+ pop eax
+
+ fld dword ptr [esi+000000D4]      // Original code (RD RES)
+ jmp _BackMHP                      // Back to main code
+
+//=========================================
+// During Combat
+_GodMode:
+ push ecx
+
+ cmp dword ptr [iEnableGMD],0
+ je _ExitGMD                       // Jump if feature is disabled
+
+ mov ecx,[eax+00024354]
+ cmp ecx,[iPlayerID]
+ jne _ExitGMD
+
+ fstp st(0)
+ fld dword ptr [eax+00023848]      // Get maximum HP
+
+_ExitGMD:
+ pop ecx
+
+ fstp dword ptr [eax+00023844]     // Original code (UPD HP)
+ jmp _BackGMD                      // Back to main code
+
+//=========================================
+// During Combat
+_GodMode1:
+ push eax
+
+ cmp dword ptr [iEnableGMD],0
+ je _ExitGM1                       // Jump if feature is disabled
+
+ mov eax,[ecx+00024354]
+ cmp eax,[iPlayerID]
+ jne _ExitGM1
+
+ fstp st(0)
+ fld dword ptr [ecx+00023848]      // Get maximum HP
+
+_ExitGM1:
+ pop eax
+
+ fstp dword ptr [ecx+00023844]     // Original code (UPD HP)
+ jmp _BackGM1                      // Back to main code
+
+//=========================================
+// During Combat
+_GodMode2:
+ push ecx
+
+ cmp dword ptr [iEnableGMD],0
+ je _ExitGM2                       // Jump if feature is disabled
+
+ mov ecx,[eax+00024354]
+ cmp ecx,[iPlayerID]
+ jne _ExitGM2
+
+ fstp st(0)
+ fld dword ptr [eax+00023848]      // Get maximum HP
+
+_ExitGM2:
+ pop ecx
+
+ fstp dword ptr [eax+00023844]     // Original code (UPD HP)
+ jmp _BackGM2                      // Back to main code
+
+//=========================================
+// When changing
+_PlayerProdRes:
+ push ecx
+ pushfd
+
+ cmp dword ptr [iEnablePPR],0
+ je _ExitPPR                       // Jump if feature is disabled
+
+ mov ecx,[esi+00024354]
+ cmp ecx,[iPlayerID]
+ jne _ExitPPR
+
+ fstp st(0)
+ fld dword ptr [esi+00023874]      // Get Current value
+
+_ExitPPR:
+ popfd
+ pop ecx
+
+ fstp dword ptr [esi+00023874]     // Original code (UPD PR)
+ jmp _BackPPR                      // Back to main code
+
+//=========================================
+ db '==========================================&gt;'
+ db 'CE6.3 Script by Recifense 012114'
+//=========================================
+// Variables
+iEnableMPR:
+ dd 0
+iEnableGMD:
+ dd 0
+iEnablePPR:
+ dd 0
+iEnableMMV:
+ dd 0
+iPlayerID:
+ dd #99
+pPlayer:
+ dd 0
+
+//=========================================
+// Hacking Points
+MHPR:
+ jmp _MonHumanPlayer
+ nop
+_BackMHP:
+
+GDMD:
+ jmp _GodMode
+ nop
+_BackGMD:
+
+GDM1:
+ jmp _GodMode1
+ nop
+_BackGM1:
+
+GDM2:
+ jmp _GodMode2
+ nop
+_BackGM2:
+
+PPRE:
+ jmp _PlayerProdRes
+ nop
+_BackPPR:
+
+//=========================================
+// Script for Restoring Original Codes
+[DISABLE]
+MHPR:
+// fld dword ptr [esi+000000D4]
+ db d9 86 d4 00 00 00
+
+GDMD:
+// fstp dword ptr [eax+00023844]
+ db d9 98 44 38 02 00
+
+GDM1:
+// fstp dword ptr [ecx+00023844]
+ db d9 99 44 38 02 00
+
+GDM2:
+// fstp dword ptr [eax+00023844]
+ db d9 98 44 38 02 00
+
+PPRE:
+// fstp dword ptr [esi+00023874]
+ db d9 9e 74 38 02 00
+
+//=========================================
+// Unregistering Symbols
+unregistersymbol(MyCode)
+unregistersymbol(iEnableMPR)
+unregistersymbol(iEnableGMD)
+unregistersymbol(iEnablePPR)
+unregistersymbol(iEnableMMV)
+unregistersymbol(iPlayerID)
+unregistersymbol(pPlayer)
+
+//=========================================
+dealloc(MyCode)
+//============= Scripts End ===============
+
+// ****************************************
+// NOTES
+// ****************************************
+{
+}
+
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>2</ID>
+          <Description>"Enable/Disable Minimum Resource =&gt; (1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMPR</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>1</ID>
+          <Description>"Enable/Disable God Mode =&gt; (1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableGMD</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>16</ID>
+          <Description>"Enable/Disable Unlimited Produced Resource =&gt; (1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnablePPR</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>17</ID>
+          <Description>"Enable/Disable Minimum Maintenance Value =&gt; (1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMMV</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols/>
+  <Comments>===========================================
+ Game Title    : Genesis Rising
+ Game Version  : 1.044
+ Game Sponsor  : Myself
+ Proces Name   : GenesisRising.exe
+ Script Version: 1.0
+ CE Version    : 6.3
+ Release date  : 21-Jan-2014
+ Author        : Recifense
+ History:
+ 21-Jan-14: First Release for steam
+ Features:
+ - Minimum Harvested Resource  [1]
+ - God Mode                    [2]
+ - Unlimited Produced Resource [3]
+ - Minimum Maintenance Value   [4]
+ - Some Pointers               [5]
+===========================================
+[1] Minimum Harvested Resource is 10000;
+[2] For player's units and buildings;
+[3] Unlimited Resource Source;
+[4] Minimum Maintenance value is 50;
+[5] Used for debugging;
+===========================================
+[USAGE]
+1) Run CE63;
+2) Run Game;
+3) Load the game process "GenesisRising.exe" in CE;
+4) Change the value to 1 of each cheat you want to use;
+5) Game On;
+===========================================
+HOTKEYS:
+CTRL+Home = Enable  all cheats;
+CTRL+End  = Disable all cheats;
+[NOTE] You can change the hotkeys.
+===========================================
+[ADVICE]
+When you can,save the game before starting using table/cheat. So you can always come back in case you don't like the result.
+===========================================
+[INFO]
+Tested on Win 7 64bits
+===========================================
+Cheers!
+</Comments>
+</CheatTable>

@@ -1,0 +1,611 @@
+<?xml version="1.0"?>
+<CheatTable CheatEngineTableVersion="11">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>1</ID>
+      <Description>"[X] &lt;== East India Company v1.2 Script"</Description>
+      <Options moHideChildren="1"/>
+      <Color>80000008</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>{
+===========================================
+ Game Title    : East India Company
+ Game Version  : 1.2
+ Process Name  : eastindia.exe
+ Script Version: 1.0
+ CE Version    : 6.1
+ Release date  : 19-Apr-2012
+ Author        : Recifense
+ Features:
+ - Minimum Money (610000)
+ - Minimum Items in Warehouse
+ - God Mode (Ship/Crew/Sail)
+ - Morale
+ - Unlimited Ammo
+ - Ship load capacity (500)
+===========================================
+}
+
+[ENABLE]
+//=========================================
+// Check if script is compatible to this game version
+// If false the script will not be loaded
+
+assert(eastindia.exe+001fcdfa,8b 91 b0 00 00 00)
+assert(eastindia.exe+002793a9,03 98 a4 01 00 00)
+assert(eastindia.exe+00279968,29 88 7c 01 00 00)
+assert(eastindia.exe+000b3ed3,29 b0 18 01 00 00)
+assert(eastindia.exe+000b3be4,29 b0 14 01 00 00)
+assert(eastindia.exe+00274bdd,d9 98 48 01 00 00)
+assert(eastindia.exe+000a81ca,8b 54 24 04 85 d2)
+assert(eastindia.exe+000b3e3f,29 81 3c 01 00 00)
+assert(eastindia.exe+000b3e74,29 b7 3c 01 00 00)
+assert(eastindia.exe+002494b1,8b 88 08 01 00 00)
+assert(eastindia.exe+000a7992,db 81 08 01 00 00)
+
+//=========================================
+alloc(MyCode,1024)
+//=========================================
+// Declaration section
+label(_MonMoney)
+label(_BackMMo)
+label(_ExitMMo)
+label(_MonWH)
+label(_BackMW)
+label(_ExitMW)
+label(_MonWH1)
+label(_BackMW1)
+label(_ExitMW1)
+label(_MonHull)
+label(_BackMH)
+label(_ExitMH)
+label(_MonSail)
+label(_BackMS)
+label(_ExitMS)
+label(_MonMorale)
+label(_BackMM)
+label(_ExitMM)
+label(_MonAmmo)
+label(_BackMA)
+label(_ExitMA)
+label(_MonCrew)
+label(_BackMC)
+label(_ExitMC)
+label(_MonCrew1)
+label(_BackMC1)
+label(_ExitMC1)
+label(_MonBoat)
+label(_BackMB)
+label(_ExitMB)
+label(_MonCombat)
+label(_BackMCo)
+label(_ExitMCo)
+label(_ChkID)
+label(_ExitCI)
+label(_ChkI0)
+label(_ChkI1)
+label(pHero)
+label(iBack)
+label(iEAX)
+label(aPlayerID)
+label(iEnableMW)
+label(iEnableGM)
+label(iEnableMM)
+label(iEnableMA)
+label(iEnableMMo)
+label(iEnableMB)
+label(iMinRes)
+label(iMinMoney)
+
+//=========================================
+// Registering Symbols
+registersymbol(MyCode)
+registersymbol(aPlayerID)
+registersymbol(pHero)
+registersymbol(iBack)
+registersymbol(iEnableMMo)
+registersymbol(iEnableMW)
+registersymbol(iEnableGM)
+registersymbol(iEnableMM)
+registersymbol(iEnableMA)
+registersymbol(iEnableMB)
+registersymbol(iMinRes)
+registersymbol(iMinMoney)
+
+//=========================================
+MyCode:
+//========================================= ok
+// It works when in home town
+_MonMoney:
+ mov edx,[ecx]                // Get player ID
+ mov [aPlayerID],edx          // Save it for further use
+
+ cmp dword ptr [iEnableMMo],0
+ je _ExitMMo                  // Jump if feature is disabled
+
+ mov edx,[iMinMoney]          // Get Minimum Money value
+ cmp edx,[ecx+000000b0]       // Current value &gt; Minimum ?
+ jle _ExitMMo                 // Jump if true
+
+ mov [ecx+000000b0],edx       // Make Current value = minimum
+
+_ExitMMo:
+ mov edx,[ecx+000000B0]       // Original code
+ jmp _BackMMo                 // Back to main code
+
+//========================================= ok
+_MonWH:
+ push ebx
+
+ cmp dword ptr [iEnableMW],0
+ je _ExitMW                   // Jump if feature is disabled
+
+ mov ebx,[iMinRes]            // Get Minimum Resource value
+ cmp ebx,[eax+000001a4]       // Current value &gt; Minimum ?
+ jle _ExitMW                  // Jump if true
+
+ mov [eax+000001a4],ebx       // Make Current value = minimum
+
+_ExitMW:
+ pop ebx
+
+ add ebx,[eax+000001a4]       // Original code
+ jmp _BackMW                  // Back to main code
+
+//========================================= ok
+_MonWH1:
+ push ebx
+
+ cmp dword ptr [iEnableMW],0
+ je _ExitMW1                  // Jump if feature is disabled
+
+ mov ebx,[iMinRes]            // Get Minimum Resource value
+ cmp ebx,[eax+0000017c]       // Current value &gt; Minimum ?
+ jle _ExitMW1                 // Jump if true
+
+ mov [eax+0000017c],ebx       // Make Current value = minimum
+
+ xor ecx,ecx                  // value2decrease = 0
+
+_ExitMW1:
+ pop ebx
+
+ sub [eax+0000017c],ecx       // Original code
+ jmp _BackMW1                 // Back to main code
+
+//========================================= ok
+_MonSail:
+ push ebx
+
+ cmp dword ptr [iEnableGM],0
+ je _ExitMS                   // Jump if feature is disabled
+
+ call _ChkID                  // Is it a player's ship?
+ jne _ExitMS                  // Jump if false
+
+ mov ebx,[eax+00000108]       // Get sail max HP
+ mov [eax+00000118],ebx       // Make cur HP = max
+
+ xor esi,esi                  // hp2decrease = 0
+ mov edi,esi                  // crew2decrease = 0
+
+_ExitMS:
+ pop ebx
+
+ sub [eax+00000118],esi       // Original code
+ jmp _BackMS                  // Back to main code
+
+//========================================= ok
+_MonHull:
+ push ebx
+
+ cmp dword ptr [iEnableGM],0
+ je _ExitMH                   // Jump if feature is disabled
+
+ call _ChkID                  // Is it a player´s ship?
+ jne _ExitMH                  // Jump if false
+
+ mov ebx,[eax+0000010c]       // Get hull max HP
+ mov [eax+00000114],ebx       // Make cur HP = max
+
+ xor esi,esi                  // hp2decrease = 0
+
+_ExitMH:
+ pop ebx
+
+ sub [eax+00000114],esi       // Original code
+ jmp _BackMH                  // Back to main code
+
+//========================================= ok
+_MonMorale:
+ push ebx
+
+ fstp dword ptr [eax+00000148]// Original code
+
+ cmp dword ptr [iEnableMM],0
+ je _ExitMM                   // Jump if feature is disabled
+
+ call _ChkID                  // Is it a player´s ship?
+ jne _ExitMM                  // Jump if false
+
+ mov ebx,[eax+0000014c]       // Get max morale
+ mov [eax+00000148],ebx       // Make current Morale = max
+
+_ExitMM:
+ pop ebx
+ jmp _BackMM                  // Back to main code
+
+//========================================= ok
+_MonAmmo:
+ push eax
+ push ebx
+
+ cmp dword ptr [iEnableMA],0
+ je _ExitMA                   // Jump if feature is disabled
+
+ mov eax,[eax]
+
+ call _ChkID                  // Is it a player's ship?
+ jne _ExitMA                  // Jump if false
+
+ pop ebx
+ pop eax
+
+ ret 0004                     // Skip "decrease ammo" codes
+
+_ExitMA:
+ pop ebx
+ pop eax
+
+ mov edx,[esp+04]             // Original code
+ test edx,edx                 // Original code
+ jmp _BackMA                  // Back to main code
+
+//========================================= ok
+_MonCrew:
+ push ebx
+
+ cmp dword ptr [iEnableGM],0
+ je _ExitMC                   // Jump if feature is disabled
+
+ push eax
+ mov eax,ecx
+ call _ChkID                  // Is it a player's ship? ...
+ pop eax
+ jne _ExitMC                  // ... Jump if false
+
+ mov ebx,[ecx+00000134]       // Get Crew max size
+ mov [ecx+0000013c],ebx       // Make cur Crew = max
+
+ xor eax,eax                  // crew2decrease = 0
+ mov esi,eax                  // marine2decrease = 0
+
+_ExitMC:
+ pop ebx
+
+ sub [ecx+0000013c],eax       // Original code
+ jmp _BackMC                  // Back to main code
+
+//========================================= ok
+_MonCrew1:
+ push ebx
+
+ cmp dword ptr [iEnableGM],0
+ je _ExitMC1                  // Jump if feature is disabled
+
+ mov eax,edi
+ call _ChkID                  // Is it a player's ship? ...
+ jne _ExitMC1                 // ... Jump if false
+
+ mov ebx,[edi+00000134]       // Get Crew max size
+ mov [edi+0000013c],ebx       // Make cur Crew = max
+
+ xor esi,esi                  // crew2decrease = 0
+
+_ExitMC1:
+ pop ebx
+
+ sub [edi+0000013c],esi       // Original code
+ jmp _BackMC1                 // Back to main code
+
+//========================================= ok
+// It works on repair screen in home town
+_MonBoat:
+ cmp dword ptr [iEnableMB],0
+ je _ExitMB                   // Jump if feature is disabled
+
+ mov dword ptr [eax+00000188],#500 // Make load capacity = 500
+
+_ExitMB:
+ mov ecx,[eax+00000108]       // Original code
+ jmp _BackMB                  // Back to main code
+
+//========================================= ok
+// It verifies the ship´s owner (E = player, NE = foe)
+_ChkID:
+ mov bx,[eax+16]              // Get ships´s info
+ cmp bx,55aa                  // Valid Info?
+ jne _ChkI0                   // Jump if true
+
+ mov bx,[eax+14]              // Get ships's info
+ cmp bx,01                    // Player's ship?
+ je _ExitCI                   // Jump if true
+
+_ChkI0:
+ mov ebx,[eax+000001d4]       // Get ptr to ships's Captain
+ or ebx,ebx                   // Valid pointer?
+ jz _ChkI1                    // Jump if false
+
+ mov ebx,[ebx+60]             // Get Captain's country ID
+ cmp ebx,[aPlayerID]          // Player's ship?
+ je _ExitCI                   // Jump if true
+
+ _ChkI1:
+ inc ebx
+ or ebx,ebx                   // Turn NE on
+
+_ExitCI:
+ ret                          // Back to caller
+
+//========================================= ok
+_MonCombat:
+ push eax
+
+ mov eax,[ebp+0000ebc0]       // Get owner ID
+ or eax,55aa0000              // Signal valid info
+ mov [ecx+14],eax             // Save owner's info
+
+_ExitMCo:
+ pop eax
+
+ fild dword ptr [ecx+00000108]// Original code
+ jmp _BackMCo                 // Back to main code
+
+//=========================================
+ db '=================================&gt;'
+ db 'CE6.1 Script by Recifense 041912'
+//=========================================
+// Variables
+iEnableMMo:
+ dd 1
+iEnableMW:
+ dd 1
+iEnableGM:
+ dd 1
+iEnableMM:
+ dd 1
+iEnableMA:
+ dd 1
+iEnableMB:
+ dd 1
+pHero:
+ dd 0
+iBack:
+ dd 0
+iEAX:
+ dd 0
+iMinRes:
+ dd #20
+iMinMoney:
+ dd #610000
+aPlayerID:
+ db 'CE61'
+
+//=========================================
+// Hacking Points
+eastindia.exe+001fcdfa:
+ jmp _MonMoney
+ nop
+_BackMMo:
+
+eastindia.exe+002793a9:
+ jmp _MonWH
+ nop
+_BackMW:
+
+eastindia.exe+00279968:
+ jmp _MonWH1
+ nop
+_BackMW1:
+
+eastindia.exe+000b3ed3:
+ jmp _MonSail
+ nop
+_BackMS:
+
+eastindia.exe+000b3be4:
+ jmp _MonHull
+ nop
+_BackMH:
+
+eastindia.exe+00274bdd:
+ jmp _MonMorale
+ nop
+_BackMM:
+
+eastindia.exe+000a81ca:
+ jmp _MonAmmo
+ nop
+_BackMA:
+
+eastindia.exe+000b3e3f:
+ jmp _MonCrew
+ nop
+_BackMC:
+
+eastindia.exe+000b3e74:
+ jmp _MonCrew1
+ nop
+_BackMC1:
+
+eastindia.exe+002494b1:
+ jmp _MonBoat
+ nop
+_BackMB:
+
+eastindia.exe+000a7992:
+ jmp _MonCombat
+ nop
+_BackMCo:
+
+//=========================================
+// Script for Restoring Original Codes
+[DISABLE]
+eastindia.exe+001fcdfa:
+// mov edx,[ecx+000000B0]
+ db 8b 91 b0 00 00 00
+
+eastindia.exe+002793a9:
+// add ebx,[eax+000001a4]
+ db 03 98 a4 01 00 00
+
+eastindia.exe+00279968:
+// sub [eax+0000017c],ecx
+ db 29 88 7c 01 00 00
+
+eastindia.exe+000b3ed3:
+// sub [eax+00000118],esi
+ db 29 b0 18 01 00 00
+
+eastindia.exe+000b3be4:
+// sub [eax+00000114],esi
+ db 29 b0 14 01 00 00
+
+eastindia.exe+00274bdd:
+// fstp dword ptr [eax+00000148]
+ db d9 98 48 01 00 00
+
+eastindia.exe+000a81ca:
+// mov edx,[esp+04]
+// test edx,edx
+ db 8b 54 24 04 85 d2
+
+eastindia.exe+000b3e3f:
+// sub [ecx+0000013c],eax
+ db 29 81 3c 01 00 00
+
+eastindia.exe+000b3e74:
+// sub [edi+0000013c],esi
+ db 29 b7 3c 01 00 00
+
+eastindia.exe+002494b1:
+// mov ecx,[eax+00000108]
+ db 8b 88 08 01 00 00
+
+eastindia.exe+000a7992:
+// fild dword ptr [ecx+00000108]
+ db db 81 08 01 00 00
+
+//=========================================
+// Unregistering Symbols
+unregistersymbol(MyCode)
+unregistersymbol(aPlayerID)
+unregistersymbol(pHero)
+unregistersymbol(iBack)
+unregistersymbol(iEnableMMo)
+unregistersymbol(iEnableMW)
+unregistersymbol(iEnableGM)
+unregistersymbol(iEnableMM)
+unregistersymbol(iEnableMA)
+unregistersymbol(iEnableMB)
+unregistersymbol(iMinRes)
+unregistersymbol(iMinMoney)
+
+//=========================================
+dealloc(MyCode)
+//============= Scripts End ===============
+
+// ****************************************
+// NOTES
+// ****************************************
+{
+}
+
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>2</ID>
+          <Description>"Enable/Disable Minimum Money =&gt; (1/0)"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMMo</Address>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>8</ID>
+              <Description>"Minimum Money Value ==&gt;"</Description>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>iMinMoney</Address>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>3</ID>
+          <Description>"Enable/Disable Minimum Resources in WH =&gt; (1/0)"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMW</Address>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>9</ID>
+              <Description>"Minimum Resource Value ==&gt;"</Description>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>iMinRes</Address>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>4</ID>
+          <Description>"Enable/Disable God Mode =&gt; (1/0)"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableGM</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>5</ID>
+          <Description>"Enable/Disable Full Morale =&gt; (1/0)"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMM</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>6</ID>
+          <Description>"Enable/Disable Unlimited Ammo =&gt; (1/0)"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMA</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>7</ID>
+          <Description>"Enable/Disable Minimum Ship Capacity =&gt; (1/0)"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMB</Address>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols/>
+  <Comments>===========================================
+ Game Title    : East India Company
+ Game Version  : 1.2
+ Process Name  : eastindia.exe
+ Script Version: 1.0
+ CE Version    : 6.1
+ Release date  : 19-Apr-2012
+ Author        : Recifense
+ Features:
+ - Minimum Money (610000) [1]
+ - Minimum Items in Warehouse [2]
+ - God Mode (Ship/Crew/Sail) [3]
+ - Morale [3]
+ - Unlimited Ammo [3]
+ - Ship load capacity (500) [4]
+===========================================
+[1] Enable it and Money will be no problem;
+[2] The existing items in your Warehouse will be set to minimum when accessed. Take care with WH capacity (usually 800).
+[3] Enable them and sea battle will be really funny;
+[4] It works on repair screen in home town;
+</Comments>
+</CheatTable>

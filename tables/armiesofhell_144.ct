@@ -1,0 +1,345 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="16">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>0</ID>
+      <Description>"INJECT_UnlimitedAmmo"</Description>
+      <Color>80000008</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>{ Game   : ArmiesOfHell.exe
+  Version: Steam (DEMO)
+  Date   : 2013-09-18
+  Author : jgoemat
+
+  This is where subtracted ammo is stored back.
+}
+
+[ENABLE]
+
+aobscan(INJECT_UnlimitedAmmo,89 86 90 00 00 00 EB 1F) // should be unique
+alloc(newmem,$1000)
+
+label(code)
+label(skip)
+label(return)
+label(bUnlimitedAmmo)
+registersymbol(bUnlimitedAmmo)
+
+newmem:
+bUnlimitedAmmo:
+  dd 0
+  dd 0 // pAmmoBase
+
+code:
+  mov [bUnlimitedAmmo+4],esi
+  cmp dword ptr [bUnlimitedAmmo],1
+  jne skip
+  // reload ammo, ignoring subtract
+  mov eax,[esi+00000090]
+
+skip:
+  mov [esi+00000090],eax
+  jmp return
+
+INJECT_UnlimitedAmmo:
+  jmp code
+  nop
+return:
+registersymbol(INJECT_UnlimitedAmmo)
+
+[DISABLE]
+
+INJECT_UnlimitedAmmo:
+  db 89 86 90 00 00 00
+
+unregistersymbol(INJECT_UnlimitedAmmo)
+unregistersymbol(bUnlimitedAmmo)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: 180A1933
+
+180A190D: 8B 86 90000000    - mov eax,[esi+00000090]
+180A1913: 3B 45 0C          - cmp eax,[ebp+0C]
+180A1916: 7D 12             - jnl 180A192A
+180A1918: 83 EC 0C          - sub esp,0C
+180A191B: 68 D0DC0321       - push 2103DCD0
+180A1920: E8 CBCD3BEC       - call 0445E6F0
+180A1925: 83 C4 10          - add esp,10
+180A1928: EB 30             - jmp 180A195A
+180A192A: 8B 86 90000000    - mov eax,[esi+00000090]
+180A1930: 2B 45 0C          - sub eax,[ebp+0C] // subtract ammo
+// ---------- INJECTING HERE ----------
+180A1933: 89 86 90000000    - mov [esi+00000090],eax
+// ---------- DONE INJECTING  ----------
+180A1939: EB 1F             - jmp 180A195A
+180A193B: 8B 46 38          - mov eax,[esi+38]
+180A193E: 8B 8E 8C000000    - mov ecx,[esi+0000008C]
+180A1944: 83 EC 04          - sub esp,04
+180A1947: FF 75 0C          - push [ebp+0C]
+180A194A: 51                - push ecx
+180A194B: 50                - push eax
+180A194C: 8B 00             - mov eax,[eax]
+180A194E: 90                - nop 
+180A194F: 90                - nop 
+}
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>1</ID>
+          <Description>"bUnlimitedAmmo"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>bUnlimitedAmmo</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>2</ID>
+          <Description>"pAmmoBase"</Description>
+          <ShowAsHex>1</ShowAsHex>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>bUnlimitedAmmo+4</Address>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>12</ID>
+      <Description>"INJECT_Damage"</Description>
+      <Color>80000008</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>{ Game   : ArmiesOfHell.exe
+  Version: Steam DEMO
+  Date   : 2013-09-18
+  Author : jgoemat
+
+  This is right before damage is dealt to enable god mode and one-hit-kills.
+}
+
+[ENABLE]
+
+aobscan(INJECT_Damage,D9 87 F8 00 00 00 D9 45 0C DE E9) // should be unique
+alloc(newmem,$1000)
+
+label(code)
+label(skip)
+label(enemy)
+label(return)
+label(bGod)
+registersymbol(bGod)
+
+newmem:
+bGod:
+  dd 0 // 1 to enable God
+  dd 0 // pGodBase
+  dd 0 // 1 to enable OHK (one-hit-kill)
+
+code:
+  cmp byte ptr [edi+F0],1
+  jne enemy
+  mov [bGod+4],edi
+  cmp dword ptr [bGod],1
+  jne skip
+  mov dword ptr [ebp+0c],0 // set damage to 0
+  jmp skip
+
+enemy:
+  cmp dword ptr [bGod+8],1
+  jne skip
+  fld dword ptr [edi+000000F8] // load health
+  fstp dword ptr [ebp+0c] // set as damage
+
+skip:
+  fld dword ptr [edi+000000F8]
+  jmp return
+
+INJECT_Damage:
+  jmp code
+  nop
+return:
+registersymbol(INJECT_Damage)
+
+[DISABLE]
+
+INJECT_Damage:
+  db D9 87 F8 00 00 00
+
+unregistersymbol(INJECT_Damage)
+unregistersymbol(bGod)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: 180832E9
+
+180832C5: DEC1              - faddp
+180832C7: 83 EC 08          - sub esp,08
+180832CA: 83 EC 04          - sub esp,04
+180832CD: D9 1C 24          - fstp dword ptr [esp]
+180832D0: 83 EC 04          - sub esp,04
+180832D3: D9 1C 24          - fstp dword ptr [esp]
+180832D6: E8 BDEF3EEC       - call 04472298
+180832DB: 83 C4 10          - add esp,10
+180832DE: D9 9F F8000000    - fstp dword ptr [edi+000000F8] // some other way to store health?
+180832E4: E9 ED010000       - jmp 180834D6
+// ---------- INJECTING HERE ----------
+180832E9: D9 87 F8000000    - fld dword ptr [edi+000000F8] // load health
+// ---------- DONE INJECTING  ----------
+180832EF: D9 45 0C          - fld dword ptr [ebp+0C] // load damage
+180832F2: DEE9              - fsubp st(1),st(0) // subtract damage from health
+180832F4: D9 9F F8000000    - fstp dword ptr [edi+000000F8] // store new health
+180832FA: 0FB6 87 F0000000  - movzx eax,byte ptr [edi+000000F0]
+18083301: 85 C0             - test eax,eax
+18083303: 0F85 C4000000     - jne 180833CD
+18083309: 8B 47 14          - mov eax,[edi+14]
+1808330C: 83 EC 0C          - sub esp,0C
+1808330F: 50                - push eax
+18083310: E8 3B463DEC       - call 04457950
+}
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>13</ID>
+          <Description>"bGod"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>bGod</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>15</ID>
+          <Description>"bOneHitKill"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>bGod+8</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>14</ID>
+          <Description>"pGodBase"</Description>
+          <ShowAsHex>1</ShowAsHex>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>bGod+4</Address>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>9</ID>
+      <Description>"TEST_HealthEveryFrame1"</Description>
+      <Color>80000008</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>{ Game   : ArmiesOfHell.exe
+  Version: 
+  Date   : 2013-09-18
+  Author : jgoemat
+
+  This script does blah blah blah
+}
+
+[ENABLE]
+
+aobscan(TEST_HealthEveryFrame1,D9 81 F8 00 00 00 D9 81 F4) // should be unique
+alloc(newmem,$1000)
+
+label(code)
+label(return)
+label(pHealthEveryFrame1Base)
+registersymbol(pHealthEveryFrame1Base)
+
+newmem:
+pHealthEveryFrame1Base:
+  dd 0
+
+code:
+  mov [pHealthEveryFrame1Base],ecx
+  fld dword ptr [ecx+000000F8]
+  jmp return
+
+TEST_HealthEveryFrame1:
+  jmp code
+  nop
+return:
+registersymbol(TEST_HealthEveryFrame1)
+
+[DISABLE]
+
+TEST_HealthEveryFrame1:
+  db D9 81 F8 00 00 00
+
+unregistersymbol(TEST_HealthEveryFrame1)
+unregistersymbol(pHealthEveryFrame1Base)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: 0450187F
+
+04501857: 83 85 40FFFFFF 01 - add dword ptr [ebp-000000C0],01
+0450185E: 8B 85 44FFFFFF    - mov eax,[ebp-000000BC]
+04501864: 8B 40 0C          - mov eax,[eax+0C]
+04501867: 39 85 40FFFFFF    - cmp [ebp-000000C0],eax
+0450186D: 0F8C CDFEFFFF     - jl 04501740
+04501873: EB 38             - jmp 045018AD
+04501875: 8B 47 18          - mov eax,[edi+18]
+04501878: 8B 4F 2C          - mov ecx,[edi+2C]
+0450187B: 8B D1             - mov edx,ecx
+0450187D: 39 12             - cmp [edx],edx
+// ---------- INJECTING HERE ----------
+0450187F: D9 81 F8000000    - fld dword ptr [ecx+000000F8]
+// ---------- DONE INJECTING  ----------
+04501885: D9 81 F4000000    - fld dword ptr [ecx+000000F4]
+0450188B: DEF9              - fdivp st(1),st(0)
+0450188D: D9 9D 34FFFFFF    - fstp dword ptr [ebp-000000CC]
+04501893: D9 85 34FFFFFF    - fld dword ptr [ebp-000000CC]
+04501899: 83 EC 08          - sub esp,08
+0450189C: 83 EC 04          - sub esp,04
+0450189F: D9 1C 24          - fstp dword ptr [esp]
+045018A2: 50                - push eax
+045018A3: 39 00             - cmp [eax],eax
+045018A5: E8 C6940300       - call 0453AD70
+}
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>10</ID>
+          <Description>"pHealthEveryFrame1Base"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>pHealthEveryFrame1Base</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>11</ID>
+          <Description>"pHealthEveryFrame1Base-&gt;Health"</Description>
+          <Color>80000008</Color>
+          <VariableType>Float</VariableType>
+          <Address>pHealthEveryFrame1Base</Address>
+          <Offsets>
+            <Offset>F8</Offset>
+          </Offsets>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols>
+    <SymbolEntry>
+      <Name>bUnlimitedAmmo</Name>
+      <Address>05A90000</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>INJECT_UnlimitedAmmo</Name>
+      <Address>180A1933</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>pHealthEveryFrame1Base</Name>
+      <Address>05F40000</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>TEST_HealthEveryFrame1</Name>
+      <Address>0450187F</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>bGod</Name>
+      <Address>05A80000</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>INJECT_Damage</Name>
+      <Address>180832E9</Address>
+    </SymbolEntry>
+  </UserdefinedSymbols>
+</CheatTable>

@@ -1,0 +1,266 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="18">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>5</ID>
+      <Description>"Space Run AOB script"</Description>
+      <Options moHideChildren="1"/>
+      <LastState Activated="0"/>
+      <Color>80000008</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>/*******************
+* Game: Space Run
+* Original Table, Adresses and Work goes to Csimbi
+* Modified for Steam Version as of 17 July 2014 by Reaper79
+*******************/
+[ENABLE]
+//aobscanmodule(aobActionTicker,oSpaceGame.exe,D9 86 A4 02 00 00 0F B7 44 24 48) // old
+aobscanmodule(aobActionTicker,oSpaceGame.exe,D9 86 A8 02 00 00 0F B7 44 24 44)
+//aobscanmodule(aobEngineeringTicker,oSpaceGame.exe,C6 40 34 01 8B 40 38 C3 CC) // old
+aobscanmodule(aobEngineeringTicker,oSpaceGame.exe,C6 40 38 01 8B 40 3C C3 CC)
+//aobscanmodule(aobDamager,oSpaceGame.exe,F3 0F 11 87 44 01 00 00 8B 87 70 02 00 00) // old
+aobscanmodule(aobDamager,oSpaceGame.exe,F3 0F 11 87 50 01 00 00 8B 87 80 02 00 00)
+
+
+alloc(newmem,4096)
+
+label(aobActionTicker_r)
+registersymbol(aobActionTicker_r)
+
+label(lblActionTicker)
+label(lblActionTickerSkip)
+label(lblActionTickerRet)
+
+label(bEnableMinHexNuts)
+label(fMinHexNuts)
+registersymbol(bEnableMinHexNuts)
+registersymbol(fMinHexNuts)
+
+label(aobEngineeringTicker_r)
+registersymbol(aobEngineeringTicker_r)
+
+label(lblEngineeringTicker)
+label(lblEngineeringTickerSkipReputation)
+label(lblEngineeringTickerSkipCredits)
+
+label(bEnableMinReputation)
+label(iMinReputation)
+label(bEnableMinCredits)
+label(iMinCredits)
+registersymbol(bEnableMinReputation)
+registersymbol(iMinReputation)
+registersymbol(bEnableMinCredits)
+registersymbol(iMinCredits)
+
+label(pPlayerResources)
+registersymbol(pPlayerResources)
+
+label(aobDamager_r)
+registersymbol(aobDamager_r)
+
+label(lblDamager)
+label(lblDamagerSkipGodmode)
+label(lblDamagerSkipMax)
+label(lblDamagerRet)
+
+label(bEnableGodMode)
+registersymbol(bEnableGodMode)
+
+newmem:
+bEnableGodMode:
+dd 1
+bEnableMinHexNuts:
+dd 1
+fMinHexNuts:
+dd (float)200.0
+bEnableMinReputation:
+dd 0
+iMinReputation:
+dd (int)5
+bEnableMinCredits:
+dd 1
+iMinCredits:
+dd (int)2000
+
+lblActionTicker:
+cmp dword ptr [bEnableMinHexNuts],1
+jne short lblActionTickerSkip
+mov eax,[fMinHexNuts]
+//cmp dword ptr [esi+2A4],eax // old
+cmp dword ptr [esi+2A8],eax
+jge short lblActionTickerSkip
+//mov dword ptr [esi+2A4],eax // old
+mov dword ptr [esi+2A8],eax
+lblActionTickerSkip:
+mov dword ptr [pPlayerResources],esi
+//db D9 86 A4 02 00 00 // old
+db D9 86 A8 02 00 00
+jmp lblActionTickerRet
+pPlayerResources:
+dd 0
+
+lblEngineeringTicker:
+push ebx
+cmp dword ptr [bEnableMinReputation],1
+jne short lblEngineeringTickerSkipReputation
+mov ebx,[iMinReputation]
+//cmp dword ptr [eax+38],ebx // old
+cmp dword ptr [eax+3C],ebx
+jge short lblEngineeringTickerSkipReputation
+//mov dword ptr [eax+38],ebx // old
+mov dword ptr [eax+3C],ebx
+lblEngineeringTickerSkipReputation:
+cmp dword ptr [bEnableMinCredits],1
+jne short lblEngineeringTickerSkipCredits
+mov ebx,[iMinCredits]
+//cmp dword ptr [eax+3C],ebx // old
+cmp dword ptr [eax+40],ebx
+jge short lblEngineeringTickerSkipCredits
+//mov dword ptr [eax+3C],ebx // old
+mov dword ptr [eax+40],ebx
+lblEngineeringTickerSkipCredits:
+pop ebx
+//db 8B 40 38 C3 // old
+db 8B 40 3C C3
+
+lblDamager:
+cmp dword ptr [bEnableGodMode],1
+jne short lblDamagerSkipGodmode
+//mov eax,[edi+128] // old
+mov eax,[edi+134] // old
+cmp dword ptr [pPlayerResources],eax
+jne short lblDamagerSkipGodmode
+//mov eax,[edi+990] // old
+mov eax,[edi+B78]
+test eax,eax
+jz short lblDamagerSkipMax
+//mov eax,[eax+2D0] // old
+mov eax,[eax+2E0]
+//mov dword ptr [edi+144],eax // old
+mov dword ptr [edi+150],eax
+lblDamagerSkipMax:
+//movss xmm0,[edi+144] // old
+movss xmm0,[edi+150]
+jmp lblDamagerRet
+lblDamagerSkipGodmode:
+//db F3 0F 11 87 44 01 00 00 // old
+db F3 0F 11 87 50 01 00 00
+jmp lblDamagerRet
+
+aobDamager:
+aobDamager_r:
+jmp lblDamager
+nop
+nop
+nop
+lblDamagerRet:
+
+aobEngineeringTicker+4:
+aobEngineeringTicker_r:
+jmp lblEngineeringTicker
+
+aobActionTicker:
+aobActionTicker_r:
+jmp lblActionTicker
+nop
+lblActionTickerRet:
+
+[DISABLE]
+aobActionTicker_r:
+//db D9 86 A4 02 00 00 // old
+db D9 86 A8 02 00 00
+
+unregistersymbol(aobActionTicker_r)
+
+unregistersymbol(bEnableMinHexNuts)
+unregistersymbol(fMinHexNuts)
+
+aobEngineeringTicker_r:
+//db 8B 40 38 C3 CC // old
+db 8B 40 3C C3 CC
+
+unregistersymbol(aobEngineeringTicker_r)
+
+unregistersymbol(bEnableMinReputation)
+unregistersymbol(iMinReputation)
+unregistersymbol(bEnableMinCredits)
+unregistersymbol(iMinCredits)
+
+aobDamager_r:
+//db F3 0F 11 87 44 01 00 00 // old
+db F3 0F 11 87 50 01 00 00
+
+unregistersymbol(aobDamager_r)
+
+unregistersymbol(bEnableGodMode)
+
+dealloc(newmem)
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>29</ID>
+          <Description>"bEnableGodMode"</Description>
+          <LastState Value="??" Activated="0" RealAddress="00000000"/>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>bEnableGodMode</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>4</ID>
+          <Description>"bEnableMinHexNuts"</Description>
+          <LastState Value="??" Activated="0" RealAddress="00000000"/>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>bEnableMinHexNuts</Address>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>3</ID>
+              <Description>"fMinHexNuts"</Description>
+              <LastState Value="??" Activated="0" RealAddress="00000000"/>
+              <Color>FF0000</Color>
+              <VariableType>Float</VariableType>
+              <Address>fMinHexNuts</Address>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>14</ID>
+          <Description>"bEnableMinReputation"</Description>
+          <LastState Value="??" Activated="0" RealAddress="00000000"/>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>bEnableMinReputation</Address>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>15</ID>
+              <Description>"iMinReputation"</Description>
+              <LastState Value="??" Activated="0" RealAddress="00000000"/>
+              <Color>FF0000</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>iMinReputation</Address>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>16</ID>
+          <Description>"bEnableMinCredits"</Description>
+          <LastState Value="??" Activated="0" RealAddress="00000000"/>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>bEnableMinCredits</Address>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>17</ID>
+              <Description>"iMinCredits"</Description>
+              <LastState Value="??" Activated="0" RealAddress="00000000"/>
+              <Color>FF0000</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>iMinCredits</Address>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols/>
+</CheatTable>

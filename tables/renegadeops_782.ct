@@ -1,0 +1,3229 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="24">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>0</ID>
+      <Description>"&gt;&gt;&gt; ACTIVATE &lt;&lt;&lt;"</Description>
+      <Options moHideChildren="1" moDeactivateChildrenAsWell="1"/>
+      <LastState/>
+      <Color>FF0000</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>{ ##### Enable ##### }
+
+[ENABLE]
+
+
+{ ##### AOB Scans ##### }
+
+aobscanmodule(AOB_Health,RenegadeOps.exe,F3 0F 11 89 DC 00 00 00 ?? ?? F3 0F 11 81 DC 00 00 00 80 79 50 00)
+aobscanmodule(AOB_Lives,RenegadeOps.exe,8B 46 50 48 B9 00 00 00 00)
+aobscanmodule(AOB_Ammo,RenegadeOps.exe,FF 8E 84 17 00 00)
+aobscanmodule(AOB_Score,RenegadeOps.exe,80 7D 10 00 57 8B 7D 08)
+aobscanmodule(AOB_Upgrade,RenegadeOps.exe,83 BE 80 17 00 00 00)
+aobscanmodule(AOB_Special_0,RenegadeOps.exe,F3 0F 58 86 58 06 00 00 F3 0F 10)
+aobscanmodule(AOB_Special_1,RenegadeOps.exe,D9 9F 54 06 00 00)
+aobscanmodule(AOB_Special_2,RenegadeOps.exe,D9 86 48 06 00 00 F3)
+aobscanmodule(AOB_Special_3,RenegadeOps.exe,F3 0F 10 8E 84 06 00 00)
+aobscanmodule(AOB_Special_4,RenegadeOps.exe,D9 9E 4C 06 00 00 53)
+aobscanmodule(AOB_Special_5,RenegadeOps.exe,D9 9F 5C 06 00 00)
+aobscanmodule(AOB_Special_6,RenegadeOps.exe,D9 9E 5C 06 00 00)
+aobscanmodule(AOB_ObjectiveTime,RenegadeOps.exe,F3 0F 11 86 C4 02 00 00 8B 86)
+aobscanmodule(AOB_SessionTime,RenegadeOps.exe,F3 0F 11 4F 7C 51)
+aobscanmodule(AOB_DamageStreak,RenegadeOps.exe,0F 28 C1 F3 0F 11 46 40)
+
+
+{ ##### Allocate Memory ##### }
+
+alloc(newmem,$1000)
+
+globalalloc(pLives,4)
+globalalloc(pHealth,4)
+globalalloc(pAmmo,4)
+globalalloc(pCooldown,4)
+globalalloc(pUpgrade,4)
+globalalloc(pScore,4)
+globalalloc(pObjectiveTime,4)
+globalalloc(pSessionTime,4)
+globalalloc(pDamageStreak,4)
+globalalloc(pTimerTemp,4)
+
+globalalloc(pUnlimitedLives,4)
+globalalloc(pUnlimitedHealth,4)
+globalalloc(pUnlimitedAmmo,4)
+globalalloc(pNoCooldown,4)
+globalalloc(pSuperWeapons,4)
+globalalloc(pFastScore,4)
+globalalloc(pOneHitKill,4)
+globalalloc(pFreezeTime,4)
+globalalloc(pFreezeDamageStreak,4)
+
+
+{ ##### Create Labels ##### }
+
+label(newHealth)
+label(enemyHealth)
+label(codeHealth)
+label(returnHealth)
+
+label(newLives)
+label(codeLives)
+label(returnLives)
+
+label(newAmmo)
+label(codeAmmo)
+label(returnAmmo)
+
+label(newUpgrade)
+label(codeUpgrade)
+label(returnUpgrade)
+
+label(newScore)
+label(codeScore)
+label(returnScore)
+
+label(newSpecial_0)
+label(codeSpecial_0)
+label(returnSpecial_0)
+
+label(newSpecial_1)
+label(codeSpecial_1)
+label(returnSpecial_1)
+
+label(newSpecial_2)
+label(codeSpecial_2)
+label(returnSpecial_2)
+
+label(newSpecial_3)
+label(codeSpecial_3)
+label(returnSpecial_3)
+
+label(newSpecial_4)
+label(codeSpecial_4)
+label(returnSpecial_4)
+
+label(newSpecial_5)
+label(codeSpecial_5)
+label(returnSpecial_5)
+
+label(newSpecial_6)
+label(codeSpecial_6)
+label(returnSpecial_6)
+
+label(newObjectiveTime)
+label(codeObjectiveTime)
+label(returnObjectiveTime)
+
+label(newSessionTime)
+label(codeSessionTime)
+label(returnSessionTime)
+
+label(newDamageTime)
+label(codeDamageTime)
+label(returnDamageTime)
+
+
+{ ##### Register Symbols ##### }
+
+registersymbol(AOB_Lives)
+registersymbol(AOB_Health)
+registersymbol(AOB_Ammo)
+registersymbol(AOB_Upgrade)
+registersymbol(AOB_Score)
+registersymbol(AOB_Special_0)
+registersymbol(AOB_Special_1)
+registersymbol(AOB_Special_2)
+registersymbol(AOB_Special_3)
+registersymbol(AOB_Special_4)
+registersymbol(AOB_Special_5)
+registersymbol(AOB_Special_6)
+registersymbol(AOB_ObjectiveTime)
+registersymbol(AOB_SessionTime)
+registersymbol(AOB_DamageStreak)
+
+
+{ ##### New Memory Start ##### }
+
+newmem:
+
+
+{ ##### AOB_Health ##### }
+
+newHealth:
+  mov [pHealth],ecx // read here
+  cmp dword ptr [pUnlimitedHealth],1 // cheat check
+  jne enemyHealth
+  cmp dword ptr [ecx+24C],0 // player check
+  jne enemyHealth
+  movss [ecx+000000DC],xmm0 // move max to current
+  jmp returnHealth
+
+enemyHealth:
+  cmp dword ptr [pOneHitKill],1 // cheat check
+  jne codeHealth
+  fldz // load 0.0
+  fstp dword ptr [ecx+000000DC] // store 0.0
+  jmp returnHealth
+
+codeHealth:
+  movss [ecx+000000DC],xmm1
+  jmp returnHealth
+
+
+{ ##### AOB_Lives ##### }
+
+newLives:
+  mov [pLives],esi // read here
+  cmp dword ptr [pUnlimitedLives],1 // cheat check
+  jne codeLives
+  mov eax,[esi+50]
+  inc eax // increase or do nothing
+  mov ecx,00000000
+  jmp returnLives
+
+codeLives:
+  mov eax,[esi+50]
+  dec eax
+  mov ecx,00000000
+  jmp returnLives
+
+
+{ ##### AOB_Ammo ##### }
+
+newAmmo:
+  mov [pAmmo],esi // read here
+  cmp dword ptr [pUnlimitedAmmo],1 // cheat check
+  jne codeAmmo
+  inc [esi+00001784] // increase or do nothing
+  jmp returnAmmo
+
+codeAmmo:
+  dec [esi+00001784]
+  jmp returnAmmo
+
+
+{ ##### AOB_Upgrade ##### }
+
+newUpgrade:
+  mov [pUpgrade],esi // read here
+  cmp dword ptr [pSuperWeapons],1 // cheat check
+  jne codeUpgrade
+  cmp [esi+00001780],(int)10 // value check
+  jge codeUpgrade
+  mov [esi+00001780],(int)10 // move 10
+  jmp codeUpgrade
+
+codeUpgrade:
+  cmp dword ptr [esi+00001780],00
+  jmp returnUpgrade
+
+
+{ ##### AOB_Score ##### }
+
+newScore:
+  mov [pScore],esi // read here
+  cmp byte ptr [ebp+10],00
+  push edi
+  mov edi,[ebp+08]
+  cmp dword ptr [pFastScore],1 // cheat check
+  jne returnScore
+  add edi,00001388 // add 5000 // #1000 // add score
+  jmp returnScore
+
+codeScore:
+  cmp byte ptr [ebp+10],00
+  push edi
+  mov edi,[ebp+08]
+  jmp returnScore
+
+
+{ ##### AOB_Special_0 ##### }
+
+newSpecial_0:
+  mov [pCooldown],esi // read here
+  cmp dword ptr [pNoCooldown],1 // cheat check
+  jne codeSpecial_0
+  fldz // load 0.0
+  fstp dword ptr [esi+00000658] // store 0.0
+  jmp codeSpecial_0
+
+codeSpecial_0:
+  addss xmm0,[esi+00000658] // add 0.0
+  jmp returnSpecial_0
+
+
+{ ##### AOB_Special_1 ##### }
+
+newSpecial_1:
+  mov [pCooldown],edi // read here
+  cmp dword ptr [pNoCooldown],1 // cheat check
+  jne codeSpecial_1
+  fldz // load 0.0
+  jmp codeSpecial_1
+
+codeSpecial_1:
+  fstp dword ptr [edi+00000654] // store 0.0
+  jmp returnSpecial_1
+
+
+{ ##### AOB_Special_2 ##### }
+
+newSpecial_2:
+  mov [pCooldown],esi // read here
+  cmp dword ptr [pNoCooldown],1 // cheat check
+  jne codeSpecial_2
+  fldz // load 0.0
+  jmp returnSpecial_2
+
+codeSpecial_2:
+  fld dword ptr [esi+00000648] // load cooldown time
+  jmp returnSpecial_2
+
+
+{ ##### AOB_Special_3 ##### }
+
+newSpecial_3:
+  mov [pCooldown],esi // read here
+  cmp dword ptr [pNoCooldown],1 // cheat check
+  jne codeSpecial_3
+  fldz // load 0.0
+  fstp dword ptr [esi+00000684] // store 0.0
+  jmp returnSpecial_3
+
+codeSpecial_3:
+  movss xmm1,[esi+00000684]
+  jmp returnSpecial_3
+
+
+{ ##### AOB_Special_4 ##### }
+
+newSpecial_4:
+  mov [pCooldown],esi // read here
+  cmp dword ptr [pNoCooldown],1 // cheat check
+  jne codeSpecial_4
+  fstp dword ptr [esi+00000648]
+  fldz // load 0.0
+  jmp codeSpecial_4
+
+codeSpecial_4:
+  fstp dword ptr [esi+0000064C] // store 0.0
+  jmp returnSpecial_4
+
+
+{ ##### AOB_Special_5 ##### }
+
+newSpecial_5:
+  mov [pCooldown],edi // read here
+  cmp dword ptr [pNoCooldown],1 // cheat check
+  jne codeSpecial_5
+  fstp dword ptr [edi+00000658]
+  fldz // load 0.0
+  jmp codeSpecial_5
+
+codeSpecial_5:
+  fstp dword ptr [edi+0000065C] // store 0.0
+  jmp returnSpecial_5
+
+
+{ ##### AOB_Special_6 ##### }
+
+newSpecial_6:
+  mov [pCooldown],esi // read here
+  cmp dword ptr [pNoCooldown],1 // cheat check
+  jne codeSpecial_6
+  fstp dword ptr [esi+00000658]
+  fldz // load 0.0
+  jmp codeSpecial_6
+
+codeSpecial_6:
+  fstp dword ptr [esi+0000065C] // store 0.0
+  jmp returnSpecial_6
+
+
+{ ##### AOB_ObjectiveTime ##### }
+
+newObjectiveTime:
+  mov [pObjectiveTime],esi // read here
+  cmp dword ptr [pFreezeTime],1 // cheat check
+  jne codeObjectiveTime
+  fldz // load 0.0
+  fstp dword ptr [pTimerTemp] // store 0.0 in temp
+  movss xmm0,[pTimerTemp] // move increment
+  addss xmm0,[esi+000002C4] // add increment to elapsed
+  jmp codeObjectiveTime
+
+codeObjectiveTime:
+  movss [esi+000002C4],xmm0 // move elapsed
+  jmp returnObjectiveTime
+
+
+{ ##### AOB_SessionTime ##### }
+
+newSessionTime:
+  mov [pSessionTime],edi // read here
+  cmp dword ptr [pFreezeTime],1 // cheat check
+  jne codeSessionTime
+  fldz // load 0.0
+  fstp dword ptr [pTimerTemp] // store 0.0 into temp
+  movss xmm0,[pTimerTemp] // move increment
+  movss xmm1,[edi+7C] // move elapsed time
+  addss xmm1,xmm0 // add increment to elapsed
+  jmp codeSessionTime
+
+codeSessionTime:
+  movss [edi+7C],xmm1 // move elapsed
+  jmp returnSessionTime
+
+
+{ ##### AOB_DamageStreak ##### }
+
+newDamageTime:
+  mov [pDamageStreak],esi // read here
+  cmp dword ptr [pFreezeDamageStreak],1 // cheat check
+  jne codeDamageTime
+  movss xmm0,[esi+28] //  mov max time
+  jmp codeDamageTime
+
+codeDamageTime:
+  movss [esi+40],xmm0
+  jmp returnDamageTime
+
+
+{ ##### AOB Injection ##### }
+
+AOB_Health:
+  jmp newHealth
+  nop
+  nop
+  nop
+returnHealth:
+
+AOB_Lives:
+  jmp newLives
+  nop
+  nop
+  nop
+  nop
+returnLives:
+
+AOB_Ammo:
+  jmp newAmmo
+  nop
+returnAmmo:
+
+AOB_Upgrade:
+  jmp newUpgrade
+  nop
+  nop
+returnUpgrade:
+
+AOB_Score:
+  jmp newScore
+  nop
+  nop
+  nop
+returnScore:
+
+AOB_Special_0:
+  jmp newSpecial_0
+  nop
+  nop
+  nop
+returnSpecial_0:
+
+AOB_Special_1:
+  jmp newSpecial_1
+  nop
+returnSpecial_1:
+
+AOB_Special_2:
+  jmp newSpecial_2
+  nop
+returnSpecial_2:
+
+AOB_Special_3:
+  jmp newSpecial_3
+  nop
+  nop
+  nop
+returnSpecial_3:
+
+AOB_Special_4:
+  jmp newSpecial_4
+  nop
+returnSpecial_4:
+
+AOB_Special_5:
+  jmp newSpecial_5
+  nop
+returnSpecial_5:
+
+AOB_Special_6:
+  jmp newSpecial_6
+  nop
+returnSpecial_6:
+
+AOB_ObjectiveTime:
+  jmp newObjectiveTime
+  nop
+  nop
+  nop
+returnObjectiveTime:
+
+AOB_SessionTime:
+  jmp newSessionTime
+returnSessionTime:
+
+AOB_DamageStreak+3:
+  jmp newDamageTime
+returnDamageTime:
+
+
+{ ##### Change 'Activate' View ############## }
+
+{$lua}
+addressList = getAddressList()
+thisRecord = addressList.getMemoryRecordByID(0)
+thisRecord.Color = 0x0000FF -- red
+thisRecord.Description = "&gt;&gt;&gt; DEACTIVATE &lt;&lt;&lt;"
+{$asm}
+
+
+{ ##### Play Confirmation Sound ##### }
+
+{$lua}
+soundstream = createMemoryStream()
+soundstream.loadFromFile("C:\\Windows\\Media\\ir_begin.wav")
+playSound(soundstream)
+soundstream.destroy()
+{$asm}
+
+
+{ ##### DISABLE ##### }
+
+[DISABLE]
+
+
+{ ##### Restore AOB Injection ##### }
+
+AOB_Health:
+  db F3 0F 11 89 DC 00 00 00
+
+AOB_Lives:
+  db 8B 46 50 48 B9 00 00 00 00
+
+AOB_Ammo:
+  db FF 8E 84 17 00 00
+
+AOB_Upgrade:
+  db 83 BE 80 17 00 00 00
+
+AOB_Score:
+  db 80 7D 10 00 57 8B 7D 08
+
+AOB_Special_0:
+  db F3 0F 58 86 58 06 00 00
+
+AOB_Special_1:
+  db D9 9F 54 06 00 00
+
+AOB_Special_2:
+  db D9 86 48 06 00 00
+
+AOB_Special_3:
+  db F3 0F 10 8E 84 06 00 00
+
+AOB_Special_4:
+  db D9 9E 4C 06 00 00
+
+AOB_Special_5:
+  db D9 9F 5C 06 00 00
+
+AOB_Special_6:
+  db D9 9E 5C 06 00 00
+
+AOB_ObjectiveTime:
+  db F3 0F 11 86 C4 02 00 00
+
+AOB_SessionTime:
+  db F3 0F 11 4F 7C
+
+AOB_DamageStreak+3:
+  db F3 0F 11 46 40
+
+
+{ ##### Unregister Symbols ##### }
+
+unregistersymbol(AOB_Health)
+unregistersymbol(AOB_Lives)
+unregistersymbol(AOB_Ammo)
+unregistersymbol(AOB_Upgrade)
+unregistersymbol(AOB_Score)
+unregistersymbol(AOB_Special_0)
+unregistersymbol(AOB_Special_1)
+unregistersymbol(AOB_Special_2)
+unregistersymbol(AOB_Special_3)
+unregistersymbol(AOB_Special_4)
+unregistersymbol(AOB_Special_5)
+unregistersymbol(AOB_Special_6)
+unregistersymbol(AOB_ObjectiveTime)
+unregistersymbol(AOB_SessionTime)
+unregistersymbol(AOB_DamageStreak)
+
+unregistersymbol(pHealth)
+unregistersymbol(pLives)
+unregistersymbol(pAmmo)
+unregistersymbol(pCooldown)
+unregistersymbol(pUpgrade)
+unregistersymbol(pScore)
+unregistersymbol(pObjectiveTime)
+unregistersymbol(pSessionTime)
+unregistersymbol(pDamageStreak)
+unregistersymbol(pTimerTemp)
+unregistersymbol(pUnlimitedHealth)
+unregistersymbol(pUnlimitedLives)
+unregistersymbol(pUnlimitedAmmo)
+unregistersymbol(pNoCooldown)
+unregistersymbol(pSuperWeapons)
+unregistersymbol(pFastScore)
+unregistersymbol(pOneHitKill)
+unregistersymbol(pFreezeTime)
+unregistersymbol(pFreezeDamageStreak)
+
+
+{ ##### Deallocate Memory ##### }
+
+dealloc(newmem)
+
+dealloc(pHealth)
+dealloc(pLives)
+dealloc(pAmmo)
+dealloc(pCooldown)
+dealloc(pUpgrade)
+dealloc(pScore)
+dealloc(pObjectiveTime)
+dealloc(pSessionTime)
+dealloc(pDamageStreak)
+dealloc(pTimerTemp)
+dealloc(pUnlimitedHealth)
+dealloc(pUnlimitedLives)
+dealloc(pUnlimitedAmmo)
+dealloc(pNoCooldown)
+dealloc(pSuperWeapons)
+dealloc(pFastScore)
+dealloc(pOneHitKill)
+dealloc(pFreezeTime)
+dealloc(pFreezeDamageStreak)
+
+
+{ ##### Change 'Activate' View ############## }
+
+{$lua}
+addressList = getAddressList()
+thisRecord = addressList.getMemoryRecordByID(0)
+thisRecord.Color = 0xFF0000 -- blue
+thisRecord.Description = "&gt;&gt;&gt; ACTIVATE &lt;&lt;&lt;"
+{$asm}
+
+
+{ ##### Play Confirmation Sound ##### }
+
+{$lua}
+soundstream = createMemoryStream()
+soundstream.loadFromFile("C:\\Windows\\Media\\ir_end.wav")
+playSound(soundstream)
+soundstream.destroy()
+{$asm}
+
+
+{ ##### Original Code ##### }
+
+{ ##### AOB_Health #####
+// ORIGINAL CODE - INJECTION POINT: "RenegadeOps.exe"+12F4DF
+"RenegadeOps.exe"+12F4BD: CC                       -  int 3
+"RenegadeOps.exe"+12F4BE: CC                       -  int 3
+"RenegadeOps.exe"+12F4BF: CC                       -  int 3
+"RenegadeOps.exe"+12F4C0: 55                       -  push ebp
+"RenegadeOps.exe"+12F4C1: 8B EC                    -  mov ebp,esp
+"RenegadeOps.exe"+12F4C3: D9 81 DC 00 00 00        -  fld dword ptr [ecx+000000DC]
+"RenegadeOps.exe"+12F4C9: F3 0F 10 4D 08           -  movss xmm1,[ebp+08]
+"RenegadeOps.exe"+12F4CE: F3 0F 10 81 D8 00 00 00  -  movss xmm0,[ecx+000000D8]
+"RenegadeOps.exe"+12F4D6: D9 99 E0 00 00 00        -  fstp dword ptr [ecx+000000E0]
+"RenegadeOps.exe"+12F4DC: 0F 2F C8                 -  comiss xmm1,xmm0
+// ---------- INJECTING HERE ----------
+"RenegadeOps.exe"+12F4DF: F3 0F 11 89 DC 00 00 00  -  movss [ecx+000000DC],xmm1
+// ---------- DONE INJECTING  ----------
+"RenegadeOps.exe"+12F4E7: 76 08                    -  jna RenegadeOps.exe+12F4F1
+"RenegadeOps.exe"+12F4E9: F3 0F 11 81 DC 00 00 00  -  movss [ecx+000000DC],xmm0
+"RenegadeOps.exe"+12F4F1: 80 79 50 00              -  cmp byte ptr [ecx+50],00
+"RenegadeOps.exe"+12F4F5: 75 40                    -  jne RenegadeOps.exe+12F537
+"RenegadeOps.exe"+12F4F7: F3 0F 10 81 DC 00 00 00  -  movss xmm0,[ecx+000000DC]
+"RenegadeOps.exe"+12F4FF: 0F 57 C9                 -  xorps xmm1,xmm1
+"RenegadeOps.exe"+12F502: 0F 2F C8                 -  comiss xmm1,xmm0
+"RenegadeOps.exe"+12F505: 72 30                    -  jb RenegadeOps.exe+12F537
+"RenegadeOps.exe"+12F507: 80 B9 60 03 00 00 00     -  cmp byte ptr [ecx+00000360],00
+"RenegadeOps.exe"+12F50E: 74 18                    -  je RenegadeOps.exe+12F528
+}
+
+
+{ ##### AOB_Lives #####
+// ORIGINAL CODE - INJECTION POINT: "RenegadeOps.exe"+BF390
+"RenegadeOps.exe"+BF361: 8B F1                          -  mov esi,ecx
+"RenegadeOps.exe"+BF363: 80 7E 5C 00                    -  cmp byte ptr [esi+5C],00
+"RenegadeOps.exe"+BF367: 0F 84 9F 00 00 00              -  je RenegadeOps.exe+BF40C
+"RenegadeOps.exe"+BF36D: 8B 8E B0 00 00 00              -  mov ecx,[esi+000000B0]
+"RenegadeOps.exe"+BF373: E8 68 E6 FF FF                 -  call RenegadeOps.exe+BD9E0
+"RenegadeOps.exe"+BF378: FF 46 58                       -  inc [esi+58]
+"RenegadeOps.exe"+BF37B: C6 86 08 01 00 00 00           -  mov byte ptr [esi+00000108],00
+"RenegadeOps.exe"+BF382: A1 0C F0 C0 00                 -  mov eax,[RenegadeOps.exe+80F00C]
+"RenegadeOps.exe"+BF387: 83 B8 2C 01 00 00 00           -  cmp dword ptr [eax+0000012C],00
+"RenegadeOps.exe"+BF38E: 74 12                          -  je RenegadeOps.exe+BF3A2
+// ---------- INJECTING HERE ----------
+"RenegadeOps.exe"+BF390: 8B 46 50                       -  mov eax,[esi+50]
+"RenegadeOps.exe"+BF393: 48                             -  dec eax
+"RenegadeOps.exe"+BF394: B9 00 00 00 00                 -  mov ecx,00000000
+// ---------- DONE INJECTING  ----------
+"RenegadeOps.exe"+BF399: 0F 98 C1                       -  sets cl
+"RenegadeOps.exe"+BF39C: 49                             -  dec ecx
+"RenegadeOps.exe"+BF39D: 23 C1                          -  and eax,ecx
+"RenegadeOps.exe"+BF39F: 89 46 50                       -  mov [esi+50],eax
+"RenegadeOps.exe"+BF3A2: 83 7E 50 00                    -  cmp dword ptr [esi+50],00
+"RenegadeOps.exe"+BF3A6: 75 64                          -  jne RenegadeOps.exe+BF40C
+"RenegadeOps.exe"+BF3A8: A1 48 28 C3 00                 -  mov eax,[RenegadeOps.exe+832848]
+"RenegadeOps.exe"+BF3AD: 33 C9                          -  xor ecx,ecx
+"RenegadeOps.exe"+BF3AF: 85 C0                          -  test eax,eax
+"RenegadeOps.exe"+BF3B1: 74 48                          -  je RenegadeOps.exe+BF3FB
+}
+
+
+{ ##### AOB_Ammo #####
+// ORIGINAL CODE - INJECTION POINT: "RenegadeOps.exe"+10640D
+"RenegadeOps.exe"+1063E0: 3B 86 80 17 00 00              -  cmp eax,[esi+00001780]
+"RenegadeOps.exe"+1063E6: 7D 1B                          -  jnl RenegadeOps.exe+106403
+"RenegadeOps.exe"+1063E8: 8B 8C 86 30 16 00 00           -  mov ecx,[esi+eax*4+00001630]
+"RenegadeOps.exe"+1063EF: 3B 8C 86 2C 16 00 00           -  cmp ecx,[esi+eax*4+0000162C]
+"RenegadeOps.exe"+1063F6: 75 15                          -  jne RenegadeOps.exe+10640D
+"RenegadeOps.exe"+1063F8: 47                             -  inc edi
+"RenegadeOps.exe"+1063F9: 3B BE 80 17 00 00              -  cmp edi,[esi+00001780]
+"RenegadeOps.exe"+1063FF: 7C B3                          -  jl RenegadeOps.exe+1063B4
+"RenegadeOps.exe"+106401: EB 0A                          -  jmp RenegadeOps.exe+10640D
+"RenegadeOps.exe"+106403: C7 86 70 17 00 00 00 00 00 00  -  mov [esi+00001770],00000000
+// ---------- INJECTING HERE ----------
+"RenegadeOps.exe"+10640D: FF 8E 84 17 00 00              -  dec [esi+00001784]
+// ---------- DONE INJECTING  ----------
+"RenegadeOps.exe"+106413: 5F                             -  pop edi
+"RenegadeOps.exe"+106414: 79 0A                          -  jns RenegadeOps.exe+106420
+"RenegadeOps.exe"+106416: C7 86 84 17 00 00 00 00 00 00  -  mov [esi+00001784],00000000
+"RenegadeOps.exe"+106420: 5E                             -  pop esi
+"RenegadeOps.exe"+106421: C3                             -  ret
+"RenegadeOps.exe"+106422: CC                             -  int 3
+"RenegadeOps.exe"+106423: CC                             -  int 3
+"RenegadeOps.exe"+106424: CC                             -  int 3
+"RenegadeOps.exe"+106425: CC                             -  int 3
+"RenegadeOps.exe"+106426: CC                             -  int 3
+}
+
+{ ##### AOB_DamageStreak #####
+// ORIGINAL CODE - INJECTION POINT: "RenegadeOps.exe"+C5B8D
+"RenegadeOps.exe"+C5B6E: 8B CF                 -  mov ecx,edi
+"RenegadeOps.exe"+C5B70: FF D0                 -  call eax
+"RenegadeOps.exe"+C5B72: 80 7D CB 00           -  cmp byte ptr [ebp-35],00
+"RenegadeOps.exe"+C5B76: 0F 57 C9              -  xorps xmm1,xmm1
+"RenegadeOps.exe"+C5B79: 74 17                 -  je RenegadeOps.exe+C5B92
+"RenegadeOps.exe"+C5B7B: F3 0F 10 46 40        -  movss xmm0,[esi+40]
+"RenegadeOps.exe"+C5B80: F3 0F 5C 43 08        -  subss xmm0,[ebx+08]
+"RenegadeOps.exe"+C5B85: 0F 2F C1              -  comiss xmm0,xmm1
+"RenegadeOps.exe"+C5B88: 73 03                 -  jae RenegadeOps.exe+C5B8D
+"RenegadeOps.exe"+C5B8A: 0F 28 C1              -  movaps xmm0,xmm1
+// ---------- INJECTING HERE ----------
+"RenegadeOps.exe"+C5B8D: F3 0F 11 46 40        -  movss [esi+40],xmm0
+// ---------- DONE INJECTING  ----------
+"RenegadeOps.exe"+C5B92: 8B 0D 38 B4 C2 00     -  mov ecx,[RenegadeOps.exe+82B438]
+"RenegadeOps.exe"+C5B98: 83 B9 94 00 00 00 04  -  cmp dword ptr [ecx+00000094],04
+"RenegadeOps.exe"+C5B9F: 75 05                 -  jne RenegadeOps.exe+C5BA6
+"RenegadeOps.exe"+C5BA1: F3 0F 11 4E 40        -  movss [esi+40],xmm1
+"RenegadeOps.exe"+C5BA6: 8B 4E 04              -  mov ecx,[esi+04]
+"RenegadeOps.exe"+C5BA9: 80 79 5C 00           -  cmp byte ptr [ecx+5C],00
+"RenegadeOps.exe"+C5BAD: 74 77                 -  je RenegadeOps.exe+C5C26
+"RenegadeOps.exe"+C5BAF: F3 0F 10 46 40        -  movss xmm0,[esi+40]
+"RenegadeOps.exe"+C5BB4: F3 0F 5E 46 28        -  divss xmm0,[esi+28]
+"RenegadeOps.exe"+C5BB9: F3 0F 11 45 E0        -  movss [ebp-20],xmm0
+}
+{ ##### AOB_Upgrade #####
+// ORIGINAL CODE - INJECTION POINT: "RenegadeOps.exe"+FAE15
+"RenegadeOps.exe"+FADE7: 74 2C                    -  je RenegadeOps.exe+FAE15
+"RenegadeOps.exe"+FADE9: 8B 8E 70 17 00 00        -  mov ecx,[esi+00001770]
+"RenegadeOps.exe"+FADEF: 83 BC 8E 90 22 00 00 00  -  cmp dword ptr [esi+ecx*4+00002290],00
+"RenegadeOps.exe"+FADF7: 75 1C                    -  jne RenegadeOps.exe+FAE15
+"RenegadeOps.exe"+FADF9: 8B 50 64                 -  mov edx,[eax+64]
+"RenegadeOps.exe"+FADFC: 8B 0D 88 2E C2 00        -  mov ecx,[RenegadeOps.exe+822E88]
+"RenegadeOps.exe"+FAE02: 52                       -  push edx
+"RenegadeOps.exe"+FAE03: E8 98 85 FE FF           -  call RenegadeOps.exe+E33A0
+"RenegadeOps.exe"+FAE08: 8B 8E 70 17 00 00        -  mov ecx,[esi+00001770]
+"RenegadeOps.exe"+FAE0E: 89 84 8E 90 22 00 00     -  mov [esi+ecx*4+00002290],eax
+// ---------- INJECTING HERE ----------
+"RenegadeOps.exe"+FAE15: 83 BE 80 17 00 00 00     -  cmp dword ptr [esi+00001780],00
+// ---------- DONE INJECTING  ----------
+"RenegadeOps.exe"+FAE1C: C7 45 D0 00 00 00 00     -  mov [ebp-30],00000000
+"RenegadeOps.exe"+FAE23: 0F 8E E9 02 00 00        -  jng RenegadeOps.exe+FB112
+"RenegadeOps.exe"+FAE29: F3 0F 10 0D 00 82 9C 00  -  movss xmm1,[RenegadeOps.exe+5C8200]
+"RenegadeOps.exe"+FAE31: 53                       -  push ebx
+"RenegadeOps.exe"+FAE32: 8D 96 30 01 00 00        -  lea edx,[esi+00000130]
+"RenegadeOps.exe"+FAE38: 8D 86 64 04 00 00        -  lea eax,[esi+00000464]
+"RenegadeOps.exe"+FAE3E: 57                       -  push edi
+"RenegadeOps.exe"+FAE3F: 8D 9E 90 22 00 00        -  lea ebx,[esi+00002290]
+"RenegadeOps.exe"+FAE45: 89 55 D4                 -  mov [ebp-2C],edx
+"RenegadeOps.exe"+FAE48: 89 45 CC                 -  mov [ebp-34],eax
+}
+
+
+{ ##### AOB_Score #####
+// ORIGINAL CODE - INJECTION POINT: "RenegadeOps.exe"+C56C5
+"RenegadeOps.exe"+C56AE: CC                       -  int 3
+"RenegadeOps.exe"+C56AF: CC                       -  int 3
+"RenegadeOps.exe"+C56B0: 55                       -  push ebp
+"RenegadeOps.exe"+C56B1: 8B EC                    -  mov ebp,esp
+"RenegadeOps.exe"+C56B3: 56                       -  push esi
+"RenegadeOps.exe"+C56B4: 8B F1                    -  mov esi,ecx
+"RenegadeOps.exe"+C56B6: 80 7E 5C 00              -  cmp byte ptr [esi+5C],00
+"RenegadeOps.exe"+C56BA: 0F 84 A7 00 00 00        -  je RenegadeOps.exe+C5767
+// ---------- INJECTING HERE ----------
+"RenegadeOps.exe"+C56C0: 80 7D 10 00              -  cmp byte ptr [ebp+10],00
+"RenegadeOps.exe"+C56C4: 57                       -  push edi
+"RenegadeOps.exe"+C56C5: 8B 7D 08                 -  mov edi,[ebp+08]
+// ---------- DONE INJECTING  ----------
+"RenegadeOps.exe"+C56C8: 74 18                    -  je RenegadeOps.exe+C56E2
+"RenegadeOps.exe"+C56CA: 51                       -  push ecx
+"RenegadeOps.exe"+C56CB: 8B 8E B0 00 00 00        -  mov ecx,[esi+000000B0]
+"RenegadeOps.exe"+C56D1: 0F 57 C0                 -  xorps xmm0,xmm0
+"RenegadeOps.exe"+C56D4: F3 0F 2A C7              -  cvtsi2ss xmm0,edi
+"RenegadeOps.exe"+C56D8: F3 0F 11 04 24           -  movss [esp],xmm0
+"RenegadeOps.exe"+C56DD: E8 6E 83 FF FF           -  call RenegadeOps.exe+BDA50
+"RenegadeOps.exe"+C56E2: 8B 45 0C                 -  mov eax,[ebp+0C]
+"RenegadeOps.exe"+C56E5: 83 F8 06                 -  cmp eax,06
+"RenegadeOps.exe"+C56E8: 75 14                    -  jne RenegadeOps.exe+C56FE
+"RenegadeOps.exe"+C56EA: 8B 86 84 00 00 00        -  mov eax,[esi+00000084]
+}
+
+
+{ ##### AOB_Special_0 #####
+// ORIGINAL CODE - INJECTION POINT: "RenegadeOps.exe"+138D7D
+"RenegadeOps.exe"+138D51: 8B 0D 3C B6 C2 00        -  mov ecx,[RenegadeOps.exe+82B63C]
+"RenegadeOps.exe"+138D57: F3 0F 11 45 AC           -  movss [ebp-54],xmm0
+"RenegadeOps.exe"+138D5C: E8 DF AA F8 FF           -  call RenegadeOps.exe+C3840
+"RenegadeOps.exe"+138D61: F3 0F 10 45 D4           -  movss xmm0,[ebp-2C]
+"RenegadeOps.exe"+138D66: 51                       -  push ecx
+"RenegadeOps.exe"+138D67: 8B CE                    -  mov ecx,esi
+"RenegadeOps.exe"+138D69: F3 0F 11 04 24           -  movss [esp],xmm0
+"RenegadeOps.exe"+138D6E: E8 ED 4F EF FF           -  call RenegadeOps.exe+2DD60
+"RenegadeOps.exe"+138D73: F3 0F 10 45 08           -  movss xmm0,[ebp+08]
+"RenegadeOps.exe"+138D78: F3 0F 5E 45 A0           -  divss xmm0,[ebp-60]
+// ---------- INJECTING HERE ----------
+"RenegadeOps.exe"+138D7D: F3 0F 58 86 58 06 00 00  -  addss xmm0,[esi+00000658]
+// ---------- DONE INJECTING  ----------
+"RenegadeOps.exe"+138D85: F3 0F 10 8E 54 06 00 00  -  movss xmm1,[esi+00000654]
+"RenegadeOps.exe"+138D8D: 0F 2F C1                 -  comiss xmm0,xmm1
+"RenegadeOps.exe"+138D90: F3 0F 11 86 58 06 00 00  -  movss [esi+00000658],xmm0
+"RenegadeOps.exe"+138D98: 72 14                    -  jb RenegadeOps.exe+138DAE
+"RenegadeOps.exe"+138D9A: 8B 16                    -  mov edx,[esi]
+"RenegadeOps.exe"+138D9C: 8B 82 98 00 00 00        -  mov eax,[edx+00000098]
+"RenegadeOps.exe"+138DA2: 8B CE                    -  mov ecx,esi
+"RenegadeOps.exe"+138DA4: F3 0F 11 8E 58 06 00 00  -  movss [esi+00000658],xmm1
+"RenegadeOps.exe"+138DAC: FF D0                    -  call eax
+"RenegadeOps.exe"+138DAE: 8D 4D B0                 -  lea ecx,[ebp-50]
+}
+
+
+{ ##### AOB_Special_1 #####
+// ORIGINAL CODE - INJECTION POINT: "RenegadeOps.exe"+14B682
+"RenegadeOps.exe"+14B64E: 09 87 BC 03 00 00     -  or [edi+000003BC],eax
+"RenegadeOps.exe"+14B654: 09 87 C0 03 00 00     -  or [edi+000003C0],eax
+"RenegadeOps.exe"+14B65A: 09 87 C4 03 00 00     -  or [edi+000003C4],eax
+"RenegadeOps.exe"+14B660: 09 87 C8 03 00 00     -  or [edi+000003C8],eax
+"RenegadeOps.exe"+14B666: D9 87 60 06 00 00     -  fld dword ptr [edi+00000660]
+"RenegadeOps.exe"+14B66C: 8B 87 4C 02 00 00     -  mov eax,[edi+0000024C]
+"RenegadeOps.exe"+14B672: D9 9F 64 06 00 00     -  fstp dword ptr [edi+00000664]
+"RenegadeOps.exe"+14B678: D9 87 50 06 00 00     -  fld dword ptr [edi+00000650]
+"RenegadeOps.exe"+14B67E: 8D 4D D8              -  lea ecx,[ebp-28]
+"RenegadeOps.exe"+14B681: 51                    -  push ecx
+// ---------- INJECTING HERE ----------
+"RenegadeOps.exe"+14B682: D9 9F 54 06 00 00     -  fstp dword ptr [edi+00000654]
+// ---------- DONE INJECTING  ----------
+"RenegadeOps.exe"+14B688: 8D 8F 40 06 00 00     -  lea ecx,[edi+00000640]
+"RenegadeOps.exe"+14B68E: C7 45 D8 00 00 00 00  -  mov [ebp-28],00000000
+"RenegadeOps.exe"+14B695: 89 45 DC              -  mov [ebp-24],eax
+"RenegadeOps.exe"+14B698: E8 63 2A 00 00        -  call RenegadeOps.exe+14E100
+"RenegadeOps.exe"+14B69D: 8D 55 D8              -  lea edx,[ebp-28]
+"RenegadeOps.exe"+14B6A0: 52                    -  push edx
+"RenegadeOps.exe"+14B6A1: 8D 8F 44 06 00 00     -  lea ecx,[edi+00000644]
+"RenegadeOps.exe"+14B6A7: E8 54 2A 00 00        -  call RenegadeOps.exe+14E100
+"RenegadeOps.exe"+14B6AC: 8B 8F 00 01 00 00     -  mov ecx,[edi+00000100]
+"RenegadeOps.exe"+14B6B2: 85 C9                 -  test ecx,ecx
+}
+
+
+{ ##### AOB_Special_2 #####
+// ORIGINAL CODE - INJECTION POINT: "RenegadeOps.exe"+136BA3
+"RenegadeOps.exe"+136B8A: 6A 00                          -  push 00
+"RenegadeOps.exe"+136B8C: 6A 00                          -  push 00
+"RenegadeOps.exe"+136B8E: 6A 00                          -  push 00
+"RenegadeOps.exe"+136B90: 6A 00                          -  push 00
+"RenegadeOps.exe"+136B92: 6A 00                          -  push 00
+"RenegadeOps.exe"+136B94: 6A 00                          -  push 00
+"RenegadeOps.exe"+136B96: 8D BE 50 01 00 00              -  lea edi,[esi+00000150]
+"RenegadeOps.exe"+136B9C: 57                             -  push edi
+"RenegadeOps.exe"+136B9D: 52                             -  push edx
+"RenegadeOps.exe"+136B9E: E8 7D 15 FB FF                 -  call RenegadeOps.exe+E8120
+// ---------- INJECTING HERE ----------
+"RenegadeOps.exe"+136BA3: D9 86 48 06 00 00              -  fld dword ptr [esi+00000648]
+// ---------- DONE INJECTING  ----------
+"RenegadeOps.exe"+136BA9: F3 0F 10 8E 64 06 00 00        -  movss xmm1,[esi+00000664]
+"RenegadeOps.exe"+136BB1: D9 9E 4C 06 00 00              -  fstp dword ptr [esi+0000064C]
+"RenegadeOps.exe"+136BB7: F3 0F 10 96 54 06 00 00        -  movss xmm2,[esi+00000654]
+"RenegadeOps.exe"+136BBF: 0F 57 C0                       -  xorps xmm0,xmm0
+"RenegadeOps.exe"+136BC2: F3 0F 59 8D 74 FF FF FF        -  mulss xmm1,[ebp-0000008C]
+"RenegadeOps.exe"+136BCA: F3 0F 58 95 6C FF FF FF        -  addss xmm2,[ebp-00000094]
+"RenegadeOps.exe"+136BD2: 8D 85 44 FF FF FF              -  lea eax,[ebp-000000BC]
+"RenegadeOps.exe"+136BD8: F3 0F 58 CA                    -  addss xmm1,xmm2
+"RenegadeOps.exe"+136BDC: 50                             -  push eax
+"RenegadeOps.exe"+136BDD: 8D 8E 40 06 00 00              -  lea ecx,[esi+00000640]
+}
+
+
+{ ##### AOB_Special_3 #####
+// ORIGINAL CODE - INJECTION POINT: "RenegadeOps.exe"+135C38
+"RenegadeOps.exe"+135C03: 8B 90 94 00 00 00              -  mov edx,[eax+00000094]
+"RenegadeOps.exe"+135C09: 8B CE                          -  mov ecx,esi
+"RenegadeOps.exe"+135C0B: FF D2                          -  call edx
+"RenegadeOps.exe"+135C0D: 0F 57 C0                       -  xorps xmm0,xmm0
+"RenegadeOps.exe"+135C10: C6 86 78 06 00 00 01           -  mov byte ptr [esi+00000678],01
+"RenegadeOps.exe"+135C17: F3 0F 11 86 C0 06 00 00        -  movss [esi+000006C0],xmm0
+"RenegadeOps.exe"+135C1F: 83 BE 74 06 00 00 02           -  cmp dword ptr [esi+00000674],02
+"RenegadeOps.exe"+135C26: 75 59                          -  jne RenegadeOps.exe+135C81
+"RenegadeOps.exe"+135C28: F3 0F 10 86 88 06 00 00        -  movss xmm0,[esi+00000688]
+"RenegadeOps.exe"+135C30: F3 0F 5C 86 8C 06 00 00        -  subss xmm0,[esi+0000068C]
+// ---------- INJECTING HERE ----------
+"RenegadeOps.exe"+135C38: F3 0F 10 8E 84 06 00 00        -  movss xmm1,[esi+00000684]
+// ---------- DONE INJECTING  ----------
+"RenegadeOps.exe"+135C40: 0F 2F C8                       -  comiss xmm1,xmm0
+"RenegadeOps.exe"+135C43: 72 3C                          -  jb RenegadeOps.exe+135C81
+"RenegadeOps.exe"+135C45: F3 0F 10 86 C0 06 00 00        -  movss xmm0,[esi+000006C0]
+"RenegadeOps.exe"+135C4D: F3 0F 58 45 08                 -  addss xmm0,[ebp+08]
+"RenegadeOps.exe"+135C52: 0F 2F 05 00 82 9C 00           -  comiss xmm0,[RenegadeOps.exe+5C8200]
+"RenegadeOps.exe"+135C59: F3 0F 11 86 C0 06 00 00        -  movss [esi+000006C0],xmm0
+"RenegadeOps.exe"+135C61: 76 1E                          -  jna RenegadeOps.exe+135C81
+"RenegadeOps.exe"+135C63: EB 10                          -  jmp RenegadeOps.exe+135C75
+"RenegadeOps.exe"+135C65: 83 BE 74 06 00 00 02           -  cmp dword ptr [esi+00000674],02
+"RenegadeOps.exe"+135C6C: C6 86 78 06 00 00 00           -  mov byte ptr [esi+00000678],00
+}
+
+
+{ ##### AOB_Special_4 #####
+// ORIGINAL CODE - INJECTION POINT: "RenegadeOps.exe"+14BBAC
+"RenegadeOps.exe"+14BB74: 8B F1                          -  mov esi,ecx
+"RenegadeOps.exe"+14BB76: 83 BE 4C 02 00 00 FF           -  cmp dword ptr [esi+0000024C],-01
+"RenegadeOps.exe"+14BB7D: 0F 84 0C 07 00 00              -  je RenegadeOps.exe+14C28F
+"RenegadeOps.exe"+14BB83: B8 08 00 00 00                 -  mov eax,00000008
+"RenegadeOps.exe"+14BB88: 09 86 BC 03 00 00              -  or [esi+000003BC],eax
+"RenegadeOps.exe"+14BB8E: 09 86 C0 03 00 00              -  or [esi+000003C0],eax
+"RenegadeOps.exe"+14BB94: 09 86 C4 03 00 00              -  or [esi+000003C4],eax
+"RenegadeOps.exe"+14BB9A: 09 86 C8 03 00 00              -  or [esi+000003C8],eax
+"RenegadeOps.exe"+14BBA0: D9 86 48 06 00 00              -  fld dword ptr [esi+00000648]
+"RenegadeOps.exe"+14BBA6: 8B 86 4C 02 00 00              -  mov eax,[esi+0000024C]
+// ---------- INJECTING HERE ----------
+"RenegadeOps.exe"+14BBAC: D9 9E 4C 06 00 00              -  fstp dword ptr [esi+0000064C]
+// ---------- DONE INJECTING  ----------
+"RenegadeOps.exe"+14BBB2: 53                             -  push ebx
+"RenegadeOps.exe"+14BBB3: 8D 8D 58 FF FF FF              -  lea ecx,[ebp-000000A8]
+"RenegadeOps.exe"+14BBB9: 51                             -  push ecx
+"RenegadeOps.exe"+14BBBA: 33 DB                          -  xor ebx,ebx
+"RenegadeOps.exe"+14BBBC: 8D 8E 40 06 00 00              -  lea ecx,[esi+00000640]
+"RenegadeOps.exe"+14BBC2: 89 9D 58 FF FF FF              -  mov [ebp-000000A8],ebx
+"RenegadeOps.exe"+14BBC8: 89 85 5C FF FF FF              -  mov [ebp-000000A4],eax
+"RenegadeOps.exe"+14BBCE: E8 2D 25 00 00                 -  call RenegadeOps.exe+14E100
+"RenegadeOps.exe"+14BBD3: 8B 8E 00 01 00 00              -  mov ecx,[esi+00000100]
+"RenegadeOps.exe"+14BBD9: 3B CB                          -  cmp ecx,ebx
+}
+
+
+{ ##### AOB_Special_5 #####
+// ORIGINAL CODE - INJECTION POINT: "RenegadeOps.exe"+14B0D2
+"RenegadeOps.exe"+14B0A3: 8B 87 4C 02 00 00        -  mov eax,[edi+0000024C]
+"RenegadeOps.exe"+14B0A9: 8D 4D F0                 -  lea ecx,[ebp-10]
+"RenegadeOps.exe"+14B0AC: 51                       -  push ecx
+"RenegadeOps.exe"+14B0AD: 8D 8F 40 06 00 00        -  lea ecx,[edi+00000640]
+"RenegadeOps.exe"+14B0B3: C7 45 F0 00 00 00 00     -  mov [ebp-10],00000000
+"RenegadeOps.exe"+14B0BA: 89 45 F4                 -  mov [ebp-0C],eax
+"RenegadeOps.exe"+14B0BD: C6 87 4C 06 00 00 01     -  mov byte ptr [edi+0000064C],01
+"RenegadeOps.exe"+14B0C4: E8 37 30 00 00           -  call RenegadeOps.exe+14E100
+"RenegadeOps.exe"+14B0C9: D9 87 58 06 00 00        -  fld dword ptr [edi+00000658]
+"RenegadeOps.exe"+14B0CF: 0F 57 C0                 -  xorps xmm0,xmm0
+// ---------- INJECTING HERE ----------
+"RenegadeOps.exe"+14B0D2: D9 9F 5C 06 00 00        -  fstp dword ptr [edi+0000065C]
+// ---------- DONE INJECTING  ----------
+"RenegadeOps.exe"+14B0D8: D9 87 70 06 00 00        -  fld dword ptr [edi+00000670]
+"RenegadeOps.exe"+14B0DE: F3 0F 11 87 54 06 00 00  -  movss [edi+00000654],xmm0
+"RenegadeOps.exe"+14B0E6: D9 9F 64 06 00 00        -  fstp dword ptr [edi+00000664]
+"RenegadeOps.exe"+14B0EC: 8B 8F 00 01 00 00        -  mov ecx,[edi+00000100]
+"RenegadeOps.exe"+14B0F2: 85 C9                    -  test ecx,ecx
+"RenegadeOps.exe"+14B0F4: 74 10                    -  je RenegadeOps.exe+14B106
+"RenegadeOps.exe"+14B0F6: 8B 11                    -  mov edx,[ecx]
+"RenegadeOps.exe"+14B0F8: 8B 52 38                 -  mov edx,[edx+38]
+"RenegadeOps.exe"+14B0FB: 6A 01                    -  push 01
+"RenegadeOps.exe"+14B0FD: 8D 87 50 01 00 00        -  lea eax,[edi+00000150]
+}
+
+
+{ ##### AOB_Special_6 #####
+// ORIGINAL CODE - INJECTION POINT: "RenegadeOps.exe"+13C4A2
+"RenegadeOps.exe"+13C46A: 8B F1                          -  mov esi,ecx
+"RenegadeOps.exe"+13C46C: 83 BE 4C 02 00 00 FF           -  cmp dword ptr [esi+0000024C],-01
+"RenegadeOps.exe"+13C473: 0F 84 A2 02 00 00              -  je RenegadeOps.exe+13C71B
+"RenegadeOps.exe"+13C479: B8 08 00 00 00                 -  mov eax,00000008
+"RenegadeOps.exe"+13C47E: 09 86 BC 03 00 00              -  or [esi+000003BC],eax
+"RenegadeOps.exe"+13C484: 09 86 C0 03 00 00              -  or [esi+000003C0],eax
+"RenegadeOps.exe"+13C48A: 09 86 C4 03 00 00              -  or [esi+000003C4],eax
+"RenegadeOps.exe"+13C490: 09 86 C8 03 00 00              -  or [esi+000003C8],eax
+"RenegadeOps.exe"+13C496: D9 86 58 06 00 00              -  fld dword ptr [esi+00000658]
+"RenegadeOps.exe"+13C49C: 8B 86 4C 02 00 00              -  mov eax,[esi+0000024C]
+// ---------- INJECTING HERE ----------
+"RenegadeOps.exe"+13C4A2: D9 9E 5C 06 00 00              -  fstp dword ptr [esi+0000065C]
+// ---------- DONE INJECTING  ----------
+"RenegadeOps.exe"+13C4A8: 53                             -  push ebx
+"RenegadeOps.exe"+13C4A9: 8D 4D F0                       -  lea ecx,[ebp-10]
+"RenegadeOps.exe"+13C4AC: 51                             -  push ecx
+"RenegadeOps.exe"+13C4AD: 33 DB                          -  xor ebx,ebx
+"RenegadeOps.exe"+13C4AF: 8D 8E 40 06 00 00              -  lea ecx,[esi+00000640]
+"RenegadeOps.exe"+13C4B5: 89 5D F0                       -  mov [ebp-10],ebx
+"RenegadeOps.exe"+13C4B8: 89 45 F4                       -  mov [ebp-0C],eax
+"RenegadeOps.exe"+13C4BB: E8 40 1C 01 00                 -  call RenegadeOps.exe+14E100
+"RenegadeOps.exe"+13C4C0: 8D 55 F0                       -  lea edx,[ebp-10]
+"RenegadeOps.exe"+13C4C3: 52                             -  push edx
+}
+
+
+{ ##### AOB_ObjectiveTime #####
+// ORIGINAL CODE - INJECTION POINT: "RenegadeOps.exe"+B4642
+"RenegadeOps.exe"+B461C: 8B CF                          -  mov ecx,edi
+"RenegadeOps.exe"+B461E: E8 7D 2A 25 00                 -  call RenegadeOps.exe+3070A0
+"RenegadeOps.exe"+B4623: 85 C0                          -  test eax,eax
+"RenegadeOps.exe"+B4625: 74 0B                          -  je RenegadeOps.exe+B4632
+"RenegadeOps.exe"+B4627: 8B CF                          -  mov ecx,edi
+"RenegadeOps.exe"+B4629: E8 A2 A9 3B 00                 -  call RenegadeOps.exe+46EFD0
+"RenegadeOps.exe"+B462E: 84 C0                          -  test al,al
+"RenegadeOps.exe"+B4630: 74 18                          -  je RenegadeOps.exe+B464A
+"RenegadeOps.exe"+B4632: F3 0F 10 83 80 00 00 00        -  movss xmm0,[ebx+00000080]
+"RenegadeOps.exe"+B463A: F3 0F 58 86 C4 02 00 00        -  addss xmm0,[esi+000002C4]
+// ---------- INJECTING HERE ----------
+"RenegadeOps.exe"+B4642: F3 0F 11 86 C4 02 00 00        -  movss [esi+000002C4],xmm0
+// ---------- DONE INJECTING  ----------
+"RenegadeOps.exe"+B464A: 8B 86 C0 02 00 00              -  mov eax,[esi+000002C0]
+"RenegadeOps.exe"+B4650: 48                             -  dec eax
+"RenegadeOps.exe"+B4651: 83 F8 04                       -  cmp eax,04
+"RenegadeOps.exe"+B4654: 0F 87 82 00 00 00              -  ja RenegadeOps.exe+B46DC
+"RenegadeOps.exe"+B465A: FF 24 85 7C 47 4B 00           -  jmp dword ptr [eax*4+RenegadeOps.exe+B477C]
+"RenegadeOps.exe"+B4661: F3 0F 10 83 80 00 00 00        -  movss xmm0,[ebx+00000080]
+"RenegadeOps.exe"+B4669: F3 0F 58 86 CC 02 00 00        -  addss xmm0,[esi+000002CC]
+"RenegadeOps.exe"+B4671: 0F 2F 86 C8 02 00 00           -  comiss xmm0,[esi+000002C8]
+"RenegadeOps.exe"+B4678: F3 0F 11 86 CC 02 00 00        -  movss [esi+000002CC],xmm0
+"RenegadeOps.exe"+B4680: 0F 86 D5 00 00 00              -  jbe RenegadeOps.exe+B475B
+}
+
+
+{ ##### AOB_SessionTime #####
+// ORIGINAL CODE - INJECTION POINT: "RenegadeOps.exe"+99E35
+"RenegadeOps.exe"+99E11: 74 0B                    -  je RenegadeOps.exe+99E1E
+"RenegadeOps.exe"+99E13: 8B CE                    -  mov ecx,esi
+"RenegadeOps.exe"+99E15: E8 B6 51 3D 00           -  call RenegadeOps.exe+46EFD0
+"RenegadeOps.exe"+99E1A: 84 C0                    -  test al,al
+"RenegadeOps.exe"+99E1C: 74 31                    -  je RenegadeOps.exe+99E4F
+"RenegadeOps.exe"+99E1E: 80 BF 90 00 00 00 00     -  cmp byte ptr [edi+00000090],00
+"RenegadeOps.exe"+99E25: F3 0F 10 45 08           -  movss xmm0,[ebp+08]
+"RenegadeOps.exe"+99E2A: 75 0E                    -  jne RenegadeOps.exe+99E3A
+"RenegadeOps.exe"+99E2C: F3 0F 10 4F 7C           -  movss xmm1,[edi+7C]
+"RenegadeOps.exe"+99E31: F3 0F 58 C8              -  addss xmm1,xmm0
+// ---------- INJECTING HERE ----------
+"RenegadeOps.exe"+99E35: F3 0F 11 4F 7C           -  movss [edi+7C],xmm1
+// ---------- DONE INJECTING  ----------
+"RenegadeOps.exe"+99E3A: 51                       -  push ecx
+"RenegadeOps.exe"+99E3B: 8B CF                    -  mov ecx,edi
+"RenegadeOps.exe"+99E3D: F3 0F 11 87 80 00 00 00  -  movss [edi+00000080],xmm0
+"RenegadeOps.exe"+99E45: F3 0F 11 04 24           -  movss [esp],xmm0
+"RenegadeOps.exe"+99E4A: E8 F1 FE FF FF           -  call RenegadeOps.exe+99D40
+"RenegadeOps.exe"+99E4F: 5F                       -  pop edi
+"RenegadeOps.exe"+99E50: 5E                       -  pop esi
+"RenegadeOps.exe"+99E51: 5D                       -  pop ebp
+"RenegadeOps.exe"+99E52: C2 04 00                 -  ret 0004
+"RenegadeOps.exe"+99E55: CC                       -  int 3
+}
+
+
+{ ##### AOB_DamageStreak #####
+// ORIGINAL CODE - INJECTION POINT: "RenegadeOps.exe"+C5B8D
+"RenegadeOps.exe"+C5B6E: 8B CF                 -  mov ecx,edi
+"RenegadeOps.exe"+C5B70: FF D0                 -  call eax
+"RenegadeOps.exe"+C5B72: 80 7D CB 00           -  cmp byte ptr [ebp-35],00
+"RenegadeOps.exe"+C5B76: 0F 57 C9              -  xorps xmm1,xmm1
+"RenegadeOps.exe"+C5B79: 74 17                 -  je RenegadeOps.exe+C5B92
+"RenegadeOps.exe"+C5B7B: F3 0F 10 46 40        -  movss xmm0,[esi+40]
+"RenegadeOps.exe"+C5B80: F3 0F 5C 43 08        -  subss xmm0,[ebx+08]
+"RenegadeOps.exe"+C5B85: 0F 2F C1              -  comiss xmm0,xmm1
+"RenegadeOps.exe"+C5B88: 73 03                 -  jae RenegadeOps.exe+C5B8D
+"RenegadeOps.exe"+C5B8A: 0F 28 C1              -  movaps xmm0,xmm1
+// ---------- INJECTING HERE ----------
+"RenegadeOps.exe"+C5B8D: F3 0F 11 46 40        -  movss [esi+40],xmm0
+// ---------- DONE INJECTING  ----------
+"RenegadeOps.exe"+C5B92: 8B 0D 38 B4 C2 00     -  mov ecx,[RenegadeOps.exe+82B438]
+"RenegadeOps.exe"+C5B98: 83 B9 94 00 00 00 04  -  cmp dword ptr [ecx+00000094],04
+"RenegadeOps.exe"+C5B9F: 75 05                 -  jne RenegadeOps.exe+C5BA6
+"RenegadeOps.exe"+C5BA1: F3 0F 11 4E 40        -  movss [esi+40],xmm1
+"RenegadeOps.exe"+C5BA6: 8B 4E 04              -  mov ecx,[esi+04]
+"RenegadeOps.exe"+C5BA9: 80 79 5C 00           -  cmp byte ptr [ecx+5C],00
+"RenegadeOps.exe"+C5BAD: 74 77                 -  je RenegadeOps.exe+C5C26
+"RenegadeOps.exe"+C5BAF: F3 0F 10 46 40        -  movss xmm0,[esi+40]
+"RenegadeOps.exe"+C5BB4: F3 0F 5E 46 28        -  divss xmm0,[esi+28]
+"RenegadeOps.exe"+C5BB9: F3 0F 11 45 E0        -  movss [ebp-20],xmm0
+}
+
+
+
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>702</ID>
+          <Description>"+ Globals"</Description>
+          <Options moHideChildren="1" moDeactivateChildrenAsWell="1"/>
+          <LastState Value="" RealAddress="00000000"/>
+          <Color>FF0000</Color>
+          <GroupHeader>1</GroupHeader>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>229</ID>
+              <Description>"pLives"</Description>
+              <ShowAsHex>1</ShowAsHex>
+              <Color>008000</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pLives</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>3</ID>
+              <Description>"pHealth"</Description>
+              <ShowAsHex>1</ShowAsHex>
+              <Color>008000</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pHealth</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>528</ID>
+              <Description>"pAmmo"</Description>
+              <ShowAsHex>1</ShowAsHex>
+              <Color>008000</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pAmmo</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>632</ID>
+              <Description>"pCooldown"</Description>
+              <ShowAsHex>1</ShowAsHex>
+              <Color>008000</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pCooldown</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>529</ID>
+              <Description>"pUpgrade"</Description>
+              <ShowAsHex>1</ShowAsHex>
+              <Color>008000</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pUpgrade</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>631</ID>
+              <Description>"pScore"</Description>
+              <ShowAsHex>1</ShowAsHex>
+              <Color>008000</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pScore</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>633</ID>
+              <Description>"pObjectiveTime"</Description>
+              <ShowAsHex>1</ShowAsHex>
+              <Color>008000</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pObjectiveTime</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>634</ID>
+              <Description>"pSessionTime"</Description>
+              <ShowAsHex>1</ShowAsHex>
+              <Color>008000</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pSessionTime</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>718</ID>
+              <Description>"pDamageStreak"</Description>
+              <ShowAsHex>1</ShowAsHex>
+              <Color>008000</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pDamageStreak</Address>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>8</ID>
+          <Description>"+ Cheats"</Description>
+          <Options moHideChildren="1" moDeactivateChildrenAsWell="1"/>
+          <LastState Value="" RealAddress="00000000"/>
+          <Color>FF0000</Color>
+          <GroupHeader>1</GroupHeader>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>9</ID>
+              <Description>"Unlimited Lives"</Description>
+              <DropDownList ReadOnly="1" DescriptionOnly="1" DisplayValueAsItem="1">0:DISABLE
+1:ENABLE
+</DropDownList>
+              <Color>FF00FF</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pUnlimitedLives</Address>
+              <Hotkeys>
+                <Hotkey>
+                  <Action>Set Value</Action>
+                  <Keys>
+                    <Key>96</Key>
+                  </Keys>
+                  <Value>0</Value>
+                  <Description>Disable All</Description>
+                  <ID>0</ID>
+                </Hotkey>
+                <Hotkey>
+                  <Action>Set Value</Action>
+                  <Keys>
+                    <Key>110</Key>
+                  </Keys>
+                  <Value>1</Value>
+                  <Description>Enable All</Description>
+                  <ID>1</ID>
+                </Hotkey>
+              </Hotkeys>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>12</ID>
+              <Description>"Unlimited Health"</Description>
+              <DropDownList ReadOnly="1" DescriptionOnly="1" DisplayValueAsItem="1">0:DISABLE
+1:ENABLE
+</DropDownList>
+              <Color>FF00FF</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pUnlimitedHealth</Address>
+              <Hotkeys>
+                <Hotkey>
+                  <Action>Set Value</Action>
+                  <Keys>
+                    <Key>96</Key>
+                  </Keys>
+                  <Value>0</Value>
+                  <Description>Disable All</Description>
+                  <ID>0</ID>
+                </Hotkey>
+                <Hotkey>
+                  <Action>Set Value</Action>
+                  <Keys>
+                    <Key>110</Key>
+                  </Keys>
+                  <Value>1</Value>
+                  <Description>Enable All</Description>
+                  <ID>1</ID>
+                </Hotkey>
+              </Hotkeys>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>10</ID>
+              <Description>"Unlimited Ammo"</Description>
+              <DropDownList ReadOnly="1" DescriptionOnly="1" DisplayValueAsItem="1">0:DISABLE
+1:ENABLE
+</DropDownList>
+              <Color>FF00FF</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pUnlimitedAmmo</Address>
+              <Hotkeys>
+                <Hotkey>
+                  <Action>Set Value</Action>
+                  <Keys>
+                    <Key>96</Key>
+                  </Keys>
+                  <Value>0</Value>
+                  <Description>Disable All</Description>
+                  <ID>0</ID>
+                </Hotkey>
+                <Hotkey>
+                  <Action>Set Value</Action>
+                  <Keys>
+                    <Key>110</Key>
+                  </Keys>
+                  <Value>1</Value>
+                  <Description>Enable All</Description>
+                  <ID>1</ID>
+                </Hotkey>
+              </Hotkeys>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>388</ID>
+              <Description>"No Cooldowns"</Description>
+              <DropDownList ReadOnly="1" DescriptionOnly="1" DisplayValueAsItem="1">0:DISABLE
+1:ENABLE
+</DropDownList>
+              <Color>FF00FF</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pNoCooldown</Address>
+              <Hotkeys>
+                <Hotkey>
+                  <Action>Set Value</Action>
+                  <Keys>
+                    <Key>96</Key>
+                  </Keys>
+                  <Value>0</Value>
+                  <Description>Disable All</Description>
+                  <ID>0</ID>
+                </Hotkey>
+                <Hotkey>
+                  <Action>Set Value</Action>
+                  <Keys>
+                    <Key>110</Key>
+                  </Keys>
+                  <Value>1</Value>
+                  <Description>Enable All</Description>
+                  <ID>1</ID>
+                </Hotkey>
+              </Hotkeys>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>228</ID>
+              <Description>"Super Weapons"</Description>
+              <DropDownList ReadOnly="1" DescriptionOnly="1" DisplayValueAsItem="1">0:DISABLE
+1:ENABLE
+</DropDownList>
+              <Color>FF00FF</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pSuperWeapons</Address>
+              <Hotkeys>
+                <Hotkey>
+                  <Action>Set Value</Action>
+                  <Keys>
+                    <Key>96</Key>
+                  </Keys>
+                  <Value>0</Value>
+                  <Description>Disable All</Description>
+                  <ID>0</ID>
+                </Hotkey>
+                <Hotkey>
+                  <Action>Set Value</Action>
+                  <Keys>
+                    <Key>110</Key>
+                  </Keys>
+                  <Value>1</Value>
+                  <Description>Enable All</Description>
+                  <ID>1</ID>
+                </Hotkey>
+              </Hotkeys>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>11</ID>
+              <Description>"Fast Score"</Description>
+              <DropDownList ReadOnly="1" DescriptionOnly="1" DisplayValueAsItem="1">0:DISABLE
+1:ENABLE
+</DropDownList>
+              <Color>FF00FF</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pFastScore</Address>
+              <Hotkeys>
+                <Hotkey>
+                  <Action>Set Value</Action>
+                  <Keys>
+                    <Key>96</Key>
+                  </Keys>
+                  <Value>0</Value>
+                  <Description>Disable All</Description>
+                  <ID>2</ID>
+                </Hotkey>
+                <Hotkey>
+                  <Action>Set Value</Action>
+                  <Keys>
+                    <Key>110</Key>
+                  </Keys>
+                  <Value>1</Value>
+                  <Description>Enable All</Description>
+                  <ID>3</ID>
+                </Hotkey>
+              </Hotkeys>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>13</ID>
+              <Description>"One Hit Kills"</Description>
+              <DropDownList ReadOnly="1" DescriptionOnly="1" DisplayValueAsItem="1">0:DISABLE
+1:ENABLE
+</DropDownList>
+              <Color>FF00FF</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pOneHitKill</Address>
+              <Hotkeys>
+                <Hotkey>
+                  <Action>Set Value</Action>
+                  <Keys>
+                    <Key>100</Key>
+                  </Keys>
+                  <Value>0</Value>
+                  <Description>One Hit Kills -&gt; Disable</Description>
+                  <ID>0</ID>
+                  <ActivateSound>Deactivate</ActivateSound>
+                  <DeactivateSound>Deactivate</DeactivateSound>
+                </Hotkey>
+                <Hotkey>
+                  <Action>Set Value</Action>
+                  <Keys>
+                    <Key>101</Key>
+                  </Keys>
+                  <Value>1</Value>
+                  <Description>One Hit Kills -&gt; Enable</Description>
+                  <ID>1</ID>
+                  <ActivateSound>Activate</ActivateSound>
+                </Hotkey>
+                <Hotkey>
+                  <Action>Set Value</Action>
+                  <Keys>
+                    <Key>96</Key>
+                  </Keys>
+                  <Value>0</Value>
+                  <Description>Disable All</Description>
+                  <ID>2</ID>
+                </Hotkey>
+                <Hotkey>
+                  <Action>Set Value</Action>
+                  <Keys>
+                    <Key>110</Key>
+                  </Keys>
+                  <Value>1</Value>
+                  <Description>Enable All</Description>
+                  <ID>3</ID>
+                </Hotkey>
+              </Hotkeys>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>395</ID>
+              <Description>"Freeze Game Time"</Description>
+              <DropDownList ReadOnly="1" DescriptionOnly="1" DisplayValueAsItem="1">0:DISABLE
+1:ENABLE
+</DropDownList>
+              <Color>FF00FF</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pFreezeTime</Address>
+              <Hotkeys>
+                <Hotkey>
+                  <Action>Set Value</Action>
+                  <Keys>
+                    <Key>97</Key>
+                  </Keys>
+                  <Value>0</Value>
+                  <Description>Freeze Timer -&gt; Disable</Description>
+                  <ID>0</ID>
+                  <ActivateSound>Deactivate</ActivateSound>
+                </Hotkey>
+                <Hotkey>
+                  <Action>Set Value</Action>
+                  <Keys>
+                    <Key>98</Key>
+                  </Keys>
+                  <Value>1</Value>
+                  <Description>Freeze Timer -&gt; Enable</Description>
+                  <ID>1</ID>
+                  <ActivateSound>Activate</ActivateSound>
+                </Hotkey>
+                <Hotkey>
+                  <Action>Set Value</Action>
+                  <Keys>
+                    <Key>96</Key>
+                  </Keys>
+                  <Value>0</Value>
+                  <Description>Disable All</Description>
+                  <ID>2</ID>
+                </Hotkey>
+                <Hotkey>
+                  <Action>Set Value</Action>
+                  <Keys>
+                    <Key>110</Key>
+                  </Keys>
+                  <Value>1</Value>
+                  <Description>Enable All</Description>
+                  <ID>3</ID>
+                </Hotkey>
+              </Hotkeys>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>717</ID>
+              <Description>"Freeze Damage Streak"</Description>
+              <DropDownList ReadOnly="1" DescriptionOnly="1" DisplayValueAsItem="1">0:DISABLE
+1:ENABLE
+</DropDownList>
+              <Color>FF00FF</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pFreezeDamageStreak</Address>
+              <Hotkeys>
+                <Hotkey>
+                  <Action>Set Value</Action>
+                  <Keys>
+                    <Key>96</Key>
+                  </Keys>
+                  <Value>0</Value>
+                  <Description>Disable All</Description>
+                  <ID>2</ID>
+                </Hotkey>
+                <Hotkey>
+                  <Action>Set Value</Action>
+                  <Keys>
+                    <Key>110</Key>
+                  </Keys>
+                  <Value>1</Value>
+                  <Description>Enable All</Description>
+                  <ID>3</ID>
+                </Hotkey>
+                <Hotkey>
+                  <Action>Set Value</Action>
+                  <Keys>
+                    <Key>100</Key>
+                  </Keys>
+                  <Value>0</Value>
+                  <Description>Freeze Dame Streak -&gt; Disable</Description>
+                  <ID>0</ID>
+                </Hotkey>
+                <Hotkey>
+                  <Action>Set Value</Action>
+                  <Keys>
+                    <Key>101</Key>
+                  </Keys>
+                  <Value>1</Value>
+                  <Description>Freeze Dame Streak -&gt; Enable</Description>
+                  <ID>1</ID>
+                </Hotkey>
+              </Hotkeys>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>7</ID>
+          <Description>"+ Structs"</Description>
+          <Options moHideChildren="1" moDeactivateChildrenAsWell="1"/>
+          <LastState Value="" RealAddress="00000000"/>
+          <Color>FF0000</Color>
+          <GroupHeader>1</GroupHeader>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>125</ID>
+              <Description>"+ pScore"</Description>
+              <Options moHideChildren="1" moDeactivateChildrenAsWell="1"/>
+              <LastState Value="" RealAddress="00000000"/>
+              <Color>008000</Color>
+              <GroupHeader>1</GroupHeader>
+              <CheatEntries>
+                <CheatEntry>
+                  <ID>95</ID>
+                  <Description>"Pointer to Health (?)"</Description>
+                  <ShowAsHex>1</ShowAsHex>
+                  <Color>00FF00</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pScore</Address>
+                  <Offsets>
+                    <Offset>18</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>91</ID>
+                  <Description>"Character Index"</Description>
+                  <ShowAsSigned>1</ShowAsSigned>
+                  <Color>0000FF</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pScore</Address>
+                  <Offsets>
+                    <Offset>28</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>90</ID>
+                  <Description>"Player Name"</Description>
+                  <Color>0000FF</Color>
+                  <VariableType>String</VariableType>
+                  <Length>32</Length>
+                  <Unicode>0</Unicode>
+                  <ZeroTerminate>1</ZeroTerminate>
+                  <Address>pScore</Address>
+                  <Offsets>
+                    <Offset>2C</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>82</ID>
+                  <Description>"Health (percentage)"</Description>
+                  <ShowAsSigned>0</ShowAsSigned>
+                  <Color>0000FF</Color>
+                  <VariableType>Float</VariableType>
+                  <Address>pScore</Address>
+                  <Offsets>
+                    <Offset>4C</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>78</ID>
+                  <Description>"Lives (current)"</Description>
+                  <ShowAsSigned>1</ShowAsSigned>
+                  <Color>0000FF</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pScore</Address>
+                  <Offsets>
+                    <Offset>50</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>79</ID>
+                  <Description>"Lives (initial)"</Description>
+                  <ShowAsSigned>1</ShowAsSigned>
+                  <Color>0000FF</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pScore</Address>
+                  <Offsets>
+                    <Offset>54</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>101</ID>
+                  <Description>"Deaths"</Description>
+                  <ShowAsSigned>1</ShowAsSigned>
+                  <Color>0000FF</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pScore</Address>
+                  <Offsets>
+                    <Offset>58</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>102</ID>
+                  <Description>"No description"</Description>
+                  <ShowAsSigned>0</ShowAsSigned>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pScore</Address>
+                  <Offsets>
+                    <Offset>5C</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>103</ID>
+                  <Description>"Cargo Count"</Description>
+                  <ShowAsSigned>1</ShowAsSigned>
+                  <Color>0000FF</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pScore</Address>
+                  <Offsets>
+                    <Offset>60</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>104</ID>
+                  <Description>"No description"</Description>
+                  <ShowAsHex>1</ShowAsHex>
+                  <ShowAsSigned>1</ShowAsSigned>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pScore</Address>
+                  <Offsets>
+                    <Offset>64</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>105</ID>
+                  <Description>"No description"</Description>
+                  <ShowAsHex>1</ShowAsHex>
+                  <ShowAsSigned>0</ShowAsSigned>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pScore</Address>
+                  <Offsets>
+                    <Offset>68</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>80</ID>
+                  <Description>"Score"</Description>
+                  <ShowAsSigned>1</ShowAsSigned>
+                  <Color>0000FF</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pScore</Address>
+                  <Offsets>
+                    <Offset>6C</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>106</ID>
+                  <Description>"Score (?)"</Description>
+                  <ShowAsSigned>1</ShowAsSigned>
+                  <Color>0000FF</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pScore</Address>
+                  <Offsets>
+                    <Offset>70</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>107</ID>
+                  <Description>"Score (?)"</Description>
+                  <ShowAsSigned>1</ShowAsSigned>
+                  <Color>0000FF</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pScore</Address>
+                  <Offsets>
+                    <Offset>74</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>108</ID>
+                  <Description>"Score (?)"</Description>
+                  <ShowAsSigned>1</ShowAsSigned>
+                  <Color>0000FF</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pScore</Address>
+                  <Offsets>
+                    <Offset>78</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>109</ID>
+                  <Description>"No description"</Description>
+                  <ShowAsSigned>1</ShowAsSigned>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pScore</Address>
+                  <Offsets>
+                    <Offset>7C</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>110</ID>
+                  <Description>"Health Collected (?)"</Description>
+                  <ShowAsSigned>1</ShowAsSigned>
+                  <Color>0000FF</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pScore</Address>
+                  <Offsets>
+                    <Offset>80</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>111</ID>
+                  <Description>"Best Damage Streak"</Description>
+                  <ShowAsSigned>1</ShowAsSigned>
+                  <Color>0000FF</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pScore</Address>
+                  <Offsets>
+                    <Offset>84</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>112</ID>
+                  <Description>"No description"</Description>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pScore</Address>
+                  <Offsets>
+                    <Offset>88</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>113</ID>
+                  <Description>"No description"</Description>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pScore</Address>
+                  <Offsets>
+                    <Offset>8C</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>114</ID>
+                  <Description>"Upgrade Points (total)"</Description>
+                  <ShowAsSigned>1</ShowAsSigned>
+                  <Color>0000FF</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pScore</Address>
+                  <Offsets>
+                    <Offset>90</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>115</ID>
+                  <Description>"Upgrade Points (earned this session)"</Description>
+                  <ShowAsSigned>1</ShowAsSigned>
+                  <Color>0000FF</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pScore</Address>
+                  <Offsets>
+                    <Offset>94</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>116</ID>
+                  <Description>"Level"</Description>
+                  <ShowAsSigned>1</ShowAsSigned>
+                  <Color>0000FF</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pScore</Address>
+                  <Offsets>
+                    <Offset>98</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>117</ID>
+                  <Description>"Level (percentage)"</Description>
+                  <Color>0000FF</Color>
+                  <VariableType>Float</VariableType>
+                  <Address>pScore</Address>
+                  <Offsets>
+                    <Offset>9C</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>118</ID>
+                  <Description>"No description"</Description>
+                  <VariableType>Float</VariableType>
+                  <Address>pScore</Address>
+                  <Offsets>
+                    <Offset>A0</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>119</ID>
+                  <Description>"Pointer to Objective Time (?)"</Description>
+                  <ShowAsHex>1</ShowAsHex>
+                  <Color>00FF00</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pScore</Address>
+                  <Offsets>
+                    <Offset>A4</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>122</ID>
+                  <Description>"Pointer to Damage Streak (?)"</Description>
+                  <ShowAsHex>1</ShowAsHex>
+                  <Color>00FF00</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pScore</Address>
+                  <Offsets>
+                    <Offset>B0</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>127</ID>
+                  <Description>"No description"</Description>
+                  <ShowAsSigned>1</ShowAsSigned>
+                  <Color>000000</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pScore</Address>
+                  <Offsets>
+                    <Offset>B4</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>128</ID>
+                  <Description>"Counter (?)"</Description>
+                  <Color>0000FF</Color>
+                  <VariableType>Float</VariableType>
+                  <Address>pScore</Address>
+                  <Offsets>
+                    <Offset>B8</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>129</ID>
+                  <Description>"Counter (?)"</Description>
+                  <Color>0000FF</Color>
+                  <VariableType>Float</VariableType>
+                  <Address>pScore</Address>
+                  <Offsets>
+                    <Offset>BC</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>130</ID>
+                  <Description>"Counter (?)"</Description>
+                  <Color>0000FF</Color>
+                  <VariableType>Float</VariableType>
+                  <Address>pScore</Address>
+                  <Offsets>
+                    <Offset>C0</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>131</ID>
+                  <Description>"No description"</Description>
+                  <ShowAsHex>1</ShowAsHex>
+                  <ShowAsSigned>1</ShowAsSigned>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pScore</Address>
+                  <Offsets>
+                    <Offset>C4</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>132</ID>
+                  <Description>"Counter (?)"</Description>
+                  <ShowAsSigned>1</ShowAsSigned>
+                  <Color>0000FF</Color>
+                  <VariableType>Float</VariableType>
+                  <Address>pScore</Address>
+                  <Offsets>
+                    <Offset>C8</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>133</ID>
+                  <Description>"Counter (?)"</Description>
+                  <Color>0000FF</Color>
+                  <VariableType>Float</VariableType>
+                  <Address>pScore</Address>
+                  <Offsets>
+                    <Offset>CC</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>134</ID>
+                  <Description>"Counter (?)"</Description>
+                  <ShowAsSigned>1</ShowAsSigned>
+                  <Color>0000FF</Color>
+                  <VariableType>Float</VariableType>
+                  <Address>pScore</Address>
+                  <Offsets>
+                    <Offset>D0</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>135</ID>
+                  <Description>"No description"</Description>
+                  <ShowAsHex>1</ShowAsHex>
+                  <ShowAsSigned>1</ShowAsSigned>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pScore</Address>
+                  <Offsets>
+                    <Offset>D4</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>136</ID>
+                  <Description>"Counter (?)"</Description>
+                  <Color>0000FF</Color>
+                  <VariableType>Float</VariableType>
+                  <Address>pScore</Address>
+                  <Offsets>
+                    <Offset>D8</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>137</ID>
+                  <Description>"Counter (?)"</Description>
+                  <Color>0000FF</Color>
+                  <VariableType>Float</VariableType>
+                  <Address>pScore</Address>
+                  <Offsets>
+                    <Offset>DC</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>138</ID>
+                  <Description>"Counter (?)"</Description>
+                  <Color>0000FF</Color>
+                  <VariableType>Float</VariableType>
+                  <Address>pScore</Address>
+                  <Offsets>
+                    <Offset>E0</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>139</ID>
+                  <Description>"No description"</Description>
+                  <ShowAsHex>1</ShowAsHex>
+                  <ShowAsSigned>1</ShowAsSigned>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pScore</Address>
+                  <Offsets>
+                    <Offset>E4</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>140</ID>
+                  <Description>"No description"</Description>
+                  <Color>0000FF</Color>
+                  <VariableType>Float</VariableType>
+                  <Address>pScore</Address>
+                  <Offsets>
+                    <Offset>E8</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>141</ID>
+                  <Description>"No description"</Description>
+                  <Color>0000FF</Color>
+                  <VariableType>Float</VariableType>
+                  <Address>pScore</Address>
+                  <Offsets>
+                    <Offset>EC</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>142</ID>
+                  <Description>"No description"</Description>
+                  <Color>0000FF</Color>
+                  <VariableType>Float</VariableType>
+                  <Address>pScore</Address>
+                  <Offsets>
+                    <Offset>F0</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>143</ID>
+                  <Description>"No description"</Description>
+                  <ShowAsSigned>0</ShowAsSigned>
+                  <Color>0000FF</Color>
+                  <VariableType>Float</VariableType>
+                  <Address>pScore</Address>
+                  <Offsets>
+                    <Offset>F4</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>144</ID>
+                  <Description>"No description"</Description>
+                  <ShowAsHex>1</ShowAsHex>
+                  <ShowAsSigned>1</ShowAsSigned>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pScore</Address>
+                  <Offsets>
+                    <Offset>F8</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>145</ID>
+                  <Description>"No description"</Description>
+                  <ShowAsHex>1</ShowAsHex>
+                  <ShowAsSigned>1</ShowAsSigned>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pScore</Address>
+                  <Offsets>
+                    <Offset>FC</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>146</ID>
+                  <Description>"No description"</Description>
+                  <ShowAsHex>1</ShowAsHex>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pScore</Address>
+                  <Offsets>
+                    <Offset>100</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>147</ID>
+                  <Description>"No description"</Description>
+                  <ShowAsHex>1</ShowAsHex>
+                  <ShowAsSigned>1</ShowAsSigned>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pScore</Address>
+                  <Offsets>
+                    <Offset>104</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>148</ID>
+                  <Description>"No description"</Description>
+                  <ShowAsHex>1</ShowAsHex>
+                  <ShowAsSigned>1</ShowAsSigned>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pScore</Address>
+                  <Offsets>
+                    <Offset>108</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>149</ID>
+                  <Description>"No description"</Description>
+                  <ShowAsHex>1</ShowAsHex>
+                  <ShowAsSigned>1</ShowAsSigned>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pScore</Address>
+                  <Offsets>
+                    <Offset>10C</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>150</ID>
+                  <Description>"No description"</Description>
+                  <ShowAsHex>1</ShowAsHex>
+                  <ShowAsSigned>0</ShowAsSigned>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pScore</Address>
+                  <Offsets>
+                    <Offset>110</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>151</ID>
+                  <Description>"No description"</Description>
+                  <ShowAsHex>1</ShowAsHex>
+                  <ShowAsSigned>1</ShowAsSigned>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pScore</Address>
+                  <Offsets>
+                    <Offset>114</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>152</ID>
+                  <Description>"No description"</Description>
+                  <ShowAsHex>1</ShowAsHex>
+                  <ShowAsSigned>1</ShowAsSigned>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pScore</Address>
+                  <Offsets>
+                    <Offset>118</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>153</ID>
+                  <Description>"Damage Received (?)"</Description>
+                  <Color>0000FF</Color>
+                  <VariableType>Float</VariableType>
+                  <Address>pScore</Address>
+                  <Offsets>
+                    <Offset>11C</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>154</ID>
+                  <Description>"No description"</Description>
+                  <ShowAsHex>1</ShowAsHex>
+                  <ShowAsSigned>1</ShowAsSigned>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pScore</Address>
+                  <Offsets>
+                    <Offset>120</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>155</ID>
+                  <Description>"Kill Bonus"</Description>
+                  <ShowAsSigned>1</ShowAsSigned>
+                  <Color>0000FF</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pScore</Address>
+                  <Offsets>
+                    <Offset>124</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>156</ID>
+                  <Description>"No description"</Description>
+                  <ShowAsHex>1</ShowAsHex>
+                  <ShowAsSigned>1</ShowAsSigned>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pScore</Address>
+                  <Offsets>
+                    <Offset>128</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>162</ID>
+                  <Description>"Pointer to Session Time (?)"</Description>
+                  <ShowAsHex>1</ShowAsHex>
+                  <ShowAsSigned>0</ShowAsSigned>
+                  <Color>00FF00</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pScore</Address>
+                  <Offsets>
+                    <Offset>140</Offset>
+                  </Offsets>
+                </CheatEntry>
+              </CheatEntries>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>283</ID>
+              <Description>"+ pHealth"</Description>
+              <Options moHideChildren="1" moDeactivateChildrenAsWell="1"/>
+              <LastState Value="" RealAddress="00000000"/>
+              <Color>008000</Color>
+              <GroupHeader>1</GroupHeader>
+              <CheatEntries>
+                <CheatEntry>
+                  <ID>217</ID>
+                  <Description>"Health (max)"</Description>
+                  <Color>0000FF</Color>
+                  <VariableType>Float</VariableType>
+                  <Address>pHealth</Address>
+                  <Offsets>
+                    <Offset>D8</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>218</ID>
+                  <Description>"Health (current)"</Description>
+                  <Color>0000FF</Color>
+                  <VariableType>Float</VariableType>
+                  <Address>pHealth</Address>
+                  <Offsets>
+                    <Offset>DC</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>219</ID>
+                  <Description>"Health (previous)"</Description>
+                  <Color>0000FF</Color>
+                  <VariableType>Float</VariableType>
+                  <Address>pHealth</Address>
+                  <Offsets>
+                    <Offset>E0</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>223</ID>
+                  <Description>"Damage Received (?)"</Description>
+                  <Color>0000FF</Color>
+                  <VariableType>Float</VariableType>
+                  <Address>pHealth</Address>
+                  <Offsets>
+                    <Offset>E4</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>224</ID>
+                  <Description>"Player-Team"</Description>
+                  <ShowAsSigned>1</ShowAsSigned>
+                  <Color>0000FF</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pHealth</Address>
+                  <Offsets>
+                    <Offset>24C</Offset>
+                  </Offsets>
+                </CheatEntry>
+              </CheatEntries>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>222</ID>
+              <Description>"+ pAmmo"</Description>
+              <Options moHideChildren="1" moDeactivateChildrenAsWell="1"/>
+              <LastState Value="" RealAddress="00000000"/>
+              <Color>008000</Color>
+              <GroupHeader>1</GroupHeader>
+              <CheatEntries>
+                <CheatEntry>
+                  <ID>201</ID>
+                  <Description>"No description"</Description>
+                  <ShowAsHex>1</ShowAsHex>
+                  <ShowAsSigned>1</ShowAsSigned>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pAmmo</Address>
+                  <Offsets>
+                    <Offset>1770</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>200</ID>
+                  <Description>"No description"</Description>
+                  <ShowAsHex>1</ShowAsHex>
+                  <ShowAsSigned>1</ShowAsSigned>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pAmmo</Address>
+                  <Offsets>
+                    <Offset>1774</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>199</ID>
+                  <Description>"No description"</Description>
+                  <ShowAsHex>1</ShowAsHex>
+                  <ShowAsSigned>1</ShowAsSigned>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pAmmo</Address>
+                  <Offsets>
+                    <Offset>1778</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>198</ID>
+                  <Description>"No description"</Description>
+                  <ShowAsHex>1</ShowAsHex>
+                  <ShowAsSigned>1</ShowAsSigned>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pAmmo</Address>
+                  <Offsets>
+                    <Offset>177C</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>197</ID>
+                  <Description>"Ammo Upgrade"</Description>
+                  <ShowAsSigned>1</ShowAsSigned>
+                  <Color>0000FF</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pAmmo</Address>
+                  <Offsets>
+                    <Offset>1780</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>196</ID>
+                  <Description>"Ammo Count"</Description>
+                  <ShowAsSigned>1</ShowAsSigned>
+                  <Color>0000FF</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pAmmo</Address>
+                  <Offsets>
+                    <Offset>1784</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>202</ID>
+                  <Description>"No description"</Description>
+                  <ShowAsHex>1</ShowAsHex>
+                  <ShowAsSigned>1</ShowAsSigned>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pAmmo</Address>
+                  <Offsets>
+                    <Offset>1788</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>203</ID>
+                  <Description>"Time Since Weapon Used (?)"</Description>
+                  <ShowAsSigned>1</ShowAsSigned>
+                  <Color>0000FF</Color>
+                  <VariableType>Float</VariableType>
+                  <Address>pAmmo</Address>
+                  <Offsets>
+                    <Offset>178C</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>204</ID>
+                  <Description>"Time Since Weapon Used (?)"</Description>
+                  <Color>0000FF</Color>
+                  <VariableType>Float</VariableType>
+                  <Address>pAmmo</Address>
+                  <Offsets>
+                    <Offset>1790</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>205</ID>
+                  <Description>"No description"</Description>
+                  <ShowAsHex>1</ShowAsHex>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pAmmo</Address>
+                  <Offsets>
+                    <Offset>1794</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>206</ID>
+                  <Description>"No description"</Description>
+                  <ShowAsSigned>1</ShowAsSigned>
+                  <VariableType>Float</VariableType>
+                  <Address>pAmmo</Address>
+                  <Offsets>
+                    <Offset>1798</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>207</ID>
+                  <Description>"No description"</Description>
+                  <ShowAsHex>1</ShowAsHex>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pAmmo</Address>
+                  <Offsets>
+                    <Offset>179C</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>208</ID>
+                  <Description>"Coordinate X (?)"</Description>
+                  <Color>0000FF</Color>
+                  <VariableType>Float</VariableType>
+                  <Address>pAmmo</Address>
+                  <Offsets>
+                    <Offset>17A0</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>209</ID>
+                  <Description>"Coordinate Y (?)"</Description>
+                  <Color>0000FF</Color>
+                  <VariableType>Float</VariableType>
+                  <Address>pAmmo</Address>
+                  <Offsets>
+                    <Offset>17A4</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>210</ID>
+                  <Description>"Coordinate Z (?)"</Description>
+                  <Color>0000FF</Color>
+                  <VariableType>Float</VariableType>
+                  <Address>pAmmo</Address>
+                  <Offsets>
+                    <Offset>17A8</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>211</ID>
+                  <Description>"No description"</Description>
+                  <ShowAsHex>1</ShowAsHex>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pAmmo</Address>
+                  <Offsets>
+                    <Offset>17AC</Offset>
+                  </Offsets>
+                </CheatEntry>
+              </CheatEntries>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>641</ID>
+              <Description>"+ pCooldown"</Description>
+              <Options moHideChildren="1" moDeactivateChildrenAsWell="1"/>
+              <LastState Value="" RealAddress="00000000"/>
+              <Color>008000</Color>
+              <GroupHeader>1</GroupHeader>
+              <CheatEntries>
+                <CheatEntry>
+                  <ID>669</ID>
+                  <Description>"No description"</Description>
+                  <ShowAsHex>1</ShowAsHex>
+                  <Color>000000</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pCooldown</Address>
+                  <Offsets>
+                    <Offset>0</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>1014</ID>
+                  <Description>"No description"</Description>
+                  <ShowAsHex>1</ShowAsHex>
+                  <Color>000000</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pCooldown</Address>
+                  <Offsets>
+                    <Offset>98</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>681</ID>
+                  <Description>"No description"</Description>
+                  <ShowAsHex>1</ShowAsHex>
+                  <Color>000000</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pCooldown</Address>
+                  <Offsets>
+                    <Offset>100</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>682</ID>
+                  <Description>"No description"</Description>
+                  <ShowAsHex>1</ShowAsHex>
+                  <Color>000000</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pCooldown</Address>
+                  <Offsets>
+                    <Offset>150</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>675</ID>
+                  <Description>"No description"</Description>
+                  <ShowAsHex>1</ShowAsHex>
+                  <Color>000000</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pCooldown</Address>
+                  <Offsets>
+                    <Offset>24C</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>670</ID>
+                  <Description>"No description"</Description>
+                  <ShowAsHex>1</ShowAsHex>
+                  <Color>000000</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pCooldown</Address>
+                  <Offsets>
+                    <Offset>3BC</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>671</ID>
+                  <Description>"No description"</Description>
+                  <ShowAsHex>1</ShowAsHex>
+                  <Color>000000</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pCooldown</Address>
+                  <Offsets>
+                    <Offset>3C0</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>672</ID>
+                  <Description>"No description"</Description>
+                  <ShowAsHex>1</ShowAsHex>
+                  <Color>000000</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pCooldown</Address>
+                  <Offsets>
+                    <Offset>3C4</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>673</ID>
+                  <Description>"No description"</Description>
+                  <ShowAsHex>1</ShowAsHex>
+                  <Color>000000</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pCooldown</Address>
+                  <Offsets>
+                    <Offset>3C8</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>679</ID>
+                  <Description>"No description"</Description>
+                  <ShowAsHex>1</ShowAsHex>
+                  <Color>000000</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pCooldown</Address>
+                  <Offsets>
+                    <Offset>640</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>680</ID>
+                  <Description>"No description"</Description>
+                  <ShowAsHex>1</ShowAsHex>
+                  <Color>000000</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pCooldown</Address>
+                  <Offsets>
+                    <Offset>644</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>683</ID>
+                  <Description>"No description"</Description>
+                  <ShowAsHex>1</ShowAsHex>
+                  <Color>000000</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pCooldown</Address>
+                  <Offsets>
+                    <Offset>648</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>684</ID>
+                  <Description>"No description"</Description>
+                  <ShowAsHex>1</ShowAsHex>
+                  <Color>000000</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pCooldown</Address>
+                  <Offsets>
+                    <Offset>64C</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>677</ID>
+                  <Description>"No description"</Description>
+                  <ShowAsHex>1</ShowAsHex>
+                  <Color>000000</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pCooldown</Address>
+                  <Offsets>
+                    <Offset>650</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>668</ID>
+                  <Description>"No description"</Description>
+                  <ShowAsHex>1</ShowAsHex>
+                  <Color>000000</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pCooldown</Address>
+                  <Offsets>
+                    <Offset>654</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>667</ID>
+                  <Description>"No description"</Description>
+                  <ShowAsHex>1</ShowAsHex>
+                  <Color>000000</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pCooldown</Address>
+                  <Offsets>
+                    <Offset>658</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>691</ID>
+                  <Description>"No description"</Description>
+                  <ShowAsHex>1</ShowAsHex>
+                  <Color>000000</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pCooldown</Address>
+                  <Offsets>
+                    <Offset>65C</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>674</ID>
+                  <Description>"No description"</Description>
+                  <ShowAsHex>1</ShowAsHex>
+                  <Color>000000</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pCooldown</Address>
+                  <Offsets>
+                    <Offset>660</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>676</ID>
+                  <Description>"No description"</Description>
+                  <ShowAsHex>1</ShowAsHex>
+                  <Color>000000</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pCooldown</Address>
+                  <Offsets>
+                    <Offset>664</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>687</ID>
+                  <Description>"No description"</Description>
+                  <ShowAsHex>1</ShowAsHex>
+                  <Color>000000</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pCooldown</Address>
+                  <Offsets>
+                    <Offset>670</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>692</ID>
+                  <Description>"No description"</Description>
+                  <ShowAsHex>1</ShowAsHex>
+                  <Color>000000</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pCooldown</Address>
+                  <Offsets>
+                    <Offset>674</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>685</ID>
+                  <Description>"No description"</Description>
+                  <ShowAsHex>1</ShowAsHex>
+                  <Color>000000</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pCooldown</Address>
+                  <Offsets>
+                    <Offset>678</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>690</ID>
+                  <Description>"No description"</Description>
+                  <ShowAsHex>1</ShowAsHex>
+                  <Color>000000</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pCooldown</Address>
+                  <Offsets>
+                    <Offset>684</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>688</ID>
+                  <Description>"No description"</Description>
+                  <ShowAsHex>1</ShowAsHex>
+                  <Color>000000</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pCooldown</Address>
+                  <Offsets>
+                    <Offset>688</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>689</ID>
+                  <Description>"No description"</Description>
+                  <ShowAsHex>1</ShowAsHex>
+                  <Color>000000</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pCooldown</Address>
+                  <Offsets>
+                    <Offset>68C</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>686</ID>
+                  <Description>"No description"</Description>
+                  <ShowAsHex>1</ShowAsHex>
+                  <Color>000000</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pCooldown</Address>
+                  <Offsets>
+                    <Offset>6C0</Offset>
+                  </Offsets>
+                </CheatEntry>
+              </CheatEntries>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>639</ID>
+              <Description>"+ pUpgrade"</Description>
+              <Options moHideChildren="1" moDeactivateChildrenAsWell="1"/>
+              <LastState Value="" RealAddress="00000000"/>
+              <Color>008000</Color>
+              <GroupHeader>1</GroupHeader>
+              <CheatEntries>
+                <CheatEntry>
+                  <ID>660</ID>
+                  <Description>"No description"</Description>
+                  <Color>000000</Color>
+                  <VariableType>Float</VariableType>
+                  <Address>pUpgrade</Address>
+                  <Offsets>
+                    <Offset>130</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>661</ID>
+                  <Description>"Move Speed (?)"</Description>
+                  <Color>0000FF</Color>
+                  <VariableType>Float</VariableType>
+                  <Address>pUpgrade</Address>
+                  <Offsets>
+                    <Offset>464</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>658</ID>
+                  <Description>"No description"</Description>
+                  <ShowAsHex>1</ShowAsHex>
+                  <Color>000000</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pUpgrade</Address>
+                  <Offsets>
+                    <Offset>1770</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>659</ID>
+                  <Description>"Weapon Upgrade"</Description>
+                  <Color>0000FF</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pUpgrade</Address>
+                  <Offsets>
+                    <Offset>1780</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>662</ID>
+                  <Description>"No description"</Description>
+                  <ShowAsHex>1</ShowAsHex>
+                  <Color>000000</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pUpgrade</Address>
+                  <Offsets>
+                    <Offset>2290</Offset>
+                  </Offsets>
+                </CheatEntry>
+              </CheatEntries>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>565</ID>
+              <Description>"+ pObjectiveTime"</Description>
+              <Options moHideChildren="1" moDeactivateChildrenAsWell="1"/>
+              <LastState Value="" RealAddress="00000000"/>
+              <Color>008000</Color>
+              <GroupHeader>1</GroupHeader>
+              <CheatEntries>
+                <CheatEntry>
+                  <ID>578</ID>
+                  <Description>"No description"</Description>
+                  <Color>000000</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pObjectiveTime</Address>
+                  <Offsets>
+                    <Offset>80</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>579</ID>
+                  <Description>"No description"</Description>
+                  <ShowAsHex>1</ShowAsHex>
+                  <Color>000000</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pObjectiveTime</Address>
+                  <Offsets>
+                    <Offset>84</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>580</ID>
+                  <Description>"No description"</Description>
+                  <Color>000000</Color>
+                  <VariableType>Float</VariableType>
+                  <Address>pObjectiveTime</Address>
+                  <Offsets>
+                    <Offset>88</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>581</ID>
+                  <Description>"Initial Time"</Description>
+                  <Color>0000FF</Color>
+                  <VariableType>Float</VariableType>
+                  <Address>pObjectiveTime</Address>
+                  <Offsets>
+                    <Offset>8C</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>582</ID>
+                  <Description>"No description"</Description>
+                  <ShowAsSigned>1</ShowAsSigned>
+                  <Color>000000</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pObjectiveTime</Address>
+                  <Offsets>
+                    <Offset>294</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>583</ID>
+                  <Description>"Pointer to Session Time (?)"</Description>
+                  <ShowAsHex>1</ShowAsHex>
+                  <ShowAsSigned>1</ShowAsSigned>
+                  <Color>00FF00</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pObjectiveTime</Address>
+                  <Offsets>
+                    <Offset>298</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>619</ID>
+                  <Description>"No description"</Description>
+                  <Color>000000</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pObjectiveTime</Address>
+                  <Offsets>
+                    <Offset>2C0</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>620</ID>
+                  <Description>"Elapsed Time"</Description>
+                  <Color>0000FF</Color>
+                  <VariableType>Float</VariableType>
+                  <Address>pObjectiveTime</Address>
+                  <Offsets>
+                    <Offset>2C4</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>621</ID>
+                  <Description>"No description"</Description>
+                  <Color>000000</Color>
+                  <VariableType>Float</VariableType>
+                  <Address>pObjectiveTime</Address>
+                  <Offsets>
+                    <Offset>2C8</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>622</ID>
+                  <Description>"No description"</Description>
+                  <Color>000000</Color>
+                  <VariableType>Float</VariableType>
+                  <Address>pObjectiveTime</Address>
+                  <Offsets>
+                    <Offset>2CC</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>623</ID>
+                  <Description>"No description"</Description>
+                  <Color>000000</Color>
+                  <VariableType>Float</VariableType>
+                  <Address>pObjectiveTime</Address>
+                  <Offsets>
+                    <Offset>2E0</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>624</ID>
+                  <Description>"Remaining Time"</Description>
+                  <Color>0000FF</Color>
+                  <VariableType>Float</VariableType>
+                  <Address>pObjectiveTime</Address>
+                  <Offsets>
+                    <Offset>2F4</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>625</ID>
+                  <Description>"No description"</Description>
+                  <Color>000000</Color>
+                  <VariableType>Float</VariableType>
+                  <Address>pObjectiveTime</Address>
+                  <Offsets>
+                    <Offset>2F8</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>626</ID>
+                  <Description>"No description"</Description>
+                  <ShowAsSigned>1</ShowAsSigned>
+                  <Color>000000</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pObjectiveTime</Address>
+                  <Offsets>
+                    <Offset>300</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>627</ID>
+                  <Description>"No description"</Description>
+                  <Color>000000</Color>
+                  <VariableType>Float</VariableType>
+                  <Address>pObjectiveTime</Address>
+                  <Offsets>
+                    <Offset>340</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>628</ID>
+                  <Description>"No description"</Description>
+                  <Color>000000</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pObjectiveTime</Address>
+                  <Offsets>
+                    <Offset>354</Offset>
+                  </Offsets>
+                </CheatEntry>
+              </CheatEntries>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>530</ID>
+              <Description>"+ pSessionTime"</Description>
+              <Options moHideChildren="1" moDeactivateChildrenAsWell="1"/>
+              <LastState Value="" RealAddress="00000000"/>
+              <Color>008000</Color>
+              <GroupHeader>1</GroupHeader>
+              <CheatEntries>
+                <CheatEntry>
+                  <ID>542</ID>
+                  <Description>"Pointer to Objective Time (?)"</Description>
+                  <ShowAsHex>1</ShowAsHex>
+                  <ShowAsSigned>1</ShowAsSigned>
+                  <Color>00FF00</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pSessionTime</Address>
+                  <Offsets>
+                    <Offset>6C</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>543</ID>
+                  <Description>"No description"</Description>
+                  <ShowAsHex>1</ShowAsHex>
+                  <ShowAsSigned>1</ShowAsSigned>
+                  <Color>000000</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pSessionTime</Address>
+                  <Offsets>
+                    <Offset>70</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>544</ID>
+                  <Description>"No description"</Description>
+                  <ShowAsHex>1</ShowAsHex>
+                  <ShowAsSigned>1</ShowAsSigned>
+                  <Color>000000</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pSessionTime</Address>
+                  <Offsets>
+                    <Offset>74</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>545</ID>
+                  <Description>"No description"</Description>
+                  <ShowAsHex>1</ShowAsHex>
+                  <ShowAsSigned>1</ShowAsSigned>
+                  <Color>000000</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pSessionTime</Address>
+                  <Offsets>
+                    <Offset>78</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>546</ID>
+                  <Description>"Total Time"</Description>
+                  <ShowAsSigned>1</ShowAsSigned>
+                  <Color>0000FF</Color>
+                  <VariableType>Float</VariableType>
+                  <Address>pSessionTime</Address>
+                  <Offsets>
+                    <Offset>7C</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>547</ID>
+                  <Description>"Time Add (?)"</Description>
+                  <ShowAsSigned>1</ShowAsSigned>
+                  <Color>0000FF</Color>
+                  <VariableType>Float</VariableType>
+                  <Address>pSessionTime</Address>
+                  <Offsets>
+                    <Offset>80</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>548</ID>
+                  <Description>"No description"</Description>
+                  <ShowAsHex>1</ShowAsHex>
+                  <ShowAsSigned>1</ShowAsSigned>
+                  <Color>000000</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pSessionTime</Address>
+                  <Offsets>
+                    <Offset>84</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>549</ID>
+                  <Description>"No description"</Description>
+                  <ShowAsSigned>1</ShowAsSigned>
+                  <Color>000000</Color>
+                  <VariableType>Float</VariableType>
+                  <Address>pSessionTime</Address>
+                  <Offsets>
+                    <Offset>88</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>550</ID>
+                  <Description>"No description"</Description>
+                  <ShowAsHex>1</ShowAsHex>
+                  <ShowAsSigned>1</ShowAsSigned>
+                  <Color>000000</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pSessionTime</Address>
+                  <Offsets>
+                    <Offset>8C</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>551</ID>
+                  <Description>"Comparison (?)"</Description>
+                  <ShowAsHex>1</ShowAsHex>
+                  <ShowAsSigned>1</ShowAsSigned>
+                  <Color>0000FF</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pSessionTime</Address>
+                  <Offsets>
+                    <Offset>90</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>552</ID>
+                  <Description>"No description"</Description>
+                  <ShowAsSigned>1</ShowAsSigned>
+                  <Color>000000</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pSessionTime</Address>
+                  <Offsets>
+                    <Offset>94</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>553</ID>
+                  <Description>"Pointer to Objective Time (?)"</Description>
+                  <ShowAsHex>1</ShowAsHex>
+                  <ShowAsSigned>1</ShowAsSigned>
+                  <Color>00FF00</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pSessionTime</Address>
+                  <Offsets>
+                    <Offset>98</Offset>
+                  </Offsets>
+                </CheatEntry>
+              </CheatEntries>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>705</ID>
+              <Description>"+ pDamageStreak"</Description>
+              <Options moHideChildren="1" moDeactivateChildrenAsWell="1"/>
+              <LastState Value="" RealAddress="00000000"/>
+              <Color>008000</Color>
+              <GroupHeader>1</GroupHeader>
+              <CheatEntries>
+                <CheatEntry>
+                  <ID>723</ID>
+                  <Description>"No description"</Description>
+                  <ShowAsHex>1</ShowAsHex>
+                  <ShowAsSigned>1</ShowAsSigned>
+                  <Color>000000</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pDamageStreak</Address>
+                  <Offsets>
+                    <Offset>0</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>712</ID>
+                  <Description>"Pointer to Player (?)"</Description>
+                  <ShowAsHex>1</ShowAsHex>
+                  <Color>00FF00</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pDamageStreak</Address>
+                  <Offsets>
+                    <Offset>4</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>714</ID>
+                  <Description>"Damage Streak Time (max)"</Description>
+                  <Color>0000FF</Color>
+                  <VariableType>Float</VariableType>
+                  <Address>pDamageStreak</Address>
+                  <Offsets>
+                    <Offset>28</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>713</ID>
+                  <Description>"No description"</Description>
+                  <Color>000000</Color>
+                  <VariableType>Float</VariableType>
+                  <Address>pDamageStreak</Address>
+                  <Offsets>
+                    <Offset>30</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>710</ID>
+                  <Description>"No description"</Description>
+                  <Color>000000</Color>
+                  <VariableType>Float</VariableType>
+                  <Address>pDamageStreak</Address>
+                  <Offsets>
+                    <Offset>34</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>709</ID>
+                  <Description>"No description"</Description>
+                  <Color>000000</Color>
+                  <VariableType>Float</VariableType>
+                  <Address>pDamageStreak</Address>
+                  <Offsets>
+                    <Offset>38</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>708</ID>
+                  <Description>"No description"</Description>
+                  <Color>000000</Color>
+                  <VariableType>Float</VariableType>
+                  <Address>pDamageStreak</Address>
+                  <Offsets>
+                    <Offset>3C</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>703</ID>
+                  <Description>"Damage Streak Time (current)"</Description>
+                  <Color>0000FF</Color>
+                  <VariableType>Float</VariableType>
+                  <Address>pDamageStreak</Address>
+                  <Offsets>
+                    <Offset>40</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>707</ID>
+                  <Description>"No description"</Description>
+                  <Color>000000</Color>
+                  <VariableType>Float</VariableType>
+                  <Address>pDamageStreak</Address>
+                  <Offsets>
+                    <Offset>44</Offset>
+                  </Offsets>
+                </CheatEntry>
+              </CheatEntries>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols/>
+  <Comments>********************************************************************************
+Game    : RenegadeOps
+Version : (Steam 01-15-2017)
+Date    : 01-15-2017
+Author  : JizzaBeez
+********************************************************************************
+Cheats:
+  * Unlimited Lives
+  * Unlimited Health
+  * Unlimited Ammo
+  * No Cooldowns
+  * Super Weapons
+  * Fast Score
+  * One Hit Kills
+  * Freeze Time
+  * Freeze Damage Streak
+********************************************************************************
+Hotkeys:
+  * NUMPAD1 : Freeze Time -&gt; Disable
+  * NUMPAD2 : Freeze Time -&gt; Enable
+  * NUMPAD4 : Freeze Damage Streak -&gt; Disable
+  * NUMPAD5 : Freeze Damage Streak -&gt; Enable
+  * NUMPAD7 : One Hit Kill -&gt; Disable
+  * NUMPAD8 : One Hit Kill -&gt; Enable
+  * NUMPAD0 : Disable ALL
+  * NUMPAD. : Enable ALL
+********************************************************************************
+How to use table:
+  1) Run the game 'RenegadeOps.exe'.
+  2) Open Cheat Engine 6.6+ (below not tested).
+  3) Select the process 'RenegadeOps.exe'.
+  4) Open the table 'RenegadeOps.ct'.
+  5) Click '&gt;&gt;&gt; ACTIVATE &lt;&lt;&lt;' to enable the table.
+  6) See below how to use 'Cheats' and 'Structs'.
+  7) Play the game and win!!!1!!1!1 ...
+  8) Click '&gt;&gt;&gt; DEACTIVATE &lt;&lt;&lt;' before closing or the game will crash!
+********************************************************************************
+How to use 'Cheats':
+  1) Enable: select the item and change its value to 'ENABLE'.
+  2) Disable: select the item and change its value to 'DISABLE'.
+  *) Mission objectives can not progress if the time is frozen. Temporarily disable 'Freeze Time' to let the objective proceed.
+  *) 'One Hit Kills' nukes minor enemies when their health is loaded. If an objective target is killed too soon then the mission may not progress (restart required).
+********************************************************************************
+How to edit 'Structs':
+  *) Pointers/addresses will be loaded when the game accesses the code; take damage to load health pointer, fire weapon to load ammo pointer, etc.
+  *) After the addresses are loaded the values can be edited as normal.
+********************************************************************************
+</Comments>
+</CheatTable>

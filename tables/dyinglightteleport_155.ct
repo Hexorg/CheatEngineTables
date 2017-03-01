@@ -1,0 +1,394 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="18">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>317</ID>
+      <Description>"TELEPORT"</Description>
+      <Options moHideChildren="1"/>
+      <LastState Activated="1"/>
+      <Color>80000008</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>[ENABLE]
+aobscanmodule(_TeleportCode,engine_x64_rwdi.dll,F3 0F 58 83 C4 00 00 00 48)
+aobscanmodule(_GetWaypointCoord,gamedll_x64_rwdi.dll,F3 0F 10 83 38 08 00 00 F3)
+alloc(teleportmem,$1000,engine_x64_rwdi.dll)
+alloc(newmem,$1000,gamedll_x64_rwdi.dll)
+registersymbol(z_coord)
+registersymbol(x_coord)
+registersymbol(y_coord)
+registersymbol(z_coord_undo)
+registersymbol(x_coord_undo)
+registersymbol(y_coord_undo)
+registersymbol(s_enable)
+registersymbol(l_enable)
+registersymbol(u_enable)
+Registersymbol(_TeleportCode)
+Registersymbol(_GetWayPointCoord_X)
+Registersymbol(_GetWayPointCoord_Y)
+Registersymbol(_GetWayPointCoord_Z)
+registersymbol(_GetWaypointCoord)
+Registersymbol(_WriteWayPointCoordsToPlayerLocation)
+
+alloc(s_enable,4)
+alloc(l_enable,4)
+alloc(u_enable,4)
+alloc(z_coord,4)
+alloc(x_coord,4)
+alloc(y_coord,4)
+alloc(z_coord_undo,4)
+alloc(x_coord_undo,4)
+alloc(y_coord_undo,4)
+alloc(_GetWayPointCoord_X,4)
+alloc(_GetWayPointCoord_Y,4)
+alloc(_GetWayPointCoord_Z,4)
+alloc(_WriteWayPointCoordsToPlayerLocation,4)
+
+label(returnteleport)
+label(originalcodeteleport)
+label(exitteleport)
+label(save_coord)
+label(load_coord)
+label(undo_coord)
+label(returnhere)
+label(originalcode)
+label(exit)
+label(WriteWayPointCoordsToPlayerLocation)
+
+newmem: //this is allocated memory, you have read,write,execute access
+movss xmm12,[rbx+00000838]
+movss [_GetWayPointCoord_X],xmm12
+movss xmm12,[rbx+0000083C]
+movss [_GetWayPointCoord_Y],xmm12
+movss xmm12,[rbx+00000840]
+movss [_GetWayPointCoord_Z],xmm12
+
+originalcode:
+movss xmm0,[rbx+00000838]
+exit:
+jmp returnhere
+
+
+
+teleportmem:
+cmp [s_enable],1
+je save_coord
+cmp [l_enable],1
+je load_coord
+cmp [u_enable],1
+je undo_coord
+cmp [_WriteWayPointCoordsToPlayerLocation],1
+je WriteWayPointCoordsToPlayerLocation
+jmp originalcodeteleport
+
+save_coord:
+mov [s_enable],0
+cmp r9,0
+jne originalcodeteleport
+movss xmm12,[rbx+BC] // Save Value of X-Coordinate into xmm12
+movss [x_coord],xmm12// Load Value of xmm12 into x_coord
+movss xmm12,[rbx+C0] // Save Value of Z-Coordinate into xmm12
+movss [z_coord],xmm12// Load Value of xmm12 into z_coord
+movss xmm12,[rbx+C4] // Save Value of Y-Coordinate into xmm12
+movss [y_coord],xmm12// Load Value of xmm12 into y_coord
+jmp originalcodeteleport
+
+load_coord:
+mov [l_enable],0
+cmp [z_coord],0
+je originalcodeteleport
+cmp r9,0
+jne originalcodeteleport
+// Save current Player position again for UNDO TELEPORT
+movss xmm12,[rbx+BC] // Save Value of X-Coordinate into xmm12
+movss [x_coord_undo],xmm12// Load Value of xmm12 into x_coord_undo
+movss xmm12,[rbx+C0] // Save Value of Z-Coordinate into xmm12
+movss [z_coord_undo],xmm12// Load Value of xmm12 into z_coord_undo
+movss xmm12,[rbx+C4] // Save Value of Y-Coordinate into xmm12
+movss [y_coord_undo],xmm12// Load Value of xmm12 into y_coord_undo
+
+// Load last saved Player Position
+movss xmm12,[x_coord]
+movss [rbx+BC],xmm12
+movss xmm12,[z_coord]
+movss [rbx+C0],xmm12
+movss xmm12,[y_coord]
+movss [rbx+C4],xmm12
+jmp originalcodeteleport
+
+
+undo_coord:
+mov [l_enable],0
+mov [s_enable],0
+mov [u_enable],0
+cmp [z_coord_undo],0
+je originalcodeteleport
+cmp r9,0
+jne originalcodeteleport
+// Do undo teleportation here
+movss xmm12,[x_coord_undo]
+movss [rbx+BC],xmm12
+movss xmm12,[z_coord_undo]
+movss [rbx+C0],xmm12
+movss xmm12,[y_coord_undo]
+movss [rbx+C4],xmm12
+jmp originalcodeteleport
+
+
+///////////////TELEPORT TO WAYPOiNT//////////////
+WriteWayPointCoordsToPlayerLocation:
+mov byte ptr [_WriteWayPointCoordsToPlayerLocation],0
+cmp r9,0
+jne originalcodeteleport
+// Save current Player position again for UNDO TELEPORT
+movss xmm12,[rbx+BC] // Save Value of X-Coordinate into xmm12
+movss [x_coord_undo],xmm12// Load Value of xmm12 into x_coord_undo
+movss xmm12,[rbx+C0] // Save Value of Z-Coordinate into xmm12
+movss [z_coord_undo],xmm12// Load Value of xmm12 into z_coord_undo
+movss xmm12,[rbx+C4] // Save Value of Y-Coordinate into xmm12
+movss [y_coord_undo],xmm12// Load Value of xmm12 into y_coord_undo
+
+// Do Waypoint Teleportation here
+movss xmm11,[_GetWayPointCoord_X]
+movss [rbx+BC],xmm11
+movss xmm11,[_GetWayPointCoord_Y]
+movss [rbx+C0],xmm11
+movss xmm11,[_GetWayPointCoord_Z]
+movss [rbx+C4],xmm11
+
+//Fix teleporting into ground (adds +3.0 to our Up/Down Axis on Teleport)
+fld [rbx+C0]
+fld1
+faddp
+fld1
+faddp
+fld1
+faddp
+fstp [rbx+C0]
+jmp originalcodeteleport
+
+
+
+originalcodeteleport:
+addss xmm0,[rbx+000000C4]
+
+exitteleport:
+jmp returnteleport
+
+
+_TeleportCode:
+jmp teleportmem
+nop
+nop
+nop
+returnteleport:
+
+_GetWaypointCoord:
+jmp newmem
+nop
+nop
+nop
+returnhere:
+
+
+x_coord:
+dd 0
+z_coord:
+dd 0
+y_coord:
+dd 0
+s_enable:
+dd 0
+l_enable:
+dd 0
+x_coord_undo:
+dd 0
+z_coord_undo:
+dd 0
+y_coord_undo:
+dd 0
+u_enable:
+dd 0
+
+
+[DISABLE]
+Unregistersymbol(z_coord)
+Unregistersymbol(x_coord)
+Unregistersymbol(y_coord)
+Unregistersymbol(z_coord_undo)
+Unregistersymbol(x_coord_undo)
+Unregistersymbol(y_coord_undo)
+Unregistersymbol(s_enable)
+Unregistersymbol(l_enable)
+Unregistersymbol(u_enable)
+Unregistersymbol(_TeleportCode)
+Unregistersymbol(_GetWayPointCoord_X)
+Unregistersymbol(_GetWayPointCoord_Y)
+Unregistersymbol(_GetWayPointCoord_Z)
+Unregistersymbol(_GetWaypointCoord)
+Unregistersymbol(_WriteWayPointCoordsToPlayerLocation)
+
+dealloc(z_coord)
+dealloc(x_coord)
+dealloc(y_coord)
+dealloc(z_coord_undo)
+dealloc(x_coord_undo)
+dealloc(y_coord_undo)
+dealloc(s_enable)
+dealloc(l_enable)
+dealloc(u_enable)
+dealloc(teleportmem)
+dealloc(_GetWayPointCoord_X)
+dealloc(_GetWayPointCoord_Y)
+dealloc(_GetWayPointCoord_Z)
+dealloc(newmem)
+dealloc(_WriteWayPointCoordsToPlayerLocation)
+
+
+_TeleportCode:
+addss xmm0,[rbx+000000C4]
+
+_GetWaypointCoord:
+movss xmm0,[rbx+00000838]
+
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>336</ID>
+          <Description>"DEBUG"</Description>
+          <Options moHideChildren="1"/>
+          <LastState Value="" Activated="0" RealAddress="00000000"/>
+          <Color>0080FF</Color>
+          <GroupHeader>1</GroupHeader>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>329</ID>
+              <Description>"Waypoint Coord X"</Description>
+              <LastState Value="-9.967407227" Activated="0" RealAddress="7FF8E4B11024"/>
+              <Color>808080</Color>
+              <VariableType>Float</VariableType>
+              <Address>_GetWayPointCoord_X</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>330</ID>
+              <Description>"Waypoint Coord Y"</Description>
+              <LastState Value="98.71616364" Activated="0" RealAddress="7FF8E4B11028"/>
+              <Color>808080</Color>
+              <VariableType>Float</VariableType>
+              <Address>_GetWayPointCoord_Y</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>331</ID>
+              <Description>"Waypoint Coord Z"</Description>
+              <LastState Value="425.9197388" Activated="0" RealAddress="7FF8E4B1102C"/>
+              <Color>808080</Color>
+              <VariableType>Float</VariableType>
+              <Address>_GetWayPointCoord_Z</Address>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>319</ID>
+          <Description>"SAVE POSiTiON"</Description>
+          <LastState Value="0" Activated="0" RealAddress="7FF8E4B11000"/>
+          <Color>80000008</Color>
+          <VariableType>Byte</VariableType>
+          <Address>s_enable</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>107</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>320</ID>
+          <Description>"LOAD POSiTiON"</Description>
+          <LastState Value="0" Activated="0" RealAddress="7FF8E4B11004"/>
+          <Color>80000008</Color>
+          <VariableType>Byte</VariableType>
+          <Address>l_enable</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>109</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>321</ID>
+          <Description>"UNDO TELEPORT"</Description>
+          <LastState Value="0" Activated="0" RealAddress="7FF8E4B11008"/>
+          <Color>80000008</Color>
+          <VariableType>Byte</VariableType>
+          <Address>u_enable</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>106</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>335</ID>
+          <Description>"TELEPORT TO WAYPOiNT"</Description>
+          <LastState Value="0" Activated="0" RealAddress="7FF8E4B11030"/>
+          <Color>80000008</Color>
+          <VariableType>Byte</VariableType>
+          <Address>_WriteWayPointCoordsToPlayerLocation</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>111</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols>
+    <SymbolEntry>
+      <Name>_InfiniteMeleeStamina</Name>
+      <Address>7FF983441986</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>_InfiniteWeaponDurability</Name>
+      <Address>7FF98307ADD6</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>_InfiniteHealth</Name>
+      <Address>7FF9832C8410</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>RealInfiniteHealth</Name>
+      <Address>7FF983440AA9</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>iNfiniteMeeleStamina</Name>
+      <Address>7FF9835717AA</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>_TeleportCode</Name>
+      <Address> 7FF8E4EAE542</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>_GetWaypointCoord</Name>
+      <Address> 7FF8E5A5A92C</Address>
+    </SymbolEntry>
+  </UserdefinedSymbols>
+</CheatTable>

@@ -1,0 +1,473 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="14">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>27</ID>
+      <Description>"[X] &lt;== Baldur's Gate EE SR 1.0.2011 Script 1.1"</Description>
+      <Options moHideChildren="1"/>
+      <Color>FF0000</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>{
+===========================================
+ Game Title    : Baldur's Gate - Enhanced Edition
+ Game Version  : 1.0.2011
+ Game Sponsor  : SKIDROW (via Internet)
+ Proces Name   : Baldur.exe
+ Script Version: 1.1
+ CE Version    : 6.2
+ Release date  : 17-Dec-2012
+ Author        : Recifense
+ History:
+ 30-Nov-12: First Release
+ 03-Dec-12: Fix GM. Now only player's unit are safe.
+ 17-Dec-12: Release for version 1.0.2011.
+ Features:
+ - God Mode
+ - Minimum Gold
+ - Pointers
+===========================================
+}
+
+//=========================================
+// Definitions
+define(LUDO,"Baldur.exe")
+
+//=========================================
+[ENABLE]
+//=========================================
+//LuaCall(CheckVersion())
+//=========================================
+// Check if script is compatible to this game version
+// If false the script will not be loaded
+
+assert(LUDO+002fae11,0f bf 88 d0 03 00 00) // _MU
+assert(LUDO+000aa689,0f bf 08 2b ca 8b 95) // _GM
+assert(LUDO+000ed89a,8b 80 7c 42 00 00 8b) // _MG
+
+//=========================================
+alloc(MyCode,4096,LUDO)
+//=========================================
+// Declaration section
+label(_MonUnits)
+label(_BackMU)
+label(_ExitMU)
+label(_GodMode)
+label(_BackGM)
+label(_ExitGM)
+label(_MonGold)
+label(_BackMG)
+label(_ExitMG)
+label(pUnit)
+label(pGold)
+label(iEnableGM)
+label(iEnableMG)
+label(iMinGold)
+
+//=========================================
+// Registering Symbols
+registersymbol(MyCode)
+registersymbol(pUnit)
+registersymbol(pGold)
+registersymbol(iEnableGM)
+registersymbol(iEnableMG)
+registersymbol(iMinGold)
+
+//=========================================
+MyCode:
+//========================================= ok
+// Select player's Unit on the inventory screen
+_MonUnits:
+ mov [pUnit],eax
+
+ cmp dword ptr [iEnableGM],0
+ je _ExitMU                        // Jump if feature is disabled
+
+ cmp byte ptr [eax+24],02          // Double checking :)
+ jne _ExitMU
+
+ mov cx,[eax+000003D2]
+ mov [eax+000003D0],cx
+
+_ExitMU:
+ movsx ecx,word ptr [eax+000003D0] // Original code (rds cHP)
+ jmp _BackMU                       // Back to main code
+
+//========================================= ok
+_GodMode:
+ cmp dword ptr [iEnableGM],0
+ je _ExitGM                        // Jump if feature is disabled
+
+ mov ecx,[ebp+08]
+ test ecx,ecx
+ jz _ExitGM
+
+ cmp byte ptr [ecx+24],02
+ jne _ExitGM
+
+ mov dx,[ecx+000003D2]
+ mov [ecx+000003D0],dx
+
+ xor edx,edx
+
+_ExitGM:
+ movsx ecx,word ptr [eax]          // Original code
+ sub ecx,edx                       // Original code
+ jmp _BackGM                       // Back to main code
+
+//=========================================
+// On Inventory Screen
+_MonGold:
+ push ecx
+ mov [pGold],eax
+
+ cmp dword ptr [iEnableMG],0
+ je _ExitMG                        // Jump if feature is disabled
+
+ mov ecx,[iMinGold]
+ cmp ecx,[eax+0000427C]
+ jle _ExitMG
+
+ mov [eax+0000427C],ecx
+
+_ExitMG:
+ pop ecx
+
+ mov eax,[eax+0000427C]            // Original code (rds cHP)
+ jmp _BackMG                       // Back to main code
+
+//=========================================
+ db '====================================&gt;'
+ db 'CE6.2 Script by Recifense 121712'
+//=========================================
+// Variables
+iEnableGM:
+ dd 0
+iEnableMG:
+ dd 0
+pUnit:
+ dd 0
+pGold:
+ dd 0
+iMinGold:
+ dd #6200
+
+//=========================================
+// Hacking Points
+//LUDO+001d899c:
+LUDO+002fae11:
+ jmp _MonUnits
+ nop
+ nop
+_BackMU:
+
+//LUDO+00090345:
+LUDO+000aa689:
+ jmp _GodMode
+_BackGM:
+
+//LUDO+001d8992:
+LUDO+000ed89a:
+ jmp _MonGold
+ nop
+_BackMG:
+
+//=========================================
+// Script for Restoring Original Codes
+[DISABLE]
+//LUDO+001d899c:
+// movsx edx,word ptr [edi+000003D0]
+LUDO+002fae11:
+// movsx ecx,word ptr [eax+000003D0]
+ db 0f bf 88 d0 03 00 00
+
+//LUDO+00090345:
+// sub [ebx+000003D0],dx
+LUDO+000aa689:
+// movsx ecx,word ptr [eax]
+// sub ecx,edx
+ db 0f bf 08 2b ca
+
+//LUDO+001d8992:
+// mov ecx,[esi+000043F8]
+// db 8b 8e f8 43 00 00
+LUDO+000ed89a:
+// mov eax,[eax+0000427C]
+ db 8b 80 7c 42 00 00
+
+//=========================================
+// Unregistering Symbols
+unregistersymbol(MyCode)
+unregistersymbol(pUnit)
+unregistersymbol(pGold)
+unregistersymbol(iEnableGM)
+unregistersymbol(iEnableMG)
+unregistersymbol(iMinGold)
+
+//=========================================
+dealloc(MyCode)
+//============= Scripts End ===============
+
+// ****************************************
+// NOTES
+// ****************************************
+{
+Baldur.exe+55D860
+}
+
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>12</ID>
+          <Description>"Enable/Disable God Mode =&gt; (1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableGM</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>32</ID>
+          <Description>"Enable/Disable Minimum Gold =&gt; (1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMG</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>41</ID>
+              <Description>"Minimum Gold Value ==&gt;"</Description>
+              <Color>0080FF</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>iMinGold</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>29</ID>
+              <Description>"Current Gold ==&gt;"</Description>
+              <Color>0000FF</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pGold</Address>
+              <Offsets>
+                <Offset>427C</Offset>
+              </Offsets>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>13</ID>
+          <Description>"======= Selected Unit in Inventory Info ======="</Description>
+          <ShowAsHex>1</ShowAsHex>
+          <Color>000080</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>pUnit</Address>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>42</ID>
+              <Description>"Current XP ==&gt;"</Description>
+              <Color>0000FF</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pUnit</Address>
+              <Offsets>
+                <Offset>3C4</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>43</ID>
+              <Description>"Current Strength R ==&gt;"</Description>
+              <Color>0000FF</Color>
+              <VariableType>Byte</VariableType>
+              <Address>pUnit</Address>
+              <Offsets>
+                <Offset>5E4</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>49</ID>
+              <Description>"Current Strength C ==&gt;"</Description>
+              <Color>0000FF</Color>
+              <VariableType>2 Bytes</VariableType>
+              <Address>pUnit</Address>
+              <Offsets>
+                <Offset>B16</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>44</ID>
+              <Description>"Current Intelligence R ==&gt;"</Description>
+              <Color>0000FF</Color>
+              <VariableType>Byte</VariableType>
+              <Address>pUnit</Address>
+              <Offsets>
+                <Offset>5E6</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>50</ID>
+              <Description>"Current Intelligence C ==&gt;"</Description>
+              <Color>0000FF</Color>
+              <VariableType>2 Bytes</VariableType>
+              <Address>pUnit</Address>
+              <Offsets>
+                <Offset>B1A</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>45</ID>
+              <Description>"Current Wisdom R ==&gt;"</Description>
+              <Color>0000FF</Color>
+              <VariableType>Byte</VariableType>
+              <Address>pUnit</Address>
+              <Offsets>
+                <Offset>5E7</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>51</ID>
+              <Description>"Current Wisdom C ==&gt;"</Description>
+              <Color>0000FF</Color>
+              <VariableType>2 Bytes</VariableType>
+              <Address>pUnit</Address>
+              <Offsets>
+                <Offset>B1C</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>46</ID>
+              <Description>"Current Dexterity R ==&gt;"</Description>
+              <Color>0000FF</Color>
+              <VariableType>Byte</VariableType>
+              <Address>pUnit</Address>
+              <Offsets>
+                <Offset>5E8</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>52</ID>
+              <Description>"Current Dexterity C ==&gt;"</Description>
+              <Color>0000FF</Color>
+              <VariableType>2 Bytes</VariableType>
+              <Address>pUnit</Address>
+              <Offsets>
+                <Offset>B1E</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>47</ID>
+              <Description>"Current Constitution R ==&gt;"</Description>
+              <Color>0000FF</Color>
+              <VariableType>Byte</VariableType>
+              <Address>pUnit</Address>
+              <Offsets>
+                <Offset>5E9</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>53</ID>
+              <Description>"Current Constitution C ==&gt;"</Description>
+              <Color>0000FF</Color>
+              <VariableType>2 Bytes</VariableType>
+              <Address>pUnit</Address>
+              <Offsets>
+                <Offset>B20</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>48</ID>
+              <Description>"Current Charisma R ==&gt;"</Description>
+              <Color>0000FF</Color>
+              <VariableType>Byte</VariableType>
+              <Address>pUnit</Address>
+              <Offsets>
+                <Offset>5EA</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>54</ID>
+              <Description>"Current Charisma C ==&gt;"</Description>
+              <Color>0000FF</Color>
+              <VariableType>2 Bytes</VariableType>
+              <Address>pUnit</Address>
+              <Offsets>
+                <Offset>B22</Offset>
+              </Offsets>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols>
+    <SymbolEntry>
+      <Name>LUDO</Name>
+      <Address>Baldur.exe</Address>
+    </SymbolEntry>
+  </UserdefinedSymbols>
+  <Comments>===========================================
+ Game Title    : Baldur's Gate - Enhanced Edition
+ Game Version  : 1.0.2011
+ Game Sponsor  : SKIDROW (via Internet)
+ Proces Name   : Baldur.exe
+ Script Version: 1.1
+ CE Version    : 6.2
+ Release date  : 17-Dec-2012
+ Author        : Recifense
+ History:
+ 30-Nov-12: First Release
+ 03-Dec-12: Fix GM. Now only player's unit are safe.
+ 17-Dec-12: Release for version 1.0.2011.
+ Features:
+ - God Mode      [1]
+ - Minimum Gold  [2]
+ - Pointers      [3]
+===========================================
+[1] For Player's Party;
+[2] Minimum can be changed (default = 6200)
+[3] Used on the table (selected unit and gold)
+===========================================
+[IMPORTANT] Selected Unit Info is only valid when in the inventory screen;
+[NOTE] The unit's attributes are placed in two diferrent addresses, change both;
+===========================================
+HOTKEYS:
+CTRL+Home = Enable  all cheats;
+CTRL+End  = Disable all cheats;
+===========================================
+The old good games are coming back!
+Cheers!
+</Comments>
+</CheatTable>

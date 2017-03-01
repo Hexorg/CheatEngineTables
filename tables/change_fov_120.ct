@@ -1,0 +1,169 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="17">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>204</ID>
+      <Description>"Change FoV (PG UP, PG DOWN, HOME)"</Description>
+      <Options moHideChildren="1" moManualExpandCollapse="1" moAllowManualCollapseAndExpand="1"/>
+      <LastState Activated="0"/>
+      <Color>80000008</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>{ Game   : BioShockInfinite.exe
+  Date   : 2013-11-19
+  Author : mgr.inz.Player
+}
+
+[ENABLE]
+aobscanmodule(FoV_OnTheFly,BioShockInfinite.exe,F3 0F 10 85 90 02 00 00 5F 5E) // should be unique
+registersymbol(FoV_OnTheFly)
+label(currentFOVOffset)
+globalalloc(FOV_OnTheFly_Memory,$1000)
+label(code)
+label(return)
+
+label(thread)
+createthread(thread)
+label(disableThread)
+registersymbol(disableThread)
+label(IncreaseFOV)
+label(DecreaseFOV)
+label(ResetFOV)
+label(FOVOffsetStep)
+registersymbol(FOVOffsetStep)
+
+
+FOV_OnTheFly_Memory:
+thread:
+push #5
+call sleep
+
+push 21 //PG_UP
+call GetAsyncKeyState
+test ax,ax
+jnz IncreaseFOV
+
+push 22 //PG_DOWN
+call GetAsyncKeyState
+test ax,ax
+jnz DecreaseFOV
+
+push 24 //HOME
+call GetAsyncKeyState
+test ax,ax
+jnz ResetFOV
+
+test byte ptr [disableThread],01
+jz thread
+ret
+
+label(calcStep)
+
+IncreaseFOV:
+fld [currentFOVOffset]
+fadd [FOVOffsetStep]
+fstp [currentFOVOffset]
+call calcStep
+jmp thread
+
+DecreaseFOV:
+fld [currentFOVOffset]
+fsub [FOVOffsetStep]
+fstp [currentFOVOffset]
+call calcStep
+jmp thread
+
+ResetFOV:
+fldz
+fstp [currentFOVOffset]
+call calcStep
+jmp thread
+
+FOVOffsetStep:
+dd (float)0.2
+
+currentFOVOffset:
+dd 00
+
+disableThread:
+db 00
+
+label(currentFoV)
+registersymbol(currentFoV)
+currentFoV:
+dd 00
+
+label(const)
+const:
+dd (float)-0.0016852808
+dd (float)0.15
+dd (float)90
+
+calcStep:
+fld [const+8]
+fsub [currentFoV]
+fabs
+fmul [const]
+fadd [const+4]
+fstp [FOVOffsetStep]
+ret
+
+
+code:
+  movss xmm0,[currentFOVOffset]
+  movss [ebp+00000290],xmm0
+
+  //movss xmm0,[ebp+00000290] // orig
+
+  //  INFO
+  movq xmm2,xmm0
+  addss xmm2,xmm1
+  movd [currentFoV],xmm2
+  //^^^^^^^^^^^^^^^^^^^^^
+
+  jmp return
+
+FoV_OnTheFly:
+  jmp code
+  db 90 90 90
+return:
+
+[DISABLE]
+FoV_OnTheFly:
+  db F3 0F 10 85 90 02 00 00
+
+disableThread:
+db 01
+
+unregistersymbol(FoV_OnTheFly)
+unregistersymbol(disableThread)
+unregistersymbol(FOVOffsetStep)
+unregistersymbol(currentFoV)
+
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>205</ID>
+          <Description>"FoV Step (INFO only)"</Description>
+          <LastState Value="??" Activated="0" RealAddress="06460085"/>
+          <Color>80000008</Color>
+          <VariableType>Float</VariableType>
+          <Address>FOVOffsetStep</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>206</ID>
+          <Description>"currentFoV (INFO only)"</Description>
+          <LastState Value="??" Activated="0" RealAddress="0646008E"/>
+          <Color>80000008</Color>
+          <VariableType>Float</VariableType>
+          <Address>currentFoV</Address>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols>
+    <SymbolEntry>
+      <Name>FOV_OnTheFly_Memory</Name>
+      <Address>06460000</Address>
+    </SymbolEntry>
+  </UserdefinedSymbols>
+</CheatTable>

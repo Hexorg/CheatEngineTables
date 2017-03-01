@@ -1,0 +1,372 @@
+<?xml version="1.0"?>
+<CheatTable CheatEngineTableVersion="12">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>16</ID>
+      <Description>"[X] &lt;== Earth Defense Force Insect Armageddon Script 2.1"</Description>
+      <Options moHideChildren="1"/>
+      <Color>80000008</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>{
+===========================================
+ Game Title    : Earth Defense Force Insect Armageddon
+ Game Version  : Unknown (patch of 28-Jan-2012)
+ Script Version: 2.0
+ CE Version    : 6.1
+ Release date  : 27-Feb-2011
+ Author        : Recifense
+ Features:
+ - God Mode (inluding Turret/Mech/Tank)
+ - Unlimited Ammo
+ - Cooldown (Turret/Mech)
+ - Unlimited Energy (Jet/Weapon)
+===========================================
+}
+
+[ENABLE]
+//=========================================
+// Check if script is compatible to this game version
+// If false the script will not be loaded
+
+assert("EDF-IA.exe"+1b8e86,8b 85 b0 03 00 00)
+
+//=========================================
+alloc(MyCode,1024)
+//=========================================
+// Declaration section
+label(_MonValues)
+label(_MonV000)
+label(_MonV001)
+label(_MonV0010)
+label(_MonV002)
+label(_MonV0020)
+label(_MonV003)
+label(_MonV0030)
+label(_MonV004)
+label(_MonV00)
+label(_MonV01)
+label(_MonV02)
+label(_MonV0C)
+label(_MonV0Z)
+label(_BackMV)
+label(_ExitMV)
+label(pHP)
+label(pWeapon)
+label(iEnableGM)
+label(iEnableMA)
+label(iEnableMCD)
+label(iEnableME)
+
+//=========================================
+// Registering Symbols
+registersymbol(MyCode)
+registersymbol(pHP)
+registersymbol(pWeapon)
+registersymbol(iEnableGM)
+registersymbol(iEnableMA)
+registersymbol(iEnableMCD)
+registersymbol(iEnableME)
+
+//=========================================
+MyCode:
+//=========================================
+// HP and Ammo
+_MonValues:
+// Turret Armor
+ mov eax,[ebp+08]
+ cmp eax,'VEH_'
+ jne _MonV000
+
+ mov eax,[ebp+0C]
+ cmp eax,'Turr'
+ jne _MonV003
+
+ cmp ebx,1
+ jne _ExitMV
+
+ test edi,edi
+ jnz _ExitMV
+
+ jmp _MonV00
+//========
+// Char Armor
+_MonV000:
+ cmp eax,'CHAR'
+ jne _MonV001
+
+ mov eax,[ebp+0c]
+ cmp eax,'_Arm'
+ jne _ExitMV
+
+ test ebx,ebx
+ jnz _ExitMV
+
+ test edi,edi
+ jnz _ExitMV
+
+ jmp _MonV00
+//========
+// Turrent/Mech Cooldown
+_MonV001:
+ cmp eax,'GUN_'
+ jne _MonV004
+
+ mov eax,[ebp+0c]
+ cmp eax,'Turr'
+ je _MonV0010
+
+ cmp eax,'Mech'
+ jne _MonV002
+
+_MonV0010:
+ cmp  ebx,1
+ jnz _ExitMV
+
+ test edi,edi
+ jnz _ExitMV
+
+ jmp _MonV01
+//========
+// Gun Ammo
+_MonV002:
+ cmp eax,'Hect'
+ je _ExitMV
+
+// cmp eax,'Troo'
+// je _MonV0020
+
+// cmp eax,'Tact'
+// je _MonV0020
+
+// cmp eax,'Tank'
+// je _MonV0020
+
+// cmp eax,'JetA'
+// je _MonV0020
+
+// cmp eax,'JetM'
+// jne _ExitMV
+
+_MonV0020:
+ test ebx,ebx
+ jnz _ExitMV
+
+ cmp  edi,1
+ jne _ExitMV
+
+ cmp dword ptr [iEnableMA],0
+ je _ExitMV                        // Jump if feature is disabled
+
+ jmp _MonV0C
+//========
+// Mech/Tank Armor
+_MonV003:
+ mov eax,[ebp+0C]
+ cmp eax,'Mech'
+ je _MonV0030
+
+ cmp eax,'Tank'
+ jne _ExitMV
+
+_MonV0030:
+ cmp ebx,2
+ jne _ExitMV
+
+ test edi,edi
+ jnz _ExitMV
+
+ jmp _MonV00
+//========
+// Energy
+_MonV004:
+ cmp eax,'MGR_'
+ jne _ExitMV
+
+ mov eax,[ebp+0c]
+ cmp eax,'Ener'
+ jne _ExitMV
+
+ test ebx,ebx
+ jnz _ExitMV
+
+ test edi,edi
+ jnz _ExitMV
+
+ cmp dword ptr [iEnableME],0
+ je _ExitMV                        // Jump if feature is disabled
+
+ jmp _MonV0C
+//========
+// God Mode
+_MonV00:
+ cmp dword ptr [iEnableGM],0
+ je _ExitMV                        // Jump if feature is disabled
+
+ jmp _MonV0Z
+
+// Cooldown
+_MonV01:
+ cmp dword ptr [iEnableMCD],0
+ je _ExitMV                        // Jump if feature is disabled
+
+ jmp _MonV0Z
+
+// Output Current Value or greater
+_MonV0C:
+ mov eax,[ebp+08]                  // For debugging
+
+ mov eax,[ebp+000003B0]            // Get pValue
+ mov ecx,[eax+ebx*4]
+ mov ecx,[ecx+edi*4]
+
+ mov eax,[esp+14]
+ test eax,eax
+ js _MonV02
+
+ cmp ecx,[esp+14]
+ jle _ExitMV
+
+_MonV02:
+ mov [esp+14],ecx
+ jmp _ExitMV
+
+// Output Zero
+_MonV0Z:
+ mov eax,[ebp+08]                  // For debugging
+
+ xor eax,eax
+ mov [esp+14],eax
+
+_ExitMV:
+ mov eax,[ebp+000003B0]            // Original code
+ jmp _BackMV                       // Back to main code
+
+//=========================================
+ db '======================&gt;'
+ db 'CE6.1 Script by Recifense 022712'
+//=========================================
+// Variables
+iEnableGM:
+ dd 1
+iEnableMA:
+ dd 1
+iEnableMCD:
+ dd 1
+iEnableME:
+ dd 1
+pWeapon:
+ dd 0
+pHP:
+ dd 0
+
+//=========================================
+// Hacking Points
+"EDF-IA.exe"+1b8e86:
+ jmp _MonValues
+ nop
+_BackMV:
+
+//=========================================
+// Script for Restoring Original Codes
+[DISABLE]
+"EDF-IA.exe"+1b8e86:
+// mov eax,[ebp+000003B0]
+ db 8b 85 b0 03 00 00
+
+//=========================================
+// Unregistering Symbols
+unregistersymbol(MyCode)
+unregistersymbol(pHP)
+unregistersymbol(pWeapon)
+unregistersymbol(iEnableGM)
+unregistersymbol(iEnableMA)
+unregistersymbol(iEnableMCD)
+unregistersymbol(iEnableME)
+
+//=========================================
+dealloc(MyCode)
+//============= Scripts End ===============
+
+// ****************************************
+// NOTES
+// ****************************************
+{
+}
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>17</ID>
+          <Description>"Enable/Disable God Mode ==&gt; (1/0)"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableGM</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>18</ID>
+          <Description>"Enable/Disable Unlimited Ammo ==&gt; (1/0)"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMA</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>26</ID>
+          <Description>"Enable/Disable No Cooldown ==&gt; (1/0)"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMCD</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>27</ID>
+          <Description>"Enable/Disable Unlimited Energy ==&gt; (1/0)"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableME</Address>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols>
+    <SymbolEntry>
+      <Name>MyCode</Name>
+      <Address>077C0000</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>pHP</Name>
+      <Address>077C01E3</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>pWeapon</Name>
+      <Address>077C01DF</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>iEnableGM</Name>
+      <Address>077C01CF</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>iEnableMA</Name>
+      <Address>077C01D3</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>iEnableMCD</Name>
+      <Address>077C01D7</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>iEnableME</Name>
+      <Address>077C01DB</Address>
+    </SymbolEntry>
+  </UserdefinedSymbols>
+  <Comments>===========================================
+ Game Title    : Earth Defense Force Insect Armageddon
+ Game Version  : Unknown (patch of 28-Jan-2012)
+ Script Version: 2.0
+ CE Version    : 6.1
+ Release date  : 27-Feb-2011
+ Author        : Recifense
+ Features:
+ - God Mode (inluding Turret/Mech/Tank)
+ - Unlimited Ammo
+ - Cooldown (Turret/Mech)
+ - Unlimited Energy (Jet/Weapon)
+===========================================
+</Comments>
+</CheatTable>

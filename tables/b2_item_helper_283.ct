@@ -1,0 +1,156 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="14">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>2649</ID>
+      <Description>"Player X"</Description>
+      <Color>80000008</Color>
+      <VariableType>Float</VariableType>
+      <Address>"Borderlands2.exe"+01E413F8</Address>
+      <Offsets>
+        <Offset>60</Offset>
+        <Offset>190</Offset>
+        <Offset>590</Offset>
+        <Offset>A4</Offset>
+        <Offset>28</Offset>
+      </Offsets>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>2651</ID>
+      <Description>"Player Y"</Description>
+      <Color>80000008</Color>
+      <VariableType>Float</VariableType>
+      <Address>"Borderlands2.exe"+01E413F8</Address>
+      <Offsets>
+        <Offset>64</Offset>
+        <Offset>190</Offset>
+        <Offset>590</Offset>
+        <Offset>A4</Offset>
+        <Offset>28</Offset>
+      </Offsets>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>2650</ID>
+      <Description>"Player Z"</Description>
+      <Color>80000008</Color>
+      <VariableType>Float</VariableType>
+      <Address>"Borderlands2.exe"+01E413F8</Address>
+      <Offsets>
+        <Offset>68</Offset>
+        <Offset>190</Offset>
+        <Offset>590</Offset>
+        <Offset>A4</Offset>
+        <Offset>28</Offset>
+      </Offsets>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>2652</ID>
+      <Description>"pointerscan result"</Description>
+      <Color>80000008</Color>
+      <VariableType>4 Bytes</VariableType>
+      <Address>"Borderlands2.exe"+01D91598</Address>
+      <Offsets>
+        <Offset>184</Offset>
+        <Offset>108</Offset>
+        <Offset>14</Offset>
+        <Offset>0</Offset>
+      </Offsets>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols/>
+  <LuaScript>strings_add(getAutoAttachList(), "Borderlands2.exe")
+errorOnLookupFailure(false)
+
+LootPointer = '[[[["Borderlands2.exe"+01D91598]+0]+14]+108]+184'
+PlayerData = '[[[[["Borderlands2.exe"+01E413F8]+28]+A4]+590]+190]+0'
+
+function Dec2Hex(nValue)
+  if type(nValue) == "string" then
+    nValue = String.ToNumber(nValue);
+  end
+  nHexVal = string.format("%X", nValue);
+  sHexVal = nHexVal.."";
+  return sHexVal;
+end
+
+
+
+
+function LootMover()
+   for i=0,readInteger(getAddress(LootPointer) +4)-1 do
+      local lootdata = readInteger(readInteger(getAddress(LootPointer))+(i*4))
+      writeFloat(lootdata+96,readFloat(getAddress(PlayerData)+96)+cos(readInteger(getAddress(LootPointer) +4),100,i+1))
+      writeFloat(lootdata+100,readFloat(getAddress(PlayerData)+100)+sin(readInteger(getAddress(LootPointer) +4),100,i+1))
+      writeFloat(lootdata+104,readFloat(getAddress(PlayerData)+104)+15)
+      writeBytes(lootdata+156,2)
+      --writeFloat(lootdata+120,0.3)
+   end
+   sleep(10)
+   for i=0,readInteger(getAddress(LootPointer) +4)-1 do
+      local lootdata = readInteger(readInteger(getAddress(LootPointer))+(i*4))
+      writeBytes(lootdata+156,0)
+   end
+end
+
+function CrapDelete()
+   for i=0,readInteger(getAddress(LootPointer) +4)-1 do
+      local lootdata = readInteger(readInteger(getAddress(LootPointer))+(i*4))
+      local loottimer = readFloat(lootdata+228)
+      if loottimer &gt; 0 then
+         writeFloat(lootdata+228,0.1)
+      end
+   end
+end
+
+function AllDelete()
+   for i=0,readInteger(getAddress(LootPointer) +4)-1 do
+      local lootdata = readInteger(readInteger(getAddress(LootPointer))+(i*4))
+      writeFloat(lootdata+228,0.1)
+   end
+end
+
+function LootScaler()
+   for i=0,readInteger(getAddress(LootPointer) +4)-1 do
+      local ItemData = getAddress('[[[[[[[["Borderlands2.exe"+01D91598]+0]+14]+108]+184]+' .. Dec2Hex(4*i) .. ']+134]+0]+0')
+      local rarity = readInteger(ItemData+476)
+      if rarity ==5 or (rarity &gt; 6 and rarity &lt; 11) or rarity == 501 then
+         local lootdata = readInteger(readInteger(getAddress(LootPointer))+(i*4))
+         writeFloat(lootdata+120,3)
+      elseif rarity == 4 or rarity == 6 then
+         local lootdata = readInteger(readInteger(getAddress(LootPointer))+(i*4))
+         writeFloat(lootdata+120,1.5)
+      end
+   end
+end
+
+
+function sin(Count,Distance,Number)
+return(math.sin((6.28318/Count)*Number)*Distance)
+end
+
+function cos(Count,Distance,Number)
+return(math.cos((6.28318/Count)*Number)*Distance)
+end
+
+
+if DelAll ~= nil then object_destroy(DelAll);DelAll=nil end
+DelAll = createHotkey("AllDelete",VK_DELETE)
+
+if DelSome ~= nil then object_destroy(DelSome);DelSome=nil end
+DelSome = createHotkey("CrapDelete",187)
+
+if MoveItAll ~= nil then object_destroy(MoveItAll);MoveItAll=nil end
+MoveItAll = createHotkey("LootMover",VK_SNAPSHOT)
+
+if PTimer~=nil then
+  timer_setEnabled(PTimer, false)
+  object_destroy(PTimer);
+  PTimer = nil;
+end
+
+PTimer = createTimer(nil)
+timer_onTimer(PTimer, LootScaler)
+timer_setInterval(PTimer,1)
+timer_setEnabled(PTimer, true)
+</LuaScript>
+</CheatTable>

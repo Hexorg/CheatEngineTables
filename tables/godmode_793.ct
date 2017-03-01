@@ -1,0 +1,900 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="19">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>138</ID>
+      <Description>"Activate (Numpad 0)"</Description>
+      <Options moHideChildren="1" moActivateChildrenAsWell="1" moDeactivateChildrenAsWell="1"/>
+      <LastState Activated="1"/>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>{ Game   : GodMode.exe
+  Version: 
+  Date   : 2016-02-01
+  Author : Abystus
+
+  This script does blah blah blah
+}
+
+[ENABLE]
+alloc(newmem,$1000)
+globalalloc(cameraBase, 4)
+aobscan(cameraBaseHook, D9 40 30 8B 4D 0C D9 19 D9 40 34 D9 59 04 D9 40 38 D9 59 08 EB 16) // should be unique
+
+registersymbol(cameraBaseHook)
+label(return)
+
+newmem:
+  mov [cameraBase], eax
+  fld dword ptr [eax+30]
+  mov ecx,[ebp+0C]
+  jmp return
+
+cameraBaseHook:
+  jmp newmem
+  nop
+return:
+
+[DISABLE]
+
+cameraBaseHook:
+  db D9 40 30 8B 4D 0C
+
+unregistersymbol(cameraBaseHook)
+dealloc(newmem)
+</AssemblerScript>
+      <Hotkeys>
+        <Hotkey>
+          <Action>Toggle Activation</Action>
+          <Keys>
+            <Key>96</Key>
+          </Keys>
+          <ID>0</ID>
+        </Hotkey>
+      </Hotkeys>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>144</ID>
+          <Description>"Detach Camera From Character"</Description>
+          <Options moHideChildren="1" moActivateChildrenAsWell="1" moDeactivateChildrenAsWell="1"/>
+          <LastState Activated="1"/>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[ENABLE]
+globalAlloc(myCamX, 4)
+globalAlloc(myCamY, 4)
+globalAlloc(myCamZ, 4)
+alloc(newmem,$1000)
+aobscan(detachCamera, D9 5E 28 D9 07 D9 5E 30 D9 47 04 D9 5E 34 D9 47 08 D9 5E 38 E8 ?? ?? ?? ??) // should be unique
+registersymbol(detachCamera)
+label(skipLoad)
+label(return)
+
+newmem:
+  fstp dword ptr [esi+28]
+  cmp [myCamX], 0
+  jne skipLoad
+      push eax
+      mov eax, [edi]
+      mov [myCamX], eax
+      mov eax, [edi+04]
+      mov [myCamZ], eax
+      mov eax, [edi+08]
+      mov [myCamY], eax
+      pop eax
+  skipLoad:
+  push eax
+      mov eax, [myCamX]
+      mov [edi], eax
+      mov eax, [myCamZ]
+      mov [edi+04], eax
+      mov eax, [myCamY]
+      mov [edi+08], eax
+  pop eax
+  fld dword ptr [edi]
+  jmp return
+
+detachCamera:
+  jmp newmem
+return:
+
+[DISABLE]
+myCamX:
+db (float)0
+myCamY:
+db (float)0
+myCamZ:
+db (float)0
+
+detachCamera:
+  db D9 5E 28 D9 07
+
+unregistersymbol(detachCamera)
+dealloc(newmem)
+</AssemblerScript>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>149</ID>
+              <Description>"Free Fly Camera (Y, G, H, J, U, M)"</Description>
+              <LastState Activated="1"/>
+              <VariableType>Auto Assembler Script</VariableType>
+              <AssemblerScript>[ENABLE]
+alloc(flyMode, 2048)
+alloc(flyEnabled, 1)
+createthread(flyMode)
+
+label(loopStart)
+label(skipAll)
+
+label(moveForward)
+label(skipForward)
+
+label(moveLeft)
+label(skipLeft)
+
+label(moveRight)
+label(skipRight)
+
+label(moveBackward)
+label(skipBackward)
+
+label(incZ)
+label(skipIncZ)
+
+label(decZ)
+label(skipDecZ)
+
+label(modifier)
+
+registersymbol(flyMode)
+registersymbol(flyEnabled)
+registersymbol(modifier)
+
+flyEnabled:
+  db 01
+
+flyMode:
+
+  //Loop until cheat is disabled
+  loopStart:
+
+    //Create input delay
+    push 05
+    call kernel32.Sleep
+
+    //Grab Camera Base
+    mov edi, [cameraBase]
+
+    cmp edi, 0
+    je skipAll
+
+    //VK_Y
+    push 59
+    call GetAsyncKeyState
+    shr ax,#15
+    cmp ax,1
+    jne skipForward
+        call moveForward
+    skipForward:
+
+    //VK_G
+    push 47
+    call GetAsyncKeyState
+    shr ax,#15
+    cmp ax,1
+    jne skipLeft
+        call moveLeft
+    skipLeft:
+
+    //VK_J
+    push 4A
+    call GetAsyncKeyState
+    shr ax,#15
+    cmp ax,1
+    jne skipRight
+        call moveRight
+    skipRight:
+
+    //VK_H
+    push 48
+    call GetAsyncKeyState
+    shr ax,#15
+    cmp ax,1
+    jne skipBackward
+        call moveBackward
+    skipBackward:
+
+    //VK_U
+    push 55
+    call GetAsyncKeyState
+    shr ax,#15
+    cmp ax,1
+    jne skipIncZ
+        call incZ
+    skipIncZ:
+
+    //VK_M
+    push 4D
+    call GetAsyncKeyState
+    shr ax,#15
+    cmp ax,1
+    jne skipDecZ
+        call decZ
+    skipDecZ:
+
+    skipAll:
+
+    //Clear Registers
+    xorps xmm0,xmm0
+    xorps xmm1,xmm1
+    xorps xmm2,xmm2
+    xorps xmm3,xmm3
+    xorps xmm4,xmm4
+    xorps xmm5,xmm5
+  cmp [flyEnabled], 1
+  je loopStart
+
+  dealloc(flyEnabled)
+
+  mov [myCamX], 0
+  mov [myCamY], 0
+  mov [myCamZ], 0
+
+  //Terminate thread
+  push 0                      //dwExitCode = 0
+  call GetCurrentThread
+  push eax                    //hThread = GetCurrentThread()
+  push 0                      //return address = NULL
+
+  push 8000                   //dwFreeType = MEM_RELEASE
+  push 0                      //dwSize = 0
+  push flyMode                //dwAddress = mythread
+  push TerminateThread        //return address = TerminateThread
+  jmp VirtualFree
+
+moveForward:
+    movss xmm0,[edi]   // Cosine Value
+    movss xmm1,[edi+8]   // Sine Value
+    mulss xmm0,[modifier]  // Multiply Cosine by Speed
+    mulss xmm1,[modifier]  // Multiply Sine by Speed
+
+    //Load XYZ
+    movss xmm2, [myCamX] // Load X
+    movss xmm3, [myCamY] // Load Y
+    movss xmm4, [myCamZ] // Load Z
+
+    subss xmm3,xmm0
+    addss xmm2,xmm1
+
+    movss xmm5,[edi+24]  // Load Z Pitch
+    mulss xmm5,[modifier]// Multiply pitch by modifier
+
+    addss xmm4,xmm5      // Add result to Z
+
+    //Store XYZ
+    movss [myCamX], xmm2 //Store X
+    movss [myCamY], xmm3 //Store Y
+    movss [myCamZ], xmm4 //Store Z
+ret
+
+moveLeft:
+    movss xmm0,[edi]   // Cosine Value
+    movss xmm1,[edi+8]   // Sine Value
+    mulss xmm0,[modifier]  // Multiply Cosine by Speed
+    mulss xmm1,[modifier]  // Multiply Sine by Speed
+
+    //Load XY
+    movss xmm2, [myCamX] // Load X
+    movss xmm3, [myCamY] // Load Y
+
+    subss xmm2,xmm0
+    subss xmm3,xmm1
+
+    //Store XY
+    movss [myCamX], xmm2 //Store X
+    movss [myCamY], xmm3 //Store Y
+ret
+
+moveRight:
+    movss xmm0,[edi]   // Cosine Value
+    movss xmm1,[edi+8]   // Sine Value
+    mulss xmm0,[modifier]  // Multiply Cosine by Speed
+    mulss xmm1,[modifier]  // Multiply Sine by Speed
+
+    //Load XY
+    movss xmm2, [myCamX] // Load X
+    movss xmm3, [myCamY] // Load Y
+
+    addss xmm2,xmm0
+    addss xmm3,xmm1
+
+    //Store XY
+    movss [myCamX], xmm2 //Store X
+    movss [myCamY], xmm3 //Store Y
+ret
+
+moveBackward:
+    movss xmm0,[edi]   // Cosine Value
+    movss xmm1,[edi+8]   // Sine Value
+    mulss xmm0,[modifier]  // Multiply Cosine by Speed
+    mulss xmm1,[modifier]  // Multiply Sine by Speed
+
+    //Load XYZ
+    movss xmm2, [myCamX] // Load X
+    movss xmm3, [myCamY] // Load Y
+    movss xmm4, [myCamZ] // Load Z
+
+    addss xmm3,xmm0
+    subss xmm2,xmm1
+
+    movss xmm5,[edi+24]  // Load Z Pitch
+    mulss xmm5,[modifier]// Multiply pitch by modifier
+
+    subss xmm4,xmm5      // Add result to Z
+
+    //Store XYZ
+    movss [myCamX], xmm2 //Store X
+    movss [myCamY], xmm3 //Store Y
+    movss [myCamZ], xmm4 //Store Z
+ret
+
+//Change Z
+incZ:
+  fld dword ptr [myCamZ]     // Load Z
+  fadd dword ptr [modifier] // Add Modifier
+  fstp dword ptr [myCamZ]    // Store Z
+ret
+
+decZ:
+  fld dword ptr [myCamZ]     // Load Z
+  fsub dword ptr [modifier] // Subtract Modifier
+  fstp dword ptr [myCamZ]    // Store Z
+ret
+
+modifier:
+  dd (float)0.10
+
+[DISABLE]
+flyEnabled:
+  db 00
+
+unregistersymbol(flyMode)
+unregistersymbol(flyEnabled)
+unregistersymbol(modifier)
+</AssemblerScript>
+              <CheatEntries>
+                <CheatEntry>
+                  <ID>151</ID>
+                  <Description>"Fly Speed"</Description>
+                  <VariableType>Float</VariableType>
+                  <Address>modifier</Address>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>145</ID>
+                  <Description>"X"</Description>
+                  <VariableType>Float</VariableType>
+                  <Address>myCamX</Address>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>147</ID>
+                  <Description>"Y"</Description>
+                  <VariableType>Float</VariableType>
+                  <Address>myCamY</Address>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>146</ID>
+                  <Description>"Z"</Description>
+                  <VariableType>Float</VariableType>
+                  <Address>myCamZ</Address>
+                </CheatEntry>
+              </CheatEntries>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>150</ID>
+              <Description>"Original Camera Info"</Description>
+              <LastState Value="" Activated="1" RealAddress="00000000"/>
+              <GroupHeader>1</GroupHeader>
+              <CheatEntries>
+                <CheatEntry>
+                  <ID>142</ID>
+                  <Description>"X"</Description>
+                  <VariableType>Float</VariableType>
+                  <Address>cameraBase</Address>
+                  <Offsets>
+                    <Offset>30</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>140</ID>
+                  <Description>"Y"</Description>
+                  <VariableType>Float</VariableType>
+                  <Address>cameraBase</Address>
+                  <Offsets>
+                    <Offset>38</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>141</ID>
+                  <Description>"Z"</Description>
+                  <VariableType>Float</VariableType>
+                  <Address>cameraBase</Address>
+                  <Offsets>
+                    <Offset>34</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>139</ID>
+                  <Description>"Sine"</Description>
+                  <VariableType>Float</VariableType>
+                  <Address>cameraBase</Address>
+                  <Offsets>
+                    <Offset>0</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>148</ID>
+                  <Description>"Cosine"</Description>
+                  <VariableType>Float</VariableType>
+                  <Address>cameraBase</Address>
+                  <Offsets>
+                    <Offset>8</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>152</ID>
+                  <Description>"Pitch"</Description>
+                  <VariableType>Float</VariableType>
+                  <Address>cameraBase</Address>
+                  <Offsets>
+                    <Offset>24</Offset>
+                  </Offsets>
+                </CheatEntry>
+              </CheatEntries>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+  </CheatEntries>
+  <CheatCodes>
+    <CodeEntry>
+      <Description>Change of fstp dword ptr [esi+34]</Description>
+      <Address>00F80B15</Address>
+      <ModuleName>GodMode.exe</ModuleName>
+      <ModuleNameOffset>B80B15</ModuleNameOffset>
+      <Before>
+        <Byte>5E</Byte>
+        <Byte>30</Byte>
+        <Byte>D9</Byte>
+        <Byte>47</Byte>
+        <Byte>04</Byte>
+      </Before>
+      <Actual>
+        <Byte>D9</Byte>
+        <Byte>5E</Byte>
+        <Byte>34</Byte>
+      </Actual>
+      <After>
+        <Byte>D9</Byte>
+        <Byte>47</Byte>
+        <Byte>08</Byte>
+        <Byte>D9</Byte>
+        <Byte>5E</Byte>
+      </After>
+    </CodeEntry>
+    <CodeEntry>
+      <Description>Change of mov ecx,[eax+38]</Description>
+      <Address>01265E14</Address>
+      <ModuleName>GodMode.exe</ModuleName>
+      <ModuleNameOffset>E65E14</ModuleNameOffset>
+      <Before>
+        <Byte>24</Byte>
+        <Byte>8C</Byte>
+        <Byte>00</Byte>
+        <Byte>00</Byte>
+        <Byte>00</Byte>
+      </Before>
+      <Actual>
+        <Byte>8B</Byte>
+        <Byte>48</Byte>
+        <Byte>38</Byte>
+      </Actual>
+      <After>
+        <Byte>89</Byte>
+        <Byte>8C</Byte>
+        <Byte>24</Byte>
+        <Byte>90</Byte>
+        <Byte>00</Byte>
+      </After>
+    </CodeEntry>
+    <CodeEntry>
+      <Description>Change of movss xmm6,[esi+38]</Description>
+      <Address>00BF4C26</Address>
+      <ModuleName>GodMode.exe</ModuleName>
+      <ModuleNameOffset>7F4C26</ModuleNameOffset>
+      <Before>
+        <Byte>F3</Byte>
+        <Byte>0F</Byte>
+        <Byte>10</Byte>
+        <Byte>6E</Byte>
+        <Byte>34</Byte>
+      </Before>
+      <Actual>
+        <Byte>F3</Byte>
+        <Byte>0F</Byte>
+        <Byte>10</Byte>
+        <Byte>76</Byte>
+        <Byte>38</Byte>
+      </Actual>
+      <After>
+        <Byte>6A</Byte>
+        <Byte>01</Byte>
+        <Byte>8D</Byte>
+        <Byte>44</Byte>
+        <Byte>24</Byte>
+      </After>
+    </CodeEntry>
+    <CodeEntry>
+      <Description>Change of movss xmm0,[eax+38]</Description>
+      <Address>006C641B</Address>
+      <ModuleName>GodMode.exe</ModuleName>
+      <ModuleNameOffset>2C641B</ModuleNameOffset>
+      <Before>
+        <Byte>F3</Byte>
+        <Byte>0F</Byte>
+        <Byte>11</Byte>
+        <Byte>45</Byte>
+        <Byte>F4</Byte>
+      </Before>
+      <Actual>
+        <Byte>F3</Byte>
+        <Byte>0F</Byte>
+        <Byte>10</Byte>
+        <Byte>40</Byte>
+        <Byte>38</Byte>
+      </Actual>
+      <After>
+        <Byte>8B</Byte>
+        <Byte>55</Byte>
+        <Byte>F4</Byte>
+        <Byte>F3</Byte>
+        <Byte>0F</Byte>
+      </After>
+    </CodeEntry>
+    <CodeEntry>
+      <Description>Change of fstp dword ptr [edx+08]</Description>
+      <Address>00EF2F6D</Address>
+      <ModuleName>GodMode.exe</ModuleName>
+      <ModuleNameOffset>AF2F6D</ModuleNameOffset>
+      <Before>
+        <Byte>5A</Byte>
+        <Byte>04</Byte>
+        <Byte>D9</Byte>
+        <Byte>41</Byte>
+        <Byte>08</Byte>
+      </Before>
+      <Actual>
+        <Byte>D9</Byte>
+        <Byte>5A</Byte>
+        <Byte>08</Byte>
+      </Actual>
+      <After>
+        <Byte>C3</Byte>
+        <Byte>CC</Byte>
+        <Byte>CC</Byte>
+        <Byte>CC</Byte>
+        <Byte>CC</Byte>
+      </After>
+    </CodeEntry>
+    <CodeEntry>
+      <Description>Change of mov ecx,[eax+38]</Description>
+      <Address>00C9918E</Address>
+      <ModuleName>GodMode.exe</ModuleName>
+      <ModuleNameOffset>89918E</ModuleNameOffset>
+      <Before>
+        <Byte>96</Byte>
+        <Byte>C4</Byte>
+        <Byte>00</Byte>
+        <Byte>00</Byte>
+        <Byte>00</Byte>
+      </Before>
+      <Actual>
+        <Byte>8B</Byte>
+        <Byte>48</Byte>
+        <Byte>38</Byte>
+      </Actual>
+      <After>
+        <Byte>89</Byte>
+        <Byte>8E</Byte>
+        <Byte>C8</Byte>
+        <Byte>00</Byte>
+        <Byte>00</Byte>
+      </After>
+    </CodeEntry>
+    <CodeEntry>
+      <Description>Change of mov eax,[eax+38]</Description>
+      <Address>011DD364</Address>
+      <ModuleName>GodMode.exe</ModuleName>
+      <ModuleNameOffset>DDD364</ModuleNameOffset>
+      <Before>
+        <Byte>34</Byte>
+        <Byte>89</Byte>
+        <Byte>54</Byte>
+        <Byte>24</Byte>
+        <Byte>74</Byte>
+      </Before>
+      <Actual>
+        <Byte>8B</Byte>
+        <Byte>40</Byte>
+        <Byte>38</Byte>
+      </Actual>
+      <After>
+        <Byte>8B</Byte>
+        <Byte>55</Byte>
+        <Byte>00</Byte>
+        <Byte>89</Byte>
+        <Byte>44</Byte>
+      </After>
+    </CodeEntry>
+    <CodeEntry>
+      <Description>Change of fstp dword ptr [esi+38]</Description>
+      <Address>00F80B1B</Address>
+      <ModuleName>GodMode.exe</ModuleName>
+      <ModuleNameOffset>B80B1B</ModuleNameOffset>
+      <Before>
+        <Byte>5E</Byte>
+        <Byte>34</Byte>
+        <Byte>D9</Byte>
+        <Byte>47</Byte>
+        <Byte>08</Byte>
+      </Before>
+      <Actual>
+        <Byte>D9</Byte>
+        <Byte>5E</Byte>
+        <Byte>38</Byte>
+      </Actual>
+      <After>
+        <Byte>E8</Byte>
+        <Byte>AD</Byte>
+        <Byte>FA</Byte>
+        <Byte>FF</Byte>
+        <Byte>FF</Byte>
+      </After>
+    </CodeEntry>
+    <CodeEntry>
+      <Description>Change of fld dword ptr [eax+38]</Description>
+      <Address>0071E7B6</Address>
+      <ModuleName>GodMode.exe</ModuleName>
+      <ModuleNameOffset>31E7B6</ModuleNameOffset>
+      <Before>
+        <Byte>40</Byte>
+        <Byte>34</Byte>
+        <Byte>D9</Byte>
+        <Byte>59</Byte>
+        <Byte>04</Byte>
+      </Before>
+      <Actual>
+        <Byte>D9</Byte>
+        <Byte>40</Byte>
+        <Byte>38</Byte>
+      </Actual>
+      <After>
+        <Byte>D9</Byte>
+        <Byte>59</Byte>
+        <Byte>08</Byte>
+        <Byte>EB</Byte>
+        <Byte>16</Byte>
+      </After>
+    </CodeEntry>
+    <CodeEntry>
+      <Description>Change of movss xmm2,[eax+38]</Description>
+      <Address>00BB6FB6</Address>
+      <ModuleName>GodMode.exe</ModuleName>
+      <ModuleNameOffset>7B6FB6</ModuleNameOffset>
+      <Before>
+        <Byte>04</Byte>
+        <Byte>F3</Byte>
+        <Byte>0F</Byte>
+        <Byte>5C</Byte>
+        <Byte>07</Byte>
+      </Before>
+      <Actual>
+        <Byte>F3</Byte>
+        <Byte>0F</Byte>
+        <Byte>10</Byte>
+        <Byte>50</Byte>
+        <Byte>38</Byte>
+      </Actual>
+      <After>
+        <Byte>F3</Byte>
+        <Byte>0F</Byte>
+        <Byte>5C</Byte>
+        <Byte>57</Byte>
+        <Byte>08</Byte>
+      </After>
+    </CodeEntry>
+    <CodeEntry>
+      <Description>Change of fld dword ptr [eax+38]</Description>
+      <Address>00BB7055</Address>
+      <ModuleName>GodMode.exe</ModuleName>
+      <ModuleNameOffset>7B7055</ModuleNameOffset>
+      <Before>
+        <Byte>40</Byte>
+        <Byte>34</Byte>
+        <Byte>D9</Byte>
+        <Byte>5F</Byte>
+        <Byte>04</Byte>
+      </Before>
+      <Actual>
+        <Byte>D9</Byte>
+        <Byte>40</Byte>
+        <Byte>38</Byte>
+      </Actual>
+      <After>
+        <Byte>D9</Byte>
+        <Byte>5F</Byte>
+        <Byte>08</Byte>
+        <Byte>8B</Byte>
+        <Byte>0D</Byte>
+      </After>
+    </CodeEntry>
+    <CodeEntry>
+      <Description>Change of movss xmm0,[esi+38]</Description>
+      <Address>00719841</Address>
+      <ModuleName>GodMode.exe</ModuleName>
+      <ModuleNameOffset>319841</ModuleNameOffset>
+      <Before>
+        <Byte>F3</Byte>
+        <Byte>0F</Byte>
+        <Byte>11</Byte>
+        <Byte>45</Byte>
+        <Byte>E8</Byte>
+      </Before>
+      <Actual>
+        <Byte>F3</Byte>
+        <Byte>0F</Byte>
+        <Byte>10</Byte>
+        <Byte>46</Byte>
+        <Byte>38</Byte>
+      </Actual>
+      <After>
+        <Byte>F3</Byte>
+        <Byte>0F</Byte>
+        <Byte>11</Byte>
+        <Byte>45</Byte>
+        <Byte>EC</Byte>
+      </After>
+    </CodeEntry>
+    <CodeEntry>
+      <Description>Change of fld dword ptr [esi+38]</Description>
+      <Address>00FAF84A</Address>
+      <ModuleName>GodMode.exe</ModuleName>
+      <ModuleNameOffset>BAF84A</ModuleNameOffset>
+      <Before>
+        <Byte>BE</Byte>
+        <Byte>F0</Byte>
+        <Byte>01</Byte>
+        <Byte>00</Byte>
+        <Byte>00</Byte>
+      </Before>
+      <Actual>
+        <Byte>D9</Byte>
+        <Byte>46</Byte>
+        <Byte>38</Byte>
+      </Actual>
+      <After>
+        <Byte>8D</Byte>
+        <Byte>85</Byte>
+        <Byte>7C</Byte>
+        <Byte>FF</Byte>
+        <Byte>FF</Byte>
+      </After>
+    </CodeEntry>
+    <CodeEntry>
+      <Description>Change of fstp dword ptr [edi+08]</Description>
+      <Address>00FAF853</Address>
+      <ModuleName>GodMode.exe</ModuleName>
+      <ModuleNameOffset>BAF853</ModuleNameOffset>
+      <Before>
+        <Byte>85</Byte>
+        <Byte>7C</Byte>
+        <Byte>FF</Byte>
+        <Byte>FF</Byte>
+        <Byte>FF</Byte>
+      </Before>
+      <Actual>
+        <Byte>D9</Byte>
+        <Byte>5F</Byte>
+        <Byte>08</Byte>
+      </Actual>
+      <After>
+        <Byte>F3</Byte>
+        <Byte>0F</Byte>
+        <Byte>10</Byte>
+        <Byte>4E</Byte>
+        <Byte>10</Byte>
+      </After>
+    </CodeEntry>
+    <CodeEntry>
+      <Description>Change of mov eax,[eax+38]</Description>
+      <Address>00685AC4</Address>
+      <ModuleName>GodMode.exe</ModuleName>
+      <ModuleNameOffset>285AC4</ModuleNameOffset>
+      <Before>
+        <Byte>15</Byte>
+        <Byte>3C</Byte>
+        <Byte>7B</Byte>
+        <Byte>CA</Byte>
+        <Byte>01</Byte>
+      </Before>
+      <Actual>
+        <Byte>8B</Byte>
+        <Byte>40</Byte>
+        <Byte>38</Byte>
+      </Actual>
+      <After>
+        <Byte>33</Byte>
+        <Byte>FF</Byte>
+        <Byte>A3</Byte>
+        <Byte>40</Byte>
+        <Byte>7B</Byte>
+      </After>
+    </CodeEntry>
+    <CodeEntry>
+      <Description>Change of fstp dword ptr [esi+000001F0]</Description>
+      <Address>00FAF831</Address>
+      <ModuleName>GodMode.exe</ModuleName>
+      <ModuleNameOffset>BAF831</ModuleNameOffset>
+      <Before>
+        <Byte>00</Byte>
+        <Byte>00</Byte>
+        <Byte>D9</Byte>
+        <Byte>46</Byte>
+        <Byte>30</Byte>
+      </Before>
+      <Actual>
+        <Byte>D9</Byte>
+        <Byte>9E</Byte>
+        <Byte>F0</Byte>
+        <Byte>01</Byte>
+        <Byte>00</Byte>
+        <Byte>00</Byte>
+      </Actual>
+      <After>
+        <Byte>0F</Byte>
+        <Byte>57</Byte>
+        <Byte>D2</Byte>
+        <Byte>D9</Byte>
+        <Byte>46</Byte>
+      </After>
+    </CodeEntry>
+  </CheatCodes>
+  <UserdefinedSymbols>
+    <SymbolEntry>
+      <Name>cameraBase</Name>
+      <Address>4CA40000</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>myCamX</Name>
+      <Address>4CA40010</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>myCamY</Name>
+      <Address>4CA40020</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>myCamZ</Name>
+      <Address>4CA40030</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>cameraBaseHook</Name>
+      <Address> 0071E7A8</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>detachCamera</Name>
+      <Address> 00F80B0A</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>modifier</Name>
+      <Address>4CA7027F</Address>
+    </SymbolEntry>
+  </UserdefinedSymbols>
+</CheatTable>

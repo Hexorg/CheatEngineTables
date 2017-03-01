@@ -1,0 +1,332 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="24">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>0</ID>
+      <Description>"INIT"</Description>
+      <Options moHideChildren="1"/>
+      <LastState Activated="1"/>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>{$lua}
+
+function check()
+
+  if process and readInteger(process) then
+    pcall( LaunchMonoDataCollector )
+  end
+  local tm,prnt = createTimer(),print
+  tm.Interval = 2000
+  tm.OnTimer=function(t)t.Destroy()print=prnt end
+  print = function(...)
+    local p = table.pack(...)
+    for i=1,p.n do p[i]=tostring(p[i])end
+    p = table.concat(p,'\t')
+    if not p:lower():find('format 2') then p:gsub("([^\n\r]+)",prnt)end
+  end
+
+  return [[
+    globalalloc(__,$4000)
+  ]]
+
+end
+REID = "([_%a][_%w]*)"
+function template(pat,ks,list)
+  local ss,reid = list, REID
+  local keys ={}
+  ks:gsub(reid,function(k)keys[1+#keys]=k end)
+  local fmt = string.format
+  return function(script)
+    local code,Idx = {},0
+    ss:gsub(pat,function(...)
+      local ctx,p = {Idx=Idx},table.pack(...)
+      Idx = Idx + 1
+      for i=1,p.n do ctx[keys[i]]=p[i]end
+      code[1+#code] = script:gsub("%^'([-+*%d]*)"..reid.."'",function(num,k)
+        local v = ctx[k]
+        if v then
+          if num=='' then return v else
+            v = load('return '..num..v,'_')()
+            return v&lt;0 and fmt("-%X",-v) or fmt("%X",v)
+          end
+        end
+      end)
+    end)
+    local ss = table.concat(code,'\n')
+    return ss
+  end
+end
+
+[ENABLE]
+
+ 
+ 
+[DISABLE]
+if not syntaxcheck and monopipe then
+  monopipe = monopipe.Destroy()
+end
+
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>1</ID>
+          <Description>"ItemConsume"</Description>
+          <LastState Activated="1"/>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>{$lua}
+
+return check()
+
+{$asm}
+
+define(cave,ItemConsume)
+define(hack,consume)
+
+[ENABLE]
+
+aobscanregion(consume,InventoryItem:Consume+000 ,InventoryItem:Consume+008,55 48 8b ec 5?)
+
+alloc(ItemConsume,$1000,hack)
+registerSymbol(ItemConsume)
+
+cave+100:
+dq cave,hack
+
+cave+180:
+readmem(hack,24)
+
+cave+300:
+mov  rax,rdx
+ret
+
+
+hack:
+jmp   cave+300
+
+[DISABLE]
+{$lua}
+if not syntaxcheck and readInteger'ItemConsume'then return [[
+  [cave+108]:
+  readmem(cave+180,24)
+]]
+end
+{$asm}
+dealloc(ItemConsume)
+unregisterSymbol(ItemConsume)
+
+</AssemblerScript>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>12</ID>
+          <Description>"No need forge"</Description>
+          <LastState Activated="1"/>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>{$lua}
+
+return check()
+
+{$asm}
+
+define(cave,NoForge)
+define(hack,req)
+
+[ENABLE]
+
+aobscanregion(req, :CraftingScreenInput:_requiredForgeInVicinity+000 ,:CraftingScreenInput:_requiredForgeInVicinity+008,55 48 8b ec 5?)
+
+alloc(NoForge,$1000,hack)
+registerSymbol(NoForge)
+
+cave+100:
+dq cave,hack
+
+cave+180:
+readmem(hack,24)
+
+cave+300:
+mov  eax,1
+ret
+
+
+hack:
+jmp   cave+300
+
+[DISABLE]
+{$lua}
+if not syntaxcheck and readInteger'NoForge'then return [[
+  [cave+108]:
+  readmem(cave+180,24)
+]]
+end
+{$asm}
+dealloc(NoForge)
+unregisterSymbol(NoForge)
+
+</AssemblerScript>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>4</ID>
+          <Description>"PlayerVital"</Description>
+          <Options moHideChildren="1"/>
+          <LastState/>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>{$lua}
+
+Vitals = template(REID..":"..REID,"Type;Vital",[[
+add:Health;
+add:Stamina;
+sub:Bleeding;
+sub:Cold;
+sub:Disease;
+sub:Hunger;
+sub:Poison;
+]])
+
+
+return check()
+
+{$asm}
+
+define(cave,PlayerVital)
+define(hack,upd)
+
+[ENABLE]
+
+aobscanregion(upd,PlayerVitalsGroup:Update+000 ,PlayerVitalsGroup:Update+008,55 48 8b ec 5? )
+
+alloc(PlayerVital,$1000,hack)
+registerSymbol(PlayerVital)
+
+cave:
+dd (float)4,(float)4,(float)4,(float)4,(float)4,(float)4,(float)4
+
+cave+100:
+dq cave,hack
+
+cave+180:
+readmem(hack,24)
+
+cave+300:
+readmem(hack,5)
+sub     rsp,30
+movdqu  [rsp],xmm0
+movdqu  [rsp+10],xmm1
+movdqu  [rsp+20],xmm2
+
+push  rsi
+push  rcx
+push  rdx
+push  r8
+push  r9
+mov   rsi,rcx
+movss xmm2,xmm1  // dt
+
+{$lua}
+
+return Vitals[[
+  sub    rsp,20
+  mov    rax,":PlayerVitalsGroup:get_^'Vital'"
+  mov    rcx,rsi
+  call   rax
+  add    rsp,20
+
+  movss  xmm1,xmm0
+
+  movss  xmm0,xmm2
+  mulss  xmm0,[cave+^'4*Idx']
+
+  ^'Type'ss xmm1,xmm0
+
+  sub    rsp,20
+  mov    rax,":PlayerVitalsGroup:set_^'Vital'"
+  mov    rcx,rsi
+  call   rax
+  add    rsp,20
+
+
+]]
+
+{$asm}
+pop   r9
+pop   r8
+pop   rdx
+pop   rcx
+pop   rsi
+movdqu  xmm2,[rsp+20]
+movdqu  xmm1,[rsp+10]
+movdqu  xmm0,[rsp]
+add     rsp,30
+jmp   hack+5
+
+
+hack:
+jmp   cave+300
+
+[DISABLE]
+{$lua}
+if not syntaxcheck and readInteger'PlayerVital'then return [[
+  [cave+108]:
+  readmem(cave+180,24)
+]]
+end
+{$asm}
+dealloc(PlayerVital)
+unregisterSymbol(PlayerVital)
+
+</AssemblerScript>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>5</ID>
+              <Description>"+Health/s mul"</Description>
+              <VariableType>Float</VariableType>
+              <Address>PlayerVital</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>11</ID>
+              <Description>"+Stamina/s mul"</Description>
+              <VariableType>Float</VariableType>
+              <Address>PlayerVital+04</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>10</ID>
+              <Description>"-Bleeding/s mul"</Description>
+              <VariableType>Float</VariableType>
+              <Address>PlayerVital+08</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>9</ID>
+              <Description>"-Cold/s mul"</Description>
+              <VariableType>Float</VariableType>
+              <Address>PlayerVital+0c</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>8</ID>
+              <Description>"-Disease/s mul"</Description>
+              <VariableType>Float</VariableType>
+              <Address>PlayerVital+10</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>7</ID>
+              <Description>"-Hunger/s mul"</Description>
+              <VariableType>Float</VariableType>
+              <Address>PlayerVital+14</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>6</ID>
+              <Description>"-Poison/s mul"</Description>
+              <VariableType>Float</VariableType>
+              <Address>PlayerVital+18</Address>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols>
+    <SymbolEntry>
+      <Name>__</Name>
+      <Address>01340000</Address>
+    </SymbolEntry>
+  </UserdefinedSymbols>
+  <LuaScript>
+</LuaScript>
+</CheatTable>

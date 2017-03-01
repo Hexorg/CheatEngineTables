@@ -1,0 +1,2695 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="19">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>106895</ID>
+      <Description>"[CTRL+F1]/[SHIFT+F1] = remove ship limitations"</Description>
+      <LastState/>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>{
+  Game   : TransOcean.exe
+  Version:
+  Date   : 8.4.2016
+  Author : V3
+
+  TransOcean all ships to all ports script
+}
+
+{$lua}
+if syntaxcheck==true then return '' end
+
+if (LaunchMonoDataCollector()==0) then
+  error("no mono")
+end
+{$asm}
+
+
+
+//////////
+/////////
+////////
+[ENABLE]
+
+////////////////////////////////////////////////////////////////////////////////
+aobscanregion(INJ_allShipsAllPorts, HarbourView_CastOut_Map:IsHarbourReachable, HarbourView_CastOut_Map:IsHarbourReachable+300, D9 EE D9 5D)
+registersymbol(INJ_allShipsAllPorts)
+INJ_allShipsAllPorts:
+  jmp _allShipsAllPorts_code
+_allShipsAllPorts_return:
+
+aobscanregion(_allShipsAllPorts_skipTo, HarbourView_CastOut_Map:IsHarbourReachable, HarbourView_CastOut_Map:IsHarbourReachable+300, 3D 05 00 00 00)
+
+globalalloc(CHT_allShipsAllPorts, $100, INJ_allShipsAllPorts)
+CHT_allShipsAllPorts:
+  readmem(INJ_allShipsAllPorts, $10)
+
+_allShipsAllPorts_code:
+  mov eax, 00000001     // fake all ships as Feeders (class 1)
+
+  jmp _allShipsAllPorts_skipTo
+
+{
+HarbourView_CastOut_Map:IsHarbourReachable:     55              -  push ebp
+HarbourView_CastOut_Map:IsHarbourReachable+1:   8B EC           -  mov ebp,esp
+HarbourView_CastOut_Map:IsHarbourReachable+3:   53              -  push ebx
+HarbourView_CastOut_Map:IsHarbourReachable+4:   57              -  push edi
+HarbourView_CastOut_Map:IsHarbourReachable+5:   56              -  push esi
+HarbourView_CastOut_Map:IsHarbourReachable+6:   83 EC 3C        -  sub esp,3C
+// ---------- INJECTING HERE ----------
+HarbourView_CastOut_Map:IsHarbourReachable+9:   D9 EE           -  fldz
+HarbourView_CastOut_Map:IsHarbourReachable+b:   D9 5D E0        -  fstp dword ptr [ebp-20]
+// ---------- DONE INJECTING ----------
+HarbourView_CastOut_Map:IsHarbourReachable+e:   8B 45 10        -  mov eax,[ebp+10]
+HarbourView_CastOut_Map:IsHarbourReachable+11:  8B 40 14        -  mov eax,[eax+14]
+HarbourView_CastOut_Map:IsHarbourReachable+14:  83 EC 0C        -  sub esp,0C
+HarbourView_CastOut_Map:IsHarbourReachable+17:  50              -  push eax
+HarbourView_CastOut_Map:IsHarbourReachable+18:  39 00           -  cmp [eax],eax
+HarbourView_CastOut_Map:IsHarbourReachable+1a:  E8 F9 40 73 D1  -  call HarbourData:GetMaxShipClass
+HarbourView_CastOut_Map:IsHarbourReachable+1f:  83 C4 10        -  add esp,10
+HarbourView_CastOut_Map:IsHarbourReachable+22:  89 45 D0        -  mov [ebp-30],eax
+HarbourView_CastOut_Map:IsHarbourReachable+25:  8B 45 14        -  mov eax,[ebp+14]
+HarbourView_CastOut_Map:IsHarbourReachable+28:  8B 40 10        -  mov eax,[eax+10]
+...
+HarbourView_CastOut_Map:IsHarbourReachable+f4:   74 0A           -  je HarbourView_CastOut_Map:IsHarbourReachable+100
+HarbourView_CastOut_Map:IsHarbourReachable+f6:   B8 03 00 00 00  -  mov eax,00000003
+HarbourView_CastOut_Map:IsHarbourReachable+fb:   E9 10 01 00 00  -  jmp HarbourView_CastOut_Map:IsHarbourReachable+210
+HarbourView_CastOut_Map:IsHarbourReachable+100:  8B 45 14        -  mov eax,[ebp+14]
+HarbourView_CastOut_Map:IsHarbourReachable+103:  8B 40 10        -  mov eax,[eax+10]
+HarbourView_CastOut_Map:IsHarbourReachable+106:  83 EC 0C        -  sub esp,0C
+HarbourView_CastOut_Map:IsHarbourReachable+109:  50              -  push eax
+HarbourView_CastOut_Map:IsHarbourReachable+10a:  39 00           -  cmp [eax],eax
+HarbourView_CastOut_Map:IsHarbourReachable+10c:  E8 6F 24 FE FF  -  call ShipData:GetShipClass
+HarbourView_CastOut_Map:IsHarbourReachable+111:  83 C4 10        -  add esp,10
+// ---------- SKIP TO HERE ----------
+HarbourView_CastOut_Map:IsHarbourReachable+114:  3D 05 00 00 00  -  cmp eax,00000005
+HarbourView_CastOut_Map:IsHarbourReachable+119:  0F 9C C0        -  setl al
+HarbourView_CastOut_Map:IsHarbourReachable+11c:  0F B6 C0        -  movzx eax,al
+HarbourView_CastOut_Map:IsHarbourReachable+11f:  85 C0           -  test eax,eax
+HarbourView_CastOut_Map:IsHarbourReachable+121:  0F 94 45 E7     -  sete [ebp-19] // withOutPanama
+}
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+aobscanregion(INJ_allShipsAllCommissions, HarbourViewCommissionScrollViewItem:Update, HarbourViewCommissionScrollViewItem:Update+400, 83 C4 10 8B D0 8B 4D ?? B8 01 00 00 00)
+registersymbol(INJ_allShipsAllCommissions)
+INJ_allShipsAllCommissions:
+  jmp _allShipsAllCommissions_code
+_allShipsAllCommissions_return:
+
+globalalloc(CHT_allShipsAllCommissions, $100, INJ_allShipsAllCommissions)
+CHT_allShipsAllCommissions:
+  readmem(INJ_allShipsAllCommissions, $10)
+
+_allShipsAllCommissions_code:
+  mov eax, 00000001           // fake all ships as Feeders (class 1)
+
+_allShipsAllCommissions_original_code:
+  readmem(INJ_allShipsAllCommissions, $05)
+  //add esp,10
+  //mov edx,eax
+
+  jmp _allShipsAllCommissions_return
+
+{
+HarbourViewCommissionScrollViewItem:Update+236:  83 EC 0C           -  sub esp,0C
+HarbourViewCommissionScrollViewItem:Update+239:  50                 -  push eax
+HarbourViewCommissionScrollViewItem:Update+23a:  E8 71 CC FA FF     -  call Harbour:GetHarbourFromName
+HarbourViewCommissionScrollViewItem:Update+23f:  83 C4 10           -  add esp,10
+HarbourViewCommissionScrollViewItem:Update+242:  89 45 BC           -  mov [ebp-44],eax
+HarbourViewCommissionScrollViewItem:Update+245:  8B 45 BC           -  mov eax,[ebp-44]
+HarbourViewCommissionScrollViewItem:Update+248:  8B 40 14           -  mov eax,[eax+14]
+HarbourViewCommissionScrollViewItem:Update+24b:  83 EC 0C           -  sub esp,0C
+HarbourViewCommissionScrollViewItem:Update+24e:  50                 -  push eax
+HarbourViewCommissionScrollViewItem:Update+24f:  39 00              -  cmp [eax],eax
+HarbourViewCommissionScrollViewItem:Update+251:  E8 E2 90 FA FF     -  call HarbourData:GetMaxShipClass
+HarbourViewCommissionScrollViewItem:Update+256:  83 C4 10           -  add esp,10
+HarbourViewCommissionScrollViewItem:Update+259:  89 45 B0           -  mov [ebp-50],eax
+HarbourViewCommissionScrollViewItem:Update+25c:  8B 05 80 3D 0A 04  -  mov eax,[040A3D80]
+HarbourViewCommissionScrollViewItem:Update+262:  8B C8              -  mov ecx,eax
+HarbourViewCommissionScrollViewItem:Update+264:  39 09              -  cmp [ecx],ecx
+HarbourViewCommissionScrollViewItem:Update+266:  8B 40 10           -  mov eax,[eax+10]
+HarbourViewCommissionScrollViewItem:Update+269:  83 EC 0C           -  sub esp,0C
+HarbourViewCommissionScrollViewItem:Update+26c:  50                 -  push eax
+HarbourViewCommissionScrollViewItem:Update+26d:  39 00              -  cmp [eax],eax
+HarbourViewCommissionScrollViewItem:Update+26f:  E8 F4 CE FB FF     -  call ShipData:GetShipClass
+// ---------- INJECTING HERE ----------
+HarbourViewCommissionScrollViewItem:Update+274:  83 C4 10           -  add esp,10
+HarbourViewCommissionScrollViewItem:Update+277:  8B D0              -  mov edx,eax
+// ---------- DONE INJECTING ----------
+HarbourViewCommissionScrollViewItem:Update+279:  8B 4D B0           -  mov ecx,[ebp-50]
+HarbourViewCommissionScrollViewItem:Update+27c:  B8 01 00 00 00     -  mov eax,00000001
+HarbourViewCommissionScrollViewItem:Update+281:  3B CA              -  cmp ecx,edx
+HarbourViewCommissionScrollViewItem:Update+283:  0F 4C F0           -  cmovl esi,eax
+HarbourViewCommissionScrollViewItem:Update+286:  8B 47 5C           -  mov eax,[edi+5C]
+HarbourViewCommissionScrollViewItem:Update+289:  89 45 B4           -  mov [ebp-4C],eax
+HarbourViewCommissionScrollViewItem:Update+28c:  8B 47 44           -  mov eax,[edi+44]
+HarbourViewCommissionScrollViewItem:Update+28f:  83 EC 0C           -  sub esp,0C
+HarbourViewCommissionScrollViewItem:Update+292:  50                 -  push eax
+HarbourViewCommissionScrollViewItem:Update+293:  39 00              -  cmp [eax],eax
+HarbourViewCommissionScrollViewItem:Update+295:  E8 7E EC FE FF     -  call CommissionData:get_cargoAmountInTeu_int
+HarbourViewCommissionScrollViewItem:Update+29a:  83 C4 10           -  add esp,10
+}
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+aobscanregion(INJ_allCommissionsAllPorts, CommissionFactory:GetHarboursWithFittingShipClass, CommissionFactory:GetHarboursWithFittingShipClass+100, 83 C4 10 8B C8 8B 45 ?? 3B C1)
+registersymbol(INJ_allCommissionsAllPorts)
+INJ_allCommissionsAllPorts:
+  jmp _allCommissionsAllPorts_code
+_allCommissionsAllPorts_return:
+
+globalalloc(CHT_allCommissionsAllPorts, $100, INJ_allCommissionsAllPorts)
+CHT_allCommissionsAllPorts:
+  readmem(INJ_allCommissionsAllPorts, $10)
+
+_allCommissionsAllPorts_code:
+  mov eax, 00000001           // fake all ships as Feeders (class 1)
+
+_allCommissionsAllPorts_original_code:
+  readmem(INJ_allCommissionsAllPorts, $05)
+  //add esp,10
+  //mov ecx,eax
+
+  jmp _allCommissionsAllPorts_return
+
+{
+CommissionFactory:GetHarboursWithFittingShipClass+45:  83 EC 0C        -  sub esp,0C
+CommissionFactory:GetHarboursWithFittingShipClass+48:  50              -  push eax
+CommissionFactory:GetHarboursWithFittingShipClass+49:  39 00           -  cmp [eax],eax
+CommissionFactory:GetHarboursWithFittingShipClass+4b:  E8 30 F4 FC FF  -  call HarbourData:GetMaxShipClass
+CommissionFactory:GetHarboursWithFittingShipClass+50:  83 C4 10        -  add esp,10
+CommissionFactory:GetHarboursWithFittingShipClass+53:  89 45 E8        -  mov [ebp-18],eax
+CommissionFactory:GetHarboursWithFittingShipClass+56:  83 EC 0C        -  sub esp,0C
+CommissionFactory:GetHarboursWithFittingShipClass+59:  FF 75 10        -  push [ebp+10]
+CommissionFactory:GetHarboursWithFittingShipClass+5c:  8B 45 10        -  mov eax,[ebp+10]
+CommissionFactory:GetHarboursWithFittingShipClass+5f:  39 00           -  cmp [eax],eax
+CommissionFactory:GetHarboursWithFittingShipClass+61:  E8 12 70 FD FF  -  call ShipData:GetShipClass
+// ---------- INJECTING HERE ----------
+CommissionFactory:GetHarboursWithFittingShipClass+66:  83 C4 10        -  add esp,10
+CommissionFactory:GetHarboursWithFittingShipClass+69:  8B C8           -  mov ecx,eax
+// ---------- DONE INJECTING  ----------
+CommissionFactory:GetHarboursWithFittingShipClass+6b:  8B 45 E8        -  mov eax,[ebp-18]
+CommissionFactory:GetHarboursWithFittingShipClass+6e:  3B C1           -  cmp eax,ecx
+CommissionFactory:GetHarboursWithFittingShipClass+70:  7C 3A           -  jl CommissionFactory:GetHarboursWithFittingShipClass+ac
+CommissionFactory:GetHarboursWithFittingShipClass+72:  83 EC 0C        -  sub esp,0C
+CommissionFactory:GetHarboursWithFittingShipClass+75:  FF 75 F4        -  push [ebp-0C]
+CommissionFactory:GetHarboursWithFittingShipClass+78:  8B 45 F4        -  mov eax,[ebp-0C]
+CommissionFactory:GetHarboursWithFittingShipClass+7b:  39 00           -  cmp [eax],eax
+CommissionFactory:GetHarboursWithFittingShipClass+7d:  E8 CE 90 D0 C7  -  call UnityEngine:Component:get_gameObject
+CommissionFactory:GetHarboursWithFittingShipClass+82:  83 C4 10        -  add esp,10
+CommissionFactory:GetHarboursWithFittingShipClass+85:  39 00           -  cmp [eax],eax
+}
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+aobscanregion(INJ_allShipsThroughPanama, PathfindingManager:GetPath, PathfindingManager:GetPath+100, 0F B6 45 ?? 85 C0)
+registersymbol(INJ_allShipsThroughPanama)
+INJ_allShipsThroughPanama:
+  xor eax, eax
+  nop
+  nop
+
+globalalloc(CHT_allShipsThroughPanama, $10, INJ_allShipsThroughPanama)
+CHT_allShipsThroughPanama:
+  readmem(INJ_allShipsThroughPanama, $10)
+
+{
+PathfindingManager:GetPath:    55                 -  push ebp
+PathfindingManager:GetPath+1:  8B EC              -  mov ebp,esp
+PathfindingManager:GetPath+3:  53                 -  push ebx
+PathfindingManager:GetPath+4:  56                 -  push esi
+PathfindingManager:GetPath+5:  8B 5D 08           -  mov ebx,[ebp+08]
+PathfindingManager:GetPath+8:  8B 75 0C           -  mov esi,[ebp+0C]
+// ---------- INJECTING HERE ----------
+PathfindingManager:GetPath+b:  0F B6 45 10        -  movzx eax,byte ptr [ebp+10]
+// ---------- DONE INJECTING ----------
+PathfindingManager:GetPath+f:  85 C0              -  test eax,eax
+PathfindingManager:GetPath+11: 0F 84 7C 00 00 00  -  je PathfindingManager:GetPath+93
+PathfindingManager:GetPath+17: 8B 05 54 3D E8 04  -  mov eax,[04E83D54] // PathfindingManager.routesWithoutPanama
+PathfindingManager:GetPath+1d: 85 C0              -  test eax,eax
+PathfindingManager:GetPath+1f: 0F 84 6E 00 00 00  -  je PathfindingManager:GetPath+93
+PathfindingManager:GetPath+25: 8B 05 54 3D E8 04  -  mov eax,[04E83D54] // PathfindingManager.routesWithoutPanama
+PathfindingManager:GetPath+2b: 83 EC 08           -  sub esp,08
+PathfindingManager:GetPath+2e: 53                 -  push ebx
+PathfindingManager:GetPath+2f: 50                 -  push eax
+PathfindingManager:GetPath+30: 39 00              -  cmp [eax],eax
+PathfindingManager:GetPath+32: E8 05 01 00 00     -  call 38C18E4C
+PathfindingManager:GetPath+37: 83 C4 10           -  add esp,10
+}
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+aobscanregion(INJ_allShipsBuyable, ShipsBuyScrollViewItem:GetClassNumberString, ShipsBuyScrollViewItem:GetClassNumberString+100, 74 ?? B8 ?? ?? ?? ?? E9)
+registersymbol(INJ_allShipsBuyable)
+INJ_allShipsBuyable:
+  nop
+  nop
+
+globalalloc(CHT_allShipsBuyable, $10, INJ_allShipsBuyable)
+CHT_allShipsBuyable:
+  readmem(INJ_allShipsBuyable, $10)
+
+{
+ShipsBuyScrollViewItem:GetClassNumberString:     55              -  push ebp
+ShipsBuyScrollViewItem:GetClassNumberString+1:   8B EC           -  mov ebp,esp
+ShipsBuyScrollViewItem:GetClassNumberString+3:   57              -  push edi
+ShipsBuyScrollViewItem:GetClassNumberString+4:   83 EC 04        -  sub esp,04
+ShipsBuyScrollViewItem:GetClassNumberString+7:   8B 7D 0C        -  mov edi,[ebp+0C]
+ShipsBuyScrollViewItem:GetClassNumberString+a:   83 EC 08        -  sub esp,08
+ShipsBuyScrollViewItem:GetClassNumberString+d:   68 B0 21 C3 1B  -  push 1BC321B0 // "01"
+ShipsBuyScrollViewItem:GetClassNumberString+12:  57              -  push edi
+ShipsBuyScrollViewItem:GetClassNumberString+13:  39 3F           -  cmp [edi],edi
+ShipsBuyScrollViewItem:GetClassNumberString+15:  E8 46 4A 03 CC  -  call System:String:Contains
+ShipsBuyScrollViewItem:GetClassNumberString+1a:  83 C4 10        -  add esp,10
+ShipsBuyScrollViewItem:GetClassNumberString+1d:  85 C0           -  test eax,eax
+// ---------- INJECTING HERE ----------
+ShipsBuyScrollViewItem:GetClassNumberString+1f:  74 0A           -  je ShipsBuyScrollViewItem:GetClassNumberString+2b
+// ---------- DONE INJECTING ----------
+ShipsBuyScrollViewItem:GetClassNumberString+21:  B8 B0 21 C3 1B  -  mov eax,1BC321B0 // "01"
+ShipsBuyScrollViewItem:GetClassNumberString+26:  E9 81 00 00 00  -  jmp ShipsBuyScrollViewItem:GetClassNumberString+ac
+ShipsBuyScrollViewItem:GetClassNumberString+2b:  83 EC 08        -  sub esp,08
+ShipsBuyScrollViewItem:GetClassNumberString+2e:  68 98 21 C3 1B  -  push 1BC32198 // "02"
+ShipsBuyScrollViewItem:GetClassNumberString+33:  57              -  push edi
+ShipsBuyScrollViewItem:GetClassNumberString+34:  39 3F           -  cmp [edi],edi
+ShipsBuyScrollViewItem:GetClassNumberString+36:  E8 25 4A 03 CC  -  call System:String:Contains
+ShipsBuyScrollViewItem:GetClassNumberString+3b:  83 C4 10        -  add esp,10
+ShipsBuyScrollViewItem:GetClassNumberString+3e:  85 C0           -  test eax,eax
+ShipsBuyScrollViewItem:GetClassNumberString+40:  74 0A           -  je ShipsBuyScrollViewItem:GetClassNumberString+4c
+ShipsBuyScrollViewItem:GetClassNumberString+42:  B8 98 21 C3 1B  -  mov eax,1BC32198 // "02"
+}
+
+
+
+///////////
+//////////
+/////////
+[DISABLE]
+
+////////////////////////////////////////////////////////////////////////////////
+INJ_allShipsAllPorts:
+  readmem(CHT_allShipsAllPorts, $10)
+unregistersymbol(INJ_allShipsAllPorts)
+dealloc(CHT_allShipsAllPorts)
+unregistersymbol(CHT_allShipsAllPorts)
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+INJ_allShipsAllCommissions:
+  readmem(CHT_allShipsAllCommissions, $10)
+unregistersymbol(INJ_allShipsAllCommissions)
+dealloc(CHT_allShipsAllCommissions)
+unregistersymbol(CHT_allShipsAllCommissions)
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+INJ_allCommissionsAllPorts:
+  readmem(CHT_allCommissionsAllPorts, $10)
+unregistersymbol(INJ_allCommissionsAllPorts)
+dealloc(CHT_allCommissionsAllPorts)
+unregistersymbol(CHT_allCommissionsAllPorts)
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+INJ_allShipsThroughPanama:
+  readmem(CHT_allShipsThroughPanama, $10)
+unregistersymbol(INJ_allShipsThroughPanama)
+dealloc(CHT_allShipsThroughPanama)
+unregistersymbol(CHT_allShipsThroughPanama)
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+INJ_allShipsBuyable:
+  readmem(CHT_allShipsBuyable, $10)
+unregistersymbol(INJ_allShipsBuyable)
+dealloc(CHT_allShipsBuyable)
+unregistersymbol(CHT_allShipsBuyable)
+
+</AssemblerScript>
+      <Hotkeys>
+        <Hotkey>
+          <Action>Activate</Action>
+          <Keys>
+            <Key>17</Key>
+            <Key>112</Key>
+          </Keys>
+          <ID>0</ID>
+        </Hotkey>
+        <Hotkey>
+          <Action>Deactivate</Action>
+          <Keys>
+            <Key>16</Key>
+            <Key>112</Key>
+          </Keys>
+          <ID>1</ID>
+        </Hotkey>
+        <Hotkey>
+          <Action>Activate</Action>
+          <Keys>
+            <Key>17</Key>
+            <Key>45</Key>
+          </Keys>
+          <ID>2</ID>
+        </Hotkey>
+        <Hotkey>
+          <Action>Deactivate</Action>
+          <Keys>
+            <Key>16</Key>
+            <Key>45</Key>
+          </Keys>
+          <ID>3</ID>
+        </Hotkey>
+      </Hotkeys>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>106896</ID>
+      <Description>"[CTRL+F2]/[SHIFT+F2] = skip manual cast off/in"</Description>
+      <Options moHideChildren="1" moAllowManualCollapseAndExpand="1"/>
+      <LastState/>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>{
+  Game   : TransOcean.exe
+  Version:
+  Date   : 8.4.2016
+  Author : V3
+
+  TransOcean skip manual cast off/in script
+}
+
+{$lua}
+if syntaxcheck==true then return '' end
+
+if (LaunchMonoDataCollector()==0) then
+  error("no mono")
+end
+{$asm}
+
+
+
+//////////
+/////////
+////////
+[ENABLE]
+
+////////////////////////////////////////////////////////////////////////////////
+aobscanregion(INJ_instantCastOffIn, Cargo.Landing:gamecontrol:Update, Cargo.Landing:gamecontrol:Update+1000, 83 C4 10 85 C0 0F 84 ?? ?? ?? ?? 0F B6 87)
+registersymbol(INJ_instantCastOffIn)
+INJ_instantCastOffIn:
+  jmp _instantCastOffIn_code
+_instantCastOffIn_return:
+
+aobscanregion(_instantCastOffIn_skipTo, Cargo.Landing:gamecontrol:Update, Cargo.Landing:gamecontrol:Update+1000, C6 87 ?? ?? 00 00 01)
+
+globalalloc(CHT_instantCastOffIn, $100, INJ_instantCastOffIn)
+CHT_instantCastOffIn:
+  readmem(INJ_instantCastOffIn, $10)
+
+_instantCastOffIn_code:
+  pushfd
+  pushad
+
+  push $11               // VK_CONTROL
+  call GetAsyncKeyState
+  shr ax, $0F
+  cmp ax, 01             // CTRL pressed?
+  jne _instantCastOffIn_exit
+
+  popad
+  popfd
+
+  jmp _instantCastOffIn_skipTo
+
+_instantCastOffIn_exit:
+  popad
+  popfd
+
+_instantCastOffIn_original_code:
+  readmem(INJ_instantCastOffIn, $05)
+  //add esp,10
+  //test eax,eax
+
+  jmp _instantCastOffIn_return
+
+{
+Cargo.Landing:gamecontrol:Update+4da:  E8 F1220000       - call UnityEngine:Vector3:get_sqrMagnitude
+Cargo.Landing:gamecontrol:Update+4df:  83 C4 10          - add esp,10
+Cargo.Landing:gamecontrol:Update+4e2:  D9 9F 60010000    - fstp dword ptr [edi+00000160] // ShipSpeed
+Cargo.Landing:gamecontrol:Update+4e8:  8B 47 14          - mov eax,[edi+14]
+Cargo.Landing:gamecontrol:Update+4eb:  83 EC 08          - sub esp,08
+Cargo.Landing:gamecontrol:Update+4ee:  68 40563C5B       - push 5B3C5640
+Cargo.Landing:gamecontrol:Update+4f3:  50                - push eax
+Cargo.Landing:gamecontrol:Update+4f4:  E8 7FA0C8AC       - call System:String:op_Equality
+// ---------- INJECTING HERE ----------
+Cargo.Landing:gamecontrol:Update+4f9:  83 C4 10          - add esp,10
+Cargo.Landing:gamecontrol:Update+4fc:  85 C0             - test eax,eax
+// ---------- DONE INJECTING ----------
+Cargo.Landing:gamecontrol:Update+4fe:  0F84 0D010000     - je Cargo.Landing:gamecontrol:Update+611
+Cargo.Landing:gamecontrol:Update+504:  0FB6 87 7D010000  - movzx eax,byte ptr [edi+0000017D] // TargetAreaBox1State
+Cargo.Landing:gamecontrol:Update+50b:  85 C0             - test eax,eax
+Cargo.Landing:gamecontrol:Update+50d:  0F84 EB000000     - je Cargo.Landing:gamecontrol:Update+5fe
+Cargo.Landing:gamecontrol:Update+513:  0FB6 87 7E010000  - movzx eax,byte ptr [edi+0000017E] // TargetAreaBox2State
+Cargo.Landing:gamecontrol:Update+51a:  85 C0             - test eax,eax
+Cargo.Landing:gamecontrol:Update+51c:  0F84 DC000000     - je Cargo.Landing:gamecontrol:Update+5fe
+Cargo.Landing:gamecontrol:Update+522:  D9 87 60010000    - fld dword ptr [edi+00000160] // ShipSpeed
+Cargo.Landing:gamecontrol:Update+528:  D9 05 B0C14128    - fld dword ptr [2841C1B0]     // 20.00
+Cargo.Landing:gamecontrol:Update+52e:  DFF1              - fcomip st(0),st(1)
+Cargo.Landing:gamecontrol:Update+530:  DDD8              - fstp st(0)
+Cargo.Landing:gamecontrol:Update+532:  0F86 B3000000     - jbe Cargo.Landing:gamecontrol:Update+5eb
+// ---------- SKIP TO HERE ----------
+Cargo.Landing:gamecontrol:Update+538:  C6 87 80010000 01 - mov byte ptr [edi+00000180],01 // TargetState
+Cargo.Landing:gamecontrol:Update+53f:  83 EC 0C          - sub esp,0C
+Cargo.Landing:gamecontrol:Update+542:  57                - push edi
+Cargo.Landing:gamecontrol:Update+543:  E8 D01D0100       - call Cargo.Landing:gamecontrol:StopGame
+Cargo.Landing:gamecontrol:Update+548:  83 C4 10          - add esp,10
+}
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+aobscanregion(INJ_skipCastOff, HarbourView_CastOut_CastOff:CastOut, HarbourView_CastOut_CastOff:CastOut+300, 83 EC 04 FF 75 14 53 FF 75 08 E8)
+registersymbol(INJ_skipCastOff)
+INJ_skipCastOff:
+  jmp _skipCastOff_code
+  nop
+_skipCastOff_return:
+
+aobscanregion(_skipCastOff_skipTo, HarbourView_CastOut_CastOff:CastOut, HarbourView_CastOut_CastOff:CastOut+300, 8D 65 ?? 5B C9 C3)
+
+Ship:CastOut:
+_Ship_CastOut:
+
+Cargo.EventManagement:EventManager:SendEvent:
+_Cargo_EventManagement_EventManager_SendEvent:
+
+globalalloc(CHT_skipCastOff, $100, INJ_skipCastOff)
+CHT_skipCastOff:
+  readmem(INJ_skipCastOff, $10)
+
+_skipCastOff_code:
+  sub esp,0C
+  push ebx
+  cmp [ebx],ebx
+  call _Ship_CastOut
+  add esp,10
+
+  sub esp,08
+  push ebx
+  push 4D // MINIGAME_CASTOUT_SUCCESS
+  call _Cargo_EventManagement_EventManager_SendEvent
+  add esp,10
+
+  mov eax,00000001
+
+  jmp _skipCastOff_skipTo
+
+{
+HarbourView_CastOut_CastOff:CastOut+1e5:  83 EC 0C     - sub esp,0C
+HarbourView_CastOut_CastOff:CastOut+1e8:  53           - push ebx
+HarbourView_CastOut_CastOff:CastOut+1e9:  39 1B        - cmp [ebx],ebx
+HarbourView_CastOut_CastOff:CastOut+1eb:  E8 50110000  - call Ship:CastOut
+HarbourView_CastOut_CastOff:CastOut+1f0:  83 C4 10     - add esp,10
+HarbourView_CastOut_CastOff:CastOut+1f3:  83 EC 08     - sub esp,08
+HarbourView_CastOut_CastOff:CastOut+1f6:  53           - push ebx
+HarbourView_CastOut_CastOff:CastOut+1f7:  6A 52        - push 52 // 82
+HarbourView_CastOut_CastOff:CastOut+1f9:  E8 C27FB1CB  - call Cargo.EventManagement:EventManager:SendEvent
+HarbourView_CastOut_CastOff:CastOut+1fe:  83 C4 10     - add esp,10
+HarbourView_CastOut_CastOff:CastOut+201:  B8 01000000  - mov eax,00000001
+HarbourView_CastOut_CastOff:CastOut+206:  EB 1B        - jmp HarbourView_CastOut_CastOff:CastOut+223
+// ---------- INJECTING HERE ----------
+HarbourView_CastOut_CastOff:CastOut+208:  83 EC 04     - sub esp,04
+HarbourView_CastOut_CastOff:CastOut+20b:  FF 75 14     - push [ebp+14]
+// ---------- DONE INJECTING ----------
+HarbourView_CastOut_CastOff:CastOut+20e:  53           - push ebx
+HarbourView_CastOut_CastOff:CastOut+20f:  FF 75 08     - push [ebp+08]
+HarbourView_CastOut_CastOff:CastOut+212:  E8 096A0300  - call HarbourView_CastOut_CastOff:LoadMinigameCastOff
+HarbourView_CastOut_CastOff:CastOut+217:  83 C4 10     - add esp,10
+HarbourView_CastOut_CastOff:CastOut+21a:  B8 02000000  - mov eax,00000002
+HarbourView_CastOut_CastOff:CastOut+21f:  EB 02        - jmp HarbourView_CastOut_CastOff:CastOut+223
+HarbourView_CastOut_CastOff:CastOut+221:  33 C0        - xor eax,eax
+// ---------- SKIP TO HERE ----------
+HarbourView_CastOut_CastOff:CastOut+223:  8D 65 FC     - lea esp,[ebp-04]
+HarbourView_CastOut_CastOff:CastOut+226:  5B           - pop ebx
+HarbourView_CastOut_CastOff:CastOut+227:  C9           - leave
+}
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+aobscanregion(INJ_skipStartCastIn, ShipWantsToCastIn:CastIn, ShipWantsToCastIn:CastIn+300, 83 EC 0C 57 E8 ?? ?? ?? ?? 83 C4 10 8B 47)
+registersymbol(INJ_skipStartCastIn)
+INJ_skipStartCastIn:
+  jmp _skipStartCastIn_code
+  nop
+  nop
+  nop
+  nop
+  nop
+  nop
+  nop
+_skipStartCastIn_return:
+
+WorldmapShipMove:CastIn:
+_WorldmapShipMove_CastIn:
+
+HarbourOpenView:Open:
+_HarbourOpenView_Open:
+
+globalalloc(CHT_skipStartCastIn, $100, INJ_skipStartCastIn)
+CHT_skipStartCastIn:
+  readmem(INJ_skipStartCastIn, $10)
+bSkipCastIn:
+  dd deadc0de
+
+_skipStartCastIn_code:
+  mov dword ptr [bSkipCastIn], 00000001
+
+  mov eax,[edi+1C] // currentShip
+  mov eax,[eax+2C] // worldmapShipMove
+
+  sub esp,0C
+  push eax
+  cmp [eax],eax
+  call _WorldmapShipMove_CastIn
+  add esp,10
+
+  mov eax,[edi+1C] // currentShip
+  mov eax,[eax+10] // shipData
+  mov eax,[eax+7c] // m_currentHarbour
+
+  sub esp,0C
+  push eax
+  call _HarbourOpenView_Open
+  add esp,10
+
+  jmp _skipStartCastIn_return
+
+{
+ShipWantsToCastIn:CastIn+11d: 0F B6 40 28        -  movzx eax,byte ptr [eax+28]
+ShipWantsToCastIn:CastIn+121: 85 C0              -  test eax,eax
+ShipWantsToCastIn:CastIn+123: 74 10              -  je ShipWantsToCastIn:CastIn+135
+ShipWantsToCastIn:CastIn+125: 83 EC 0C           -  sub esp,0C
+ShipWantsToCastIn:CastIn+128: 68 10 D4 D9 54     -  push 54D9D410
+ShipWantsToCastIn:CastIn+12d: E8 82 AA A6 CB     -  call 04E50F64
+ShipWantsToCastIn:CastIn+132: 83 C4 10           -  add esp,10
+ShipWantsToCastIn:CastIn+135: 8B 05 58 BB 7E 04  -  mov eax,[047EBB58]
+ShipWantsToCastIn:CastIn+13b: C6 40 28 00        -  mov byte ptr [eax+28],00
+ShipWantsToCastIn:CastIn+13f: EB 0C              -  jmp ShipWantsToCastIn:CastIn+14d
+// ---------- INJECTING HERE ----------
+ShipWantsToCastIn:CastIn+141: 83 EC 0C           -  sub esp,0C
+ShipWantsToCastIn:CastIn+144: 57                 -  push edi
+ShipWantsToCastIn:CastIn+145: E8 6E 01 00 00     -  call ShipWantsToCastIn:LoadMinigameCastIn
+ShipWantsToCastIn:CastIn+14a: 83 C4 10           -  add esp,10
+// ---------- DONE INJECTING ----------
+ShipWantsToCastIn:CastIn+14d: 8B 47 1C           -  mov eax,[edi+1C]
+ShipWantsToCastIn:CastIn+150: 83 EC 08           -  sub esp,08
+ShipWantsToCastIn:CastIn+153: 6A 00              -  push 00
+ShipWantsToCastIn:CastIn+155: 50                 -  push eax
+ShipWantsToCastIn:CastIn+156: 39 00              -  cmp [eax],eax
+ShipWantsToCastIn:CastIn+158: E8 83 DD FF FF     -  call Ship:ActivatePing
+ShipWantsToCastIn:CastIn+15d: 83 C4 10           -  add esp,10
+ShipWantsToCastIn:CastIn+160: 8B 47 1C           -  mov eax,[edi+1C]
+ShipWantsToCastIn:CastIn+163: 8B C8              -  mov ecx,eax
+}
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+aobscanregion(INJ_skipEndCastIn, ShipWantsToCastIn:CastIn, ShipWantsToCastIn:CastIn+300, 8D 65 ?? 5F C9 C3)
+registersymbol(INJ_skipEndCastIn)
+INJ_skipEndCastIn:
+  jmp _skipEndCastIn_code
+  nop
+_skipEndCastIn_return:
+
+globalalloc(CHT_skipEndCastIn, $100, INJ_skipEndCastIn)
+CHT_skipEndCastIn:
+  readmem(INJ_skipEndCastIn, $10)
+
+_skipEndCastIn_code:
+  cmp dword ptr [bSkipCastIn], 00000000
+  je _skipEndCastIn_original_code
+
+  mov dword ptr [bSkipCastIn], 00000000
+
+  mov eax,[edi+1C] // currentShip
+
+  sub esp,08
+  push eax
+  push 4C // MINIGAME_CASTIN_SUCCESS
+  call _Cargo_EventManagement_EventManager_SendEvent
+  add esp,10
+
+_skipEndCastIn_original_code:
+  readmem(INJ_skipEndCastIn, $06)
+  //lea esp,[ebp-04]
+  //pop edi
+  //leave
+  //ret
+
+  //jmp _skipEndCastIn_return
+
+{
+ShipWantsToCastIn:CastIn+234:  8B 47 10        -  mov eax,[edi+10]
+ShipWantsToCastIn:CastIn+237:  8B C8           -  mov ecx,eax
+ShipWantsToCastIn:CastIn+239:  39 09           -  cmp [ecx],ecx
+ShipWantsToCastIn:CastIn+23b:  0F B6 50 38     -  movzx edx,byte ptr [eax+38]
+ShipWantsToCastIn:CastIn+23f:  33 C9           -  xor ecx,ecx
+ShipWantsToCastIn:CastIn+241:  B8 01 00 00 00  -  mov eax,00000001
+ShipWantsToCastIn:CastIn+246:  85 D2           -  test edx,edx
+ShipWantsToCastIn:CastIn+248:  0F 44 C1        -  cmove eax,ecx
+ShipWantsToCastIn:CastIn+24b:  83 EC 08        -  sub esp,08
+ShipWantsToCastIn:CastIn+24e:  50              -  push eax
+ShipWantsToCastIn:CastIn+24f:  68 00 37 63 55  -  push 55633700
+ShipWantsToCastIn:CastIn+254:  E8 3F 25 CF C8  -  call 0471AE30
+ShipWantsToCastIn:CastIn+259:  83 C4 10        -  add esp,10
+// ---------- INJECTING HERE ----------
+ShipWantsToCastIn:CastIn+25c:  8D 65 FC        -  lea esp,[ebp-04]
+ShipWantsToCastIn:CastIn+25f:  5F              -  pop edi
+ShipWantsToCastIn:CastIn+260:  C9              -  leave
+ShipWantsToCastIn:CastIn+261:  C3              -  ret
+// ---------- DONE INJECTING ----------
+}
+
+
+
+///////////
+//////////
+/////////
+[DISABLE]
+
+////////////////////////////////////////////////////////////////////////////////
+INJ_instantCastOffIn:
+  readmem(CHT_instantCastOffIn, $10)
+unregistersymbol(INJ_instantCastOffIn)
+dealloc(CHT_instantCastOffIn)
+unregistersymbol(CHT_instantCastOffIn)
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+INJ_skipCastOff:
+  readmem(CHT_skipCastOff, $10)
+unregistersymbol(INJ_skipCastOff)
+dealloc(CHT_skipCastOff)
+unregistersymbol(CHT_skipCastOff)
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+INJ_skipStartCastIn:
+  readmem(CHT_skipStartCastIn, $10)
+unregistersymbol(INJ_skipStartCastIn)
+dealloc(CHT_skipStartCastIn)
+unregistersymbol(CHT_skipStartCastIn)
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+INJ_skipEndCastIn:
+  readmem(CHT_skipEndCastIn, $10)
+unregistersymbol(INJ_skipEndCastIn)
+dealloc(CHT_skipEndCastIn)
+unregistersymbol(CHT_skipEndCastIn)
+
+</AssemblerScript>
+      <Hotkeys>
+        <Hotkey>
+          <Action>Activate</Action>
+          <Keys>
+            <Key>17</Key>
+            <Key>113</Key>
+          </Keys>
+          <ID>0</ID>
+        </Hotkey>
+        <Hotkey>
+          <Action>Deactivate</Action>
+          <Keys>
+            <Key>16</Key>
+            <Key>113</Key>
+          </Keys>
+          <ID>1</ID>
+        </Hotkey>
+        <Hotkey>
+          <Action>Activate</Action>
+          <Keys>
+            <Key>17</Key>
+            <Key>45</Key>
+          </Keys>
+          <ID>2</ID>
+        </Hotkey>
+        <Hotkey>
+          <Action>Deactivate</Action>
+          <Keys>
+            <Key>16</Key>
+            <Key>45</Key>
+          </Keys>
+          <ID>3</ID>
+        </Hotkey>
+      </Hotkeys>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>106899</ID>
+      <Description>"[CTRL+F3]/[SHIFT+F3] = speedup ships on map"</Description>
+      <Options moHideChildren="1"/>
+      <LastState/>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>{
+  Game   : TransOcean.exe
+  Version:
+  Date   : 8.4.2016
+  Author : V3
+
+  TransOcean ships speedup script
+}
+
+{$lua}
+if syntaxcheck==true then return '' end
+
+if (LaunchMonoDataCollector()==0) then
+  error("no mono")
+end
+{$asm}
+
+
+
+//////////
+/////////
+////////
+[ENABLE]
+
+////////////////////////////////////////////////////////////////////////////////
+globalalloc(fSpeedUpFactor, $04)
+fSpeedUpFactor:
+  dd (float)5.00
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+aobscanregion(INJ_shipSpeedUp, WorldmapShipMove:Update, WorldmapShipMove:Update+1000, D9 80 ?? ?? 00 00)
+registersymbol(INJ_shipSpeedUp)
+INJ_shipSpeedUp:
+  jmp _shipSpeedUp_code
+  nop
+_shipSpeedUp_return:
+
+globalalloc(CHT_shipSpeedUp, $100, INJ_shipSpeedUp)
+CHT_shipSpeedUp:
+  readmem(INJ_shipSpeedUp, $10)
+
+_shipSpeedUp_code:
+  readmem(INJ_shipSpeedUp, $06)
+  //fld dword ptr [eax+000000D8]    // m_vActual
+  fmul dword ptr [fSpeedUpFactor]
+
+  jmp _shipSpeedUp_return
+
+{
+WorldmapShipMove:Update+1da:  8B 47 14        - mov eax,[edi+14]
+WorldmapShipMove:Update+1dd:  8B 40 10        - mov eax,[eax+10]
+WorldmapShipMove:Update+1e0:  8B C8           - mov ecx,eax
+WorldmapShipMove:Update+1e2:  39 09           - cmp [ecx],ecx
+WorldmapShipMove:Update+1e4:  0FB6 40 67      - movzx eax,byte ptr [eax+67] // shipSinks
+WorldmapShipMove:Update+1e8:  85 C0           - test eax,eax
+WorldmapShipMove:Update+1ea:  0F85 D90C0000   - jne WorldmapShipMove:Update+ec9
+WorldmapShipMove:Update+1f0:  8B 47 14        - mov eax,[edi+14]
+WorldmapShipMove:Update+1f3:  8B C8           - mov ecx,eax
+WorldmapShipMove:Update+1f5:  39 09           - cmp [ecx],ecx
+// ---------- INJECTING HERE ----------
+WorldmapShipMove:Update+1f7:  D9 80 D8000000  - fld dword ptr [eax+000000D8] // m_vActual
+// ---------- DONE INJECTING ----------
+WorldmapShipMove:Update+1fd:  D9 9D 7CFDFFFF  - fstp dword ptr [ebp-00000284]
+WorldmapShipMove:Update+203:  D9 85 7CFDFFFF  - fld dword ptr [ebp-00000284]
+WorldmapShipMove:Update+209:  D9 9D 7CFDFFFF  - fstp dword ptr [ebp-00000284]
+WorldmapShipMove:Update+20f:  D9 85 7CFDFFFF  - fld dword ptr [ebp-00000284]
+WorldmapShipMove:Update+215:  D9 05 9888E51A  - fld dword ptr [1AE58898] // 1.85
+WorldmapShipMove:Update+21b:  DEC9            - fmulp st(1),st(0)
+WorldmapShipMove:Update+21d:  D9 9D 7CFDFFFF  - fstp dword ptr [ebp-00000284]
+WorldmapShipMove:Update+223:  D9 85 7CFDFFFF  - fld dword ptr [ebp-00000284]
+WorldmapShipMove:Update+229:  D9 05 A088E51A  - fld dword ptr [1AE588A0] // 200.00
+WorldmapShipMove:Update+22f:  D9 9D 7CFDFFFF  - fstp dword ptr [ebp-00000284]
+}
+
+
+
+///////////
+//////////
+/////////
+[DISABLE]
+
+////////////////////////////////////////////////////////////////////////////////
+dealloc(fSpeedUpFactor)
+unregistersymbol(fSpeedUpFactor)
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+INJ_shipSpeedUp:
+  readmem(CHT_shipSpeedUp, $10)
+unregistersymbol(INJ_shipSpeedUp)
+dealloc(CHT_shipSpeedUp)
+unregistersymbol(CHT_shipSpeedUp)
+
+</AssemblerScript>
+      <Hotkeys>
+        <Hotkey>
+          <Action>Activate</Action>
+          <Keys>
+            <Key>17</Key>
+            <Key>114</Key>
+          </Keys>
+          <ID>0</ID>
+        </Hotkey>
+        <Hotkey>
+          <Action>Deactivate</Action>
+          <Keys>
+            <Key>16</Key>
+            <Key>114</Key>
+          </Keys>
+          <ID>1</ID>
+        </Hotkey>
+        <Hotkey>
+          <Action>Activate</Action>
+          <Keys>
+            <Key>17</Key>
+            <Key>45</Key>
+          </Keys>
+          <ID>2</ID>
+        </Hotkey>
+        <Hotkey>
+          <Action>Deactivate</Action>
+          <Keys>
+            <Key>16</Key>
+            <Key>45</Key>
+          </Keys>
+          <ID>3</ID>
+        </Hotkey>
+      </Hotkeys>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>106879</ID>
+          <Description>"speedup factor"</Description>
+          <Color>FF8000</Color>
+          <VariableType>Float</VariableType>
+          <Address>fSpeedUpFactor</Address>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>106971</ID>
+      <Description>"[CTRL+F4]/[SHIFT+F4] = modify TEU/TDW/contracts"</Description>
+      <Options moHideChildren="1"/>
+      <LastState/>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>{
+  Game   : TransOcean.exe
+  Version:
+  Date   : 12.4.2016
+  Author : V3 (lua code by panraven)
+
+  TransOcean TEU/TDW/commissions script
+}
+
+{$lua}
+if syntaxcheck==true then return '' end
+
+if (LaunchMonoDataCollector() == 0) then
+  error("no mono")
+end
+
+function reEscape(s)
+  local escPatChars = [[().%+-*?[^]]
+  s = s:gsub('.', function(c) if escPatChars:find(c, 1, true) then return '%'..c end end)
+  return s
+end
+
+function findMethodAddrBySignature(classname, methodname, signature, check)
+  local method = findMethodBySignature(classname, methodname, signature, check)
+  if method ~= nil and method &gt; 0 then
+    return mono_compile_method(method)
+  end
+end
+
+function findMethodBySignature(classname, methodname, signature, check)
+  assert(type(signature) == 'string', "invalid signature")
+  signature = "^"..reEscape(signature:gsub(";", ","))
+  local class = mono_findClass('', classname)
+  if type(class) ~= 'number' or class == 0 then return nil end
+  local methods = mono_class_enumMethods(class)
+  if type(methods) ~= 'table' or #methods &lt; 1 then return nil end
+  if check then  print('check:'..methodname..": &lt;"..signature.."&gt; vs ") end
+  for i = 1, #methods do
+	if methodname == methods[i].name then
+	  local sign = mono_method_getSignature(methods[i].method)
+	  if check then print("  &gt;&gt; &lt;"..sign..'&gt;') end
+	  if sign:match(signature) then
+	    return methods[i].method
+	  end
+	end
+  end
+end
+{$asm}
+
+
+
+//////////
+/////////
+////////
+[ENABLE]
+
+////////////////////////////////////////////////////////////////////////////////
+globalalloc(fTEUfactor, $08)
+fTEUfactor:
+  dd (float)1.00
+  dd deadc0de
+
+globalalloc(fTDWfactor, $08)
+fTDWfactor:
+  dd (float)1.50
+  dd deadc0de
+
+globalalloc(fPortCommissionsFactor, $08)
+fPortCommissionsFactor:
+  dd (float)1.50
+  dd deadc0de
+
+globalalloc(fPortCommissionsTEUdivisor, $08)
+fPortCommissionsTEUdivisor:
+  dd (float)1.50
+  dd deadc0de
+
+globalalloc(fContractGoalTEUdivisor, $04)
+fContractGoalTEUdivisor:
+  dd (float)6.00
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+aobscanregion(INJ_increaseTEU, ShipData:get_initialTeu_int, ShipData:get_initialTeu_int+100, 83 C4 10 C9 C3)
+registersymbol(INJ_increaseTEU)
+INJ_increaseTEU:
+  jmp _increaseTEU_code
+_increaseTEU_return:
+
+globalalloc(CHT_increaseTEU, $100, INJ_increaseTEU)
+CHT_increaseTEU:
+  readmem(INJ_increaseTEU, $10)
+
+_increaseTEU_code:
+  fld dword ptr [fTEUfactor]
+  mov dword ptr [fTEUfactor+4],eax
+  fild dword ptr [fTEUfactor+4]
+  fmulp
+  fistp dword ptr [fTEUfactor+4]
+  mov eax, dword ptr [fTEUfactor+4]
+
+_increaseTEU_original_code:
+  readmem(INJ_increaseTEU, $05)
+  //add esp,10
+  //leave
+  //ret
+
+  //jmp _increaseTEU_return
+
+{
+ShipData:get_initialTeu_int:     55              -  push ebp
+ShipData:get_initialTeu_int+1:   8B EC           -  mov ebp,esp
+ShipData:get_initialTeu_int+3:   83 EC 08        -  sub esp,08
+ShipData:get_initialTeu_int+6:   8B 45 08        -  mov eax,[ebp+08]
+ShipData:get_initialTeu_int+9:   8B 40 58        -  mov eax,[eax+58] // m_initialTeu
+ShipData:get_initialTeu_int+c:   83 EC 0C        -  sub esp,0C
+ShipData:get_initialTeu_int+f:   50              -  push eax
+ShipData:get_initialTeu_int+10:  E8 BB 19 44 CB  -  call GlobalHelpers:IntParse
+// ---------- INJECTING HERE ----------
+ShipData:get_initialTeu_int+15:  83 C4 10        -  add esp,10
+ShipData:get_initialTeu_int+18:  C9              -  leave
+ShipData:get_initialTeu_int+19:  C3              -  ret
+// ---------- DONE INJECTING ----------
+}
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+aobscanregion(INJ_increaseTDW, ShipData:get_initialTdw_int, ShipData:get_initialTdw_int+100, 83 C4 10 C9 C3)
+registersymbol(INJ_increaseTDW)
+INJ_increaseTDW:
+  jmp _increaseTDW_code
+_increaseTDW_return:
+
+globalalloc(CHT_increaseTDW, $100, INJ_increaseTDW)
+CHT_increaseTDW:
+  readmem(INJ_increaseTDW, $10)
+
+_increaseTDW_code:
+  fld dword ptr [fTDWfactor]
+  mov dword ptr [fTDWfactor+4],eax
+  fild dword ptr [fTDWfactor+4]
+  fmulp
+  fistp dword ptr [fTDWfactor+4]
+  mov eax, dword ptr [fTDWfactor+4]
+
+_increaseTDW_original_code:
+  readmem(INJ_increaseTDW, $05)
+  //add esp,10
+  //leave
+  //ret
+
+  //jmp _increaseTDW_return
+
+{
+ShipData:get_initialTdw_int:     55              -  push ebp
+ShipData:get_initialTdw_int+1:   8B EC           -  mov ebp,esp
+ShipData:get_initialTdw_int+3:   83 EC 08        -  sub esp,08
+ShipData:get_initialTdw_int+6:   8B 45 08        -  mov eax,[ebp+08]
+ShipData:get_initialTdw_int+9:   8B 40 4C        -  mov eax,[eax+4C] // m_initialTdw
+ShipData:get_initialTdw_int+c:   83 EC 0C        -  sub esp,0C
+ShipData:get_initialTdw_int+f:   50              -  push eax
+ShipData:get_initialTdw_int+10:  E8 7B A1 42 CB  -  call GlobalHelpers:IntParse
+// ---------- INJECTING HERE ----------
+ShipData:get_initialTdw_int+15:  83 C4 10        -  add esp,10
+ShipData:get_initialTdw_int+18:  C9              -  leave
+ShipData:get_initialTdw_int+19:  C3              -  ret
+// ---------- DONE INJECTING ----------
+}
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+aobscanregion(INJ_moreCommissions, CommissionFactory:GenerateCommissions, CommissionFactory:GenerateCommissions+400, 83 C4 10 89 45 ?? 50 DB 04 24)
+registersymbol(INJ_moreCommissions)
+INJ_moreCommissions:
+  jmp _moreCommissions_code
+  nop
+_moreCommissions_return:
+
+globalalloc(CHT_moreCommissions, $100, INJ_moreCommissions)
+CHT_moreCommissions:
+  readmem(INJ_moreCommissions, $10)
+
+_moreCommissions_code:
+  fld dword ptr [fPortCommissionsFactor]
+  mov dword ptr [fPortCommissionsFactor+4],eax
+  fild dword ptr [fPortCommissionsFactor+4]
+  fmulp
+  fistp dword ptr [fPortCommissionsFactor+4]
+  mov eax, dword ptr [fPortCommissionsFactor+4]
+
+_moreCommissions_original_code:
+  readmem(INJ_moreCommissions, $06)
+  //add esp,10
+  //mov [ebp-3C],eax
+
+  jmp _moreCommissions_return
+
+{
+CommissionFactory:GenerateCommissions+35:  83 EC 0C              -  sub esp,0C
+CommissionFactory:GenerateCommissions+38:  50                    -  push eax
+CommissionFactory:GenerateCommissions+39:  39 00                 -  cmp [eax],eax
+CommissionFactory:GenerateCommissions+3b:  E8 98 02 F9 FF        -  call HarbourData:GetMaxShipClass
+CommissionFactory:GenerateCommissions+40:  83 C4 10              -  add esp,10
+CommissionFactory:GenerateCommissions+43:  89 45 C8              -  mov [ebp-38],eax
+CommissionFactory:GenerateCommissions+46:  85 F6                 -  test esi,esi
+CommissionFactory:GenerateCommissions+48:  74 13                 -  je CommissionFactory:GenerateCommissions+5d
+CommissionFactory:GenerateCommissions+4a:  C7 45 C4 01 00 00 00  -  mov [ebp-3C],00000001
+CommissionFactory:GenerateCommissions+51:  C7 45 C0 00 00 00 00  -  mov [ebp-40],00000000
+CommissionFactory:GenerateCommissions+58:  E9 7B 00 00 00        -  jmp CommissionFactory:GenerateCommissions+d8
+CommissionFactory:GenerateCommissions+5d:  8B 45 08              -  mov eax,[ebp+08]
+CommissionFactory:GenerateCommissions+60:  8B 40 3C              -  mov eax,[eax+3C] // minCommissions base
+CommissionFactory:GenerateCommissions+63:  8B 4D C8              -  mov ecx,[ebp-38]
+CommissionFactory:GenerateCommissions+66:  49                    -  dec ecx
+CommissionFactory:GenerateCommissions+67:  83 EC 08              -  sub esp,08
+CommissionFactory:GenerateCommissions+6a:  51                    -  push ecx
+CommissionFactory:GenerateCommissions+6b:  50                    -  push eax
+CommissionFactory:GenerateCommissions+6c:  39 00                 -  cmp [eax],eax
+CommissionFactory:GenerateCommissions+6e:  E8 B5 02 00 00        -  call System.Collections.Generic:List`1:get_Item
+CommissionFactory:GenerateCommissions+73:  83 C4 10              -  add esp,10
+CommissionFactory:GenerateCommissions+76:  89 45 BC              -  mov [ebp-44],eax
+CommissionFactory:GenerateCommissions+79:  8B 45 08              -  mov eax,[ebp+08]
+CommissionFactory:GenerateCommissions+7c:  8B 40 40              -  mov eax,[eax+40] // maxCommissions base
+CommissionFactory:GenerateCommissions+7f:  8B 4D C8              -  mov ecx,[ebp-38]
+CommissionFactory:GenerateCommissions+82:  49                    -  dec ecx
+CommissionFactory:GenerateCommissions+83:  83 EC 08              -  sub esp,08
+CommissionFactory:GenerateCommissions+86:  51                    -  push ecx
+CommissionFactory:GenerateCommissions+87:  50                    -  push eax
+CommissionFactory:GenerateCommissions+88:  39 00                 -  cmp [eax],eax
+CommissionFactory:GenerateCommissions+8a:  E8 99 02 00 00        -  call System.Collections.Generic:List`1:get_Item
+CommissionFactory:GenerateCommissions+8f:  83 C4 10              -  add esp,10
+CommissionFactory:GenerateCommissions+92:  8B C8                 -  mov ecx,eax
+CommissionFactory:GenerateCommissions+94:  8B 45 BC              -  mov eax,[ebp-44]
+CommissionFactory:GenerateCommissions+97:  83 EC 08              -  sub esp,08
+CommissionFactory:GenerateCommissions+9a:  51                    -  push ecx
+CommissionFactory:GenerateCommissions+9b:  50                    -  push eax
+CommissionFactory:GenerateCommissions+9c:  E8 37 09 FA FF        -  call NGUITools:RandomRange
+// ---------- INJECTING HERE ----------
+CommissionFactory:GenerateCommissions+a1:  83 C4 10              -  add esp,10
+CommissionFactory:GenerateCommissions+a4:  89 45 C4              -  mov [ebp-3C],eax
+// ---------- DONE INJECTING ----------
+CommissionFactory:GenerateCommissions+a7:  50                    -  push eax
+CommissionFactory:GenerateCommissions+a8:  DB 04 24              -  fild dword ptr [esp]
+CommissionFactory:GenerateCommissions+ab:  D9 1C 24              -  fstp dword ptr [esp]
+CommissionFactory:GenerateCommissions+ae:  D9 04 24              -  fld dword ptr [esp]
+CommissionFactory:GenerateCommissions+b1:  83 C4 04              -  add esp,04
+CommissionFactory:GenerateCommissions+b4:  8B 45 08              -  mov eax,[ebp+08]
+CommissionFactory:GenerateCommissions+b7:  D9 40 74              -  fld dword ptr [eax+74]
+CommissionFactory:GenerateCommissions+ba:  DE C9                 -  fmulp st(1),st(0)
+CommissionFactory:GenerateCommissions+bc:  D9 05 60 AB 36 1B     -  fld dword ptr [1B36AB60]
+CommissionFactory:GenerateCommissions+c2:  DE F9                 -  fdivp st(1),st(0)
+CommissionFactory:GenerateCommissions+c4:  83 EC 0C              -  sub esp,0C
+CommissionFactory:GenerateCommissions+c7:  83 EC 04              -  sub esp,04
+CommissionFactory:GenerateCommissions+ca:  D9 1C 24              -  fstp dword ptr [esp]
+CommissionFactory:GenerateCommissions+cd:  E8 1E 55 DE C7        -  call UnityEngine:Mathf:FloorToInt
+CommissionFactory:GenerateCommissions+d2:  83 C4 10              -  add esp,10
+CommissionFactory:GenerateCommissions+d5:  89 45 C0              -  mov [ebp-40],eax
+CommissionFactory:GenerateCommissions+d8:  C7 45 EC 00 00 00 00  -  mov [ebp-14],00000000
+CommissionFactory:GenerateCommissions+df:  E9 99 01 00 00        -  jmp CommissionFactory:GenerateCommissions+27d
+}
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+{$lua}
+if syntaxcheck==true then return '' end
+moreContractCommissionsFrom = findMethodAddrBySignature('CommissionFactory', 'GenerateCommissionsFrequently', 'bool')
+moreContractCommissionsTo = moreContractCommissionsFrom + 0x700
+{$asm}
+
+aobscanregion(INJ_moreContractCommissions, $moreContractCommissionsFrom, $moreContractCommissionsTo, 83 C4 10 89 85 ?? ?? FF FF 33 FF)
+registersymbol(INJ_moreContractCommissions)
+INJ_moreContractCommissions:
+  jmp _moreContractCommissions_code
+  nop
+  nop
+  nop
+  nop
+_moreContractCommissions_return:
+
+globalalloc(CHT_moreContractCommissions, $100, INJ_moreContractCommissions)
+CHT_moreContractCommissions:
+  readmem(INJ_moreContractCommissions, $10)
+
+_moreContractCommissions_code:
+  fld dword ptr [fPortCommissionsFactor]
+  mov dword ptr [fPortCommissionsFactor+4],eax
+  fild dword ptr [fPortCommissionsFactor+4]
+  fmulp
+  fistp dword ptr [fPortCommissionsFactor+4]
+  mov eax, dword ptr [fPortCommissionsFactor+4]
+
+_moreContractCommissions_original_code:
+  readmem(INJ_moreContractCommissions, $09)
+  //add esp,10
+  //mov [ebp-000000A4],eax
+
+  jmp _moreContractCommissions_return
+
+{
+CommissionFactory:GenerateCommissionsFrequently+3ca:  83 EC 08              -  sub esp,08
+CommissionFactory:GenerateCommissionsFrequently+3cd:  51                    -  push ecx
+CommissionFactory:GenerateCommissionsFrequently+3ce:  50                    -  push eax
+CommissionFactory:GenerateCommissionsFrequently+3cf:  E8 44 85 CE C7        -  call UnityEngine:Object:op_Equality
+CommissionFactory:GenerateCommissionsFrequently+3d4:  83 C4 10              -  add esp,10
+CommissionFactory:GenerateCommissionsFrequently+3d7:  85 C0                 -  test eax,eax
+CommissionFactory:GenerateCommissionsFrequently+3d9:  0F 84 53 00 00 00     -  je CommissionFactory:GenerateCommissionsFrequently+432
+CommissionFactory:GenerateCommissionsFrequently+3df:  83 EC 08              -  sub esp,08
+CommissionFactory:GenerateCommissionsFrequently+3e2:  6A 05                 -  push 05
+CommissionFactory:GenerateCommissionsFrequently+3e4:  6A 03                 -  push 03
+CommissionFactory:GenerateCommissionsFrequently+3e6:  E8 CD E1 FB FF        -  call NGUITools:RandomRange
+// ---------- INJECTING HERE ----------
+CommissionFactory:GenerateCommissionsFrequently+3eb:  83 C4 10              -  add esp,10
+CommissionFactory:GenerateCommissionsFrequently+3ee:  89 85 5C FF FF FF     -  mov [ebp-000000A4],eax
+// ---------- DONE INJECTING ----------
+CommissionFactory:GenerateCommissionsFrequently+3f4:  33 FF                 -  xor edi,edi
+CommissionFactory:GenerateCommissionsFrequently+3f6:  EB 32                 -  jmp CommissionFactory:GenerateCommissionsFrequently+42a
+CommissionFactory:GenerateCommissionsFrequently+3f8:  83 EC 0C              -  sub esp,0C
+CommissionFactory:GenerateCommissionsFrequently+3fb:  56                    -  push esi
+CommissionFactory:GenerateCommissionsFrequently+3fc:  39 36                 -  cmp [esi],esi
+CommissionFactory:GenerateCommissionsFrequently+3fe:  E8 B5 85 CE C7        -  call UnityEngine:Component:get_gameObject
+CommissionFactory:GenerateCommissionsFrequently+403:  83 C4 10              -  add esp,10
+CommissionFactory:GenerateCommissionsFrequently+406:  8B 4E 10              -  mov ecx,[esi+10]
+CommissionFactory:GenerateCommissionsFrequently+409:  8B D1                 -  mov edx,ecx
+CommissionFactory:GenerateCommissionsFrequently+40b:  39 12                 -  cmp [edx],edx
+CommissionFactory:GenerateCommissionsFrequently+40d:  8B 49 7C              -  mov ecx,[ecx+7C]
+CommissionFactory:GenerateCommissionsFrequently+410:  83 EC 0C              -  sub esp,0C
+CommissionFactory:GenerateCommissionsFrequently+413:  53                    -  push ebx
+CommissionFactory:GenerateCommissionsFrequently+414:  0F B6 95 6B FF FF FF  -  movzx edx,byte ptr [ebp-00000095]
+CommissionFactory:GenerateCommissionsFrequently+41b:  52                    -  push edx
+CommissionFactory:GenerateCommissionsFrequently+41c:  51                    -  push ecx
+CommissionFactory:GenerateCommissionsFrequently+41d:  50                    -  push eax
+CommissionFactory:GenerateCommissionsFrequently+41e:  FF 75 08              -  push [ebp+08]
+CommissionFactory:GenerateCommissionsFrequently+421:  E8 32 03 00 00        -  call CommissionFactory:StartCommissionGenerationCoroutine
+CommissionFactory:GenerateCommissionsFrequently+426:  83 C4 20              -  add esp,20
+CommissionFactory:GenerateCommissionsFrequently+429:  47                    -  inc edi
+CommissionFactory:GenerateCommissionsFrequently+42a:  3B BD 5C FF FF FF     -  cmp edi,[ebp-000000A4]
+CommissionFactory:GenerateCommissionsFrequently+430:  7C C6                 -  jl CommissionFactory:GenerateCommissionsFrequently+3f8
+CommissionFactory:GenerateCommissionsFrequently+432:  8D 45 B4              -  lea eax,[ebp-4C]
+CommissionFactory:GenerateCommissionsFrequently+435:  BA B4 CC 35 1B        -  mov edx,1B35CCB4
+CommissionFactory:GenerateCommissionsFrequently+43a:  83 EC 0C              -  sub esp,0C
+CommissionFactory:GenerateCommissionsFrequently+43d:  50                    -  push eax
+CommissionFactory:GenerateCommissionsFrequently+43e:  E8 A5 9D D3 C7        -  call Enumerator:MoveNext
+CommissionFactory:GenerateCommissionsFrequently+443:  83 C4 10              -  add esp,10
+}
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+aobscanregion(INJ_modifyCommissionTEU, CommissionFactory:GetCommissionTeuForShip, CommissionFactory:GetCommissionTeuForShip+100, 83 C4 10 C9 C3)
+registersymbol(INJ_modifyCommissionTEU)
+INJ_modifyCommissionTEU:
+  jmp _modifyCommissionTEU_code
+_modifyCommissionTEU_return:
+
+globalalloc(CHT_modifyCommissionTEU, $100, INJ_modifyCommissionTEU)
+CHT_modifyCommissionTEU:
+  readmem(INJ_modifyCommissionTEU, $10)
+
+_modifyCommissionTEU_code:
+  mov dword ptr [fPortCommissionsTEUdivisor+4], eax
+  fild dword ptr [fPortCommissionsTEUdivisor+4]
+  fld dword ptr [fPortCommissionsTEUdivisor]
+  fdivp
+  fistp dword ptr [fPortCommissionsTEUdivisor+4]
+  mov eax, dword ptr [fPortCommissionsTEUdivisor+4]
+
+_modifyCommissionTEU_original_code:
+  readmem(INJ_modifyCommissionTEU, $05)
+  //add esp,10
+  //leave
+  //ret
+
+  //jmp _modifyCommissionTEU_return
+
+{
+CommissionFactory:GetCommissionTeuForShip+2f:  83 EC 0C        -  sub esp,0C
+CommissionFactory:GetCommissionTeuForShip+32:  50              -  push eax
+CommissionFactory:GetCommissionTeuForShip+33:  39 00           -  cmp [eax],eax
+CommissionFactory:GetCommissionTeuForShip+35:  E8 26 7A FE FF  -  call ShipData:get_teu_int
+CommissionFactory:GetCommissionTeuForShip+3a:  83 C4 10        -  add esp,10
+CommissionFactory:GetCommissionTeuForShip+3d:  50              -  push eax
+CommissionFactory:GetCommissionTeuForShip+3e:  DB 04 24        -  fild dword ptr [esp]
+CommissionFactory:GetCommissionTeuForShip+41:  D9 1C 24        -  fstp dword ptr [esp]
+CommissionFactory:GetCommissionTeuForShip+44:  D9 04 24        -  fld dword ptr [esp]
+CommissionFactory:GetCommissionTeuForShip+47:  83 C4 04        -  add esp,04
+CommissionFactory:GetCommissionTeuForShip+4a:  8B 45 08        -  mov eax,[ebp+08]
+CommissionFactory:GetCommissionTeuForShip+4d:  D9 40 78        -  fld dword ptr [eax+78] // minTeuDivisor
+CommissionFactory:GetCommissionTeuForShip+50:  DE F9           -  fdivp st(1),st(0)
+CommissionFactory:GetCommissionTeuForShip+52:  83 EC 0C        -  sub esp,0C
+CommissionFactory:GetCommissionTeuForShip+55:  83 EC 04        -  sub esp,04
+CommissionFactory:GetCommissionTeuForShip+58:  D9 1C 24        -  fstp dword ptr [esp]
+CommissionFactory:GetCommissionTeuForShip+5b:  E8 78 3F FC FF  -  call UnityEngine:Mathf:FloorToInt
+CommissionFactory:GetCommissionTeuForShip+60:  83 C4 10        -  add esp,10
+CommissionFactory:GetCommissionTeuForShip+63:  8B C8           -  mov ecx,eax
+CommissionFactory:GetCommissionTeuForShip+65:  8B 45 F4        -  mov eax,[ebp-0C]
+CommissionFactory:GetCommissionTeuForShip+68:  89 4D F8        -  mov [ebp-08],ecx
+CommissionFactory:GetCommissionTeuForShip+6b:  83 EC 0C        -  sub esp,0C
+CommissionFactory:GetCommissionTeuForShip+6e:  50              -  push eax
+CommissionFactory:GetCommissionTeuForShip+6f:  39 00           -  cmp [eax],eax
+CommissionFactory:GetCommissionTeuForShip+71:  E8 EA 79 FE FF  -  call ShipData:get_teu_int
+CommissionFactory:GetCommissionTeuForShip+76:  83 C4 10        -  add esp,10
+CommissionFactory:GetCommissionTeuForShip+79:  50              -  push eax
+CommissionFactory:GetCommissionTeuForShip+7a:  DB 04 24        -  fild dword ptr [esp]
+CommissionFactory:GetCommissionTeuForShip+7d:  D9 1C 24        -  fstp dword ptr [esp]
+CommissionFactory:GetCommissionTeuForShip+80:  D9 04 24        -  fld dword ptr [esp]
+CommissionFactory:GetCommissionTeuForShip+83:  83 C4 04        -  add esp,04
+CommissionFactory:GetCommissionTeuForShip+86:  8B 45 08        -  mov eax,[ebp+08]
+CommissionFactory:GetCommissionTeuForShip+89:  D9 40 7C        -  fld dword ptr [eax+7C] // maxTeuDivisor
+CommissionFactory:GetCommissionTeuForShip+8c:  DE F9           -  fdivp st(1),st(0)
+CommissionFactory:GetCommissionTeuForShip+8e:  83 EC 0C        -  sub esp,0C
+CommissionFactory:GetCommissionTeuForShip+91:  83 EC 04        -  sub esp,04
+CommissionFactory:GetCommissionTeuForShip+94:  D9 1C 24        -  fstp dword ptr [esp]
+CommissionFactory:GetCommissionTeuForShip+97:  E8 3C 3F FC FF  -  call UnityEngine:Mathf:FloorToInt
+CommissionFactory:GetCommissionTeuForShip+9c:  83 C4 10        -  add esp,10
+CommissionFactory:GetCommissionTeuForShip+9f:  8B C8           -  mov ecx,eax
+CommissionFactory:GetCommissionTeuForShip+a1:  8B 45 F8        -  mov eax,[ebp-08]
+CommissionFactory:GetCommissionTeuForShip+a4:  83 EC 08        -  sub esp,08
+CommissionFactory:GetCommissionTeuForShip+a7:  51              -  push ecx
+CommissionFactory:GetCommissionTeuForShip+a8:  50              -  push eax
+CommissionFactory:GetCommissionTeuForShip+a9:  E8 3A F4 FD FF  -  call NGUITools:RandomRange
+// ---------- INJECTING HERE ----------
+CommissionFactory:GetCommissionTeuForShip+ae:  83 C4 10        -  add esp,10
+CommissionFactory:GetCommissionTeuForShip+b1:  C9              -  leave
+CommissionFactory:GetCommissionTeuForShip+b2:  C3              -  ret
+// ---------- DONE INJECTING ----------
+}
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+aobscanregion(INJ_modifyContractCommissionTEU, CompanyContractFactory:GenerateCompanyContract, CompanyContractFactory:GenerateCompanyContract+1000, D9 00 D9 9D ?? ?? FF FF)
+registersymbol(INJ_modifyContractCommissionTEU)
+INJ_modifyContractCommissionTEU:
+  jmp _modifyContractCommissionTEU_code
+  nop
+  nop
+  nop
+_modifyContractCommissionTEU_return:
+
+globalalloc(CHT_modifyContractCommissionTEU, $100, INJ_modifyContractCommissionTEU)
+CHT_modifyContractCommissionTEU:
+  readmem(INJ_modifyContractCommissionTEU, $10)
+
+_modifyContractCommissionTEU_code:
+  fld dword ptr [eax]
+  fld dword ptr [fContractGoalTEUdivisor]
+  fdivp
+  fstp dword ptr [ebp-000000D0]
+
+_modifyContractCommissionTEU_original_code:
+  //readmem(INJ_modifyContractCommissionTEU, $08)
+  //fld dword ptr [eax]
+  //fstp dword ptr [ebp-000000D0]
+
+  jmp _modifyContractCommissionTEU_return
+
+{
+CompanyContractFactory:GenerateCompanyContract+298:  83 EC 0C           -  sub esp,0C
+CompanyContractFactory:GenerateCompanyContract+29b:  53                 -  push ebx
+CompanyContractFactory:GenerateCompanyContract+29c:  E8 6F 15 00 00     -  call CompanyContract:GetMaxShipClass
+CompanyContractFactory:GenerateCompanyContract+2a1:  83 C4 10           -  add esp,10
+CompanyContractFactory:GenerateCompanyContract+2a4:  48                 -  dec eax
+CompanyContractFactory:GenerateCompanyContract+2a5:  8B 0D D4 3D F4 04  -  mov ecx,[04F43DD4]
+CompanyContractFactory:GenerateCompanyContract+2ab:  8B 49 3C           -  mov ecx,[ecx+3C]
+CompanyContractFactory:GenerateCompanyContract+2ae:  49                 -  dec ecx
+CompanyContractFactory:GenerateCompanyContract+2af:  83 EC 08           -  sub esp,08
+CompanyContractFactory:GenerateCompanyContract+2b2:  51                 -  push ecx
+CompanyContractFactory:GenerateCompanyContract+2b3:  50                 -  push eax
+CompanyContractFactory:GenerateCompanyContract+2b4:  E8 3F 7A D4 C7     -  call UnityEngine:Mathf:Min
+CompanyContractFactory:GenerateCompanyContract+2b9:  83 C4 10           -  add esp,10
+CompanyContractFactory:GenerateCompanyContract+2bc:  8B C8              -  mov ecx,eax
+CompanyContractFactory:GenerateCompanyContract+2be:  8B 85 B8 FE FF FF  -  mov eax,[ebp-00000148]
+CompanyContractFactory:GenerateCompanyContract+2c4:  39 48 0C           -  cmp [eax+0C],ecx
+CompanyContractFactory:GenerateCompanyContract+2c7:  0F 86 A7 0A 00 00  -  jbe CompanyContractFactory:GenerateCompanyContract+d74
+CompanyContractFactory:GenerateCompanyContract+2cd:  8D 44 88 10        -  lea eax,[eax+ecx*4+10]
+// ---------- INJECTING HERE ----------
+CompanyContractFactory:GenerateCompanyContract+2d1:  D9 00              -  fld dword ptr [eax]
+CompanyContractFactory:GenerateCompanyContract+2d3:  D9 9D 30 FF FF FF  -  fstp dword ptr [ebp-000000D0]
+// ---------- DONE INJECTING ----------
+CompanyContractFactory:GenerateCompanyContract+2d9:  D9 85 30 FF FF FF  -  fld dword ptr [ebp-000000D0]
+CompanyContractFactory:GenerateCompanyContract+2df:  D9 45 B0           -  fld dword ptr [ebp-50]
+CompanyContractFactory:GenerateCompanyContract+2e2:  DE C9              -  fmulp st(1),st(0)
+CompanyContractFactory:GenerateCompanyContract+2e4:  D9 9D 2C FF FF FF  -  fstp dword ptr [ebp-000000D4]
+CompanyContractFactory:GenerateCompanyContract+2ea:  D9 85 2C FF FF FF  -  fld dword ptr [ebp-000000D4]
+CompanyContractFactory:GenerateCompanyContract+2f0:  8B 45 08           -  mov eax,[ebp+08]
+CompanyContractFactory:GenerateCompanyContract+2f3:  D9 40 24           -  fld dword ptr [eax+24]
+CompanyContractFactory:GenerateCompanyContract+2f6:  DE C9              -  fmulp st(1),st(0)
+CompanyContractFactory:GenerateCompanyContract+2f8:  DD 9D B0 FE FF FF  -  fstp qword ptr [ebp-00000150]
+CompanyContractFactory:GenerateCompanyContract+2fe:  D9 EE              -  fldz
+}
+
+
+
+///////////
+//////////
+/////////
+[DISABLE]
+
+////////////////////////////////////////////////////////////////////////////////
+dealloc(fTEUfactor)
+unregistersymbol(fTEUfactor)
+
+dealloc(fTDWfactor)
+unregistersymbol(fTDWfactor)
+
+dealloc(fPortCommissionsFactor)
+unregistersymbol(fPortCommissionsFactor)
+
+dealloc(fPortCommissionsTEUdivisor)
+unregistersymbol(fPortCommissionsTEUdivisor)
+
+dealloc(fContractGoalTEUdivisor)
+unregistersymbol(fContractGoalTEUdivisor)
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+INJ_increaseTEU:
+  readmem(CHT_increaseTEU, $10)
+unregistersymbol(INJ_increaseTEU)
+dealloc(CHT_increaseTEU)
+unregistersymbol(CHT_increaseTEU)
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+INJ_increaseTDW:
+  readmem(CHT_increaseTDW, $10)
+unregistersymbol(INJ_increaseTDW)
+dealloc(CHT_increaseTDW)
+unregistersymbol(CHT_increaseTDW)
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+INJ_moreCommissions:
+  readmem(CHT_moreCommissions, $10)
+unregistersymbol(INJ_moreCommissions)
+dealloc(CHT_moreCommissions)
+unregistersymbol(CHT_moreCommissions)
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+INJ_moreContractCommissions:
+  readmem(CHT_moreContractCommissions, $10)
+unregistersymbol(INJ_moreContractCommissions)
+dealloc(CHT_moreContractCommissions)
+unregistersymbol(CHT_moreContractCommissions)
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+INJ_modifyCommissionTEU:
+  readmem(CHT_modifyCommissionTEU, $10)
+unregistersymbol(INJ_modifyCommissionTEU)
+dealloc(CHT_modifyCommissionTEU)
+unregistersymbol(CHT_modifyCommissionTEU)
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+INJ_modifyContractCommissionTEU:
+  readmem(CHT_modifyContractCommissionTEU, $10)
+unregistersymbol(INJ_modifyContractCommissionTEU)
+dealloc(CHT_modifyContractCommissionTEU)
+unregistersymbol(CHT_modifyContractCommissionTEU)
+
+</AssemblerScript>
+      <Hotkeys>
+        <Hotkey>
+          <Action>Activate</Action>
+          <Keys>
+            <Key>17</Key>
+            <Key>115</Key>
+          </Keys>
+          <ID>0</ID>
+        </Hotkey>
+        <Hotkey>
+          <Action>Deactivate</Action>
+          <Keys>
+            <Key>16</Key>
+            <Key>115</Key>
+          </Keys>
+          <ID>1</ID>
+        </Hotkey>
+        <Hotkey>
+          <Action>Activate</Action>
+          <Keys>
+            <Key>17</Key>
+            <Key>45</Key>
+          </Keys>
+          <ID>2</ID>
+        </Hotkey>
+        <Hotkey>
+          <Action>Deactivate</Action>
+          <Keys>
+            <Key>16</Key>
+            <Key>45</Key>
+          </Keys>
+          <ID>3</ID>
+        </Hotkey>
+      </Hotkeys>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>106972</ID>
+          <Description>"TEU factor"</Description>
+          <Color>FF8000</Color>
+          <VariableType>Float</VariableType>
+          <Address>fTEUfactor</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>106978</ID>
+          <Description>"TDW factor"</Description>
+          <Color>FF8000</Color>
+          <VariableType>Float</VariableType>
+          <Address>fTDWfactor</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>106977</ID>
+          <Description>"per harbour commisions factor"</Description>
+          <Color>FF8000</Color>
+          <VariableType>Float</VariableType>
+          <Address>fPortCommissionsFactor</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>106976</ID>
+          <Description>"harbour commisions TEU divisor"</Description>
+          <Color>FF8000</Color>
+          <VariableType>Float</VariableType>
+          <Address>fPortCommissionsTEUdivisor</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>106975</ID>
+          <Description>"company contracts goal TEU divisor"</Description>
+          <Color>FF8000</Color>
+          <VariableType>Float</VariableType>
+          <Address>fContractGoalTEUdivisor</Address>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>106973</ID>
+      <Description>"[CTRL+F5]/[SHIFT+F5] = quick ship repair"</Description>
+      <LastState/>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>{
+  Game   : TransOcean.exe
+  Version:
+  Date   : 10.4.2016
+  Author : V3
+
+  TransOcean ship repair script
+}
+
+{$lua}
+if syntaxcheck==true then return '' end
+
+if (LaunchMonoDataCollector()==0) then
+  error("no mono")
+end
+{$asm}
+
+
+
+//////////
+/////////
+////////
+[ENABLE]
+
+////////////////////////////////////////////////////////////////////////////////
+aobscanregion(INJ_quickRepairDone, HarbourView_Popup_Repair_Master:InitRepair, HarbourView_Popup_Repair_Master:InitRepair+200, 83 EC 0C 68 ?? ?? ?? ?? E8 ?? ?? ?? ?? 83 C4 10 83 EC 0C)
+registersymbol(INJ_quickRepairDone)
+INJ_quickRepairDone:
+  jmp _quickRepairDone_code
+  nop
+  nop
+  nop
+_quickRepairDone_return:
+
+Ship:RepairShipDone:
+_Ship_RepairShipDone:
+
+globalalloc(CHT_quickRepairDone, $100, INJ_quickRepairDone)
+CHT_quickRepairDone:
+  readmem(INJ_quickRepairDone, $10)
+
+_quickRepairDone_code:
+  mov eax,[edi+38] // currentShip (Ship)
+  sub esp,0C
+  push eax
+  call _Ship_RepairShipDone
+  add esp,10
+
+_quickRepairDone_original_code:
+  readmem(INJ_quickRepairDone, $08)
+  //sub esp,0C
+  //push 1A3E3F00
+
+  jmp _quickRepairDone_return
+
+{
+HarbourView_Popup_Repair_Master:InitRepair+16c:  83 EC 08           -  sub esp,08
+HarbourView_Popup_Repair_Master:InitRepair+16f:  50                 -  push eax   // toPay (long)
+HarbourView_Popup_Repair_Master:InitRepair+170:  6A 67              -  push 67    // SHIP_REPAIR
+HarbourView_Popup_Repair_Master:InitRepair+172:  E8 A1 F9 C9 CC     -  call Cargo.EventManagement:EventManager:SendEvent
+HarbourView_Popup_Repair_Master:InitRepair+177:  83 C4 10           -  add esp,10
+// ---------- INJECTING HERE ----------
+HarbourView_Popup_Repair_Master:InitRepair+17a:  83 EC 0C           -  sub esp,0C
+HarbourView_Popup_Repair_Master:InitRepair+17d:  68 00 3F 3E 1A     -  push 1A3E3F00 // "HarbourView_CastOutWindow"
+// ---------- DONE INJECTING ----------
+HarbourView_Popup_Repair_Master:InitRepair+182:  E8 F1 19 00 00     -  call WindowManagement:WindowManager:RefreshWindow
+HarbourView_Popup_Repair_Master:InitRepair+187:  83 C4 10           -  add esp,10
+HarbourView_Popup_Repair_Master:InitRepair+18a:  83 EC 0C           -  sub esp,0C
+HarbourView_Popup_Repair_Master:InitRepair+18d:  68 60 79 3A 52     -  push 523A7960 // "HarbourView_CommissionsWindow"
+HarbourView_Popup_Repair_Master:InitRepair+192:  E8 E1 19 00 00     -  call WindowManagement:WindowManager:RefreshWindow
+HarbourView_Popup_Repair_Master:InitRepair+197:  83 C4 10           -  add esp,10
+HarbourView_Popup_Repair_Master:InitRepair+19a:  8B 47 10           -  mov eax,[edi+10] // window (WindowManagement.IWindow)
+HarbourView_Popup_Repair_Master:InitRepair+19d:  83 EC 0C           -  sub esp,0C
+HarbourView_Popup_Repair_Master:InitRepair+1a0:  50                 -  push eax
+HarbourView_Popup_Repair_Master:InitRepair+1a1:  8B 00              -  mov eax,[eax]
+HarbourView_Popup_Repair_Master:InitRepair+1a3:  90                 -  nop
+HarbourView_Popup_Repair_Master:InitRepair+1a4:  90                 -  nop
+HarbourView_Popup_Repair_Master:InitRepair+1a5:  90                 -  nop
+HarbourView_Popup_Repair_Master:InitRepair+1a6:  FF 50 3C           -  call dword ptr [eax+3C] // WindowManagement.IWindow:CloseWindow
+HarbourView_Popup_Repair_Master:InitRepair+1a9:  83 C4 10           -  add esp,10
+HarbourView_Popup_Repair_Master:InitRepair+1ac:  8D 65 F4           -  lea esp,[ebp-0C]
+HarbourView_Popup_Repair_Master:InitRepair+1af:  5E                 -  pop esi
+HarbourView_Popup_Repair_Master:InitRepair+1b0:  5F                 -  pop edi
+HarbourView_Popup_Repair_Master:InitRepair+1b1:  5B                 -  pop ebx
+HarbourView_Popup_Repair_Master:InitRepair+1b2:  C9                 -  leave
+HarbourView_Popup_Repair_Master:InitRepair+1b3:  C3                 -  ret
+}
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+aobscanregion(INJ_quickRepairNoDuration, Ship:RepairShip, Ship:RepairShip+200, 8B 45 0C 50 DB 04 24)
+registersymbol(INJ_quickRepairNoDuration)
+INJ_quickRepairNoDuration:
+  xor eax,eax
+  nop
+_quickRepairNoDuration_return:
+
+globalalloc(CHT_quickRepairNoDuration, $10, INJ_quickRepairNoDuration)
+CHT_quickRepairNoDuration:
+  readmem(INJ_quickRepairNoDuration, $10)
+
+{
+Ship:RepairShip+45:  C6 43 6C 01     -  mov byte ptr [ebx+6C],01 // repairShip (bool)
+Ship:RepairShip+49:  B8 88 9F B6 0D  -  mov eax,0DB69F88
+Ship:RepairShip+4e:  8B 08           -  mov ecx,[eax]
+Ship:RepairShip+50:  89 4D C8        -  mov [ebp-38],ecx
+Ship:RepairShip+53:  8B 48 04        -  mov ecx,[eax+04]
+Ship:RepairShip+56:  89 4D CC        -  mov [ebp-34],ecx
+Ship:RepairShip+59:  8B 48 08        -  mov ecx,[eax+08]
+Ship:RepairShip+5c:  89 4D D0        -  mov [ebp-30],ecx
+Ship:RepairShip+5f:  8B 40 0C        -  mov eax,[eax+0C]
+Ship:RepairShip+62:  89 45 D4        -  mov [ebp-2C],eax
+Ship:RepairShip+65:  8D 4D C8        -  lea ecx,[ebp-38]
+// ---------- INJECTING HERE ----------
+Ship:RepairShip+68:  8B 45 0C        -  mov eax,[ebp+0C] // m_durationInDays (int)
+// ---------- DONE INJECTING ----------
+Ship:RepairShip+6b:  50              -  push eax
+Ship:RepairShip+6c:  DB 04 24        -  fild dword ptr [esp]
+Ship:RepairShip+6f:  83 C4 04        -  add esp,04
+Ship:RepairShip+72:  8D 45 D8        -  lea eax,[ebp-28] // m_durationInDays (double)
+Ship:RepairShip+75:  83 EC 08        -  sub esp,08
+Ship:RepairShip+78:  DD 1C 24        -  fstp qword ptr [esp]
+Ship:RepairShip+7b:  51              -  push ecx
+Ship:RepairShip+7c:  50              -  push eax
+Ship:RepairShip+7d:  E8 DE 18 CD CC  -  call System:DateTime:AddDays
+Ship:RepairShip+82:  83 C4 0C        -  add esp,0C
+Ship:RepairShip+85:  8D 43 78        -  lea eax,[ebx+78] // repairEndTime (DateTime)
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+aobscanregion(INJ_quickRepairNoTimer, Ship:RepairShip, Ship:RepairShip+200, E8 ?? ?? ?? ?? 83 C4 20 83 EC)
+registersymbol(INJ_quickRepairNoTimer)
+INJ_quickRepairNoTimer:
+  nop
+  nop
+  nop
+  nop
+  nop
+_quickRepairNoTimer_return:
+
+globalalloc(CHT_quickRepairNoTimer, $10, INJ_quickRepairNoTimer)
+CHT_quickRepairNoTimer:
+  readmem(INJ_quickRepairNoTimer, $10)
+
+{
+Ship:RepairShip+9f:  8D 43 78        -  lea eax,[ebx+78] // repairEndTime (DateTime)
+Ship:RepairShip+a2:  8B 08           -  mov ecx,[eax]
+Ship:RepairShip+a4:  89 4D E8        -  mov [ebp-18],ecx
+Ship:RepairShip+a7:  8B 48 04        -  mov ecx,[eax+04]
+Ship:RepairShip+aa:  89 4D EC        -  mov [ebp-14],ecx
+Ship:RepairShip+ad:  8B 48 08        -  mov ecx,[eax+08]
+Ship:RepairShip+b0:  89 4D F0        -  mov [ebp-10],ecx
+Ship:RepairShip+b3:  8B 40 0C        -  mov eax,[eax+0C]
+Ship:RepairShip+b6:  89 45 F4        -  mov [ebp-0C],eax
+Ship:RepairShip+b9:  83 EC 08        -  sub esp,08
+Ship:RepairShip+bc:  68 D0 7E 10 29  -  push 29107ED0    // "RepairShipDone"
+Ship:RepairShip+c1:  53              -  push ebx         // this
+Ship:RepairShip+c2:  83 EC 10        -  sub esp,10
+Ship:RepairShip+c5:  8B 45 E8        -  mov eax,[ebp-18]
+Ship:RepairShip+c8:  89 04 24        -  mov [esp],eax
+Ship:RepairShip+cb:  8B 45 EC        -  mov eax,[ebp-14]
+Ship:RepairShip+ce:  89 44 24 04     -  mov [esp+04],eax
+Ship:RepairShip+d2:  8B 45 F0        -  mov eax,[ebp-10]
+Ship:RepairShip+d5:  89 44 24 08     -  mov [esp+08],eax
+Ship:RepairShip+d9:  8B 45 F4        -  mov eax,[ebp-0C]
+Ship:RepairShip+dc:  89 44 24 0C     -  mov [esp+0C],eax
+// ---------- INJECTING HERE ----------
+Ship:RepairShip+e0:  E8 3B 0D 66 CC  -  call Cargo:Timer:AddAlert
+// ---------- DONE INJECTING ----------
+Ship:RepairShip+e5:  83 C4 20        -  add esp,20
+Ship:RepairShip+e8:  83 EC 08        -  sub esp,08
+Ship:RepairShip+eb:  53              -  push ebx   // this
+Ship:RepairShip+ec:  6A 27           -  push 27    // SHIP_REPAIR_STARTED
+Ship:RepairShip+ee:  E8 8D F3 62 CC  -  call Cargo.EventManagement:EventManager:SendEvent
+Ship:RepairShip+f3:  83 C4 10        -  add esp,10
+Ship:RepairShip+f6:  8D 65 FC        -  lea esp,[ebp-04]
+Ship:RepairShip+f9:  5B              -  pop ebx
+Ship:RepairShip+fa:  C9              -  leave
+Ship:RepairShip+fb:  C3              -  ret
+}
+
+
+{
+////////////////////////////////////////////////////////////////////////////////
+aobscanregion(INJ_quickRepairNoDuration, HarbourView_Popup_Repair_Master:GetRepairDuration, HarbourView_Popup_Repair_Master:GetRepairDuration+100, 0F AF C1 C9 C3)
+registersymbol(INJ_quickRepairNoDuration)
+INJ_quickRepairNoDuration:
+  xor eax,eax
+  nop
+_quickRepairNoDuration_return:
+
+globalalloc(CHT_quickRepairNoDuration, $10, INJ_quickRepairNoDuration)
+CHT_quickRepairNoDuration:
+  readmem(INJ_quickRepairNoDuration, $10)
+
+_quickRepairNoDuration_code:
+
+_quickRepairNoDuration_original_code:
+  //readmem(INJ_quickRepairNoDuration, $05)
+  //imul eax,ecx
+  //leave
+  //ret
+
+  //jmp _quickRepairNoDuration_return
+
+{
+HarbourView_Popup_Repair_Master:GetRepairDuration:     55                 -  push ebp
+HarbourView_Popup_Repair_Master:GetRepairDuration+1:   8B EC              -  mov ebp,esp
+HarbourView_Popup_Repair_Master:GetRepairDuration+3:   83 EC 08           -  sub esp,08
+HarbourView_Popup_Repair_Master:GetRepairDuration+6:   8B 45 0C           -  mov eax,[ebp+0C]
+HarbourView_Popup_Repair_Master:GetRepairDuration+9:   50                 -  push eax
+HarbourView_Popup_Repair_Master:GetRepairDuration+a:   DB 04 24           -  fild dword ptr [esp]
+HarbourView_Popup_Repair_Master:GetRepairDuration+d:   D9 1C 24           -  fstp dword ptr [esp]
+HarbourView_Popup_Repair_Master:GetRepairDuration+10:  D9 04 24           -  fld dword ptr [esp]
+HarbourView_Popup_Repair_Master:GetRepairDuration+13:  83 C4 04           -  add esp,04
+HarbourView_Popup_Repair_Master:GetRepairDuration+16:  D9 05 B8 57 E1 19  -  fld dword ptr [19E157B8] // 10.00
+HarbourView_Popup_Repair_Master:GetRepairDuration+1c:  DE F9              -  fdivp st(1),st(0)
+HarbourView_Popup_Repair_Master:GetRepairDuration+1e:  83 EC 0C           -  sub esp,0C
+HarbourView_Popup_Repair_Master:GetRepairDuration+21:  83 EC 04           -  sub esp,04
+HarbourView_Popup_Repair_Master:GetRepairDuration+24:  D9 1C 24           -  fstp dword ptr [esp]
+HarbourView_Popup_Repair_Master:GetRepairDuration+27:  E8 BC AF FE FF     -  call 37BAFDA0 // UnityEngine.Mathf:CeilToInt
+HarbourView_Popup_Repair_Master:GetRepairDuration+2c:  83 C4 10           -  add esp,10
+HarbourView_Popup_Repair_Master:GetRepairDuration+2f:  8B 0D 9C D0 FA 0A  -  mov ecx,[0AFAD09C] // DAYS_PER_PERCENTAGE_SCALE
+// ---------- INJECTING HERE ----------
+HarbourView_Popup_Repair_Master:GetRepairDuration+35:  0F AF C1           -  imul eax,ecx
+HarbourView_Popup_Repair_Master:GetRepairDuration+38:  C9                 -  leave
+HarbourView_Popup_Repair_Master:GetRepairDuration+39:  C3                 -  ret
+// ---------- DONE INJECTING ----------
+}
+
+
+
+///////////
+//////////
+/////////
+[DISABLE]
+
+////////////////////////////////////////////////////////////////////////////////
+INJ_quickRepairDone:
+  readmem(CHT_quickRepairDone, $10)
+unregistersymbol(INJ_quickRepairDone)
+dealloc(CHT_quickRepairDone)
+unregistersymbol(CHT_quickRepairDone)
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+INJ_quickRepairNoDuration:
+  readmem(CHT_quickRepairNoDuration, $10)
+unregistersymbol(INJ_quickRepairNoDuration)
+dealloc(CHT_quickRepairNoDuration)
+unregistersymbol(CHT_quickRepairNoDuration)
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+INJ_quickRepairNoTimer:
+  readmem(CHT_quickRepairNoTimer, $10)
+unregistersymbol(INJ_quickRepairNoTimer)
+dealloc(CHT_quickRepairNoTimer)
+unregistersymbol(CHT_quickRepairNoTimer)
+
+</AssemblerScript>
+      <Hotkeys>
+        <Hotkey>
+          <Action>Activate</Action>
+          <Keys>
+            <Key>17</Key>
+            <Key>116</Key>
+          </Keys>
+          <ID>0</ID>
+        </Hotkey>
+        <Hotkey>
+          <Action>Deactivate</Action>
+          <Keys>
+            <Key>16</Key>
+            <Key>116</Key>
+          </Keys>
+          <ID>1</ID>
+        </Hotkey>
+        <Hotkey>
+          <Action>Activate</Action>
+          <Keys>
+            <Key>17</Key>
+            <Key>45</Key>
+          </Keys>
+          <ID>2</ID>
+        </Hotkey>
+        <Hotkey>
+          <Action>Deactivate</Action>
+          <Keys>
+            <Key>16</Key>
+            <Key>45</Key>
+          </Keys>
+          <ID>3</ID>
+        </Hotkey>
+      </Hotkeys>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>106974</ID>
+      <Description>"[CTRL+F6]/[SHIFT+F6] = quick ship upgrade"</Description>
+      <LastState/>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>{
+  Game   : TransOcean.exe
+  Version:
+  Date   : 10.4.2016
+  Author : V3
+
+  TransOcean ship upgrade script
+}
+
+{$lua}
+if syntaxcheck==true then return '' end
+
+if (LaunchMonoDataCollector()==0) then
+  error("no mono")
+end
+{$asm}
+
+
+
+//////////
+/////////
+////////
+[ENABLE]
+
+////////////////////////////////////////////////////////////////////////////////
+aobscanregion(INJ_quickUpgradeDuration, Ship:UpgradeShip, Ship:UpgradeShip+100, 8B 45 0C 50 DB 04 24)
+registersymbol(INJ_quickUpgradeDuration)
+INJ_quickUpgradeDuration:
+  xor eax,eax
+  nop
+_quickUpgradeDuration_return:
+
+globalalloc(CHT_quickUpgradeDuration, $10, INJ_quickUpgradeDuration)
+CHT_quickUpgradeDuration:
+  readmem(INJ_quickUpgradeDuration, $10)
+
+_quickUpgradeDuration_code:
+
+_quickUpgradeDuration_original_code:
+  //readmem(INJ_quickUpgradeDuration, $03)
+  //mov eax,[ebp+0C]
+
+  //jmp _quickUpgradeDuration_return
+
+{
+Ship:UpgradeShip+26:  8B 46 68              -  mov eax,[esi+68]         // upgradeCount
+Ship:UpgradeShip+29:  40                    -  inc eax
+Ship:UpgradeShip+2a:  89 46 68              -  mov [esi+68],eax         // upgradeCount
+Ship:UpgradeShip+2d:  C6 46 6D 01           -  mov byte ptr [esi+6D],01 // upgradeShip
+Ship:UpgradeShip+31:  B8 88 2F A4 0C        -  mov eax,0CA42F88
+Ship:UpgradeShip+36:  8B 08                 -  mov ecx,[eax]
+Ship:UpgradeShip+38:  89 4D C8              -  mov [ebp-38],ecx
+Ship:UpgradeShip+3b:  8B 48 04              -  mov ecx,[eax+04]
+Ship:UpgradeShip+3e:  89 4D CC              -  mov [ebp-34],ecx
+Ship:UpgradeShip+41:  8B 48 08              -  mov ecx,[eax+08]
+Ship:UpgradeShip+44:  89 4D D0              -  mov [ebp-30],ecx
+Ship:UpgradeShip+47:  8B 40 0C              -  mov eax,[eax+0C]
+Ship:UpgradeShip+4a:  89 45 D4              -  mov [ebp-2C],eax
+Ship:UpgradeShip+4d:  8D 4D C8              -  lea ecx,[ebp-38]
+// ---------- INJECTING HERE ----------
+Ship:UpgradeShip+50:  8B 45 0C              -  mov eax,[ebp+0C] // m_durationInDays (int)
+// ---------- DONE INJECTING ----------
+Ship:UpgradeShip+53:  50                    -  push eax
+Ship:UpgradeShip+54:  DB 04 24              -  fild dword ptr [esp]
+Ship:UpgradeShip+57:  83 C4 04              -  add esp,04
+Ship:UpgradeShip+5a:  8D 45 D8              -  lea eax,[ebp-28] // m_durationInDays (double)
+Ship:UpgradeShip+5d:  83 EC 08              -  sub esp,08
+Ship:UpgradeShip+60:  DD 1C 24              -  fstp qword ptr [esp]
+Ship:UpgradeShip+63:  51                    -  push ecx
+Ship:UpgradeShip+64:  50                    -  push eax
+Ship:UpgradeShip+65:  E8 D6 19 CD CC        -  call System:DateTime:AddDays
+Ship:UpgradeShip+6a:  83 C4 0C              -  add esp,0C
+Ship:UpgradeShip+6d:  8D 86 88 00 00 00     -  lea eax,[esi+00000088] // upgradeEndTime (DateTime)
+Ship:UpgradeShip+73:  8B 4D D8              -  mov ecx,[ebp-28]
+Ship:UpgradeShip+76:  89 08                 -  mov [eax],ecx
+Ship:UpgradeShip+78:  8B 4D DC              -  mov ecx,[ebp-24]
+Ship:UpgradeShip+7b:  89 48 04              -  mov [eax+04],ecx
+Ship:UpgradeShip+7e:  8B 4D E0              -  mov ecx,[ebp-20]
+Ship:UpgradeShip+81:  89 48 08              -  mov [eax+08],ecx
+Ship:UpgradeShip+84:  8B 4D E4              -  mov ecx,[ebp-1C]
+Ship:UpgradeShip+87:  89 48 0C              -  mov [eax+0C],ecx
+}
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+aobscanregion(INJ_quickUpgrade, Ship:UpgradeShip, Ship:UpgradeShip+100, E8 ?? ?? ?? ?? 83 C4 20 8D 65)
+registersymbol(INJ_quickUpgrade)
+INJ_quickUpgrade:
+  jmp _quickUpgrade_code
+_quickUpgrade_return:
+
+Ship:UpgradeShipDone:
+_Ship_UpgradeShipDone:
+
+globalalloc(CHT_quickUpgrade, $100, INJ_quickUpgrade)
+CHT_quickUpgrade:
+  readmem(INJ_quickUpgrade, $10)
+
+_quickUpgrade_code:
+  mov dword ptr [esi+68], 00000000 // upgradeCount = 0
+
+  sub esp,0C
+  push esi   // this (Ship)
+  call _Ship_UpgradeShipDone
+  add esp,10
+
+_quickUpgrade_original_code:
+  //readmem(INJ_quickUpgrade, $05)
+  //call Cargo:Timer:AddAlert
+
+  jmp _quickUpgrade_return
+
+{
+Ship:UpgradeShip+8a:  8D 86 88 00 00 00     -  lea eax,[esi+00000088] // upgradeEndTime (DateTime)
+Ship:UpgradeShip+90:  8B 08                 -  mov ecx,[eax]
+Ship:UpgradeShip+92:  89 4D E8              -  mov [ebp-18],ecx
+Ship:UpgradeShip+95:  8B 48 04              -  mov ecx,[eax+04]
+Ship:UpgradeShip+98:  89 4D EC              -  mov [ebp-14],ecx
+Ship:UpgradeShip+9b:  8B 48 08              -  mov ecx,[eax+08]
+Ship:UpgradeShip+9e:  89 4D F0              -  mov [ebp-10],ecx
+Ship:UpgradeShip+a1:  8B 40 0C              -  mov eax,[eax+0C]
+Ship:UpgradeShip+a4:  89 45 F4              -  mov [ebp-0C],eax
+Ship:UpgradeShip+a7:  83 EC 08              -  sub esp,08
+Ship:UpgradeShip+aa:  68 30 BF CE 26        -  push 26CEBF30    // "UpgradeShipDone"
+Ship:UpgradeShip+af:  56                    -  push esi         // this
+Ship:UpgradeShip+b0:  83 EC 10              -  sub esp,10
+Ship:UpgradeShip+b3:  8B 45 E8              -  mov eax,[ebp-18]
+Ship:UpgradeShip+b6:  89 04 24              -  mov [esp],eax
+Ship:UpgradeShip+b9:  8B 45 EC              -  mov eax,[ebp-14]
+Ship:UpgradeShip+bc:  89 44 24 04           -  mov [esp+04],eax
+Ship:UpgradeShip+c0:  8B 45 F0              -  mov eax,[ebp-10]
+Ship:UpgradeShip+c3:  89 44 24 08           -  mov [esp+08],eax
+Ship:UpgradeShip+c7:  8B 45 F4              -  mov eax,[ebp-0C]
+Ship:UpgradeShip+ca:  89 44 24 0C           -  mov [esp+0C],eax
+// ---------- INJECTING HERE ----------
+Ship:UpgradeShip+ce:  E8 C5 11 66 CC        -  call Cargo:Timer:AddAlert
+// ---------- DONE INJECTING ----------
+Ship:UpgradeShip+d3:  83 C4 20              -  add esp,20
+Ship:UpgradeShip+d6:  8D 65 FC              -  lea esp,[ebp-04]
+Ship:UpgradeShip+d9:  5E                    -  pop esi
+Ship:UpgradeShip+da:  C9                    -  leave
+Ship:UpgradeShip+db:  C3                    -  ret
+}
+
+
+
+///////////
+//////////
+/////////
+[DISABLE]
+
+////////////////////////////////////////////////////////////////////////////////
+INJ_quickUpgradeDuration:
+  readmem(CHT_quickUpgradeDuration, $10)
+unregistersymbol(INJ_quickUpgradeDuration)
+dealloc(CHT_quickUpgradeDuration)
+unregistersymbol(CHT_quickUpgradeDuration)
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+INJ_quickUpgrade:
+  readmem(CHT_quickUpgrade, $10)
+unregistersymbol(INJ_quickUpgrade)
+dealloc(CHT_quickUpgrade)
+unregistersymbol(CHT_quickUpgrade)
+
+</AssemblerScript>
+      <Hotkeys>
+        <Hotkey>
+          <Action>Activate</Action>
+          <Keys>
+            <Key>17</Key>
+            <Key>117</Key>
+          </Keys>
+          <ID>0</ID>
+        </Hotkey>
+        <Hotkey>
+          <Action>Deactivate</Action>
+          <Keys>
+            <Key>16</Key>
+            <Key>117</Key>
+          </Keys>
+          <ID>1</ID>
+        </Hotkey>
+        <Hotkey>
+          <Action>Activate</Action>
+          <Keys>
+            <Key>17</Key>
+            <Key>45</Key>
+          </Keys>
+          <ID>2</ID>
+        </Hotkey>
+        <Hotkey>
+          <Action>Deactivate</Action>
+          <Keys>
+            <Key>16</Key>
+            <Key>45</Key>
+          </Keys>
+          <ID>3</ID>
+        </Hotkey>
+      </Hotkeys>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>106931</ID>
+      <Description>"[CTRL+F7]/[SHIFT+F7] = browse&amp;edit values"</Description>
+      <Options moHideChildren="1"/>
+      <LastState/>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>{
+  Game   : TransOcean.exe
+  Version:
+  Date   : 7.4.2016
+  Author : V3
+
+  TransOcean browse&amp;edit values script
+}
+
+{$lua}
+if syntaxcheck==true then return '' end
+
+if (LaunchMonoDataCollector()==0) then
+  error("no mono")
+end
+{$asm}
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+define(INJ_player, Player:get_ReputationAmount)
+define(AOB_player, 8B 05 ?? ?? ?? ?? D9 40 38 C3)
+
+{
+Player:get_ReputationAmount:    8B 05 D43DB904  - mov eax,[04B93DD4]     // static address of Player structure
+Player:get_ReputationAmount+6:  D9 40 38        - fld dword ptr [eax+38] // reputation
+Player:get_ReputationAmount+9:  C3              - ret
+}
+
+
+
+//////////
+/////////
+////////
+[ENABLE]
+
+////////////////////////////////////////////////////////////////////////////////
+globalalloc(pPlayer, $04)
+pPlayer:
+  readmem(INJ_player+2, $04)
+
+globalalloc(pShip, $04)
+pShip:
+  dd 00000000
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+assert(INJ_player, AOB_player)
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+aobscanregion(INJ_worldmapShip, ShipList_Details_Master:Refresh, ShipList_Details_Master:Refresh+200, 83 EC 08 6A 00)
+registersymbol(INJ_worldmapShip)
+INJ_worldmapShip:
+  jmp _worldmapShip_code
+_worldmapShip_return:
+
+globalalloc(CHT_worldmapShip, $100, INJ_worldmapShip)
+CHT_worldmapShip:
+  readmem(INJ_worldmapShip, $10)
+
+_worldmapShip_code:
+  push eax
+  mov eax,[eax+10]
+  mov dword ptr [pShip], eax
+  pop eax
+
+_worldmapShip_original_code:
+  readmem(INJ_worldmapShip, $05)
+  //sub esp,08
+  //push 00
+
+  jmp _worldmapShip_return
+
+{
+ShipList_Details_Master:Refresh:     55                 -  push ebp
+ShipList_Details_Master:Refresh+1:   8B EC              -  mov ebp,esp
+ShipList_Details_Master:Refresh+3:   57                 -  push edi
+ShipList_Details_Master:Refresh+4:   83 EC 04           -  sub esp,04
+ShipList_Details_Master:Refresh+7:   8B 7D 08           -  mov edi,[ebp+08]   // ShipList_Details_Master
+ShipList_Details_Master:Refresh+a:   8B 05 C0 3C 0A 04  -  mov eax,[040A3CC0] // Ship static address
+// ---------- INJECTING HERE ----------
+ShipList_Details_Master:Refresh+10:  83 EC 08           -  sub esp,08
+ShipList_Details_Master:Refresh+13:  6A 00              -  push 00
+// ---------- INJECTING HERE ----------
+ShipList_Details_Master:Refresh+15:  50                 -  push eax
+ShipList_Details_Master:Refresh+16:  E8 45 EE EF CB     -  call UnityEngine:Object:op_Equality
+ShipList_Details_Master:Refresh+1b:  83 C4 10           -  add esp,10
+ShipList_Details_Master:Refresh+1e:  85 C0              -  test eax,eax
+ShipList_Details_Master:Refresh+20:  0F 85 0F 01 00 00  -  jne ShipList_Details_Master:Refresh+135
+ShipList_Details_Master:Refresh+26:  8B 47 24           -  mov eax,[edi+24] // ButtonToHarbour (UIButton)
+ShipList_Details_Master:Refresh+29:  83 EC 0C           -  sub esp,0C
+ShipList_Details_Master:Refresh+2c:  50                 -  push eax
+ShipList_Details_Master:Refresh+2d:  39 00              -  cmp [eax],eax
+ShipList_Details_Master:Refresh+2f:  E8 CC EE EF CB     -  call UnityEngine:Component:get_gameObject
+ShipList_Details_Master:Refresh+34:  83 C4 10           -  add esp,10
+ShipList_Details_Master:Refresh+37:  89 45 F8           -  mov [ebp-08],eax   // ShipList_Details_Master
+ShipList_Details_Master:Refresh+3a:  8B 05 C0 3C 0A 04  -  mov eax,[040A3CC0] // Ship static address
+ShipList_Details_Master:Refresh+40:  8B 40 10           -  mov eax,[eax+10]   // ShipData
+}
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+aobscanregion(INJ_harbourShip, Harbour:get_CurrentShip, Harbour:get_CurrentShip+100, 83 EC 08 6A 00)
+registersymbol(INJ_harbourShip)
+INJ_harbourShip:
+  jmp _harbourShip_code
+_harbourShip_return:
+
+globalalloc(CHT_harbourShip, $100, INJ_harbourShip)
+CHT_harbourShip:
+  readmem(INJ_harbourShip, $10)
+
+_harbourShip_code:
+  mov dword ptr [pShip], eax
+
+_harbourShip_original_code:
+  readmem(INJ_harbourShip, $05)
+  //sub esp,08
+  //push 00
+
+  jmp _harbourShip_return
+
+{
+Harbour:get_CurrentShip:     55              -  push ebp
+Harbour:get_CurrentShip+1:   8B EC           -  mov ebp,esp
+Harbour:get_CurrentShip+3:   83 EC 08        -  sub esp,08
+Harbour:get_CurrentShip+6:   8B 45 08        -  mov eax,[ebp+08] // Harbour
+Harbour:get_CurrentShip+9:   8B 40 10        -  mov eax,[eax+10] // currentShipData
+// ---------- INJECTING HERE ----------
+Harbour:get_CurrentShip+c:   83 EC 08        -  sub esp,08
+Harbour:get_CurrentShip+f:   6A 00           -  push 00
+// ---------- INJECTING HERE ----------
+Harbour:get_CurrentShip+11:  50              -  push eax
+Harbour:get_CurrentShip+12:  E8 C9 63 EF CB  -  call UnityEngine:Object:op_Equality
+Harbour:get_CurrentShip+17:  83 C4 10        -  add esp,10
+Harbour:get_CurrentShip+1a:  85 C0           -  test eax,eax
+Harbour:get_CurrentShip+1c:  74 04           -  je Harbour:get_CurrentShip+22
+Harbour:get_CurrentShip+1e:  33 C0           -  xor eax,eax
+Harbour:get_CurrentShip+20:  EB 09           -  jmp Harbour:get_CurrentShip+2b
+Harbour:get_CurrentShip+22:  8B 45 08        -  mov eax,[ebp+08] // Harbour
+Harbour:get_CurrentShip+25:  8B 40 10        -  mov eax,[eax+10] // currentShipData
+Harbour:get_CurrentShip+28:  8B 40 10        -  mov eax,[eax+10] // Ship
+Harbour:get_CurrentShip+2b:  C9              -  leave
+Harbour:get_CurrentShip+2c:  C3              -  ret
+}
+
+
+
+///////////
+//////////
+/////////
+[DISABLE]
+
+////////////////////////////////////////////////////////////////////////////////
+dealloc(pPlayer)
+unregistersymbol(pPlayer)
+
+dealloc(pShip)
+unregistersymbol(pShip)
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+INJ_worldmapShip:
+  readmem(CHT_worldmapShip, $10)
+unregistersymbol(INJ_worldmapShip)
+dealloc(CHT_worldmapShip)
+unregistersymbol(CHT_worldmapShip)
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+INJ_harbourShip:
+  readmem(CHT_harbourShip, $10)
+unregistersymbol(INJ_harbourShip)
+dealloc(CHT_harbourShip)
+unregistersymbol(CHT_harbourShip)
+
+</AssemblerScript>
+      <Hotkeys>
+        <Hotkey>
+          <Action>Activate</Action>
+          <Keys>
+            <Key>17</Key>
+            <Key>118</Key>
+          </Keys>
+          <ID>0</ID>
+        </Hotkey>
+        <Hotkey>
+          <Action>Deactivate</Action>
+          <Keys>
+            <Key>16</Key>
+            <Key>118</Key>
+          </Keys>
+          <ID>1</ID>
+        </Hotkey>
+        <Hotkey>
+          <Action>Activate</Action>
+          <Keys>
+            <Key>17</Key>
+            <Key>45</Key>
+          </Keys>
+          <ID>2</ID>
+        </Hotkey>
+        <Hotkey>
+          <Action>Deactivate</Action>
+          <Keys>
+            <Key>16</Key>
+            <Key>45</Key>
+          </Keys>
+          <ID>3</ID>
+        </Hotkey>
+      </Hotkeys>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>106932</ID>
+          <Description>"credits"</Description>
+          <VariableType>8 Bytes</VariableType>
+          <Address>pShip</Address>
+          <Offsets>
+            <Offset>20</Offset>
+            <Offset>5C</Offset>
+            <Offset>10</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>106962</ID>
+          <Description>"player"</Description>
+          <Options moAllowManualCollapseAndExpand="1"/>
+          <LastState Value="" RealAddress="00000000"/>
+          <GroupHeader>1</GroupHeader>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>106933</ID>
+              <Description>"rank (1-5)"</Description>
+              <VariableType>4 Bytes</VariableType>
+              <Address>[pPlayer]</Address>
+              <Offsets>
+                <Offset>3C</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>106934</ID>
+              <Description>"reputation (0-100)"</Description>
+              <VariableType>Float</VariableType>
+              <Address>[pPlayer]</Address>
+              <Offsets>
+                <Offset>38</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>106935</ID>
+              <Description>"fulfilled company contracts"</Description>
+              <VariableType>8 Bytes</VariableType>
+              <Address>[pPlayer]</Address>
+              <Offsets>
+                <Offset>48</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>106936</ID>
+              <Description>"fulfilled big contracts"</Description>
+              <VariableType>8 Bytes</VariableType>
+              <Address>[pPlayer]</Address>
+              <Offsets>
+                <Offset>70</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>106937</ID>
+              <Description>"max suboffices"</Description>
+              <VariableType>4 Bytes</VariableType>
+              <Address>[pPlayer]</Address>
+              <Offsets>
+                <Offset>24</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>106938</ID>
+              <Description>"max suboffices in campaign"</Description>
+              <VariableType>4 Bytes</VariableType>
+              <Address>[pPlayer]</Address>
+              <Offsets>
+                <Offset>28</Offset>
+              </Offsets>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>106960</ID>
+          <Description>"ship"</Description>
+          <Options moAllowManualCollapseAndExpand="1"/>
+          <LastState Value="" RealAddress="00000000"/>
+          <GroupHeader>1</GroupHeader>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>106939</ID>
+              <Description>"name"</Description>
+              <VariableType>String</VariableType>
+              <Length>32</Length>
+              <Unicode>1</Unicode>
+              <ZeroTerminate>1</ZeroTerminate>
+              <Address>pShip</Address>
+              <Offsets>
+                <Offset>C</Offset>
+                <Offset>1C</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>106940</ID>
+              <Description>"model"</Description>
+              <VariableType>String</VariableType>
+              <Length>32</Length>
+              <Unicode>1</Unicode>
+              <ZeroTerminate>1</ZeroTerminate>
+              <Address>pShip</Address>
+              <Offsets>
+                <Offset>C</Offset>
+                <Offset>20</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>106941</ID>
+              <Description>"class"</Description>
+              <VariableType>String</VariableType>
+              <Length>32</Length>
+              <Unicode>1</Unicode>
+              <ZeroTerminate>1</ZeroTerminate>
+              <Address>pShip</Address>
+              <Offsets>
+                <Offset>C</Offset>
+                <Offset>24</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>106942</ID>
+              <Description>"condition"</Description>
+              <VariableType>Float</VariableType>
+              <Address>pShip</Address>
+              <Offsets>
+                <Offset>B8</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>106943</ID>
+              <Description>"start fuel"</Description>
+              <VariableType>Float</VariableType>
+              <Address>pShip</Address>
+              <Offsets>
+                <Offset>BC</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>106968</ID>
+              <Description>"TEU/TDW"</Description>
+              <Options moHideChildren="1" moAllowManualCollapseAndExpand="1"/>
+              <LastState Value="" RealAddress="00000000"/>
+              <GroupHeader>1</GroupHeader>
+              <CheatEntries>
+                <CheatEntry>
+                  <ID>106947</ID>
+                  <Description>"initial TEU"</Description>
+                  <VariableType>String</VariableType>
+                  <Length>32</Length>
+                  <Unicode>1</Unicode>
+                  <ZeroTerminate>1</ZeroTerminate>
+                  <Address>pShip</Address>
+                  <Offsets>
+                    <Offset>C</Offset>
+                    <Offset>58</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>106948</ID>
+                  <Description>"TEU"</Description>
+                  <VariableType>String</VariableType>
+                  <Length>32</Length>
+                  <Unicode>1</Unicode>
+                  <ZeroTerminate>1</ZeroTerminate>
+                  <Address>pShip</Address>
+                  <Offsets>
+                    <Offset>C</Offset>
+                    <Offset>5C</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>106949</ID>
+                  <Description>"TEU loaded"</Description>
+                  <VariableType>String</VariableType>
+                  <Length>32</Length>
+                  <Unicode>1</Unicode>
+                  <ZeroTerminate>1</ZeroTerminate>
+                  <Address>pShip</Address>
+                  <Offsets>
+                    <Offset>C</Offset>
+                    <Offset>60</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>106944</ID>
+                  <Description>"initial TDW"</Description>
+                  <VariableType>String</VariableType>
+                  <Length>32</Length>
+                  <Unicode>1</Unicode>
+                  <ZeroTerminate>1</ZeroTerminate>
+                  <Address>pShip</Address>
+                  <Offsets>
+                    <Offset>C</Offset>
+                    <Offset>4C</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>106945</ID>
+                  <Description>"TDW"</Description>
+                  <VariableType>String</VariableType>
+                  <Length>32</Length>
+                  <Unicode>1</Unicode>
+                  <ZeroTerminate>1</ZeroTerminate>
+                  <Address>pShip</Address>
+                  <Offsets>
+                    <Offset>C</Offset>
+                    <Offset>50</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>106946</ID>
+                  <Description>"TDW loaded"</Description>
+                  <VariableType>String</VariableType>
+                  <Length>32</Length>
+                  <Unicode>1</Unicode>
+                  <ZeroTerminate>1</ZeroTerminate>
+                  <Address>pShip</Address>
+                  <Offsets>
+                    <Offset>C</Offset>
+                    <Offset>54</Offset>
+                  </Offsets>
+                </CheatEntry>
+              </CheatEntries>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>106969</ID>
+              <Description>"speed"</Description>
+              <Options moHideChildren="1" moAllowManualCollapseAndExpand="1"/>
+              <LastState Value="" RealAddress="00000000"/>
+              <GroupHeader>1</GroupHeader>
+              <CheatEntries>
+                <CheatEntry>
+                  <ID>106951</ID>
+                  <Description>"vMin"</Description>
+                  <VariableType>Float</VariableType>
+                  <Address>pShip</Address>
+                  <Offsets>
+                    <Offset>D0</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>106952</ID>
+                  <Description>"vMax"</Description>
+                  <VariableType>Float</VariableType>
+                  <Address>pShip</Address>
+                  <Offsets>
+                    <Offset>C8</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>106953</ID>
+                  <Description>"initial vMax"</Description>
+                  <VariableType>Float</VariableType>
+                  <Address>pShip</Address>
+                  <Offsets>
+                    <Offset>CC</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>106954</ID>
+                  <Description>"vActual"</Description>
+                  <VariableType>Float</VariableType>
+                  <Address>pShip</Address>
+                  <Offsets>
+                    <Offset>D8</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>106955</ID>
+                  <Description>"speed slider value"</Description>
+                  <VariableType>Float</VariableType>
+                  <Address>pShip</Address>
+                  <Offsets>
+                    <Offset>DC</Offset>
+                  </Offsets>
+                </CheatEntry>
+              </CheatEntries>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>106970</ID>
+              <Description>"flags"</Description>
+              <Options moAllowManualCollapseAndExpand="1"/>
+              <LastState Value="" RealAddress="00000000"/>
+              <GroupHeader>1</GroupHeader>
+              <CheatEntries>
+                <CheatEntry>
+                  <ID>106961</ID>
+                  <Description>"was busy?"</Description>
+                  <VariableType>Byte</VariableType>
+                  <Address>pShip</Address>
+                  <Offsets>
+                    <Offset>64</Offset>
+                    <Offset>10</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>106966</ID>
+                  <Description>"repair?"</Description>
+                  <VariableType>Byte</VariableType>
+                  <Address>pShip</Address>
+                  <Offsets>
+                    <Offset>6C</Offset>
+                    <Offset>10</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>106967</ID>
+                  <Description>"upgrade?"</Description>
+                  <VariableType>Byte</VariableType>
+                  <Address>pShip</Address>
+                  <Offsets>
+                    <Offset>6D</Offset>
+                    <Offset>10</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>106956</ID>
+                  <Description>"has route?"</Description>
+                  <VariableType>Byte</VariableType>
+                  <Address>pShip</Address>
+                  <Offsets>
+                    <Offset>F4</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>106957</ID>
+                  <Description>"automated routing?"</Description>
+                  <VariableType>Byte</VariableType>
+                  <Address>pShip</Address>
+                  <Offsets>
+                    <Offset>F5</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>106963</ID>
+                  <Description>"wants to cast in?"</Description>
+                  <VariableType>Byte</VariableType>
+                  <Address>pShip</Address>
+                  <Offsets>
+                    <Offset>65</Offset>
+                    <Offset>10</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>106964</ID>
+                  <Description>"wants to cast out?"</Description>
+                  <VariableType>Byte</VariableType>
+                  <Address>pShip</Address>
+                  <Offsets>
+                    <Offset>66</Offset>
+                    <Offset>10</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>106958</ID>
+                  <Description>"stopped?"</Description>
+                  <VariableType>Byte</VariableType>
+                  <Address>pShip</Address>
+                  <Offsets>
+                    <Offset>F6</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>106959</ID>
+                  <Description>"stopped by event"</Description>
+                  <VariableType>String</VariableType>
+                  <Length>32</Length>
+                  <Unicode>1</Unicode>
+                  <ZeroTerminate>1</ZeroTerminate>
+                  <Address>pShip</Address>
+                  <Offsets>
+                    <Offset>C</Offset>
+                    <Offset>84</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>106950</ID>
+                  <Description>"smuggling?"</Description>
+                  <VariableType>Byte</VariableType>
+                  <Address>pShip</Address>
+                  <Offsets>
+                    <Offset>D4</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>106965</ID>
+                  <Description>"sinks?"</Description>
+                  <VariableType>Byte</VariableType>
+                  <Address>pShip</Address>
+                  <Offsets>
+                    <Offset>67</Offset>
+                    <Offset>10</Offset>
+                  </Offsets>
+                </CheatEntry>
+              </CheatEntries>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols/>
+</CheatTable>
