@@ -1,0 +1,492 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="18">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>329</ID>
+      <Description>"ItemSwap - when grabbing any item"</Description>
+      <Options moHideChildren="1" moAllowManualCollapseAndExpand="1"/>
+      <LastState Activated="0"/>
+      <Color>80000008</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>{ Game   : DarkSoulsII.exe
+  Version:
+  Date   : 2014-05-02
+  Author : mgr.inz.Player
+
+  ItemSwap - when grabbing any item
+
+  1. set desired ItemID,
+  2. in game, pick up whatever item from the ground (you can drop whatever item you want)
+  3. don't forget to disable this cheat when not needed anymore
+
+}
+
+[ENABLE]
+
+aobscanmodule(BetterItemSwap,DarkSoulsII.exe,8D 70 40 B9 21 00 00 00 8D) // should be unique
+alloc(newmem,$1000)
+label(return)
+
+
+alloc(myDesiredItemID,128)
+registersymbol(myDesiredItemID)
+
+label(myDesiredLevel)
+registersymbol(myDesiredLevel)
+
+label(myDesiredInfusion)
+registersymbol(myDesiredInfusion)
+
+label(myDesiredQuantity)
+registersymbol(myDesiredQuantity)
+
+label(divisor)
+
+myDesiredItemID:
+dd 0
+myDesiredLevel:
+db FF
+myDesiredInfusion:
+db FF
+myDesiredQuantity:
+db FF
+
+divisor:
+dd (int)100000
+
+
+newmem:
+  mov esi,eax  // backup EAX
+  mov edi,edx  // backup EDX
+
+  // divide ID by 100'000, to get group ID
+  mov eax,[myDesiredItemID]
+  cmp eax,0
+  jnz @f
+  mov eax,[esi+44] // get original ID
+  @@:
+  xor edx,edx
+  div dword ptr [divisor]
+
+  // set quantity
+  cmp eax,#611
+  jg @f        // is it consumable item
+  cmp eax,#600
+  jl @f        // is it consumable item
+    mov cl,[myDesiredQuantity]
+    cmp cl,FF
+    je @f
+    cmp cl,14
+    ja @f
+    cmp cl,0
+    je @f
+      mov [esi+4C],cl
+  @@:
+
+  // set durability to something bigger than 0, so it can be repaired with powder
+  cmp eax,#279
+  jg @f        // is it an item with durability or not ?
+    mov [esi+48],(float)500.0
+  @@:
+
+  // durability for rings
+  cmp eax,#400
+  jl @f
+  cmp eax,#411
+  jg @f
+    mov [esi+48],(float)500.0
+  @@:
+
+  // set infusion
+  cmp eax,#118
+  jg @f        // is it an infusion-able item or not ?
+
+    mov cl,[myDesiredInfusion]
+    cmp cl,FF
+    je  @f
+    cmp cl,09     // must be 0 - 9
+    ja  @f
+      mov byte ptr [esi+4F],cl     //infusion
+  @@:
+
+
+  // set level
+  cmp eax,#279
+  jg @f
+    mov cl,[myDesiredLevel]
+    cmp cl,FF
+    je  @f
+    cmp cl,0A    // must be 0 - 10
+    ja  @f
+      mov byte ptr [esi+4E],cl     //level
+  @@:
+
+
+
+  // get desiredID
+  mov ecx,[myDesiredItemID]
+
+  // swap item
+  cmp ecx,0
+  je @f
+  mov [esi+44],ecx // swap ID
+  @@:
+
+  mov eax,esi       // restore EAX
+  mov edx,edi       // restore EDX
+
+  lea esi,[eax+40]  // orig
+  mov ecx,00000021  // orig
+  jmp return
+
+BetterItemSwap:
+  jmp newmem
+  nop
+  nop
+  nop
+return:
+registersymbol(BetterItemSwap)
+
+[DISABLE]
+
+BetterItemSwap:
+  db 8D 70 40 B9 21 00 00 00
+
+unregistersymbol(BetterItemSwap)
+unregistersymbol(myDesiredItemID)
+unregistersymbol(myDesiredLevel)
+unregistersymbol(myDesiredInfusion)
+unregistersymbol(myDesiredQuantity)
+
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: "DarkSoulsII.exe"+2190E5
+
+"DarkSoulsII.exe"+2190C4: 83 F9 03              -  cmp ecx,03
+"DarkSoulsII.exe"+2190C7: 0F 87 2F FF FF FF     -  ja DarkSoulsII.exe+218FFC
+"DarkSoulsII.exe"+2190CD: 8B 46 04              -  mov eax,[esi+04]
+"DarkSoulsII.exe"+2190D0: 8B 0C 88              -  mov ecx,[eax+ecx*4]
+"DarkSoulsII.exe"+2190D3: 8D 55 08              -  lea edx,[ebp+08]
+"DarkSoulsII.exe"+2190D6: 52                    -  push edx
+"DarkSoulsII.exe"+2190D7: E8 14 C9 FF FF        -  call DarkSoulsII.exe+2159F0
+"DarkSoulsII.exe"+2190DC: 3B C3                 -  cmp eax,ebx
+"DarkSoulsII.exe"+2190DE: 0F 84 18 FF FF FF     -  je DarkSoulsII.exe+218FFC
+"DarkSoulsII.exe"+2190E4: 57                    -  push edi
+// ---------- INJECTING HERE ----------
+"DarkSoulsII.exe"+2190E5: 8D 70 40              -  lea esi,[eax+40]
+"DarkSoulsII.exe"+2190E8: B9 21 00 00 00        -  mov ecx,00000021
+// ---------- DONE INJECTING  ----------
+"DarkSoulsII.exe"+2190ED: 8D BD 78 FF FF FF     -  lea edi,[ebp-00000088]
+"DarkSoulsII.exe"+2190F3: F3 A5                 - repe  movsd
+"DarkSoulsII.exe"+2190F5: 0F B6 4D F8           -  movzx ecx,byte ptr [ebp-08]
+"DarkSoulsII.exe"+2190F9: 5F                    -  pop edi
+"DarkSoulsII.exe"+2190FA: 51                    -  push ecx
+"DarkSoulsII.exe"+2190FB: 8B 8D 70 FF FF FF     -  mov ecx,[ebp-00000090]
+"DarkSoulsII.exe"+219101: 8D 95 78 FF FF FF     -  lea edx,[ebp-00000088]
+"DarkSoulsII.exe"+219107: 52                    -  push edx
+"DarkSoulsII.exe"+219108: C6 85 77 FF FF FF 01  -  mov byte ptr [ebp-00000089],01
+"DarkSoulsII.exe"+21910F: E8 4C 30 FD FF        -  call DarkSoulsII.exe+1EC160
+}
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>330</ID>
+          <Description>"Desired Item ID"</Description>
+          <LastState Value="00000000" Activated="0" RealAddress="283D1000"/>
+          <ShowAsHex>1</ShowAsHex>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>myDesiredItemID</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>331</ID>
+          <Description>"Desired Level (weapons and wearables)"</Description>
+          <LastState Value="-1" Activated="0" RealAddress="283D1004"/>
+          <ShowAsSigned>1</ShowAsSigned>
+          <Color>80000008</Color>
+          <VariableType>Byte</VariableType>
+          <Address>myDesiredLevel</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>332</ID>
+          <Description>"Desired Infusion (weapons)"</Description>
+          <LastState Value="-1" Activated="0" RealAddress="283D1005"/>
+          <ShowAsSigned>1</ShowAsSigned>
+          <Color>80000008</Color>
+          <VariableType>Byte</VariableType>
+          <Address>myDesiredInfusion</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>333</ID>
+          <Description>"Desired Quantity (consumables)"</Description>
+          <LastState Value="-1" Activated="0" RealAddress="283D1006"/>
+          <ShowAsSigned>1</ShowAsSigned>
+          <Color>80000008</Color>
+          <VariableType>Byte</VariableType>
+          <Address>myDesiredQuantity</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>334</ID>
+          <Description>"helper"</Description>
+          <LastState Activated="0"/>
+          <Color>80000008</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[ENABLE]
+LuaCall(showHelper())
+
+[DISABLE]
+LuaCall(hideHelper())
+</AssemblerScript>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>335</ID>
+      <Description>"highlighted item"</Description>
+      <Options moHideChildren="1" moAllowManualCollapseAndExpand="1"/>
+      <LastState Activated="1"/>
+      <Color>80000008</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>{ Game   : DarkSoulsII.exe
+  Version:
+  Date   : 2014-05-04
+  Author : mgr.inz.Player
+}
+
+[ENABLE]
+
+aobscanmodule(highlightedItem,DarkSoulsII.exe,8A 48 16 84 C9 74 0F) // should be unique
+alloc(newmem,$1000)
+
+label(pItem)
+registersymbol(pItem)
+
+label(previous)
+
+label(code)
+label(return)
+
+newmem:
+
+code:
+
+  cmp [previous],eax
+  mov [previous],eax
+  jne @f
+
+  mov [pItem],eax
+
+  @@:
+  mov cl,[eax+16]
+  test cl,cl
+  jmp return
+
+pItem:
+dq 0
+previous:
+dq 0
+
+
+highlightedItem:
+  jmp code
+return:
+registersymbol(highlightedItem)
+
+[DISABLE]
+
+highlightedItem:
+  db 8A 48 16 84 C9
+
+unregistersymbol(highlightedItem)
+unregistersymbol(pItem)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: "DarkSoulsII.exe"+E1209
+
+"DarkSoulsII.exe"+E11F1: 8B 49 60              -  mov ecx,[ecx+60]
+"DarkSoulsII.exe"+E11F4: 85 C9                 -  test ecx,ecx
+"DarkSoulsII.exe"+E11F6: 74 34                 -  je DarkSoulsII.exe+E122C
+"DarkSoulsII.exe"+E11F8: 8B 49 08              -  mov ecx,[ecx+08]
+"DarkSoulsII.exe"+E11FB: 85 C9                 -  test ecx,ecx
+"DarkSoulsII.exe"+E11FD: 74 2D                 -  je DarkSoulsII.exe+E122C
+"DarkSoulsII.exe"+E11FF: 50                    -  push eax
+"DarkSoulsII.exe"+E1200: E8 6B AE 10 00        -  call DarkSoulsII.exe+1EC070
+"DarkSoulsII.exe"+E1205: 85 C0                 -  test eax,eax
+"DarkSoulsII.exe"+E1207: 74 23                 -  je DarkSoulsII.exe+E122C
+// ---------- INJECTING HERE ----------
+"DarkSoulsII.exe"+E1209: 8A 48 16              -  mov cl,[eax+16]
+"DarkSoulsII.exe"+E120C: 84 C9                 -  test cl,cl
+// ---------- DONE INJECTING  ----------
+"DarkSoulsII.exe"+E120E: 74 0F                 -  je DarkSoulsII.exe+E121F
+"DarkSoulsII.exe"+E1210: 80 F9 01              -  cmp cl,01
+"DarkSoulsII.exe"+E1213: 74 0A                 -  je DarkSoulsII.exe+E121F
+"DarkSoulsII.exe"+E1215: 32 C0                 -  xor al,al
+"DarkSoulsII.exe"+E1217: 88 85 3F FF FF FF     -  mov [ebp-000000C1],al
+"DarkSoulsII.exe"+E121D: EB 14                 -  jmp DarkSoulsII.exe+E1233
+"DarkSoulsII.exe"+E121F: 8A 40 1E              -  mov al,[eax+1E]
+"DarkSoulsII.exe"+E1222: 24 0F                 -  and al,0F
+"DarkSoulsII.exe"+E1224: 88 85 3F FF FF FF     -  mov [ebp-000000C1],al
+"DarkSoulsII.exe"+E122A: EB 07                 -  jmp DarkSoulsII.exe+E1233
+}
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>336</ID>
+          <Description>"start"</Description>
+          <LastState Value="154DE804" Activated="0" RealAddress="0F7A0022"/>
+          <ShowAsHex>1</ShowAsHex>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>pItem</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>337</ID>
+          <Description>"ID 1/2"</Description>
+          <LastState Value="0145F1CE" Activated="0" RealAddress="154DE810"/>
+          <ShowAsHex>1</ShowAsHex>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>pItem</Address>
+          <Offsets>
+            <Offset>C</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>338</ID>
+          <Description>"ID 2/2"</Description>
+          <LastState Value="0145F1CE" Activated="0" RealAddress="154DE814"/>
+          <ShowAsHex>1</ShowAsHex>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>pItem</Address>
+          <Offsets>
+            <Offset>10</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>339</ID>
+          <Description>"type"</Description>
+          <LastState Value="0204" Activated="0" RealAddress="154DE81A"/>
+          <ShowAsHex>1</ShowAsHex>
+          <Color>80000008</Color>
+          <VariableType>2 Bytes</VariableType>
+          <Address>pItem</Address>
+          <Offsets>
+            <Offset>16</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>340</ID>
+          <Description>"Quantity (consumable only)"</Description>
+          <LastState Value="1117782016" Activated="0" RealAddress="154DE81C"/>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>pItem</Address>
+          <Offsets>
+            <Offset>18</Offset>
+          </Offsets>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>100</Key>
+              </Keys>
+              <Value>60</Value>
+              <ID>0</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>341</ID>
+          <Description>"Durability (armor, weapons)"</Description>
+          <LastState Value="80" Activated="0" RealAddress="154DE81C"/>
+          <Color>80000008</Color>
+          <VariableType>Float</VariableType>
+          <Address>pItem</Address>
+          <Offsets>
+            <Offset>18</Offset>
+          </Offsets>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>105</Key>
+              </Keys>
+              <Value>10</Value>
+              <ID>0</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>13</ID>
+          <Description>"damaged (0=damaged)"</Description>
+          <LastState Value="255" Activated="0" RealAddress="154DE820"/>
+          <Color>80000008</Color>
+          <VariableType>Byte</VariableType>
+          <Address>pItem</Address>
+          <Offsets>
+            <Offset>1C</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>20328</ID>
+          <Description>"level (max 10)"</Description>
+          <LastState Value="5" Activated="0" RealAddress="154DE821"/>
+          <Color>80000008</Color>
+          <VariableType>Byte</VariableType>
+          <Address>pItem</Address>
+          <Offsets>
+            <Offset>1D</Offset>
+          </Offsets>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>103</Key>
+              </Keys>
+              <Value>10</Value>
+              <ID>0</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>20329</ID>
+          <Description>"Infusion (max 9)"</Description>
+          <LastState Value="0" Activated="0" RealAddress="154DE822"/>
+          <Color>80000008</Color>
+          <VariableType>Byte</VariableType>
+          <Address>pItem</Address>
+          <Offsets>
+            <Offset>1E</Offset>
+          </Offsets>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>104</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols>
+    <SymbolEntry>
+      <Name>pItem</Name>
+      <Address>0F7A0022</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>highlightedItem</Name>
+      <Address> 00508C89</Address>
+    </SymbolEntry>
+  </UserdefinedSymbols>
+</CheatTable>

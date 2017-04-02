@@ -1,0 +1,408 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="18">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>33</ID>
+      <Description>"Player Health v2.0 (Alternate Version)"</Description>
+      <LastState Activated="1"/>
+      <Color>80000008</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>//Dark Souls 2 (*ver: 1.01++)
+//Player Health v2.0(Applied Upon Being Hit)
+//Optional Enemy Damage Multiplier (actually multiplies in this version) 1x == 1x damage etc...
+//Steve Andrew
+[enable]
+alloc(PlayerHealth,1024)
+label(NotPlayer)
+label(GrabPlayerObject)
+label(PlayerObject)
+label(TrueDamageMultiplier)
+label(OtherVariable)
+label(PlayerHealthRet)
+label(GrabPlayerObjectRet)
+registersymbol(PlayerObject)
+registersymbol(TrueDamageMultiplier)
+registersymbol(PlayerObjectAddress)
+registersymbol(HurtPlayerEnemyAddress)
+aobscanmodule(PlayerObjectAddress,DarkSoulsII.exe,39 81 fc 00 00 00 0f 9f c0)
+aobscanmodule(HurtPlayerEnemyAddress,DarkSoulsII.exe,89 8e fc 00 00 00 8b 02 50 e8)
+
+PlayerHealth:
+cmp esi,[PlayerObject]
+jne NotPlayer
+
+mov ecx,[esi+108]
+mov [esi+fc],ecx  //Apply Max / 100% Full Health
+jmp PlayerHealthRet
+
+NotPlayer: //Do Normal Damage To Enemy Or Apply More Precise Damage Multiplier
+push eax
+push edx
+mov eax,[esi+fc] //old enemy health val
+mov edx,eax
+sub eax,ecx //old - new == (EAX) normal damage done
+{mov ecx,[TrueDamageMultiplierNonFloat] //32-bit dword multiplication
+mul ecx //[damage done] * TrueDamageMultiplier == (EAX) multiplied damage done!
+mov edx,[esi+fc]
+sub edx,eax}
+{cvtsi2ss xmm0,eax //32-bit floating point xmm register multiplication
+movss xmm1,[TrueDamageMultiplier]
+mulss xmm0,xmm1
+cvtss2si eax,xmm0
+sub edx,eax}
+lea ecx,[OtherVariable]
+mov [ecx],eax //32-bit floating point stack multiplication method
+fild [ecx]
+fmul [TrueDamageMultiplier]
+fistp [ecx]
+sub edx,[ecx] //[old enemy health value] - [new multiplied damage]
+mov [esi+fc],edx //damage enemy with (EDX) multiplied damage!
+mov ecx,edx
+pop edx
+pop eax
+jmp PlayerHealthRet
+
+GrabPlayerObject:
+mov [PlayerObject],ecx
+cmp [ecx+fc],eax
+jmp GrabPlayerObjectRet
+
+PlayerObject: //Pointer to gauranteed player object! :)
+dd 0
+
+TrueDamageMultiplier: //set to 1.0 for 1x or normal damage...
+dd (float)2.22 //default: 2.22x damage
+
+OtherVariable:
+dd 0
+
+//DarkSoulsII.exe+1bb521:
+HurtPlayerEnemyAddress:
+jmp PlayerHealth
+nop
+PlayerHealthRet:
+
+//DarkSoulsII.exe+26ce58://credit to: mgr.inz.player
+PlayerObjectAddress:
+jmp GrabPlayerObject
+nop
+GrabPlayerObjectRet:
+
+[disable]
+
+//DarkSoulsII.exe+1bb521:
+HurtPlayerEnemyAddress:
+mov [esi+fc],ecx
+
+//DarkSoulsII.exe+26ce58:
+PlayerObjectAddress:
+cmp [ecx+fc],eax
+
+dealloc(PlayerHealth)
+unregistersymbol(PlayerObject)
+unregistersymbol(TrueDamageMultiplier)
+unregistersymbol(PlayerObjectAddress)
+unregistersymbol(HurtPlayerEnemyAddress)
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>34</ID>
+          <Description>"Enemy Damage Multiplier; Mutliplied By"</Description>
+          <LastState Value="2.220000029" Activated="0" RealAddress="0A750061"/>
+          <Color>80000008</Color>
+          <VariableType>Float</VariableType>
+          <Address>TrueDamageMultiplier</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>37</ID>
+          <Description>"Current Player Health"</Description>
+          <LastState Value="2506" Activated="0" RealAddress="11495E38"/>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>PlayerObject</Address>
+          <Offsets>
+            <Offset>108</Offset>
+          </Offsets>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>36</ID>
+      <Description>"Player Health v1.5 (Bit-shift damage multiplier)"</Description>
+      <LastState Activated="0"/>
+      <Color>80000008</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>//Dark Souls 2 (*ver: 1.01)
+//Player Health v1.5 (Applied Upon Being Hit)
+//Optional Enemy Damage Multiplier (Simple bit shift)
+//Steve Andrew
+[enable]
+alloc(PlayerHealth,1024)
+label(NotPlayer)
+label(GrabPlayerObject)
+label(PlayerObject)
+label(DamageMultiplier)
+label(PlayerHealthRet)
+label(GrabPlayerObjectRet)
+registersymbol(PlayerObject)
+registersymbol(DamageMultiplier)
+
+PlayerHealth:
+cmp esi,[PlayerObject]
+jne NotPlayer
+
+mov ecx,[esi+104]
+mov [esi+fc],ecx  //Apply Max / 100% Full Health
+jmp PlayerHealthRet
+
+NotPlayer: //Do Normal Damage To Enemy Or Apply Simple Damage Multiplier
+push edx
+mov edx,[esi+fc] //old enemy health val
+sub edx,ecx //old - new == (EDX) normal damage done
+mov cl,[DamageMultiplier] //(CL) == {damage multiplier}
+shl edx,cl//{normal damage} &lt;&lt; {damage multiplier} == New Multiplied Damage Delt
+sub [esi+fc],edx //New multiplied damage delt subtracted from enemy health!
+mov ecx,[esi+fc] //Also put new value in ecx, so its more like how it was...
+pop edx
+jmp PlayerHealthRet
+
+GrabPlayerObject:
+mov [PlayerObject],ecx
+cmp [ecx+fc],eax
+jmp GrabPlayerObjectRet
+
+PlayerObject: //Pointer to gauranteed player object!
+dd 0
+
+DamageMultiplier://00 == normal damage; 01 == x2; 02 == x4; 03 == x8; 04 == x16;
+//05 == x32; 06 == x64; 7 == x128; 08 == x256; 09 == x512; 10 == x1024;
+//11 == x2048; 12 == x4096; 13 == x8192; 14 == x16384; 15 == x3278;
+//16 == x65536; 17 == x131072; 18 == x262144; 19 == x524288; 20 == x1048576;
+//21 == x2097152; 22 == x4194304; 23 == x8388608; 24 == x16777216;
+//25 == x33554432; 26 == x67108864; 27 == x134217728; 28 == x268435456;
+//29 == x536870912; 30 == x1073741824; 31 == x2147483648; 32+ == 0/you cant 31 max
+db 01 //default: 2x damage
+
+DarkSoulsII.exe+1bb521:
+jmp PlayerHealth
+nop
+PlayerHealthRet:
+
+DarkSoulsII.exe+26ce58://credit to: mgr.inz.player
+jmp GrabPlayerObject
+nop
+GrabPlayerObjectRet:
+
+[disable]
+
+DarkSoulsII.exe+1bb521:
+mov [esi+fc],ecx
+
+DarkSoulsII.exe+26ce58:
+cmp [ecx+fc],eax
+
+dealloc(PlayerHealth)
+unregistersymbol(PlayerObject)
+unregistersymbol(DamageMultiplier)
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>22</ID>
+          <Description>"Enemy Damage Multiplier; Shifted Left By"</Description>
+          <LastState Value="??" Activated="0" RealAddress="00000000"/>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>DamageMultiplier</Address>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>32</ID>
+      <Description>"Zero Damage To Weapon In Use"</Description>
+      <LastState Activated="1"/>
+      <Color>80000008</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>//Dark Souls 2 (*ver: 1.01++)
+//Set Damage To Zero On Current Weapon In Use (Upon hitting something with it)
+//Steve Andrew
+[enable]
+alloc(ZeroDamageOnCurrentWeaponInUse,1024)
+label(Thousand)
+label(ZeroDamageRet)
+registersymbol(WeaponInUseDamageApplyingAddress)
+aobscanmodule(WeaponInUseDamageApplyingAddress,DarkSoulsII.exe,f3 0f 11 47 6c e8)
+
+ZeroDamageOnCurrentWeaponInUse:
+movss xmm0,[Thousand] //should cover most things to full I would presume...
+movss [edi+6c],xmm0 //stored value is true durability value + 1 (float)
+jmp ZeroDamageRet
+
+Thousand:
+dd (float)1000
+
+//DarkSoulsII.exe+30b37a:
+WeaponInUseDamageApplyingAddress:
+jmp ZeroDamageOnCurrentWeaponInUse
+ZeroDamageRet:
+
+[disable]
+
+//DarkSoulsII.exe+30b37a:
+WeaponInUseDamageApplyingAddress:
+db f3 0f 11 47 6c
+//movss [edi+6c],xmm0
+
+dealloc(ZeroDamageOnCurrentWeaponInUse)
+unregistersymbol(WeaponInUseDamageApplyingAddress)
+</AssemblerScript>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>13</ID>
+      <Description>"Infinite Stamina"</Description>
+      <LastState Activated="1"/>
+      <Color>80000008</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>//Dark Souls 2 (*ver: 1.01++)
+//Infinite Stamina (Never decrease + Always regenerates to full if not)
+//Steve Andrew
+[enable]
+alloc(StaminaReduceCodeBackup,1024)
+registersymbol(StaminaReduceCodeBackup)
+registersymbol(StaminaReduceCodeAddress)
+aobscanmodule(StaminaReduceCodeAddress,DarkSoulsII.exe,d9 01 d9 98 x x x x e9)
+
+StaminaReduceCodeBackup:
+readmem(StaminaReduceCodeAddress, 8)
+
+//DarkSoulsII.exe+2f648b:
+StaminaReduceCodeAddress:
+db 90 90 90 90 90 90 90 90
+
+[disable]
+
+//DarkSoulsII.exe+2f648b:
+StaminaReduceCodeAddress:
+readmem(StaminaReduceCodeBackup, 8)
+
+dealloc(StaminaReduceCodeBackup)
+unregistersymbol(StaminaReduceCodeBackup)
+unregistersymbol(StaminaReduceCodeAddress)
+</AssemblerScript>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>16</ID>
+      <Description>"Infinite Usable Items (LifeGems, Human Effigys, etc)"</Description>
+      <LastState Activated="1"/>
+      <Color>80000008</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>//Dark Souls 2 (*ver: 1.01++)
+//Infinite Usables (LifeGems, Human Effigys, etc...)
+//Steve Andrew
+[enable]
+alloc(UsableItems,1024)
+label(UsableItemsRet)
+registersymbol(UsableItemsAddress)
+aobscanmodule(UsableItemsAddress,DarkSoulsII.exe,66 29 5e 18 56)
+
+UsableItems:
+mov bx,63
+mov [esi+18],bx
+push esi
+jmp UsableItemsRet
+
+//DarkSoulsII.exe+1f3fe2:
+UsableItemsAddress:
+jmp UsableItems
+UsableItemsRet:
+
+[disable]
+
+//DarkSoulsII.exe+1f3fe2:
+UsableItemsAddress:
+db 66 29 5e 18 56
+{sub [esi+18],bx
+push esi}
+
+dealloc(UsableItems)
+unregistersymbol(UsableItemsAddress)
+</AssemblerScript>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>35</ID>
+      <Description>"Infinite Souls (Only sets if less than 10,000,000)"</Description>
+      <LastState Activated="1"/>
+      <Color>80000008</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>//Dark Souls 2 (*ver: 1.01++)
+//Infinite Souls (If &lt; 10,000,000 souls, set to 99,500,000 souls)
+//Steve Andrew
+[enable]
+alloc(InfiniteSouls,1024)
+label(ReUp)
+registersymbol(InfiniteSoulsAddress)
+aobscanmodule(InfiniteSoulsAddress,DarkSoulsII.exe,8b 01 8b 88 x x x x 8b 81 e8 00 00 00)
+
+InfiniteSouls:
+mov eax,[ecx+e8]
+cmp eax,#10000000
+jb ReUp
+ //just return usually (having done the normal code: 'mov eax,[ecx+e8]')
+ret
+
+ReUp: //when you're at less then 10,000,000
+mov eax,#99500000 //99,500,000 souls
+mov [ecx+e8],eax  //are refilled to your balance instead of just constantly! ;)
+ret
+
+//DarkSoulsII.exe+22e5c8:
+InfiniteSoulsAddress+8:
+jmp InfiniteSouls
+nop
+
+[disable]
+
+//DarkSoulsII.exe+22e5c8:
+InfiniteSoulsAddress+8:
+db 8b 81 e8 00 00 00
+//mov eax,[ecx+e8]
+
+dealloc(InfiniteSouls)
+unregistersymbol(InfiniteSoulsAddress)
+</AssemblerScript>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols>
+    <SymbolEntry>
+      <Name>PlayerObject</Name>
+      <Address>0A75005D</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>TrueDamageMultiplier</Name>
+      <Address>0A750061</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>PlayerObjectAddress</Name>
+      <Address> 0066CE58</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>HurtPlayerEnemyAddress</Name>
+      <Address> 005BB521</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>WeaponInUseDamageApplyingAddress</Name>
+      <Address> 0070B37A</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>UsableItemsAddress</Name>
+      <Address> 005F3FE2</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>InfiniteSoulsAddress</Name>
+      <Address> 0062E5C0</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>StaminaReduceCodeAddress</Name>
+      <Address> 006F648B</Address>
+    </SymbolEntry>
+  </UserdefinedSymbols>
+</CheatTable>
