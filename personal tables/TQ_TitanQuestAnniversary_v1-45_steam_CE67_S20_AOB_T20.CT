@@ -1,0 +1,567 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="26">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>44</ID>
+      <Description>"[X] &lt;== Titan Quest Anniversary v1.45 Steam Script v2.0 AOB"</Description>
+      <Options moHideChildren="1" moDeactivateChildrenAsWell="1"/>
+      <LastState/>
+      <Color>FF0000</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>{
+===========================================
+ Game Title    : Titan Quest Anniversary
+ Game Version  : 1.45
+ Game Sponsor  : Myself
+ Process Name  : TQ.exe
+ Relevant Info : 32bits/RPG
+ Script Version: 2.0
+ CE Version    : 6.7
+ Release date  : 21-Aug-2017
+ Author        : Recifense
+ History:
+ 29-Oct-13: First Release for steam (Titan Quest v1.30)
+ 21-Aug-17: Release for version 1.45 (Anniversary)
+ Features:
+ - God Mode
+ - Full Energy
+ - Minimum Gold
+ - Quick Level Up
+ - pointers
+===========================================
+}
+
+//=========================================
+// Checking CE version
+{$lua}
+  if(getCEVersion() &lt; 6.7) then
+    ShowMessage('Sorry. CE version should be 6.7 or above')
+  end
+{$asm}
+
+//=========================================
+// Checking Selected Process
+{$lua}
+  if(process == nil) then
+    ShowMessage('No process was selected')
+  elseif (process ~= "TQ.exe") then
+    ShowMessage('Error. Expected Process = TQ.exe')
+  end
+{$asm}
+
+//=========================================
+// Definitions
+define(LUDO,"TQ.exe")
+//define(MHPR,Game.dll+000e6f13)
+//define(GDMD,Game.dll+0011d74b)
+//define(MPXP,Game.dll+0017717c)
+
+define(ctMGLD,#670000)
+
+//=========================================
+[ENABLE]
+//=========================================
+//LuaCall(CheckVersion())
+//=========================================
+// Check if script is compatible to this game version
+// If false the script will not be loaded
+
+AOBScanModule(MHPR,Game.dll,f3 0f 10 81 34 07 00 00 0f 2f 05 ?? ?? ?? ?? f3 0f 11 04 24)
+AOBScanModule(GDMD,Game.dll,F3 0F 10 87 34 07 00 00 F3 0F 5C C1 F3 0F 11 87 34 07 00 00)
+AOBScanModule(MPXP,Game.dll,8b 44 24 10 D9 6C 24 0C 39 47 34 0F 82 ?? ?? ?? ?? FF 47 30)
+
+//=========================================
+alloc(MyCode,4096,$process)
+//=========================================
+// Declaration section
+label(_MonHumanPlayer)
+label(_BackMHP)
+label(_GodMode)
+label(_BackGMD)
+label(_MonPlayerXP)
+label(_BackMPX)
+
+label(iEnableGMD)
+label(iEnableMEY)
+label(iEnableMGD)
+label(iEnableMXP)
+label(iMinGold)
+label(pHero)
+
+label(pMHPR)
+label(pGDMD)
+label(pMPXP)
+
+//=========================================
+// Registering Symbols
+registersymbol(MyCode)
+registersymbol(iEnableGMD)
+registersymbol(iEnableMEY)
+registersymbol(iEnableMGD)
+registersymbol(iEnableMXP)
+registersymbol(iMinGold)
+registersymbol(pHero)
+
+registersymbol(pMHPR)
+registersymbol(pGDMD)
+registersymbol(pMPXP)
+
+//=========================================
+MyCode:
+//========================================= s2.0
+// All the time (features: Full Energy/Minimum Gold)
+_MonHumanPlayer:
+ push eax
+
+ cmp byte ptr [ecx+90],01
+ jne _ExitMHP
+
+ mov [pHero],ecx
+
+ cmp dword ptr [iEnableMEY],0
+ je _MonHP00                       // Jump if feature is disabled
+
+ movss xmm0,[ecx+0000077c]
+ maxss xmm0,[ecx+00000748]
+
+ movss [ecx+00000748],xmm0
+
+_MonHP00:
+ cmp dword ptr [iEnableMGD],0
+ je _ExitMHP                       // Jump if feature is disabled
+
+ mov eax,[iMinGold]
+
+ cmp [ecx+00000abc],eax
+ jns _ExitMHP
+
+ mov [ecx+00000abc],eax
+
+_ExitMHP:
+ pop eax
+
+ movss xmm0,[ecx+00000734]         // Original code
+ jmp _BackMHP                      // Back to main code
+
+//========================================= s2.0
+// When decreasing (Feature: GM)
+_GodMode:
+ cmp edi,[pHero]
+ jne _ExitGMD
+
+ cmp dword ptr [iEnableGMD],0
+ je _ExitGMD                       // Jump if feature is disabled
+
+ movss xmm0,[edi+00000778]
+ maxss xmm0,[edi+00000734]
+
+ movss [edi+00000734],xmm0
+
+ xorps xmm1,xmm1
+
+_ExitGMD:
+ movss xmm0,[edi+00000734]         // Original code
+ jmp _BackGMD                      // Back to main code
+
+//========================================= s2.0
+// When updating XP (Feature: Quick Level Up)
+_MonPlayerXP:
+ cmp dword ptr [iEnableMXP],0
+ je _ExitMPX                       // Jump if feature is disabled
+
+ mov eax,[edi+04]
+ cmp eax,[pHero]
+ jne _ExitMPX
+
+ mov eax,[esp+10]
+ dec eax
+
+ cmp [edi+34],eax
+ jns _ExitMPX
+
+ mov [edi+34],eax
+
+_ExitMPX:
+ mov eax,[esp+10]                  // Original code
+ fldcw [esp+0C]                    // Original code
+ cmp [edi+34],eax                  // Original code
+ jmp _BackMPX                      // Back to main code
+
+//=========================================
+align 10,'='
+//=========================================
+ db '===============================&gt;'
+ db 'CE6.7 Script by Recifense 170821'
+//=========================================
+// Variables
+iEnableGMD:
+ dd 0
+iEnableMEY:
+ dd 0
+iEnableMGD:
+ dd 0
+iEnableMXP:
+ dd 0
+iMinGold:
+ dd ctMGLD
+pHero:
+ dd MyCode
+
+//=========================================
+// Hacking Points
+MHPR:
+pMHPR:
+ jmp _MonHumanPlayer
+ nop
+ nop
+ nop
+_BackMHP:
+
+GDMD:
+pGDMD:
+ jmp _GodMode
+ nop
+ nop
+ nop
+_BackGMD:
+
+MPXP:
+pMPXP:
+ jmp _MonPlayerXP
+ nop
+ nop
+ nop
+ nop
+ nop
+ nop
+_BackMPX:
+
+//=========================================
+// Script for Restoring Original Codes
+[DISABLE]
+pMHPR:
+// movss xmm0,[ecx+00000734]
+ db f3 0f 10 81 34 07 00 00
+
+pGDMD:
+// movss xmm0,[edi+00000734]
+ db f3 0f 10 87 34 07 00 00
+
+pMPXP:
+// mov eax,[esp+10]
+// fldcw [esp+0C]
+// cmp [edi+34],eax
+ db 8b 44 24 10 d9 6c 24 0c 39 47 34
+
+//=========================================
+// Unregistering Symbols
+unregistersymbol(MyCode)
+unregistersymbol(iEnableGMD)
+unregistersymbol(iEnableMEY)
+unregistersymbol(iEnableMGD)
+unregistersymbol(iEnableMXP)
+unregistersymbol(iMinGold)
+unregistersymbol(pHero)
+
+unregistersymbol(pMHPR)
+unregistersymbol(pGDMD)
+unregistersymbol(pMPXP)
+
+//=========================================
+dealloc(MyCode)
+//============= Scripts End ===============
+
+// ****************************************
+// NOTES
+// ****************************************
+{
+    First script was, in fact, in 2007 using TSearchB
+}
+
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>98</ID>
+          <Description>"[X] &lt;== God Mode ----------------------------------&gt; (HK: CTRL+Home / CTRL+End)"</Description>
+          <LastState/>
+          <Color>C08000</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[enable]
+define(test,LUDO)
+
+{$LUA}
+writeInteger("iEnableGMD",1)
+getAddressList().getMemoryRecordByID(98).Color=0x0008000
+{$ASM}
+
+[disable]
+{$LUA}
+writeInteger("iEnableGMD",0)
+getAddressList().getMemoryRecordByID(98).Color=0x0c08000
+{$ASM}
+
+</AssemblerScript>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Activate</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Deactivate</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>229</ID>
+          <Description>"[X] &lt;== Full Energy  ---------------------------------&gt; (HK: CTRL+Home / CTRL+End)"</Description>
+          <LastState/>
+          <Color>C08000</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[enable]
+define(test,LUDO)
+
+{$LUA}
+writeInteger("iEnableMEY",1)
+getAddressList().getMemoryRecordByID(229).Color=0x0008000
+{$ASM}
+
+[disable]
+{$LUA}
+writeInteger("iEnableMEY",0)
+getAddressList().getMemoryRecordByID(229).Color=0x0c08000
+{$ASM}
+
+</AssemblerScript>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Activate</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Deactivate</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>230</ID>
+          <Description>"[X] &lt;== Minimum Gold -----------------------------&gt; (HK: CTRL+Page Up / CTRL+Page Down)"</Description>
+          <Options moHideChildren="1"/>
+          <LastState/>
+          <Color>C08000</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[enable]
+define(test,LUDO)
+
+{$LUA}
+writeInteger("iEnableMGD",1)
+getAddressList().getMemoryRecordByID(230).Color=0x0008000
+{$ASM}
+
+[disable]
+{$LUA}
+writeInteger("iEnableMGD",0)
+getAddressList().getMemoryRecordByID(230).Color=0x0c08000
+{$ASM}
+
+</AssemblerScript>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Activate</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>33</Key>
+              </Keys>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Deactivate</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>34</Key>
+              </Keys>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>22</ID>
+              <Description>"Minimum Gold Value ==&gt;"</Description>
+              <Color>4080FF</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>iMinGold</Address>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>232</ID>
+          <Description>"[X] &lt;== Quick Level Up  -----------------------------&gt; (HK: CTRL+Insert / CTRL+Delete)"</Description>
+          <LastState/>
+          <Color>C08000</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[enable]
+define(test,LUDO)
+
+{$LUA}
+writeInteger("iEnableMXP",1)
+getAddressList().getMemoryRecordByID(232).Color=0x0008000
+{$ASM}
+
+[disable]
+{$LUA}
+writeInteger("iEnableMXP",0)
+getAddressList().getMemoryRecordByID(232).Color=0x0c08000
+{$ASM}
+
+</AssemblerScript>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Activate</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>45</Key>
+              </Keys>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Deactivate</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>46</Key>
+              </Keys>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>233</ID>
+          <Description>"[X] &lt;==================== Some Values"</Description>
+          <Options moHideChildren="1"/>
+          <LastState Value="" RealAddress="00000000"/>
+          <Color>404080</Color>
+          <GroupHeader>1</GroupHeader>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>46</ID>
+              <Description>"Available Attribute Points ==&gt;"</Description>
+              <Color>0000FF</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pHero</Address>
+              <Offsets>
+                <Offset>b08</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>47</ID>
+              <Description>"Available  Skill Points ==&gt;"</Description>
+              <Color>0000FF</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pHero</Address>
+              <Offsets>
+                <Offset>b0c</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>48</ID>
+              <Description>"Current Gold ==&gt;"</Description>
+              <Color>0000FF</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pHero</Address>
+              <Offsets>
+                <Offset>abc</Offset>
+              </Offsets>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>228</ID>
+      <Description>"[X] &lt;== Table/Script Information"</Description>
+      <Options moHideChildren="1"/>
+      <LastState/>
+      <Color>0000FF</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>[enable]
+define(test,LUDO)
+
+{$LUA}
+getMainForm().CommentButton.doClick()
+{$ASM}
+
+[disable]
+
+</AssemblerScript>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols>
+    <SymbolEntry>
+      <Name>Recifense</Name>
+      <Address>20170821</Address>
+    </SymbolEntry>
+  </UserdefinedSymbols>
+  <Comments>===========================================
+ Game Title    : Titan Quest Anniversary
+ Game Version  : 1.45
+ Game Sponsor  : Myself
+ Process Name  : TQ.exe
+ Relevant Info : 32bits/RPG
+ Script Version: 2.0
+ CE Version    : 6.7
+ Release date  : 21-Aug-2017
+ Author        : Recifense
+ History:
+ 29-Oct-13: First Release for steam (Titan Quest v1.30)
+ 21-Aug-17: Release for version 1.45 (Anniversary)
+ Features:
+ - God Mode               [1]
+ - Full Energy            [2]
+ - Minimum Gold           [3]
+ - Quick Level Up         [4]
+ - pointers               [5]
+===========================================
+[1] That's it (human player only);
+[2] That's it (human player only);
+[3] Minimum Resources = 670000 (human player only);
+[4] Every two XP value added, one level up; (*)
+[5] Used in the Table itself;
+(*) Not every kill gives XP;
+===========================================
+[USAGE]
+ - Run CE 6.7 or greater;
+ - Run the GAME;
+ - Load game process "TQ.exe" via CE;
+ - Load this Table;
+ - Activate the maint script  by clicking on its box [X];
+ - Now Activate the script of each cheat you want to use;
+ - Go back to the game and have fun.
+===========================================
+HOTKEYS:
+ See each table entry;
+===========================================
+[WARNING]
+- This table is meant to be used in single player games.
+===========================================
+[INFO]
+Tested on Win10 64bits
+===========================================
+Cheers!
+</Comments>
+</CheatTable>
