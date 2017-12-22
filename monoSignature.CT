@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="19">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>0</ID>
+      <Description>"one-liner and test"</Description>
+      <LastState Activated="1"/>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>{$lua}
+
+-- assume LaunchMonoDataCollector has been called
+
+-- one liner
+function reEscape(a)local b=[[().%+-*?[^]]a=a:gsub('.',function(c)if b:find(c,1,true)then return'%'..c end end)return a end;function findMethodAddrBySignature(d,e,f,g,h)local i=findMethodBySignature(d,e,f,g,h)if i~=nil and i&gt;0 then return mono_compile_method(i)end end;function findMethodBySignature(d,e,f,g,h)assert(type(g)=='string',"invalid signature")g="^"..reEscape(g:gsub(";",","))local j=mono_findClass(d,e)if type(j)~='number'or j==0 then return nil end;local k=mono_class_enumMethods(j)if type(k)~='table'or#k&lt;1 then return nil end;if h then print('check:'..f..": &lt;"..g.."&gt; vs ")end;for l=1,#k do if f==k[l].name then local m=mono_method_getSignature(k[l].method)if h then print("  &gt;&gt; &lt;"..m..'&gt;')end;if m:match(g)then return k[l].method end end end end;function tohex(n)return string.format('%X',n or 0)end
+{$asm}
+
+{$lua}
+-- test
+print('--') -- test to show/print all signature of a given function name
+print(tohex(findMethodAddrBySignature('UnityEngine','Texture2D','.ctor','?',true)))
+print('--') -- test to match a specific (third) signature of a function name
+print(tohex(findMethodAddrBySignature('UnityEngine','Texture2D','.ctor','int,int,UnityEngine.TextureFormat,bool,bool$',true)))
+-- the last '$' is lua match end-of-string, wthout this, the match MAY succeed on fourth one.
+-- all other character should be compare as is, including upper/lower cases.
+{$asm}
+
+
+{$lua}
+--define a lua Global INTEGER type variable for use in AA script, ce 6.5 feature
+
+LUAVAR = findMethodAddrBySignature('UnityEngine','Texture2D','.ctor','int,int,UnityEngine.TextureFormat,bool,bool$')
+
+{$asm}
+
+[ENABLE]
+
+globalalloc(testarea,$10)
+
+testarea:
+dq $LUAVAR     // using the Lua Variable in AA Script by prefixing a '$' symbol, Lua variable is case-sensitive.
+dq $LUAVAR+111111
+ 
+[DISABLE]
+
+</AssemblerScript>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>1</ID>
+      <Description>"full function defintion"</Description>
+      <LastState/>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>{$lua}
+
+-- assume LaunchMonoDataCollector has been called
+
+function reEscape(s)
+  local escPatChars = [[().%+-*?[^]]
+  s = s:gsub('.',function(c) if escPatChars:find(c,1,true) then return '%'..c end end)
+  return s
+end
+function findMethodAddrBySignature(namespace,classname,methodname,signature,check)
+  local meth = findMethodBySignature(namespace,classname,methodname,signature,check)
+  if meth~=nil and meth&gt;0 then
+    return mono_compile_method(meth)
+  end
+end
+function findMethodBySignature(namespace,classname,methodname,signature,check)
+  assert(type(signature)=='string',"invalid signature")
+  signature="^"..reEscape(signature:gsub(";",","))
+  local class = mono_findClass(namespace,classname)
+  if type(class)~='number' or class==0 then return nil end
+  local methods=mono_class_enumMethods(class)
+  if type(methods)~='table' or #methods&lt;1 then return nil end
+  if check then  print('check:'..methodname..": &lt;"..signature.."&gt; vs ") end
+  for i=1,#methods do
+	if methodname == methods[i].name then
+	  local sign = mono_method_getSignature(methods[i].method)
+	  if check then  print("  &gt;&gt; &lt;"..sign..'&gt;') end
+	  if sign:match(signature) then
+	    return methods[i].method
+	  end
+	end
+  end
+end
+-- Test
+function tohex(n)return string.format('%X',n or 0)end
+{$asm}
+
+[ENABLE]
+
+ 
+ 
+[DISABLE]
+
+</AssemblerScript>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols>
+    <SymbolEntry>
+      <Name>testarea</Name>
+      <Address>02A90010</Address>
+    </SymbolEntry>
+  </UserdefinedSymbols>
+  <LuaScript>--
+
+</LuaScript>
+</CheatTable>
