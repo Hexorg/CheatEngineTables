@@ -1,0 +1,1047 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="18">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>23</ID>
+      <Description>"[X] &lt;== Heroes of Might and Magic III - HD Edition v2.0 RLD/BAT Script v1.1"</Description>
+      <Options moHideChildren="1"/>
+      <LastState Activated="0"/>
+      <Color>FF0000</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>{
+===========================================
+ Game Title    : Heroes of Might &amp; Magic III - HD Edition
+ Game Version  : 2.0 - Update 1
+ Game Sponsor  : RELOADED
+ Process Name  : HOMM3 2.0.exe
+ Script Version: 1.1
+ CE Version    : 6.4
+ Release date  : 31-Jan-2015
+ Author        : Recifense
+ History:
+ 30-Jan-15: First Release
+ 31-Jan-15: Fix for GM when defending (S1.1)
+ 12-Feb-15: Release for Update 1 (patch by Battery) AOB
+ Features:
+ - Minimum Resources
+ - Unlimited Move Points
+ - Minimum Troop Size
+ - Minimum Hero's Attributes
+ - God Mode
+ - Some Pointers
+===========================================
+}
+
+//=========================================
+// Definitions
+define(LUDO,"HOMM3 2.0.exe")
+
+//=========================================
+// Constants used in the script (that can be changed)
+define(ctCE64,(float)6.4)
+define(ctMGLD,#640000)  // Minimum Gold
+define(ctMRES,#64000)   // Minimum Resources
+define(ctSIZE,#640)     // Troop Minimum Size
+define(ctATTR,#20)      // Hero Minimum Attribute
+
+//=========================================
+[ENABLE]
+//=========================================
+//LuaCall(CheckVersion())
+//=========================================
+// Check if script is compatible to this game version
+// If false the script will not be loaded
+
+AOBScan(MOHP,ff b4 83 94 00 00 00 68 ?? ?? ?? ?? 68 ?? ?? ?? ?? ff 15 ?? ??)
+AOBScan(MOMP,8b 45 ec 29 47 49 8b 45 f8 39 47 49 ?? ?? c7 47 49 00 00 00 00)
+AOBScan(GDMD,29 71 4c 83 79 4c 00 ?? ?? c6 81 d6 00 00 00 01 6a 02 e8 ?? ??)
+AOBScan(MMP2,8b 45 1c 29 47 49 8b 47 49 3b 45 20 ?? ?? c7 47 49 00 00 00 00)
+AOBScan(MMP3,c7 42 49 00 00 00 00 8a 86 e8 01 00 00 88 42 43 c7 86 e4 01 00)
+AOBScan(MMP4,c7 41 49 00 00 00 00 8b 41 1a 89 46 20 c6 46 24 01 8a 41 1e 88)
+AOBScan(MOBB,ff 74 b2 1c ff 34 b2 e8 ?? ?? ?? ?? 8b 4d f0 e8 ?? ?? ?? ?? 8b)
+
+//=========================================
+alloc(MyCode,4096,LUDO)
+//=========================================
+// Declaration section
+label(_MonHumanPlayer)
+label(_MonHP00)
+label(_BackMHP)
+label(_ExitMHP)
+label(_MonMovePoints)
+label(_MonMP00)
+label(_MonMP01)
+label(_BackMMP)
+label(_ExitMMP)
+label(_GodMode)
+label(_BackGMD)
+label(_ExitGMD)
+label(_MonMovePoints2)
+label(_BackMP2)
+label(_ExitMP2)
+label(_MonMovePoints3)
+label(_BackMP3)
+label(_ExitMP3)
+label(_MonMovePoints4)
+label(_BackMP4)
+label(_ExitMP4)
+label(_MonBeforeBattle)
+label(_MonBB00)
+label(_BackMBB)
+label(_ExitMBB)
+label(iEnableMMR)
+label(iEnableMMP)
+label(iEnableMTS)
+label(iEnableMHA)
+label(iEnableGMD)
+label(iID)
+label(iBattleID)
+label(pPlayer)
+label(pArmy)
+
+//=========================================
+// Registering Symbols
+registersymbol(MyCode)
+registersymbol(iEnableMMR)
+registersymbol(iEnableMMP)
+registersymbol(iEnableMTS)
+registersymbol(iEnableMHA)
+registersymbol(iEnableGMD)
+registersymbol(iID)
+registersymbol(iBattleID)
+registersymbol(pPlayer)
+registersymbol(pArmy)
+
+registersymbol(MOHP)
+registersymbol(MOMP)
+registersymbol(GDMD)
+registersymbol(MMP2)
+registersymbol(MMP3)
+registersymbol(MMP4)
+registersymbol(MOBB)
+
+//=========================================
+MyCode:
+//=========================================
+// on entering/leaving a castle, on closing army detail
+_MonHumanPlayer:
+ cmp byte ptr [ebx+000000da],1
+ jne _ExitMHP
+
+ mov [pPlayer],ebx
+
+ movzx ecx,byte ptr [ebx]
+ mov [iID],ecx
+
+ cmp dword ptr [iEnableMMR],0
+ je _ExitMHP                       // Jump if feature is disabled
+
+ mov ecx,ctMRES
+ cmp eax,6
+ js _MonHP00
+
+ mov ecx,ctMGLD
+
+_MonHP00:
+ cmp ecx,[ebx+eax*4+00000094]
+ js _ExitMHP
+
+ mov [ebx+eax*4+00000094],ecx
+
+_ExitMHP:
+ push [ebx+eax*4+00000094]         // Original code (get Res Amount)
+ jmp _BackMHP                      // Back to main code
+
+//=========================================
+// On moving an Army
+_MonMovePoints:
+ push ebx
+ push ecx
+ push edx
+
+ mov [pArmy],edi
+
+ movzx eax,[edi+1e]
+ cmp eax,[iID]
+ jne _ExitMMP
+
+ cmp dword ptr [iEnableMMP],0
+ je _MonMP00                       // Jump if feature is disabled
+
+ mov eax,[edi+45]
+ mov [edi+49],eax
+
+ xor eax,eax
+ mov [ebp-14],eax
+
+_MonMP00:
+ cmp dword ptr [iEnableMTS],0
+ je _MonMP01                       // Jump if feature is disabled
+
+ mov eax,ctSIZE
+
+ mov ebx,[edi+000000a9]
+ cmp ebx,eax
+ cmovs ebx,eax
+ mov [edi+000000a9],ebx
+
+ mov ebx,[edi+000000ad]
+ cmp ebx,eax
+ cmovs ebx,eax
+ mov [edi+000000ad],ebx
+
+ mov ebx,[edi+000000b1]
+ cmp ebx,eax
+ cmovs ebx,eax
+ mov [edi+000000b1],ebx
+
+ mov ebx,[edi+000000b5]
+ cmp ebx,eax
+ cmovs ebx,eax
+ mov [edi+000000b5],ebx
+
+ mov ebx,[edi+000000b9]
+ cmp ebx,eax
+ cmovs ebx,eax
+ mov [edi+000000b9],ebx
+
+ mov ebx,[edi+000000bd]
+ cmp ebx,eax
+ cmovs ebx,eax
+ mov [edi+000000bd],ebx
+
+ mov ebx,[edi+000000c1]
+ cmp ebx,eax
+ cmovs ebx,eax
+ mov [edi+000000c1],ebx
+
+_MonMP01:
+ cmp dword ptr [iEnableMHA],0
+ je _ExitMMP                       // Jump if feature is disabled
+
+ mov ecx,ctATTR
+ xor edx,edx
+
+ mov dl,[edi+00000446]
+ cmp ecx,edx
+ cmovg edx,ecx
+
+ mov [edi+00000446],dl
+
+ mov dl,[edi+00000447]
+ cmp ecx,edx
+ cmovg edx,ecx
+
+ mov [edi+00000447],dl
+
+ mov dl,[edi+00000448]
+ cmp ecx,edx
+ cmovg edx,ecx
+
+ mov [edi+00000448],dl
+
+ mov dl,[edi+00000449]
+ cmp ecx,edx
+ cmovg edx,ecx
+
+ mov [edi+00000449],dl
+
+ lea ecx,[edx+edx*4]
+ add ecx,ecx
+
+ mov [edi+18],cx
+
+_ExitMMP:
+ pop edx
+ pop ecx
+ pop ebx
+
+ mov eax,[ebp-14]                  // Original code
+ sub [edi+49],eax                  // Original code (set MP)
+ jmp _BackMMP                      // Back to main code
+
+//=========================================
+// During Combat
+_GodMode:
+ push eax
+
+ cmp dword ptr [iEnableGMD],0
+ je _ExitGMD                       // Jump if feature is disabled
+
+ mov eax,[ecx+000000e0]
+ cmp eax,[iBattleID]
+ jne _ExitGMD
+
+ mov esi,[ecx+60]
+ mov [ecx+4c],esi
+
+ xor esi,esi
+
+_ExitGMD:
+ pop eax
+
+ sub [ecx+4C],esi                  // Original code (set SIZE)
+ cmp dword ptr [ecx+4C],00         // Original code
+ jmp _BackGMD                      // Back to main code
+
+//=========================================
+// On other ways
+_MonMovePoints2:
+ movzx eax,[edi+1e]
+ cmp eax,[iID]
+ jne _ExitMP2
+
+ cmp dword ptr [iEnableMMP],0
+ je _ExitMP2                       // Jump if feature is disabled
+
+ mov eax,[edi+45]
+ mov [edi+49],eax
+
+ xor eax,eax
+ mov [ebp+1c],eax
+
+_ExitMP2:
+ mov eax,[ebp+1C]                  // Original code
+ sub [edi+49],eax                  // Original code (set MP)
+ jmp _BackMP2                      // Back to main code
+
+//=========================================
+// On Leaving a Ship
+_MonMovePoints3:
+ push eax
+
+ mov [edx+49],00000000             // Original code (set MP)
+
+ movzx eax,[edx+1e]
+ cmp eax,[iID]
+ jne _ExitMP3
+
+ cmp dword ptr [iEnableMMP],0
+ je _ExitMP3                       // Jump if feature is disabled
+
+ mov eax,[edx+45]
+ mov [edx+49],eax
+
+_ExitMP3:
+ pop eax
+ jmp _BackMP3                      // Back to main code
+
+//=========================================
+// On getting onto a Ship
+_MonMovePoints4:
+ push eax
+
+ mov [ecx+49],00000000             // Original code (set MP)
+
+ movzx eax,[ecx+1e]
+ cmp eax,[iID]
+ jne _ExitMP4
+
+ cmp dword ptr [iEnableMMP],0
+ je _ExitMP4                       // Jump if feature is disabled
+
+ mov eax,[ecx+45]
+ mov [ecx+49],eax
+
+_ExitMP4:
+ pop eax
+ jmp _BackMP4                      // Back to main code
+
+//=========================================
+// On Battle Start
+_MonBeforeBattle:
+ push eax
+
+ mov eax,[ebp-0c]
+ test eax,eax
+ jz _ExitMBB
+
+ movzx eax,[eax+1e]
+ cmp eax,[iID]
+ mov eax,ebx
+ je _MonBB00
+
+ mov eax,1
+ xor eax,ebx
+
+_MonBB00:
+ mov [iBattleID],eax
+
+_ExitMBB:
+ pop eax
+
+ push [edx+esi*4+1C]               // Original code (Size)
+ push [edx+esi*4]                  // Original code (Type)
+ jmp _BackMBB                      // Back to main code
+
+//=========================================
+ db '========================================&gt;'
+ db 'CE6.4 Script by Recifense 021215'
+//=========================================
+// Variables
+iEnableMMR:
+ dd 0
+iEnableMMP:
+ dd 0
+iEnableMTS:
+ dd 0
+iEnableMHA:
+ dd 0
+iEnableGMD:
+ dd 0
+iID:
+ dd #99
+iBattleID:
+ dd 0
+pPlayer:
+ dd 0
+pArmy:
+ dd 0
+
+//=========================================
+// Hacking Points
+MOHP:
+ jmp _MonHumanPlayer
+ nop
+ nop
+_BackMHP:
+
+MOMP:
+ jmp _MonMovePoints
+ nop
+_BackMMP:
+
+GDMD:
+ jmp _GodMode
+ nop
+ nop
+_BackGMD:
+
+MMP2:
+ jmp _MonMovePoints2
+ nop
+_BackMP2:
+
+MMP3:
+ jmp _MonMovePoints3
+ nop
+ nop
+_BackMP3:
+
+MMP4:
+ jmp _MonMovePoints4
+ nop
+ nop
+_BackMP4:
+
+MOBB:
+ jmp _MonBeforeBattle
+ nop
+ nop
+_BackMBB:
+
+//=========================================
+// Script for Restoring Original Codes
+[DISABLE]
+MOHP:
+// push [ebx+eax*4+00000094]
+ db ff b4 83 94 00 00 00
+
+MOMP:
+// mov eax,[ebp-14]
+// sub [edi+49],eax
+ db 8b 45 ec 29 47 49
+
+GDMD:
+// sub [ecx+4C],esi
+// cmp dword ptr [ecx+4C],00
+ db 29 71 4c 83 79 4c 00
+
+MMP2:
+// mov eax,[ebp+1C]
+// sub [edi+49],eax
+ db 8b 45 1c 29 47 49
+
+MMP3:
+// mov [edx+49],00000000
+ db c7 42 49 00 00 00 00
+
+MMP4:
+// mov [ecx+49],00000000
+ db c7 41 49 00 00 00 00
+
+MOBB:
+// push [edx+esi*4+1C]
+// push [edx+esi*4]
+ db ff 74 b2 1c ff 34 b2
+
+//=========================================
+// Unregistering Symbols
+unregistersymbol(MyCode)
+unregistersymbol(iEnableMMR)
+unregistersymbol(iEnableMMP)
+unregistersymbol(iEnableMTS)
+unregistersymbol(iEnableMHA)
+unregistersymbol(iEnableGMD)
+unregistersymbol(iID)
+unregistersymbol(iBattleID)
+unregistersymbol(pPlayer)
+unregistersymbol(pArmy)
+
+unregistersymbol(MOHP)
+unregistersymbol(MOMP)
+unregistersymbol(GDMD)
+unregistersymbol(MMP2)
+unregistersymbol(MMP3)
+unregistersymbol(MMP4)
+unregistersymbol(MOBB)
+
+//=========================================
+dealloc(MyCode)
+//============= Scripts End ===============
+
+// ****************************************
+// NOTES
+// ****************************************
+{
+}
+
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>96</ID>
+          <Description>"[X] &lt;== God Mode --------------------------------------&gt; (HK: CTRL+Home / CTRL+End)"</Description>
+          <LastState Activated="0"/>
+          <Color>C08000</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[enable]
+define(test,LUDO)
+
+{$LUA}
+writeInteger("iEnableGMD",1)
+{$ASM}
+
+[disable]
+{$LUA}
+writeInteger("iEnableGMD",0)
+{$ASM}
+
+</AssemblerScript>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Activate</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Deactivate</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>97</ID>
+          <Description>"[X] &lt;== Minimum Resources -----------------------&gt; (HK: CTRL+Home / CTRL+End)"</Description>
+          <LastState Activated="0"/>
+          <Color>C08000</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[enable]
+define(test,LUDO)
+
+{$LUA}
+writeInteger("iEnableMMR",1)
+{$ASM}
+
+[disable]
+{$LUA}
+writeInteger("iEnableMMR",0)
+{$ASM}
+
+</AssemblerScript>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Activate</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Deactivate</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>98</ID>
+          <Description>"[X] &lt;== Unlimited Move Points  -------------------&gt; (HK: CTRL+Page Up / CTRL+Page Down)"</Description>
+          <LastState Activated="0"/>
+          <Color>C08000</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[enable]
+define(test,LUDO)
+
+{$LUA}
+writeInteger("iEnableMMP",1)
+{$ASM}
+
+[disable]
+{$LUA}
+writeInteger("iEnableMMP",0)
+{$ASM}
+
+</AssemblerScript>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Activate</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>33</Key>
+              </Keys>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Deactivate</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>34</Key>
+              </Keys>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>99</ID>
+          <Description>"[X] &lt;== Hero Minimum Attribute Point  --------&gt; (HK: CTRL+Insert / CTRL+Delete)"</Description>
+          <LastState Activated="0"/>
+          <Color>C08000</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[enable]
+define(test,LUDO)
+
+{$LUA}
+writeInteger("iEnableMHA",1)
+{$ASM}
+
+[disable]
+{$LUA}
+writeInteger("iEnableMHA",0)
+{$ASM}
+
+</AssemblerScript>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Activate</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>33</Key>
+              </Keys>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Deactivate</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>34</Key>
+              </Keys>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>100</ID>
+          <Description>"[X] &lt;== Minimum Troop Size -----------------------&gt; (HK: SHIFT+Insert / SHIFT+Delete)"</Description>
+          <LastState Activated="0"/>
+          <Color>C08000</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[enable]
+define(test,LUDO)
+
+{$LUA}
+writeInteger("iEnableMTS",1)
+{$ASM}
+
+[disable]
+{$LUA}
+writeInteger("iEnableMTS",0)
+{$ASM}
+
+</AssemblerScript>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Activate</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>33</Key>
+              </Keys>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Deactivate</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>34</Key>
+              </Keys>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>102</ID>
+          <Description>"[X] &lt;============ Info Regarding Commander/Army Last Moved  ==========="</Description>
+          <Options moHideChildren="1"/>
+          <LastState Value="" Activated="0" RealAddress="00000000"/>
+          <Color>0000FF</Color>
+          <GroupHeader>1</GroupHeader>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>106</ID>
+              <Description>"Name of the Army Commander that last moved ==&gt;"</Description>
+              <LastState Activated="0" RealAddress="00000000"/>
+              <Color>0000FF</Color>
+              <VariableType>String</VariableType>
+              <Length>16</Length>
+              <Unicode>0</Unicode>
+              <ZeroTerminate>1</ZeroTerminate>
+              <Address>pArmy</Address>
+              <Offsets>
+                <Offset>1F</Offset>
+              </Offsets>
+              <CheatEntries>
+                <CheatEntry>
+                  <ID>118</ID>
+                  <Description>"[X] &lt;================ Commander Info  ================"</Description>
+                  <Options moHideChildren="1"/>
+                  <LastState Value="" Activated="0" RealAddress="00000000"/>
+                  <Color>000080</Color>
+                  <GroupHeader>1</GroupHeader>
+                  <CheatEntries>
+                    <CheatEntry>
+                      <ID>107</ID>
+                      <Description>"Current XP of the Army Commander ==&gt;"</Description>
+                      <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                      <Color>0000FF</Color>
+                      <VariableType>4 Bytes</VariableType>
+                      <Address>pArmy</Address>
+                      <Offsets>
+                        <Offset>4D</Offset>
+                      </Offsets>
+                    </CheatEntry>
+                    <CheatEntry>
+                      <ID>116</ID>
+                      <Description>"Current Spell Points of the Army Commander ==&gt;"</Description>
+                      <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                      <Color>0000FF</Color>
+                      <VariableType>2 Bytes</VariableType>
+                      <Address>pArmy</Address>
+                      <Offsets>
+                        <Offset>18</Offset>
+                      </Offsets>
+                    </CheatEntry>
+                    <CheatEntry>
+                      <ID>112</ID>
+                      <Description>"Current Attack Power of the Army Commander ==&gt;"</Description>
+                      <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                      <Color>0000FF</Color>
+                      <VariableType>Byte</VariableType>
+                      <Address>pArmy</Address>
+                      <Offsets>
+                        <Offset>446</Offset>
+                      </Offsets>
+                    </CheatEntry>
+                    <CheatEntry>
+                      <ID>113</ID>
+                      <Description>"Current Defense Power of the Army Commander ==&gt;"</Description>
+                      <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                      <Color>0000FF</Color>
+                      <VariableType>Byte</VariableType>
+                      <Address>pArmy</Address>
+                      <Offsets>
+                        <Offset>447</Offset>
+                      </Offsets>
+                    </CheatEntry>
+                    <CheatEntry>
+                      <ID>114</ID>
+                      <Description>"Current Magic Power of the Army Commander ==&gt;"</Description>
+                      <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                      <Color>0000FF</Color>
+                      <VariableType>Byte</VariableType>
+                      <Address>pArmy</Address>
+                      <Offsets>
+                        <Offset>448</Offset>
+                      </Offsets>
+                    </CheatEntry>
+                    <CheatEntry>
+                      <ID>115</ID>
+                      <Description>"Current Knowledge Power of the Army Commander ==&gt;"</Description>
+                      <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                      <Color>0000FF</Color>
+                      <VariableType>Byte</VariableType>
+                      <Address>pArmy</Address>
+                      <Offsets>
+                        <Offset>449</Offset>
+                      </Offsets>
+                    </CheatEntry>
+                  </CheatEntries>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>117</ID>
+                  <Description>"[X] &lt;=================== Army Info ==================="</Description>
+                  <Options moHideChildren="1"/>
+                  <LastState Value="" Activated="0" RealAddress="00000000"/>
+                  <Color>000080</Color>
+                  <GroupHeader>1</GroupHeader>
+                  <CheatEntries>
+                    <CheatEntry>
+                      <ID>108</ID>
+                      <Description>"Slot 1 Troop Type ID ==&gt;"</Description>
+                      <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                      <ShowAsSigned>1</ShowAsSigned>
+                      <Color>0000FF</Color>
+                      <VariableType>4 Bytes</VariableType>
+                      <Address>pArmy</Address>
+                      <Offsets>
+                        <Offset>8D</Offset>
+                      </Offsets>
+                    </CheatEntry>
+                    <CheatEntry>
+                      <ID>109</ID>
+                      <Description>"Slot 1 Troop Size ==&gt;"</Description>
+                      <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                      <ShowAsSigned>1</ShowAsSigned>
+                      <Color>0000FF</Color>
+                      <VariableType>4 Bytes</VariableType>
+                      <Address>pArmy</Address>
+                      <Offsets>
+                        <Offset>A9</Offset>
+                      </Offsets>
+                    </CheatEntry>
+                    <CheatEntry>
+                      <ID>110</ID>
+                      <Description>"Slot 2 Troop Type ID ==&gt;"</Description>
+                      <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                      <ShowAsSigned>1</ShowAsSigned>
+                      <Color>0000FF</Color>
+                      <VariableType>4 Bytes</VariableType>
+                      <Address>pArmy</Address>
+                      <Offsets>
+                        <Offset>91</Offset>
+                      </Offsets>
+                    </CheatEntry>
+                    <CheatEntry>
+                      <ID>111</ID>
+                      <Description>"Slot 2 Troop Size ==&gt;"</Description>
+                      <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                      <ShowAsSigned>1</ShowAsSigned>
+                      <Color>0000FF</Color>
+                      <VariableType>4 Bytes</VariableType>
+                      <Address>pArmy</Address>
+                      <Offsets>
+                        <Offset>AD</Offset>
+                      </Offsets>
+                    </CheatEntry>
+                    <CheatEntry>
+                      <ID>119</ID>
+                      <Description>"Slot 3 Troop Type ID ==&gt;"</Description>
+                      <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                      <ShowAsSigned>1</ShowAsSigned>
+                      <Color>0000FF</Color>
+                      <VariableType>4 Bytes</VariableType>
+                      <Address>pArmy</Address>
+                      <Offsets>
+                        <Offset>95</Offset>
+                      </Offsets>
+                    </CheatEntry>
+                    <CheatEntry>
+                      <ID>120</ID>
+                      <Description>"Slot 3 Troop Size ==&gt;"</Description>
+                      <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                      <ShowAsSigned>1</ShowAsSigned>
+                      <Color>0000FF</Color>
+                      <VariableType>4 Bytes</VariableType>
+                      <Address>pArmy</Address>
+                      <Offsets>
+                        <Offset>B1</Offset>
+                      </Offsets>
+                    </CheatEntry>
+                    <CheatEntry>
+                      <ID>121</ID>
+                      <Description>"Slot 4 Troop Type ID ==&gt;"</Description>
+                      <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                      <ShowAsSigned>1</ShowAsSigned>
+                      <Color>0000FF</Color>
+                      <VariableType>4 Bytes</VariableType>
+                      <Address>pArmy</Address>
+                      <Offsets>
+                        <Offset>99</Offset>
+                      </Offsets>
+                    </CheatEntry>
+                    <CheatEntry>
+                      <ID>122</ID>
+                      <Description>"Slot 4 Troop Size ==&gt;"</Description>
+                      <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                      <ShowAsSigned>1</ShowAsSigned>
+                      <Color>0000FF</Color>
+                      <VariableType>4 Bytes</VariableType>
+                      <Address>pArmy</Address>
+                      <Offsets>
+                        <Offset>B5</Offset>
+                      </Offsets>
+                    </CheatEntry>
+                    <CheatEntry>
+                      <ID>123</ID>
+                      <Description>"Slot 5 Troop Type ID ==&gt;"</Description>
+                      <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                      <ShowAsSigned>1</ShowAsSigned>
+                      <Color>0000FF</Color>
+                      <VariableType>4 Bytes</VariableType>
+                      <Address>pArmy</Address>
+                      <Offsets>
+                        <Offset>9D</Offset>
+                      </Offsets>
+                    </CheatEntry>
+                    <CheatEntry>
+                      <ID>124</ID>
+                      <Description>"Slot 5 Troop Size ==&gt;"</Description>
+                      <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                      <ShowAsSigned>1</ShowAsSigned>
+                      <Color>0000FF</Color>
+                      <VariableType>4 Bytes</VariableType>
+                      <Address>pArmy</Address>
+                      <Offsets>
+                        <Offset>B9</Offset>
+                      </Offsets>
+                    </CheatEntry>
+                    <CheatEntry>
+                      <ID>125</ID>
+                      <Description>"Slot 6 Troop Type ID ==&gt;"</Description>
+                      <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                      <ShowAsSigned>1</ShowAsSigned>
+                      <Color>0000FF</Color>
+                      <VariableType>4 Bytes</VariableType>
+                      <Address>pArmy</Address>
+                      <Offsets>
+                        <Offset>A1</Offset>
+                      </Offsets>
+                    </CheatEntry>
+                    <CheatEntry>
+                      <ID>126</ID>
+                      <Description>"Slot 6 Troop Size ==&gt;"</Description>
+                      <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                      <ShowAsSigned>1</ShowAsSigned>
+                      <Color>0000FF</Color>
+                      <VariableType>4 Bytes</VariableType>
+                      <Address>pArmy</Address>
+                      <Offsets>
+                        <Offset>BD</Offset>
+                      </Offsets>
+                    </CheatEntry>
+                    <CheatEntry>
+                      <ID>127</ID>
+                      <Description>"Slot 7 Troop Type ID ==&gt;"</Description>
+                      <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                      <ShowAsSigned>1</ShowAsSigned>
+                      <Color>0000FF</Color>
+                      <VariableType>4 Bytes</VariableType>
+                      <Address>pArmy</Address>
+                      <Offsets>
+                        <Offset>A5</Offset>
+                      </Offsets>
+                    </CheatEntry>
+                    <CheatEntry>
+                      <ID>128</ID>
+                      <Description>"Slot 7 Troop Size ==&gt;"</Description>
+                      <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                      <ShowAsSigned>1</ShowAsSigned>
+                      <Color>0000FF</Color>
+                      <VariableType>4 Bytes</VariableType>
+                      <Address>pArmy</Address>
+                      <Offsets>
+                        <Offset>C1</Offset>
+                      </Offsets>
+                    </CheatEntry>
+                  </CheatEntries>
+                </CheatEntry>
+              </CheatEntries>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols>
+    <SymbolEntry>
+      <Name>Recifense</Name>
+      <Address>20150212</Address>
+    </SymbolEntry>
+  </UserdefinedSymbols>
+  <Comments>===========================================
+ Game Title    : Heroes of Might &amp; Magic III - HD Edition
+ Game Version  : 2.0 - Update 1
+ Game Sponsor  : RELOADED
+ Process Name  : HOMM3 2.0.exe
+ Script Version: 1.1
+ CE Version    : 6.4
+ Release date  : 31-Jan-2015
+ Author        : Recifense
+ History:
+ 30-Jan-15: First Release
+ 31-Jan-15: Fix for GM when defending (S1.1)
+ 12-Feb-15: Release for Update 1 (patch by Battery) AOB
+ Features:
+ - Minimum Resources         [1]
+ - Unlimited Move Points     [2]
+ - Minimum Troop Size        [3]
+ - Minimum Hero's Attributes [4]
+ - God Mode
+ - Some Pointers
+===========================================
+[1] For the human player only;
+[2] For the human player's Armies only;
+[3] For the human player only (Activated when moving);
+[4] For the human player's heroes only (Activated when moving);
+[5] For the human player's troops only;
+[6] Used in the table;
+===========================================
+[USAGE]
+1) Run CE64;
+2) Run Game;
+3) Load the game process "HOMM3 2.0.exe" in CE;
+4) Load this table and activate the main script;
+5) Now Activate the script of each cheat you want to use;
+6) Game On;
+===========================================
+[HOTKEYS]
+CTRL+Home      = Enable  GM/MR cheats;
+CTRL+End       = Disable GM/MR cheats;
+-----------
+CTRL+PageUp    = Enable  UMP cheat;
+CTRL+PageDown  = Disable UMP cheat;
+-----------
+CTRL+Insert    = Enable  HMAP cheat;
+CTRL+Delete    = Disable HMAP cheat;
+-----------
+SHIFT+Insert   = Enable  MTS cheat;
+SHIFT+Delete   = Disable MTS cheat;
+===========================================
+[ADVICE]
+When you can,save the game before starting using table/cheat. So you can always come back in case you don't like the result.
+===========================================
+[INFO]
+Tested on Win 7 64bits
+===========================================
+Cheers!
+</Comments>
+</CheatTable>

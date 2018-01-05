@@ -1,0 +1,406 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="18">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>8</ID>
+      <Description>"*THIS FIRST* DISABLE ANTICHEAT *THIS FIRST*"</Description>
+      <Options moHideChildren="1"/>
+      <LastState Activated="1"/>
+      <Color>150FFF</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>[ENABLE]
+registersymbol(AntiCheat)
+aobscanmodule(AntiCheat,unepic.exe,74 0A C7 81 00 04 00 00 01 00 00 00 C2 08 00)
+
+AntiCheat:
+db EB
+
+[DISABLE]
+AntiCheat:
+db 74
+
+unregistersymbol(AntiCheat)
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>17</ID>
+          <Description>"Player"</Description>
+          <Options moHideChildren="1"/>
+          <LastState Activated="0"/>
+          <Color>80000008</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[ENABLE]
+registersymbol(Player)
+aobscanmodule(Player,unepic.exe,8B 8E 60 01 00 00 57 50 51)
+
+registersymbol(Player_new)
+alloc(Player_new,64,Player)
+label(Player_code)
+label(Player_return)
+
+Player_new:
+dd 0
+Player_code:
+db 8B 8E 60 01 00 00
+mov [Player_new],esi
+jmp Player_return
+
+Player:
+jmp Player_code
+nop
+Player_return:
+
+[DISABLE]
+Player:
+db 8B 8E 60 01 00 00
+
+unregistersymbol(Player)
+unregistersymbol(Player_new)
+dealloc(Player_new)
+</AssemblerScript>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>39</ID>
+              <Description>"XP (must be less than Max XP)"</Description>
+              <LastState Value="??" Activated="0" RealAddress="00000000"/>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>Player_new</Address>
+              <Offsets>
+                <Offset>160</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>41</ID>
+              <Description>"Skills points"</Description>
+              <LastState Value="??" Activated="0" RealAddress="00000000"/>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>Player_new</Address>
+              <Offsets>
+                <Offset>178</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>42</ID>
+              <Description>"Max XP on current level"</Description>
+              <LastState Value="??" Activated="0" RealAddress="00000000"/>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>Player_new</Address>
+              <Offsets>
+                <Offset>168</Offset>
+              </Offsets>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>28</ID>
+          <Description>"Item editor (instruction inside)"</Description>
+          <Options moHideChildren="1"/>
+          <LastState Activated="1"/>
+          <Color>80000008</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>//Instruction (kind of...)
+//Oh, my English is soooo bad... aaaand... i don't actually care :P
+//I think, "condition", "charges" and "amount" don't need introduction, so let's move to the point
+//Here we have pointer on the original item description - Item pointer
+//It's light gray becouse it's need for advanced use, but useless for average users
+//And we have "Item pointer up" and "down", which is activated when pressed "Shoft+Q/E"
+//It's changes "Item pointer", changing it to the next or previous cell in the game's array of items
+//For activation you need to pick an item with mouse and put it back, after that you can change him by pressing "Shift+Q/E"
+//If you reach bounds of game's array, then an item remains the same, and nothing will happen at all
+
+[ENABLE]
+//Position vars
+registersymbol(Item_position)
+aobscanmodule(Item_position,unepic.exe,89 48 38 89 BA 84 00 00 00 8B 83 9C 01 00 00 50 8B CE)
+
+registersymbol(Item_base_address)
+label(Item_base_address)
+label(Item_position_new_code)
+label(Item_position_return)
+
+//Editor vars
+registersymbol(Item_editor)
+aobscanmodule(Item_editor,unepic.exe,8B 46 28 8B 4A 28 3B C1 7F E4 7C ED 8B 76 18 8B 52 18 3B F2)
+label(Item_editor_new_code)
+label(Item_editor_return)
+registersymbol(Item_pointer_up)
+label(Item_pointer_up)
+registersymbol(Item_pointer_down)
+label(Item_pointer_down)
+
+label(Item_editor_skip_up)
+label(Item_editor_up_repeat)
+label(Item_editor_down_repeat)
+label(Item_editor_up_last)
+label(Item_editor_down_last)
+label(Item_editor_skip)
+
+//Alloc
+alloc(Item_new_code,256,unepic.exe)
+
+//New code
+Item_new_code:
+  //Position checker
+  Item_base_address:
+    dd 0
+  Item_position_new_code:
+    mov [Item_base_address],eax
+    db 89 48 38 89 BA 84 00 00 00
+    jmp Item_position_return
+  //EDITOR
+  Item_pointer_up:
+    db 0
+  Item_pointer_down:
+   db 0
+  Item_editor_new_code:
+    cmp byte ptr [Item_pointer_up],1
+    jne Item_editor_skip_up
+      cmp byte ptr [Item_pointer_down],1
+        je Item_editor_skip
+      push eax
+      push ebx
+      mov eax,[Item_base_address]
+      Item_editor_up_repeat:
+      mov ebx,[eax+10]
+      cmp [ebx],00000E46
+      je Item_editor_up_last
+      add [eax+10],1A4
+      mov ebx,[eax+10]
+      cmp [ebx+58],1
+      jne Item_editor_up_repeat
+      cmp [ebx+194],FFFFFFFF
+      je Item_editor_up_repeat
+      Item_editor_up_last:
+      pop eax
+      pop ebx
+      jmp Item_editor_skip
+    Item_editor_skip_up:
+    cmp byte ptr [Item_pointer_down],1
+      jne Item_editor_skip
+      cmp byte ptr [Item_pointer_up],1
+        je Item_editor_skip
+      push eax
+      push ebx
+      mov eax,[Item_base_address]
+      Item_editor_down_repeat:
+      mov ebx,[eax+10]
+      cmp [ebx],00001388
+      je Item_editor_down_last
+      sub [eax+10],1A4
+      mov ebx,[eax+10]
+      cmp [ebx+58],1
+      jne Item_editor_down_repeat
+      cmp [ebx+194],FFFFFFFF
+      je Item_editor_down_repeat
+      Item_editor_down_last:
+      pop eax
+      pop ebx
+    Item_editor_skip:
+    mov byte ptr [Item_pointer_up],0
+    mov byte ptr [Item_pointer_down],0
+    db 8B 46 28 8B 4A 28
+    jmp Item_editor_return
+
+//Position checker
+Item_position:
+jmp Item_position_new_code
+db 90 90 90 90
+Item_position_return:
+
+//EDITOR
+Item_editor:
+jmp Item_editor_new_code
+db 90
+Item_editor_return:
+
+[DISABLE]
+Item_position:
+db 89 48 38 89 BA 84 00 00 00
+
+Item_editor:
+db 8B 46 28 8B 4A 28
+
+dealloc(Item_new_code)
+
+unregistersymbol(Item_position)
+unregistersymbol(Item_base_address)
+unregistersymbol(Item_editor)
+unregistersymbol(Item_pointer_up)
+unregistersymbol(Item_pointer_down)
+</AssemblerScript>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>46</ID>
+              <Description>"Item base address"</Description>
+              <LastState Value="0" Activated="0" RealAddress="00BCCF88"/>
+              <Color>D4D4D4</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>Item_base_address</Address>
+              <Offsets>
+                <Offset>0</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>29</ID>
+              <Description>"Item properties"</Description>
+              <LastState Value="0" Activated="0" RealAddress="00BCCFA4"/>
+              <Color>D4D4D4</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>Item_base_address</Address>
+              <Offsets>
+                <Offset>1C</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>38</ID>
+              <Description>"Item pointer up"</Description>
+              <LastState Value="0" Activated="0" RealAddress="07C50018"/>
+              <Color>80000008</Color>
+              <VariableType>Byte</VariableType>
+              <Address>Item_pointer_up</Address>
+              <Hotkeys>
+                <Hotkey>
+                  <Action>Set Value</Action>
+                  <Keys>
+                    <Key>16</Key>
+                    <Key>69</Key>
+                  </Keys>
+                  <Value>1</Value>
+                  <ID>0</ID>
+                </Hotkey>
+              </Hotkeys>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>32</ID>
+              <Description>"Item pointer"</Description>
+              <LastState Value="8C B9 27 01" Activated="0" RealAddress="00BCCF98"/>
+              <ShowAsHex>1</ShowAsHex>
+              <Color>D4D4D4</Color>
+              <VariableType>Array of byte</VariableType>
+              <ByteLength>4</ByteLength>
+              <Address>Item_base_address</Address>
+              <Offsets>
+                <Offset>10</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>37</ID>
+              <Description>"Item pointer down"</Description>
+              <LastState Value="0" Activated="0" RealAddress="07C50019"/>
+              <Color>80000008</Color>
+              <VariableType>Byte</VariableType>
+              <Address>Item_pointer_down</Address>
+              <Hotkeys>
+                <Hotkey>
+                  <Action>Set Value</Action>
+                  <Keys>
+                    <Key>16</Key>
+                    <Key>81</Key>
+                  </Keys>
+                  <Value>1</Value>
+                  <ID>0</ID>
+                </Hotkey>
+              </Hotkeys>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>33</ID>
+              <Description>"Item original description"</Description>
+              <LastState Value="2632" Activated="0" RealAddress="0127B98C"/>
+              <Color>D4D4D4</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>Item_base_address</Address>
+              <Offsets>
+                <Offset>0</Offset>
+                <Offset>10</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>43</ID>
+              <Description>"Item condition (%)"</Description>
+              <LastState Value="105" Activated="0" RealAddress="00BCCFB4"/>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>Item_base_address</Address>
+              <Offsets>
+                <Offset>2C</Offset>
+              </Offsets>
+              <Hotkeys>
+                <Hotkey>
+                  <Action>Set Value</Action>
+                  <Keys>
+                    <Key>16</Key>
+                    <Key>39</Key>
+                  </Keys>
+                  <Value>255</Value>
+                  <ID>0</ID>
+                </Hotkey>
+              </Hotkeys>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>31</ID>
+              <Description>"Item charges (max 127)"</Description>
+              <LastState Value="10" Activated="0" RealAddress="00BCCFA8"/>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>Item_base_address</Address>
+              <Offsets>
+                <Offset>20</Offset>
+              </Offsets>
+              <Hotkeys>
+                <Hotkey>
+                  <Action>Set Value</Action>
+                  <Keys>
+                    <Key>16</Key>
+                    <Key>39</Key>
+                  </Keys>
+                  <Value>255</Value>
+                  <ID>0</ID>
+                </Hotkey>
+              </Hotkeys>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>30</ID>
+              <Description>"Item amount"</Description>
+              <LastState Value="53" Activated="0" RealAddress="00BCCF9C"/>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>Item_base_address</Address>
+              <Offsets>
+                <Offset>14</Offset>
+              </Offsets>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols>
+    <SymbolEntry>
+      <Name>AntiCheat</Name>
+      <Address> 0042C9A5</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>Item_position</Name>
+      <Address> 00427832</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>Item_base_address</Name>
+      <Address>07C50000</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>Item_editor</Name>
+      <Address> 00410EFB</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>Item_pointer_up</Name>
+      <Address>07C50018</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>Item_pointer_down</Name>
+      <Address>07C50019</Address>
+    </SymbolEntry>
+  </UserdefinedSymbols>
+</CheatTable>

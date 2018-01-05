@@ -1,0 +1,557 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="14">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>17</ID>
+      <Description>"[X] &lt;== Spellforce 2 Dragon Storm (Gold) v2.1 Steam Script"</Description>
+      <Options moHideChildren="1"/>
+      <Color>FF0000</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>{
+===========================================
+ Game Title    : SpellForce 2 - Dragon Storm (Gold Edition)
+ Game Version  : 2.01 (Build #125055)
+ Game Sponsor  : MySelf (via Steam)
+ Proces Name   : spellforce2.exe
+ Script Version: 1.0
+ CE Version    : 6.2
+ Release date  : 19-Dec-2012
+ Author        : Recifense
+ History:
+ 24-Feb-09: First Release (version 2.0)(CE 5.5)
+ 19-Dec-12: Adapted to version 2.1 (steam)
+ Features:
+ - God Mode
+ - Mana Fast Recover
+ - Resources (RTS)
+ - Minimum Gold
+===========================================
+}
+
+//=========================================
+// Definitions
+define(LUDO,spellforce2.exe)
+define(BUHP,LUDO+0030b0d4)
+define(BBHP,LUDO+0030939e)
+define(BUMA,LUDO+0036d72e)
+define(MOXP,LUDO+001bbeda)
+
+//=========================================
+[ENABLE]
+//=========================================
+//LuaCall(CheckVersion())
+//=========================================
+// Check if script is compatible to this game version
+// If false the script will not be loaded
+
+assert(LUDO+00170c08,8b 41 10 eb 02 33 c0 89 44 24 18) //_MSt
+assert(LUDO+00170c4b,8b 40 10 eb 02 33 c0 89 44 24 18) //_MSi
+assert(LUDO+00170c8e,8b 40 10 eb 02 33 c0 89 44 24 18) //_MLe
+assert(LUDO+002d41c0,8b 81 68 01 00 00 c3) // _MG
+assert(LUDO+0034be90,d9 44 24 04 56 8b f1 d8 46 18) //_GM
+assert(LUDO+002bdad0,8b 81 90 00 00 00 c3) // _MX
+
+//=========================================
+alloc(MyCode,4096,LUDO)
+//=========================================
+// Declaration section
+label(_MonStone)
+label(_MonSilver)
+label(_MonLenya)
+label(_MonGold)
+label(_MonXP)
+label(_GodMode)
+label(_GodM0)
+label(_GodM1)
+label(_GodMU)
+label(_BackMSt)
+label(_BackMSi)
+label(_BackML)
+label(_BackGM)
+label(_BackMG)
+label(_BackMX)
+label(_ExitMSt)
+label(_ExitMSi)
+label(_ExitML)
+label(_ExitGM)
+label(_ExitMG)
+label(_ExitMX)
+label(iPlayerID)
+label(fThousand)
+label(iEnableMR)
+label(iEnableMG)
+label(iEnableMM)
+label(iEnableMX)
+label(iEnableGM)
+label(pXP)
+label(iUnitID)
+label(pUnit)
+label(iBack)
+label(iCount)
+label(pEBP)
+label(pEDI)
+
+//=========================================
+// Registering Symbols
+registersymbol(MyCode)
+registersymbol(iPlayerID)
+registersymbol(iEnableMR)
+registersymbol(iEnableMG)
+registersymbol(iEnableMM)
+registersymbol(iEnableGM)
+registersymbol(iEnableMX)
+registersymbol(pXP)
+registersymbol(iUnitID)
+registersymbol(pUnit)
+registersymbol(iBack)
+registersymbol(iCount)
+registersymbol(pEBP)
+registersymbol(pEDI)
+
+//=========================================
+MyCode:
+//=========================================
+_MonStone:
+ mov eax,[edi+10]           // Get PlayerID
+ mov [iPlayerID],eax        // Save it for further use
+
+ cmp dword ptr [iEnableMR],0
+ je _ExitMSt                // Jump if feature is disabled
+
+ mov eax,#2000              // EAX = minimum value
+ cmp eax,[ecx+10]           // Minimum value &gt; current value?
+ jle _ExitMSt               // Jump if false
+
+ mov [ecx+10],eax           // Update value
+
+_ExitMSt:
+ mov eax,[ecx+10]           // Original code
+ jmp spellforce2.exe+170c0f // Original code
+
+//=========================================
+_MonSilver:
+ push ecx
+
+ cmp dword ptr [iEnableMR],0
+ je _ExitMSi                // Jump if feature is disabled
+
+ mov ecx,#2000              // ECX = minimum value
+ cmp ecx,[eax+10]           // Minimum value &gt; current value?
+ jle _ExitMSi               // Jump if false
+
+ mov [eax+10],ecx           // Update value
+
+_ExitMSi:
+ pop ecx
+ mov eax,[eax+10]           // Original code
+ jmp spellforce2.exe+170c52 // Original code
+
+//=========================================
+_MonLenya:
+ push ecx
+
+ cmp dword ptr [iEnableMR],0
+ je _ExitML                 // Jump if feature is disabled
+
+ mov ecx,#2000              // ECX = minimum value
+ cmp ecx,[eax+10]           // Minimum value &gt; current value?
+ jle _ExitML                // Jump if false
+
+ mov [eax+10],ecx           // Update value
+
+_ExitML:
+ pop ecx
+ mov eax,[eax+10]           // Original code
+ jmp spellforce2.exe+170c95 // Original code
+
+ //=========================================
+_MonGold:
+ cmp dword ptr [iEnableMG],0
+ je _ExitMG                 // Jump if feature is disabled
+
+ mov eax,[ecx+10]           // Get OwnerID
+ cmp eax,[iPlayerID]        // Player´s gold?
+ jne _ExitMG                // Jump if false
+
+ mov eax,[ecx+00000168]     // Read gold value
+ cmp dword ptr [eax+04],#20000 // Grater than minimum value?
+ jge _ExitMG                // Jump if true
+
+ mov dword ptr [eax+04],#20000 // Make gold = minimum value (20000)
+
+_ExitMG:
+ mov eax,[ecx+00000168]     // Original code
+ jmp _BackMG                // Jump back to main code
+
+//========================================= ok
+_GodMode:
+ cmp dword ptr [iEnableGM],0
+ je _ExitGM                 // Jump if feature is disabled
+
+ mov eax,[esp]
+ cmp eax,BUHP               // Unit HP?
+ je _GodMU                  // Jump if true
+
+ cmp dword ptr [iEnableMM],0
+ je _GodM0                  // Jump if feature is disabled
+
+ cmp eax,BUMA               // Unit Mana?
+ jne _GodM0                 // Jump if false
+
+ mov eax,[edi+000000cc]     // Get OwnerID
+ jmp _GodM1
+
+_GodMU:
+ mov eax,[ebp+000000cc]     // Get OwnerID
+ jmp _GodM1
+
+_GodM0:
+ cmp eax,BBHP               // Building?
+ jne _ExitGM                // Jump if false
+
+ mov eax,[edi+000000bc]     // Get OwnerID
+
+_GodM1:
+ cmp eax,[iPlayerID]        // Does it belong to the player?
+ jne _ExitGM                // Jump if false
+
+ inc dword ptr [iCount]
+ mov eax,[fThousand]
+ mov [esp+04],eax           // Change the value to +1000
+
+_ExitGM:
+ fld dword ptr [esp+04]     // Original code
+ push esi                   // Original code
+ jmp _BackGM                // Back to main code
+
+//========================================= ok
+// ESP + 14 = fmXP
+_MonXP:
+ mov [pXP],ecx
+
+ mov eax,[esp]
+ cmp eax,MOXP
+ jne _ExitMX
+
+ cvtss2si eax,[esp+14]
+ lea eax,[esi+eax-1]
+
+ cmp dword ptr [iEnableMX],0
+ je _ExitMX                 // Jump if feature is disabled
+
+ cmp eax,[ecx+00000090]
+ jle _ExitMX
+
+ mov [ecx+00000090],eax
+
+_ExitMX:
+ mov eax,[ecx+00000090]     // Original code
+ jmp _BackMX                // Back to main code
+
+//=========================================
+ db '========================&gt;'
+ db 'CE6.2 Script by Recifense 121912'
+//=========================================
+// Variables
+iEnableGM:
+ dd 0
+iEnableMM:
+ dd 0
+iEnableMX:
+ dd 0
+iEnableMG:
+ dd 0
+iEnableMR:
+ dd 0
+iPlayerID:
+ dd 0
+fThousand:
+ dd (float)5000
+pXP:
+ dd 0
+iUnitID:
+ dd 0
+pUnit:
+ dd 0
+iBack:
+ dd 0
+iCount:
+ dd 0
+pEBP:
+ dd 0
+pEDI:
+ dd 0
+
+//=========================================
+// Hacking Points
+//spellforce2.exe+172c98:
+LUDO+00170c08:
+ jmp _MonStone
+_BackMSt:
+
+//spellforce2.exe+172cdb:
+LUDO+00170c4b:
+ jmp _MonSilver
+_BackMSi:
+
+//spellforce2.exe+172d1e:
+LUDO+00170c8e:
+ jmp _MonLenya
+_BackML:
+
+//spellforce2.exe+2d67a0:
+LUDO+002d41c0:
+ jmp _MonGold
+ nop
+_BackMG:
+
+//spellforce2.exe+34e280:
+LUDO+0034be90:
+ jmp _GodMode
+_BackGM:
+
+//spellforce2.exe+2cf6a0:
+LUDO+002bdad0:
+ jmp _MonXP
+ nop
+_BackMX:
+
+//=========================================
+// Script for Restoring Original Codes
+[DISABLE]
+//spellforce2.exe+172c98:
+LUDO+00170c08:
+// mov eax,[ecx+10]
+// jmp spellforce2.exe+170c0f
+ db 8b 41 10 eb 02
+
+//spellforce2.exe+172cdb:
+LUDO+00170c4b:
+// mov eax,[eax+10]
+// jmp spellforce2.exe+170c52
+ db 8b 40 10 eb 02
+
+//spellforce2.exe+172d1e:
+LUDO+00170c8e:
+// mov eax,[eax+10]
+// jmp spellforce2.exe+170c95
+ db 8b 40 10 eb 02
+
+//spellforce2.exe+2d67a0:
+LUDO+002d41c0:
+// mov eax,[ecx+00000168]
+ db 8b 81 68 01 00 00
+
+//spellforce2.exe+34e280:
+LUDO+0034be90:
+// fld dword ptr [esp+04]
+// push esi
+ db d9 44 24 04 56
+
+//spellforce2.exe+2cf6a0:
+LUDO+002bdad0:
+// mov eax,[ecx+00000090]
+ db 8b 81 90 00 00 00
+
+//=========================================
+// Unregistering Symbols
+unregistersymbol(MyCode)
+unregistersymbol(iPlayerID)
+unregistersymbol(iEnableMR)
+unregistersymbol(iEnableMG)
+unregistersymbol(iEnableGM)
+unregistersymbol(iEnableMM)
+unregistersymbol(iEnableMX)
+unregistersymbol(iUnitID)
+unregistersymbol(pXP)
+unregistersymbol(pUnit)
+unregistersymbol(iBack)
+unregistersymbol(iCount)
+unregistersymbol(pEBP)
+unregistersymbol(pEDI)
+
+//=========================================
+dealloc(MyCode)
+//============= Scripts End ===============
+
+// ****************************************
+// NOTES
+// ****************************************
+{
+}
+
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>1</ID>
+          <Description>"Enable/Disable God Mode =&gt;(1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableGM</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>13</ID>
+          <Description>"Enable/Disable Fast Recover Mana =&gt; (1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMM</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>16</ID>
+          <Description>"Enable/Disable Quick Level Up =&gt; (1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMX</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>33</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>34</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>18</ID>
+          <Description>"Enable/Disable Minimum Gold =&gt;(1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMG</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>19</ID>
+          <Description>"Enable/Disable Minimum Resouces =&gt; (1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMR</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols/>
+  <Comments>===========================================
+ Game Title    : SpellForce 2 - Dragon Storm (Gold Edition)
+ Game Version  : 2.01 (Build #125055)
+ Game Sponsor  : MySelf (via Steam)
+ Proces Name   : spellforce2.exe
+ Script Version: 1.0
+ CE Version    : 6.2
+ Release date  : 19-Dec-2012
+ Author        : Recifense
+ History:
+ 24-Feb-09: First Release (version 2.0)(CE 5.5)
+ 19-Dec-12: Adapted to version 2.1 (steam)
+ Features:
+ - God Mode          [1]
+ - Mana Fast Recover [2]
+ - Quick Level Up    [3]
+ - Resources (RTS)   [4]
+ - Minimum Gold      [5]
+===========================================
+[1] For player's units and buildings;
+[2] For player's units
+[3] Player's hero should selected (XP BAR visible)
+[4] Minimum Value (2000)
+[5] Minimum value (20000)
+===========================================
+HOTKEYS:
+CTRL+Home  = Enable  all cheats (but Quick Level Up)
+CTRL+End   = Disable all cheats (but Quick Level Up)
+CTRL+PageUp   = Enable  Quick Level Up
+CTRL+PageDown = Disable Quick Level Up
+===========================================
+Cheers!
+</Comments>
+</CheatTable>

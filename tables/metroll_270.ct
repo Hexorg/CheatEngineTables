@@ -1,0 +1,360 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="14">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>0</ID>
+      <Description>"Main Script"</Description>
+      <Options moHideChildren="1"/>
+      <Color>80000008</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>[ENABLE]
+alloc(newmem,2048)
+label(gravity)
+label(returnhereGravity)
+label(continueLevitate)
+label(continueDefaultG)
+label(defaultG)
+label(playerPhysicsStructAddress)
+
+label(fGravity)
+registersymbol(fGravity)
+label(bHighjump)
+registersymbol(bHighjump)
+label(bLevitate)
+registersymbol(bLevitate)
+
+newmem:
+gravity:
+mov [playerPhysicsStructAddress],esi
+
+and byte ptr [bHighjump],1
+jz continueDefaultG
+  mulss xmm2,[fGravity]
+  jmp continueLevitate
+
+ continueDefaultG:
+  mulss xmm2,[defaultG]
+
+ continueLevitate:
+  and byte ptr [bLevitate],1
+  jz returnhereGravity
+    xorps xmm0,xmm0
+    xorps xmm2,xmm2
+    jmp returnhereGravity
+
+defaultG:
+dd 411CF5C3 // 9.81 float
+
+playerPhysicsStructAddress:
+dd 0
+
+fGravity:
+dd (float)1.0
+
+bLevitate:
+dd 0
+
+bHighjump:
+dd 0
+
+
+
+
+
+
+label(AimingAT)
+label(playerPOS)
+label(returnhere_AimingAT)
+label(returnhere_PlayerPos)
+label(exit1)
+label(exit2)
+
+label(onetenth)
+label(playerPosAddress)
+label(lookATnormVectAddress)
+
+label(bTeleport)
+registersymbol(bTeleport)
+label(bNoclip)
+registersymbol(bNoclip)
+
+//aimAT
+AimingAT:
+
+ // note: xmm0, eax and ecx are free to use
+
+ cmp [bTeleport],0
+ je exit1
+ cmp [ebx+00000C30],7F7FFFFF
+ je exit1
+ cmp [playerPosAddress],0
+ je exit1
+   mov eax,[playerPosAddress]
+   lea eax,[eax+D0]
+
+   mov ecx,[ebx+00000C30]
+   mov [eax+0],ecx
+
+   fld dword ptr [ebx+00000C34]
+   fldl2e
+   faddp    //plus 1.4426...   (1.0 too small, 2.0 too big)
+   fstp [eax+4]
+
+   mov ecx,[ebx+00000C38]
+   mov [eax+8],ecx
+ exit1:
+   mov [bTeleport],0
+
+ and byte ptr [bNoclip],1
+ jz exit2
+ cmp [lookATnormVectAddress],0
+ je exit2
+ cmp [playerPosAddress],0
+ je exit2
+   mov eax,[playerPosAddress]
+   lea eax,[eax+D0]
+   mov ecx,[lookATnormVectAddress]
+   lea ecx,[ecx+70]
+
+
+   movss xmm0,[ecx]       // lookat norm vect
+   mulss xmm0,[onetenth]
+   addss xmm0,[eax]       // player pos
+   movss [eax],xmm0
+
+   movss xmm0,[ecx+4]       // lookat norm vect
+   mulss xmm0,[onetenth]
+   addss xmm0,[eax+4]       // player pos
+   movss [eax+4],xmm0
+
+   movss xmm0,[ecx+8]       // lookat norm vect
+   mulss xmm0,[onetenth]
+   addss xmm0,[eax+8]       // player pos
+   movss [eax+8],xmm0
+
+   cmp [playerPhysicsStructAddress],0
+   jz exit2
+     mov eax,[playerPhysicsStructAddress]
+     xorps xmm0,xmm0
+     movaps [eax+180],xmm0  // zero player velocity
+ exit2:
+
+mov eax,[ebx+00000144] // orig
+jmp returnhere_AimingAT
+
+
+playerPOS:
+ mov [ebx+000000D8],ecx
+ mov [playerPosAddress],ebx
+ jmp returnhere_PlayerPos
+
+playerPosAddress:
+dd 0
+bTeleport:
+dd 0
+bNoclip:
+dd 0
+db 00 00 00 00 00 00
+onetenth:
+dd (float)0.01
+
+
+
+
+label(lookATnormVect)
+label(returnhere_lookATnormVect)
+
+lookATnormVect:
+ mov [lookATnormVectAddress],esi
+ //mulps xmm5,[esi+70]
+ //shufps xmm0,xmm0,-01
+ db 0F 59 6E 70 0F C6 C0 FF
+ jmp returnhere_lookATnormVect
+
+lookATnormVectAddress:
+dd 0
+
+
+
+
+//gravity
+aobscan(gravity_AOB,F30F5915xxxxxxxxF30F5CC20F2F05xxxxxxxxF30F118684010000)
+label(gravity_REGISTERED)
+registersymbol(gravity_REGISTERED)
+label(gravity_fix_disablesection)
+registersymbol(gravity_fix_disablesection)
+[gravity_AOB-4]:             // trick
+gravity_fix_disablesection:  //
+//"MetroLL.exe"+5EC1FF:
+gravity_AOB-8:
+gravity_REGISTERED:
+jmp gravity
+db 90 90 90
+returnhereGravity:
+
+//aimAT
+aobscan(aimATAOB,D97C2418D980A00600006A000FB744241CD88C2448010000)
+label(aimAT_REGISTERED)
+registersymbol(aimAT_REGISTERED)
+//"MetroLL.exe"+3C35BD:
+aimATAOB-6:
+aimAT_REGISTERED:
+jmp AimingAT
+nop
+returnhere_AimingAT:
+
+//playerPOS
+aobscan(playerPOS_AOB,F30F5C4808F30F5C40040F28D1)
+label(playerPOS_REGISTERED)
+registersymbol(playerPOS_REGISTERED)
+//"MetroLL.exe"+6B8550:
+playerPOS_AOB-6:
+playerPOS_REGISTERED:
+jmp playerPOS
+nop
+returnhere_PlayerPos:
+
+//lookAT , normalized vector
+aobscan(lookAT_AOB,0F5986800000000F58E50F58E00F29200F28C1)
+label(lookAT_REGISTERED)
+registersymbol(lookAT_REGISTERED)
+//"MetroLL.exe"+1AA8D0:
+lookAT_AOB-8:
+lookAT_REGISTERED:
+jmp lookATnormVect
+nop
+nop
+nop
+returnhere_lookATnormVect:
+
+
+[DISABLE]
+
+
+//gravity
+//"MetroLL.exe"+5EC1FF:
+gravity_REGISTERED:
+//mulss xmm2,[MetroLL.exe+8DB174]
+db F3 0F 59 15
+dd gravity_fix_disablesection
+
+//aimAT
+//"MetroLL.exe"+3C35BD:
+aimAT_REGISTERED:
+mov eax,[ebx+00000144]
+
+//playerPOS
+//"MetroLL.exe"+6B8550:
+playerPOS_REGISTERED:
+mov [ebx+000000D8],ecx
+
+//lookAT , normalized vector
+//"MetroLL.exe"+1AA8D0:
+lookAT_REGISTERED:
+//mulps xmm5,[esi+70]
+//shufps xmm0,xmm0,-01
+db 0F 59 6E 70 0F C6 C0 FF
+
+
+unregistersymbol(fGravity)
+unregistersymbol(bLevitate)
+unregistersymbol(bHighjump)
+unregistersymbol(bTeleport)
+unregistersymbol(bNoclip)
+
+//unregister aob labels
+unregistersymbol(gravity_REGISTERED)
+unregistersymbol(gravity_fix_disablesection)
+unregistersymbol(aimAT_REGISTERED)
+unregistersymbol(playerPOS_REGISTERED)
+unregistersymbol(lookAT_REGISTERED)
+
+dealloc(newmem)
+//by mgr.inz.Player
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>1</ID>
+          <Description>"desired g value         (9.81 orig)"</Description>
+          <Color>80000008</Color>
+          <VariableType>Float</VariableType>
+          <Address>fGravity</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>2</ID>
+          <Description>"Enable High Jumps      (press J hotkey)"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>bHighjump</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Increase Value</Action>
+              <Keys>
+                <Key>74</Key>
+              </Keys>
+              <Value>1</Value>
+              <Description>Enable High Jumps</Description>
+              <ID>0</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>3</ID>
+          <Description>"Enable Levitate           (press L hotkey)"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>bLevitate</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Increase Value</Action>
+              <Keys>
+                <Key>76</Key>
+              </Keys>
+              <Value>1</Value>
+              <Description>Enable Levitate</Description>
+              <ID>0</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>4</ID>
+          <Description>"Teleport to AimingAt   (press F6 hotkey)"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>bTeleport</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>117</Key>
+              </Keys>
+              <Value>1</Value>
+              <Description>Teleport to AimingAt</Description>
+              <ID>0</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>5</ID>
+          <Description>"Enable Noclip             (press ~ hotkey)"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>bNoclip</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Increase Value</Action>
+              <Keys>
+                <Key>192</Key>
+              </Keys>
+              <Value>1</Value>
+              <Description>Enable Noclip             (press N hotkey)</Description>
+              <ID>0</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols/>
+  <Comments>by mgr.inz.Player</Comments>
+</CheatTable>

@@ -1,0 +1,482 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="18">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>21</ID>
+      <Description>"[X]&lt;== WH40K DoW Soulstorm v1.3.437 Steam Script v1.1"</Description>
+      <Options moHideChildren="1"/>
+      <LastState Activated="1"/>
+      <Color>FF0000</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>{
+===========================================
+ Game Title    : Warhammer 40k - Dawn of War - Soulstorm
+ Game Version  : 1.3.400 (1.0.400) (steam)
+ Game Sponsor  : Myself
+ Process Name  : Soulstorm.exe
+ Script Version: 1.1
+ CE Version    : 6.4
+ Release date  : 29-Jun-2014
+ Author        : Recifense
+ History:
+ 29-Jun-14: First Release
+ 01-Jul-14: Fixed GM
+ Features:
+ - Unlimited Units
+ - God Mode
+ - Minimum Resources
+ - Minimum Requisition
+ - Some Pointers
+===========================================
+}
+
+//=========================================
+// Definitions
+define(LUDO,"Soulstorm.exe")
+define(MHPR,WXPMod.dll+29A971)
+define(GDMD,WXPMod.dll+120C4F)
+define(MPRS,WXPMod.dll+D5DC4)
+define(MPRQ,WXPMod.dll+228617)
+
+//=========================================
+// Constants used in the script (that can be changed)
+define(ctCE64,(float)6.4)
+define(ctMRES,(float)6400.0)  // Minimum Resource
+define(ctMORS,(float)100.0)   // Minimum Ork Resource
+define(ctMSRS,(float)1000.0)  // Minimum Soul Essence
+define(ctMREQ,#6400)          // Minimum Requisition
+
+//=========================================
+[ENABLE]
+//=========================================
+//LuaCall(CheckVersion())
+//=========================================
+// Check if script is compatible to this game version
+// If false the script will not be loaded
+
+assert(MHPR,3b 87 b8 01 00 00 ?? ?? 8b ce e8 ?? ?? ?? ?? 3a 87 bc 01 00 00 ??)
+assert(GDMD,d9 56 14 d9 e8 d8 d1 df e0 dd d9 f6 c4 05 ?? ?? d9 5e 14 ?? ?? dd)
+assert(MPRS,d8 14 91 df e0 f6 c4 41 ?? ?? 83 c2 01 83 fa 05 ?? ?? dd d8 b0 01)
+assert(MPRQ,8b 14 88 8b 02 c2 04 00 cc 8b 41 38 8b 4c 24 04 8b 14 88 8b 42 0c)
+
+//=========================================
+alloc(MyCode,4096,LUDO)
+//=========================================
+// Declaration section
+label(_MonHumanPlayer)
+label(_BackMHP)
+label(_ExitMHP)
+label(_GodMode)
+label(_BackGMD)
+label(_ExitGMD)
+label(_MonPlayerRes)
+label(_MonPR00)
+label(_BackMPR)
+label(_ExitMPR)
+label(_MonPlayerReq)
+label(_BackMPQ)
+label(_ExitMPQ)
+label(iEnableUUS)
+label(iEnableGMD)
+label(iEnableMPR)
+label(iEnableMPQ)
+label(pPlayer)
+label(pPlayerGM)
+
+//=========================================
+// Registering Symbols
+registersymbol(MyCode)
+registersymbol(iEnableUUS)
+registersymbol(iEnableGMD)
+registersymbol(iEnableMPR)
+registersymbol(iEnableMPQ)
+registersymbol(pPlayer)
+registersymbol(pPlayerGM)
+
+//=========================================
+MyCode:
+//=========================================
+// Main game screen
+_MonHumanPlayer:
+ push ebx
+
+ mov ebx,[edi+000001b8]            // Get pPlayer
+ mov [pPlayer],ebx                 // Save pointer for debugging
+ test ebx,ebx
+ jz _ExitMHP
+
+ cmp dword ptr [iEnableUUS],0
+ je _ExitMHP                       // Jump if feature is disabled
+
+ mov dword ptr [ebx+00000244],0    // Orks
+ mov dword ptr [ebx+00000248],0    // Squads
+ mov dword ptr [ebx+0000024c],0    // Vehicles
+
+_ExitMHP:
+ pop ebx
+
+ cmp eax,[edi+000001b8]            // Original code
+ jmp _BackMHP                      // Back to main code
+
+//=========================================
+// During Combat
+_GodMode:
+ push ebx
+
+ fst dword ptr [esi+14]            // Original code
+ fld1                              // Original code
+
+ cmp dword ptr [iEnableGMD],0
+ je _ExitGMD                       // Jump if feature is disabled
+
+ mov ebx,[esi+04]
+ test ebx,ebx
+ jz _ExitGMD
+
+ mov ebx,[ebx+08]
+ test ebx,ebx
+ jz _ExitGMD
+
+ mov ebx,[ebx+10]
+ cmp ebx,[pPlayer]
+ jne _ExitGMD
+
+ mov ebx,(float)1.0
+ mov [esi+14],ebx                  // %HP = 100
+
+_ExitGMD:
+ pop ebx
+ jmp _BackGMD                      // Back to main code
+
+//=========================================
+// Main game screen
+_MonPlayerRes:
+ cmp dword ptr [iEnableMPR],0
+ je _ExitMPR                       // Jump if feature is disabled
+
+ cmp esi,[pPlayer]
+ jne _ExitMPR
+
+ mov eax,ctMRES                    // Minimum Resource value
+ cmp edx,#2
+ jl _MonPR00
+
+ mov eax,ctMORS                    // Minimum Res value for OrcResource &amp; Faith
+ cmp edx,#4
+ jl _MonPR00
+
+ mov eax,ctMSRS                    // Minimum Resource value for Soul Essence
+
+_MonPR00:
+ cmp eax,[ecx+edx*4]
+ js _ExitMPR
+
+ mov [ecx+edx*4],eax
+
+_ExitMPR:
+ fcom dword ptr [ecx+edx*4]        // Original code
+ fnstsw ax                         // Original code
+ jmp _BackMPR                      // Back to main code
+
+//=========================================
+// Main Campaign Map
+_MonPlayerReq:
+ mov edx,[eax+ecx*4]               // Original code
+ mov eax,[edx]                     // Original code
+
+ cmp dword ptr [iEnableMPQ],0
+ je _ExitMPQ                       // Jump if feature is disabled
+
+ cmp dword ptr [edx+04],0          // Player's Requisition?
+ jne _ExitMPQ                      // Jump if false
+
+ cmp eax,ctMREQ
+ jns _ExitMPQ
+
+ mov eax,ctMREQ
+ mov [edx],eax
+
+_ExitMPQ:
+ jmp _BackMPQ                      // Back to main code
+
+//=========================================
+ db '==========================================&gt;'
+ db 'CE6.4 Script by Recifense 070114'
+//=========================================
+// Variables
+iEnableUUS:
+ dd 0
+iEnableGMD:
+ dd 0
+iEnableMPR:
+ dd 0
+iEnableMPQ:
+ dd 0
+pPlayer:
+ dd MyCode
+pPlayerGM:
+ dd 0
+
+//=========================================
+// Hacking Points
+MHPR:
+ jmp _MonHumanPlayer
+ nop
+_BackMHP:
+
+GDMD:
+ jmp _GodMode
+_BackGMD:
+
+MPRS:
+ jmp _MonPlayerRes
+_BackMPR:
+
+MPRQ:
+ jmp _MonPlayerReq
+_BackMPQ:
+
+//=========================================
+// Script for Restoring Original Codes
+[DISABLE]
+MHPR:
+// cmp eax,[edi+000001B8]
+ db 3b 87 b8 01 00 00
+
+GDMD:
+// fst dword ptr [esi+14]
+// fld1
+ db d9 56 14 d9 e8
+
+MPRS:
+// fcom dword ptr [ecx+edx*4]
+// fnstsw ax
+ db d8 14 91 df e0
+
+MPRQ:
+// mov edx,[eax+ecx*4]
+// mov eax,[edx]
+ db 8b 14 88 8b 02
+
+//=========================================
+// Unregistering Symbols
+unregistersymbol(MyCode)
+unregistersymbol(iEnableUUS)
+unregistersymbol(iEnableGMD)
+unregistersymbol(iEnableMPR)
+unregistersymbol(iEnableMPQ)
+unregistersymbol(pPlayer)
+unregistersymbol(pPlayerGM)
+
+//=========================================
+dealloc(MyCode)
+//============= Scripts End ===============
+
+// ****************************************
+// NOTES
+// ****************************************
+{
+}
+
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>22</ID>
+          <Description>"Enable/Disable Unlimited Units ===============&gt;"</Description>
+          <DropDownList DescriptionOnly="1" DisplayValueAsItem="1">0:Disabled
+1:Enabled
+</DropDownList>
+          <LastState Value="??" Activated="0" RealAddress="087D0160"/>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableUUS</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>23</ID>
+          <Description>"Enable/Disable God Mode  ==================&gt;"</Description>
+          <DropDownList DescriptionOnly="1" DisplayValueAsItem="1">0:Disabled
+1:Enabled
+</DropDownList>
+          <LastState Value="??" Activated="0" RealAddress="087D0164"/>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableGMD</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>24</ID>
+          <Description>"Enable/Disable Minimum Resources ===========&gt;"</Description>
+          <DropDownList DescriptionOnly="1" DisplayValueAsItem="1">0:Disabled
+1:Enabled
+</DropDownList>
+          <LastState Value="??" Activated="0" RealAddress="087D0168"/>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMPR</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>25</ID>
+          <Description>"Enable/Disable Minimum Requisition   ==========&gt;"</Description>
+          <DropDownList DescriptionOnly="1" DisplayValueAsItem="1">0:Disabled
+1:Enabled
+</DropDownList>
+          <LastState Value="??" Activated="0" RealAddress="087D016C"/>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMPQ</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols>
+    <SymbolEntry>
+      <Name>iEnableUUS</Name>
+      <Address>087D0160</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>iEnableGMD</Name>
+      <Address>087D0164</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>iEnableMPR</Name>
+      <Address>087D0168</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>iEnableMPQ</Name>
+      <Address>087D016C</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>pPlayer</Name>
+      <Address>087D0170</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>pPlayerGM</Name>
+      <Address>087D0174</Address>
+    </SymbolEntry>
+  </UserdefinedSymbols>
+  <Comments>===========================================
+ Game Title    : Warhammer 40k - Dawn of War - Soulstorm
+ Game Version  : 1.3.400 (1.0.400) (steam)
+ Game Sponsor  : Myself
+ Process Name  : Soulstorm.exe
+ Script Version: 1.1
+ CE Version    : 6.4
+ Release date  : 29-Jun-2014
+ Author        : Recifense
+ History:
+ 29-Jun-14: First Release
+ 01-Jul-14: Fixed GM
+ Features:
+ - Unlimited Units      [1](*)
+ - God Mode             [2]
+ - Minimum Resources    [3]
+ - Minimum Requisition  [4]
+ - Some Pointers
+===========================================
+[1] For human player only;
+[2] For human player's units and structures only;
+[3] For human player only;
+[4] For human player only;
+(*) Not all kind of units.
+===========================================
+[USAGE]
+1) Run CE64;
+2) Run Game;
+3) Load the game process "Soulstorm.exe" in CE;
+4) Load the table;
+5) Activate the script (in Blue)
+4) Change the value to "Enabled" of each cheat you want to use (in Green);
+5) Game On;
+===========================================
+[HOTKEYS]
+CTRL+Home     = Enable  all cheats;
+CTRL+End      = Disable all cheats;
+===========================================
+[ADVICE]
+When you can,save the game before starting using table/cheat. So you can always come back in case you don't like the result.
+===========================================
+[INFO]
+Tested on Win 7 64bits
+===========================================
+Cheers!
+</Comments>
+</CheatTable>

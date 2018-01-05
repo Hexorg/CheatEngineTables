@@ -1,0 +1,308 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="16">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>34</ID>
+      <Description>"Rise of Venice AOB script"</Description>
+      <Options moHideChildren="1"/>
+      <Color>80000008</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>[ENABLE]
+aobscan(aobStoreUpdater,8B 94 83 B4 00 00 00 03 C0)
+aobscan(aobMoneyUpdater,89 B1 4C 05 00 00 85 C0)
+aobscan(aobXPBlockGetter,8B 49 04 85 C9 74 ?? 6A 05)
+aobscan(aobBattleTicker,0F B6 46 4B 03 5E 38)
+
+alloc(newmem,4096)
+
+label(aobXPBlockGetter_r)
+registersymbol(aobXPBlockGetter_r)
+
+label(lblXPBlockGetter)
+label(lblXPBlockGetterSkip)
+label(lblXPBlockGetterRet)
+
+label(bEnableXPMaxer)
+registersymbol(bEnableXPMaxer)
+
+label(aobMoneyUpdater_r)
+registersymbol(aobMoneyUpdater_r)
+
+label(lblMoneyUpdater)
+label(lblMoneyUpdaterSkip)
+label(lblMoneyUpdaterRet)
+
+label(bEnableMinimumMoney)
+label(iMinimumMoney)
+registersymbol(bEnableMinimumMoney)
+registersymbol(iMinimumMoney)
+
+label(aobStoreUpdater_r)
+registersymbol(aobStoreUpdater_r)
+
+label(lblStoreUpdater)
+label(lblStoreUpdaterSkipAdd)
+label(lblStoreUpdaterSkipSub)
+label(lblStoreUpdaterSkip)
+label(lblStoreUpdaterRet)
+
+label(bEnableStoreController)
+label(iStoreControllerAmount)
+registersymbol(bEnableStoreController)
+registersymbol(iStoreControllerAmount)
+
+label(aobBattleTicker_r)
+registersymbol(aobBattleTicker_r)
+
+label(lblBattleTicker)
+label(lblBattleTickerSkipCrew)
+label(lblBattleTickerSkipHull)
+label(lblBattleTickerSkip)
+label(lblBattleTickerRet)
+
+label(bEnableBattleTicker)
+label(bEnableBattleTickerCrewFix)
+label(bEnableBattleTickerHullFix)
+registersymbol(bEnableBattleTicker)
+registersymbol(bEnableBattleTickerCrewFix)
+registersymbol(bEnableBattleTickerHullFix)
+
+newmem:
+bEnableXPMaxer:
+dd 0
+bEnableMinimumMoney:
+dd 1
+iMinimumMoney:
+dd (int)20000
+bEnableStoreController:
+dd 1
+iStoreControllerAmount:
+dd (int)500
+bEnableBattleTicker:
+dd 0
+bEnableBattleTickerCrewFix:
+dd 1
+bEnableBattleTickerHullFix:
+dd 1
+
+lblXPBlockGetter:
+push eax
+cmp dword ptr [bEnableXPMaxer],1
+jne short lblXPBlockGetterSkip
+pushad
+push 11 // CTRL key
+call GetAsyncKeyState
+shr ax,#15
+cmp ax,1
+popad
+jne short lblXPBlockGetterSkip
+pushad
+push 12 // ALT key
+call GetAsyncKeyState
+shr ax,#15
+cmp ax,1
+popad
+jne short lblXPBlockGetterSkip
+mov ecx,[ecx+04] // Original code
+test ecx,ecx     // Original code
+je short lblXPBlockGetterSkip
+cmp dword ptr [ecx+40],26AB00
+jge short lblXPBlockGetterSkip
+mov dword ptr [ecx+40],26AB00
+lblXPBlockGetterSkip:
+pop eax
+mov ecx,[ecx+04] // Original code
+test ecx,ecx     // Original code
+jmp lblXPBlockGetterRet
+
+lblMoneyUpdater:
+cmp dword ptr [bEnableMinimumMoney],1
+jne short lblMoneyUpdaterSkip
+cmp dword ptr [iMinimumMoney],esi
+jle short lblMoneyUpdaterSkip
+mov esi,[iMinimumMoney]
+lblMoneyUpdaterSkip:
+mov [ecx+0000054C],esi // Original code
+jmp lblMoneyUpdaterRet
+
+lblStoreUpdater:
+cmp dword ptr [bEnableStoreController],1
+jne short lblStoreUpdaterSkip
+pushad
+push 11 // CTRL key
+call GetAsyncKeyState
+shr ax,#15
+cmp ax,1
+popad
+jne short lblStoreUpdaterSkipSub
+mov ecx,[iStoreControllerAmount]
+sub dword ptr [ebx+eax*4+000000B4],ecx
+jns lblStoreUpdaterSkipSub
+mov dword ptr [ebx+eax*4+000000B4],0
+lblStoreUpdaterSkipSub:
+pushad
+push 12 // ALT key
+call GetAsyncKeyState
+shr ax,#15
+cmp ax,1
+popad
+jne short lblStoreUpdaterSkipAdd
+mov ecx,[iStoreControllerAmount]
+add dword ptr [ebx+eax*4+000000B4],ecx
+lblStoreUpdaterSkipAdd:
+lblStoreUpdaterSkip:
+mov edx,[ebx+eax*4+000000B4] // Original code
+jmp lblStoreUpdaterRet
+
+lblBattleTicker:
+cmp dword ptr [bEnableBattleTicker],1
+jne short lblBattleTickerSkip
+cmp dword ptr [bEnableBattleTickerCrewFix],1
+jne short lblBattleTickerSkipCrew
+movzx eax,word ptr [esi+44]
+imul eax,eax,(int)1000
+mov dword ptr [esi+40],eax
+lblBattleTickerSkipCrew:
+cmp dword ptr [bEnableBattleTickerHullFix],1
+jne short lblBattleTickerSkipHull
+mov eax,[esi+3c]
+mov dword ptr [esi+38],eax
+lblBattleTickerSkipHull:
+lblBattleTickerSkip:
+movzx eax,byte ptr [esi+4B] // Original code
+add ebx,[esi+38]            // Original code
+jmp lblBattleTickerRet
+
+//"RiseOfVenice.exe"+35D7A9:
+aobBattleTicker:
+aobBattleTicker_r:
+jmp lblBattleTicker
+nop
+nop
+lblBattleTickerRet:
+
+//"RiseOfVenice.exe"+33DA22:
+aobStoreUpdater:
+aobStoreUpdater_r:
+jmp lblStoreUpdater
+nop
+nop
+lblStoreUpdaterRet:
+
+//"RiseOfVenice.exe"+2F1B5A:
+aobMoneyUpdater:
+aobMoneyUpdater_r:
+jmp lblMoneyUpdater
+nop
+lblMoneyUpdaterRet:
+
+//"RiseOfVenice.exe"+2E3E54:
+aobXPBlockGetter:
+aobXPBlockGetter_r:
+jmp lblXPBlockGetter
+lblXPBlockGetterRet:
+
+[DISABLE]
+//"RiseOfVenice.exe"+2E3E54:
+aobXPBlockGetter_r:
+//Alt: mov ecx,[ecx+04]
+//Alt: test ecx,ecx
+db 8B 49 04 85 C9
+
+unregistersymbol(aobXPBlockGetter_r)
+
+//"RiseOfVenice.exe"+2F1B5A:
+aobMoneyUpdater_r:
+//Alt: mov [ecx+0000054C],esi
+db 89 B1 4C 05 00 00
+
+unregistersymbol(aobMoneyUpdater_r)
+
+unregistersymbol(bEnableMinimumMoney)
+unregistersymbol(iMinimumMoney)
+
+//"RiseOfVenice.exe"+33DA22:
+aobStoreUpdater_r:
+//Alt: mov edx,[ebx+eax*4+000000B4]
+db 8B 94 83 B4 00 00 00
+
+unregistersymbol(aobStoreUpdater_r)
+
+//"RiseOfVenice.exe"+35D7A9:
+aobBattleTicker_r:
+//Alt: movzx eax,byte ptr [esi+4B]
+//Alt: add ebx,[esi+38]
+db 0F B6 46 4B 03 5E 38
+
+unregistersymbol(aobBattleTicker_r)
+
+dealloc(newmem)
+
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>35</ID>
+          <Description>"bEnableXPMaxer"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>bEnableXPMaxer</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>38</ID>
+          <Description>"bEnableMinimumMoney"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>bEnableMinimumMoney</Address>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>39</ID>
+              <Description>"iMinimumMoney"</Description>
+              <Color>FF0000</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>iMinimumMoney</Address>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>36</ID>
+          <Description>"bEnableStoreController"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>bEnableStoreController</Address>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>37</ID>
+              <Description>"iStoreControllerAmount"</Description>
+              <Color>FF0000</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>iStoreControllerAmount</Address>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>126</ID>
+          <Description>"bEnableBattleTicker"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>bEnableBattleTicker</Address>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>127</ID>
+              <Description>"bEnableBattleTickerCrewFix"</Description>
+              <Color>008000</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>bEnableBattleTickerCrewFix</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>128</ID>
+              <Description>"bEnableBattleTickerHullFix"</Description>
+              <Color>008000</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>bEnableBattleTickerHullFix</Address>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+  </CheatEntries>
+</CheatTable>

@@ -1,0 +1,751 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="20">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>2</ID>
+      <Description>"Character Creater Upgrade Stats"</Description>
+      <LastState/>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>[ENABLE]
+aobscan(PawnCollector,8B 46 64 8B C8) // should be unique
+alloc(newmem,$1000)
+globalalloc(bPawn,9)
+
+label(code)
+label(return)
+
+newmem:
+
+code:
+  mov eax,[esi+64]
+  mov ecx,eax
+  mov [bPawn], esi
+  //Let's max those stats
+  luacall(myTimer.Enabled = true)
+  jmp return
+
+PawnCollector:
+  jmp code
+return:
+registersymbol(PawnCollector)
+
+[DISABLE]
+
+luacall(myTimer.Enabled = false)
+
+PawnCollector:
+  db 8B 46 64 8B C8
+
+unregistersymbol(PawnCollector)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: 0FE86AF8
+
+0FE86ADC: E8 07 F0 00 00     -  call Verse:RaceProperties:get_Animal
+0FE86AE1: 83 C4 10           -  add esp,10
+0FE86AE4: 85 C0              -  test eax,eax
+0FE86AE6: 74 0E              -  je Verse:PawnGenerator:GeneratePawn+73e
+0FE86AE8: 83 EC 0C           -  sub esp,0C
+0FE86AEB: 56                 -  push esi
+0FE86AEC: 39 36              -  cmp [esi],esi
+0FE86AEE: E8 D1 00 00 00     -  call 0FE86BC4
+0FE86AF3: 83 C4 10           -  add esp,10
+0FE86AF6: 39 36              -  cmp [esi],esi
+// ---------- INJECTING HERE ----------
+0FE86AF8: 8B 46 64           -  mov eax,[esi+64]
+0FE86AFB: 8B C8              -  mov ecx,eax
+// ---------- DONE INJECTING  ----------
+0FE86AFD: 39 09              -  cmp [ecx],ecx
+0FE86AFF: 0F B6 40 24        -  movzx eax,byte ptr [eax+24]
+0FE86B03: 85 C0              -  test eax,eax
+0FE86B05: 0F 94 C0           -  sete al
+0FE86B08: 0F B6 C0           -  movzx eax,al
+0FE86B0B: 85 C0              -  test eax,eax
+0FE86B0D: 0F 84 55 00 00 00  -  je Verse:PawnGenerator:GeneratePawn+7b0
+0FE86B13: 83 7D 14 0A        -  cmp dword ptr [ebp+14],0A
+0FE86B17: 7D 1B              -  jnl Verse:PawnGenerator:GeneratePawn+77c
+0FE86B19: 8B 45 14           -  mov eax,[ebp+14]
+}
+</AssemblerScript>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>5</ID>
+      <Description>"Boost Exp Gain"</Description>
+      <Options moHideChildren="1"/>
+      <LastState/>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>[ENABLE]
+
+aobscan(ExpBoost,D9 45 0C DE C1 D9 5F 18) // should be unique
+alloc(newmem,$1000)
+globalalloc(vBoost,8)
+
+label(code)
+label(return)
+label(Negate)
+
+newmem:
+
+Negate:
+dd (float)0
+
+vBoost:
+dd (float)10
+
+code:
+  fld dword ptr [ebp+0C]
+  cmp [ebp+0c], (float)0
+  jg NoChange
+  //We dont want skill to deteriorate, so we simply make the change 0
+  fld dword ptr [Negate]
+  fmulp st(1),st(0)
+NoChange:
+  fld dword ptr [vBoost]
+  fmulp st(1),st(0)
+  faddp
+  jmp return
+
+ExpBoost:
+  jmp code
+return:
+registersymbol(ExpBoost)
+
+[DISABLE]
+
+ExpBoost:
+  db D9 45 0C DE C1
+
+unregistersymbol(ExpBoost)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: 2245E596
+
+2245E57A: DD 5D E8              -  fstp qword ptr [ebp-18]
+2245E57D: 83 EC 0C              -  sub esp,0C
+2245E580: 57                    -  push edi
+2245E581: E8 FA 54 04 00        -  call RimWorld:SkillRecord:get_LearningFactor
+2245E586: 83 C4 10              -  add esp,10
+2245E589: DD 45 E8              -  fld qword ptr [ebp-18]
+2245E58C: D9 C9                 -  fxch st(1)
+2245E58E: DE C9                 -  fmulp st(1),st(0)
+2245E590: D9 5D 0C              -  fstp dword ptr [ebp+0C]
+2245E593: D9 47 18              -  fld dword ptr [edi+18]
+// ---------- INJECTING HERE ----------
+2245E596: D9 45 0C              -  fld dword ptr [ebp+0C]
+2245E599: DE C1                 -  faddp 
+// ---------- DONE INJECTING  ----------
+2245E59B: D9 5F 18              -  fstp dword ptr [edi+18]
+2245E59E: 8B 47 10              -  mov eax,[edi+10]
+2245E5A1: 3D 14 00 00 00        -  cmp eax,00000014
+2245E5A6: 0F 85 F9 00 00 00     -  jne RimWorld:SkillRecord:Learn+1f5
+2245E5AC: D9 47 18              -  fld dword ptr [edi+18]
+2245E5AF: D9 EE                 -  fldz 
+2245E5B1: 8B 47 10              -  mov eax,[edi+10]
+2245E5B4: 69 C0 E8 03 00 00     -  imul eax,eax,000003E8
+2245E5BA: 05 E8 03 00 00        -  add eax,000003E8
+2245E5BF: 50                    -  push eax
+}
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>6</ID>
+          <Description>"Boost"</Description>
+          <LastState Value="1000" RealAddress="08010000"/>
+          <VariableType>Float</VariableType>
+          <Address>vBoost</Address>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>8</ID>
+      <Description>"Permanent Godly Skill Bonus"</Description>
+      <LastState Activated="1"/>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>[ENABLE]
+
+aobscan(SkillUseMod,8B 40 10 89 45 FC 8B 4D) // should be unique
+alloc(newmem,$1000)
+
+label(code)
+label(return)
+
+newmem:
+
+code:
+  mov [eax+10], 3E7
+  mov eax,[eax+10]
+  mov [ebp-04],eax
+  jmp return
+
+SkillUseMod:
+  jmp code
+  nop
+return:
+registersymbol(SkillUseMod)
+
+[DISABLE]
+
+SkillUseMod:
+  db 8B 40 10 89 45 FC
+
+unregistersymbol(SkillUseMod)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: 224A3845
+
+224A3827: 8B 45 0C           -  mov eax,[ebp+0C]
+224A382A: 8B 80 8C 00 00 00  -  mov eax,[eax+0000008C]
+224A3830: 8B 4D 08           -  mov ecx,[ebp+08]
+224A3833: 8B 49 08           -  mov ecx,[ecx+08]
+224A3836: 83 EC 08           -  sub esp,08
+224A3839: 51                 -  push ecx
+224A383A: 50                 -  push eax
+224A383B: 39 00              -  cmp [eax],eax
+224A383D: E8 6E CA FF FF     -  call RimWorld:Pawn_SkillTracker:GetSkill
+224A3842: 83 C4 10           -  add esp,10
+// ---------- INJECTING HERE ----------
+224A3845: 8B 40 10           -  mov eax,[eax+10]
+224A3848: 89 45 FC           -  mov [ebp-04],eax
+// ---------- DONE INJECTING  ----------
+224A384B: 8B 4D 08           -  mov ecx,[ebp+08]
+224A384E: D9 41 10           -  fld dword ptr [ecx+10]
+224A3851: D9 41 14           -  fld dword ptr [ecx+14]
+224A3854: 50                 -  push eax
+224A3855: DB 04 24           -  fild dword ptr [esp]
+224A3858: D9 1C 24           -  fstp dword ptr [esp]
+224A385B: D9 04 24           -  fld dword ptr [esp]
+224A385E: 83 C4 04           -  add esp,04
+224A3861: DE C9              -  fmulp st(1),st(0)
+224A3863: DE C1              -  faddp 
+}
+</AssemblerScript>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>9</ID>
+      <Description>"Temporary Godly Skill Bonus"</Description>
+      <LastState/>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>[ENABLE]
+
+aobscan(SkillUseMod,8B 40 10 89 45 FC 8B 4D) // should be unique
+alloc(newmem,$1000)
+
+label(code)
+label(return)
+
+newmem:
+
+code:
+  mov [ebp-04], 3E7
+  jmp return
+
+SkillUseMod:
+  jmp code
+  nop
+return:
+registersymbol(SkillUseMod)
+
+[DISABLE]
+
+SkillUseMod:
+  db 8B 40 10 89 45 FC
+
+unregistersymbol(SkillUseMod)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: 224A3845
+
+224A3827: 8B 45 0C           -  mov eax,[ebp+0C]
+224A382A: 8B 80 8C 00 00 00  -  mov eax,[eax+0000008C]
+224A3830: 8B 4D 08           -  mov ecx,[ebp+08]
+224A3833: 8B 49 08           -  mov ecx,[ecx+08]
+224A3836: 83 EC 08           -  sub esp,08
+224A3839: 51                 -  push ecx
+224A383A: 50                 -  push eax
+224A383B: 39 00              -  cmp [eax],eax
+224A383D: E8 6E CA FF FF     -  call RimWorld:Pawn_SkillTracker:GetSkill
+224A3842: 83 C4 10           -  add esp,10
+// ---------- INJECTING HERE ----------
+224A3845: 8B 40 10           -  mov eax,[eax+10]
+224A3848: 89 45 FC           -  mov [ebp-04],eax
+// ---------- DONE INJECTING  ----------
+224A384B: 8B 4D 08           -  mov ecx,[ebp+08]
+224A384E: D9 41 10           -  fld dword ptr [ecx+10]
+224A3851: D9 41 14           -  fld dword ptr [ecx+14]
+224A3854: 50                 -  push eax
+224A3855: DB 04 24           -  fild dword ptr [esp]
+224A3858: D9 1C 24           -  fstp dword ptr [esp]
+224A385B: D9 04 24           -  fld dword ptr [esp]
+224A385E: 83 C4 04           -  add esp,04
+224A3861: DE C9              -  fmulp st(1),st(0)
+224A3863: DE C1              -  faddp 
+}
+</AssemblerScript>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>11</ID>
+      <Description>"FullFill Colonist Needs"</Description>
+      <LastState Activated="1"/>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>[ENABLE]
+
+aobscan(Needs,D9 40 14 C9 C3 00 00 55 8B EC 83 EC 08) // should be unique
+alloc(newmem,$1000)
+
+label(code)
+label(return)
+
+newmem:
+
+code:
+  mov [eax+14], (float)1
+  fld dword ptr [eax+14]
+  leave 
+  ret 
+  jmp return
+
+Needs:
+  jmp code
+return:
+registersymbol(Needs)
+
+[DISABLE]
+
+Needs:
+  db D9 40 14 C9 C3
+
+unregistersymbol(Needs)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: 1243BFC1
+
+1243BFA3: 76 0E              -  jna 1243BFB3
+1243BFA5: E9 7E 40 CF F1     -  jmp 04130028
+1243BFAA: 00 00              -  add [eax],al
+1243BFAC: 68 98 6D 76 0E     -  push 0E766D98
+1243BFB1: E9 72 40 CF F1     -  jmp 04130028
+1243BFB6: 00 00              -  add [eax],al
+1243BFB8: 55                 -  push ebp
+1243BFB9: 8B EC              -  mov ebp,esp
+1243BFBB: 83 EC 08           -  sub esp,08
+1243BFBE: 8B 45 08           -  mov eax,[ebp+08]
+// ---------- INJECTING HERE ----------
+1243BFC1: D9 40 14           -  fld dword ptr [eax+14]
+1243BFC4: C9                 -  leave 
+1243BFC5: C3                 -  ret 
+// ---------- DONE INJECTING  ----------
+1243BFC6: 00 00              -  add [eax],al
+1243BFC8: 55                 -  push ebp
+1243BFC9: 8B EC              -  mov ebp,esp
+1243BFCB: 83 EC 08           -  sub esp,08
+1243BFCE: 8B 45 08           -  mov eax,[ebp+08]
+1243BFD1: 8B 40 0C           -  mov eax,[eax+0C]
+1243BFD4: 8B C8              -  mov ecx,eax
+1243BFD6: 39 09              -  cmp [ecx],ecx
+1243BFD8: 8B 40 08           -  mov eax,[eax+08]
+1243BFDB: 8B 80 10 01 00 00  -  mov eax,[eax+00000110]
+}
+</AssemblerScript>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>14</ID>
+      <Description>"Fast Movement"</Description>
+      <LastState Activated="1"/>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>[ENABLE]
+
+aobscan(Speed,89 5F 40 89 5F 3C) // should be unique
+alloc(newmem,$1000)
+
+label(code)
+label(return)
+
+newmem:
+
+code:
+  mov [edi+40],ebx
+  push ecx
+  mov ecx, [edi+8]
+  cmp [ecx+8c],0
+  je NotUs
+  mov ecx, [ecx+40]
+  mov ecx, [ecx+24]
+  cmp [ecx+6c],0
+  jne NotUs //These are raiders, if you wanted to stop them, you could set it to a number
+  mov [edi+3C],0
+  pop ecx
+  jmp return
+NotUs:
+  pop ecx
+  mov [edi+3C],ebx
+  jmp return
+
+Speed:
+  jmp code
+  nop
+return:
+registersymbol(Speed)
+
+[DISABLE]
+
+Speed:
+  db 89 5F 40 89 5F 3C
+
+unregistersymbol(Speed)
+dealloc(newmem)
+</AssemblerScript>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>18</ID>
+      <Description>"PowerBoost"</Description>
+      <LastState Activated="1"/>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>[ENABLE]
+
+aobscan(Power,D9 40 2C D9 5D F0) // should be unique
+alloc(newmem,$1000)
+
+label(code)
+label(return)
+label(vPower)
+
+newmem:
+
+vPower:
+dd (float)1000
+
+code:
+  fld dword ptr [eax+2C]
+  fld dword ptr [vPower]
+  faddp st(1), st(0)
+  fstp dword ptr [ebp-10]
+  jmp return
+
+Power:
+  jmp code
+  nop
+return:
+registersymbol(Power)
+
+[DISABLE]
+
+Power:
+  db D9 40 2C D9 5D F0
+
+unregistersymbol(Power)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: 371C2B61
+
+371C2B48: 8B 47 10              -  mov eax,[edi+10]
+371C2B4B: 83 EC 08              -  sub esp,08
+371C2B4E: 56                    -  push esi
+371C2B4F: 50                    -  push eax
+371C2B50: 39 00                 -  cmp [eax],eax
+371C2B52: E8 69 EC 3E CD        -  call System.Collections.Generic:List`1:get_Item
+371C2B57: 83 C4 10              -  add esp,10
+371C2B5A: DD 45 E8              -  fld qword ptr [ebp-18]
+371C2B5D: 8B C8                 -  mov ecx,eax
+371C2B5F: 39 09                 -  cmp [ecx],ecx
+// ---------- INJECTING HERE ----------
+371C2B61: D9 40 2C              -  fld dword ptr [eax+2C]
+371C2B64: D9 5D F0              -  fstp dword ptr [ebp-10]
+// ---------- DONE INJECTING  ----------
+371C2B67: D9 45 F0              -  fld dword ptr [ebp-10]
+371C2B6A: B8 08 33 F9 03        -  mov eax,03F93308
+371C2B6F: D9 00                 -  fld dword ptr [eax]
+371C2B71: DE C9                 -  fmulp st(1),st(0)
+371C2B73: D9 5D F0              -  fstp dword ptr [ebp-10]
+371C2B76: D9 45 F0              -  fld dword ptr [ebp-10]
+371C2B79: DE C1                 -  faddp 
+371C2B7B: D9 5D F4              -  fstp dword ptr [ebp-0C]
+371C2B7E: 46                    -  inc esi
+371C2B7F: 8B 47 10              -  mov eax,[edi+10]
+}
+</AssemblerScript>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>23</ID>
+      <Description>"Stackable Items in Storage have defined stack size"</Description>
+      <Options moHideChildren="1"/>
+      <LastState Activated="1"/>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>[ENABLE]
+
+aobscan(StackableItemEdit,8B 55 D8 8B 43 34) // should be unique
+alloc(newmem,$1000)
+globalalloc(StackValue,8)
+label(code)
+label(return)
+label(Ignore)
+newmem:
+
+StackValue:
+dd #300
+
+code:
+  mov edx,[ebp-28]
+  push ecx
+  mov ecx, [ebx+8]
+  cmp [ecx+134], 1
+  je Ignore
+  mov [ecx+134], #99999
+  mov ecx, [StackValue]
+  mov [ebx+34], ecx
+Ignore:
+  pop ecx
+  mov eax,[ebx+34]
+  jmp return
+
+StackableItemEdit:
+  jmp code
+  nop
+return:
+registersymbol(StackableItemEdit)
+
+[DISABLE]
+
+StackableItemEdit:
+  db 8B 55 D8 8B 43 34
+
+unregistersymbol(StackableItemEdit)
+dealloc(newmem)
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>33</ID>
+          <Description>"Stack number"</Description>
+          <LastState Value="300" RealAddress="08010010"/>
+          <VariableType>4 Bytes</VariableType>
+          <Address>StackValue</Address>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>26</ID>
+      <Description>"Always Carry 500 of Item (Buggy, lets a Pawn perform multiple jobs without returning for items, drops resources everywhere)"</Description>
+      <LastState/>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>[ENABLE]
+
+aobscan(CarriedItem,8B 40 34 89 45 BC) // should be unique
+alloc(newmem,$1000)
+
+label(code)
+label(return)
+
+newmem:
+
+code:
+  mov [eax+34], #500
+  mov eax,[eax+34]
+  mov [ebp-44],eax
+  jmp return
+
+CarriedItem:
+  jmp code
+  nop
+return:
+registersymbol(CarriedItem)
+
+[DISABLE]
+
+CarriedItem:
+  db 8B 40 34 89 45 BC
+
+unregistersymbol(CarriedItem)
+dealloc(newmem)
+</AssemblerScript>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>29</ID>
+      <Description>"Jobs for PawnCollector (Allows one to see all of the pawns in the colony for structure dissector)"</Description>
+      <LastState/>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>[ENABLE]
+aobscan(bPawn,8B 40 5C 85 C0 74 0B) // should be unique
+alloc(newmem,$1000)
+
+label(code)
+label(return)
+
+newmem:
+
+code:
+  mov eax,[eax+5C]
+  test eax,eax
+  jmp return
+
+bPawn:
+  jmp code
+return:
+registersymbol(bPawn)
+
+[DISABLE]
+
+bPawn:
+  db 8B 40 5C 85 C0
+
+unregistersymbol(bPawn)
+dealloc(newmem)
+</AssemblerScript>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>31</ID>
+      <Description>"Instant Work/Jobs/Bills"</Description>
+      <LastState Activated="1"/>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>[ENABLE]
+aobscan(doWorkQuickly,D9 58 2C 85 DB 74 09) // should be unique
+alloc(newmem,$1000)
+
+label(code)
+label(return)
+
+newmem:
+
+code:
+  fsub st(0),st(0)
+  fstp dword ptr [eax+2C]
+  test ebx,ebx
+  jmp return
+
+doWorkQuickly:
+  jmp code
+return:
+registersymbol(doWorkQuickly)
+
+[DISABLE]
+
+doWorkQuickly:
+  db D9 58 2C 85 DB
+
+unregistersymbol(doWorkQuickly)
+dealloc(newmem)
+</AssemblerScript>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>32</ID>
+      <Description>"Crafted Items are Legendary"</Description>
+      <LastState Activated="1"/>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>[ENABLE]
+aobscan(sQuality,88 43 10 8B 43 08) // should be unique
+alloc(newmem,$1000)
+
+label(code)
+label(return)
+
+newmem:
+
+code:
+  mov [ebx+10],8
+  mov eax,[ebx+08]
+  jmp return
+
+sQuality:
+  jmp code
+  nop
+return:
+registersymbol(sQuality)
+
+[DISABLE]
+
+sQuality:
+  db 88 43 10 8B 43 08
+
+unregistersymbol(sQuality)
+dealloc(newmem)
+</AssemblerScript>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols>
+    <SymbolEntry>
+      <Name>cPawn</Name>
+      <Address>07F90000</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>bPawn</Name>
+      <Address>07F90010</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>tPawn</Name>
+      <Address>07BE0000</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>vBoost</Name>
+      <Address>08010000</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>bSpeed</Name>
+      <Address>00F50000</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>Needs</Name>
+      <Address> 0FEDB191</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>Power</Name>
+      <Address> 0FF0ADF9</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>doWorkQuickly</Name>
+      <Address> 0FF085E5</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>Speed</Name>
+      <Address> 0FF03F87</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>SkillUseMod</Name>
+      <Address> 35D7DF6D</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>sQuality</Name>
+      <Address> 35D6BA4E</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>StackValue</Name>
+      <Address>08010010</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>StackableItemEdit</Name>
+      <Address> 0FEF0961</Address>
+    </SymbolEntry>
+  </UserdefinedSymbols>
+  <LuaScript>myTimer = createTimer(nil, false)
+myTimer.Interval = 500
+
+lastPawn = 0
+
+myTimer.OnTimer = function(UpdatePawn)
+  if readPointer("bPawn") ~= nil and lastPawn ~= readPointer("bPawn") then
+    lastPawn = readPointer("bPawn")
+    for i=0,11,1 do
+       _o = 16+i*4
+       writeInteger("[[[[[bPawn]+8C]+C]+8]+"..string.format("%X",_o).."]+10",20)
+       writeInteger("[[[[[bPawn]+8C]+C]+8]+"..string.format("%X",_o).."]+14",2)
+         writeFloat("[[[[[bPawn]+8C]+C]+8]+"..string.format("%X",_o).."]+18",1000)
+    end
+  end
+end
+
+myTimer2 = createTimer(nil, false)
+myTimer2.Interval = 500
+
+myTimer2.OnTimer = function(Needs)
+  if readPointer("tPawn") ~= nil then
+    for i=0,6,1 do
+       _o = 16+i*4
+      writeFloat("[[[[[tPawn]+9C]+C]+8]+"..string.format("%X",_o).."]+14",1)
+    end
+  end
+end
+</LuaScript>
+</CheatTable>

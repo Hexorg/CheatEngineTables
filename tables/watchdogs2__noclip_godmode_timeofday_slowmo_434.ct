@@ -1,0 +1,1635 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="24">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>306</ID>
+      <Description>"god mode"</Description>
+      <Options moHideChildren="1"/>
+      <LastState/>
+      <Color>FF0000</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>[ENABLE]
+//code from here to '[DISABLE]' will be used to enable the cheat
+{$lua}
+OpenProcess("WatchDogs2.exe")
+{$asm}
+
+aobscanmodule(healthret,Disrupt_64.dll,48 8B 45 20 48 8D 55 38 48 8D 4D 30 48 89 45 38 01 78 20)
+
+aobscanmodule(getplayerid,Disrupt_64.dll,C1 E8 04 A8 01 0F 85 AE 00 00 00 E8 * * * * 48 89 D9 48 89 C2 E8 * * * * 48 85 C0 74 35 48 89 C1)
+alloc(newmem2,$1000,getplayerid) //"Disrupt_64.dll"+63941DB)
+label(return2)
+registersymbol(PlayerHealthPtr)
+label(PlayerHealthPtr)
+
+newmem2:
+shr eax,04
+test al,01
+jne @f
+cmp [rsp+28],healthret
+jne @f
+mov [PlayerHealthPtr],rbx
+@@:
+  test al,01
+  jmp return2
+PlayerHealthPtr:
+dd 0
+getplayerid:
+  jmp newmem2
+return2:
+registersymbol(getplayerid)
+
+
+
+
+
+aobscanmodule(health,Disrupt_64.dll,F3 0F 10 41 18 C3 DF)
+alloc(newmem,$1000,health) //"Disrupt_64.dll"+4799F60)
+
+label(code)
+label(return)
+
+label(pPlayerHealth)
+registersymbol(pPlayerHealth)
+
+newmem:
+
+code:
+cmp [PlayerHealthPtr],rbx
+jne @f
+mov [pPlayerHealth],rcx
+//fld [rcx+1c]
+//fstp [rcx+18]
+@@:
+  movss xmm0,[rcx+18]
+  jmp return
+
+  ///
+  pPlayerHealth:
+  ///
+
+health:
+  jmp newmem
+return:
+registersymbol(health)
+
+///********************************************///
+
+aobscanmodule(healrhWriteOnCriticalHitAOB,Disrupt_64.dll,F3 0F 10 51 18 48 89 CB 0F 2E CA)
+registersymbol(healrhWriteOnCriticalHitAOB)
+
+alloc(newmem6,2048,healrhWriteOnCriticalHitAOB) //"Disrupt_64.dll"+6167854)
+label(returnhere6)
+label(originalcode6)
+label(exit6)
+
+newmem6: //this is allocated memory, you have read,write,execute access
+//place your code here
+push rbx
+mov rbx,[pPlayerHealth]
+cmp rbx,rcx
+pop rbx
+jne @f
+movss xmm1,[rcx+1c]
+movss xmm6,xmm1
+
+originalcode6:
+movss xmm2,[rcx+18]
+
+exit6:
+jmp returnhere6
+
+///
+
+healrhWriteOnCriticalHitAOB: //"Disrupt_64.dll"+6167854:
+jmp newmem6
+returnhere6:
+
+
+[DISABLE]
+
+getplayerid:
+  db C1 E8 04 A8 01
+unregistersymbol(getplayerid)
+unregistersymbol(PlayerHealthPtr)
+dealloc(newmem2)
+
+{
+// ORIGINAL CODE - INJECTION POINT: "Disrupt_64.dll"+63941DB
+
+"Disrupt_64.dll"+63941B5: 48 89 74 24 10                                -  mov [rsp+10],rsi
+"Disrupt_64.dll"+63941BA: 57                                            -  push rdi
+"Disrupt_64.dll"+63941BB: 48 83 EC 20                                   -  sub rsp,20
+"Disrupt_64.dll"+63941BF: 48 8B 01                                      -  mov rax,[rcx]
+"Disrupt_64.dll"+63941C2: 48 89 D6                                      -  mov rsi,rdx
+"Disrupt_64.dll"+63941C5: 48 89 CF                                      -  mov rdi,rcx
+"Disrupt_64.dll"+63941C8: 48 8B 58 10                                   -  mov rbx,[rax+10]
+"Disrupt_64.dll"+63941CC: 48 85 DB                                      -  test rbx,rbx
+"Disrupt_64.dll"+63941CF: 0F 84 BE 00 00 00                             -  je Disrupt_64.dll+6394293
+"Disrupt_64.dll"+63941D5: 8B 83 A0 00 00 00                             -  mov eax,[rbx+000000A0]
+// ---------- INJECTING HERE ----------
+"Disrupt_64.dll"+63941DB: C1 E8 04                                      -  shr eax,04
+"Disrupt_64.dll"+63941DE: A8 01                                         -  test al,01
+// ---------- DONE INJECTING  ----------
+"Disrupt_64.dll"+63941E0: 0F 85 AD 00 00 00                             -  jne Disrupt_64.dll+6394293
+"Disrupt_64.dll"+63941E6: E8 71 CD 4B FE                                -  call Disrupt_64.dll+4850F5C
+"Disrupt_64.dll"+63941EB: 48 89 D9                                      -  mov rcx,rbx
+"Disrupt_64.dll"+63941EE: 48 89 C2                                      -  mov rdx,rax
+"Disrupt_64.dll"+63941F1: E8 5A 3C B3 FF                                -  call Disrupt_64.dll+5EC7E50
+"Disrupt_64.dll"+63941F6: 48 85 C0                                      -  test rax,rax
+"Disrupt_64.dll"+63941F9: 74 37                                         -  je Disrupt_64.dll+6394232
+"Disrupt_64.dll"+63941FB: 48 89 C1                                      -  mov rcx,rax
+"Disrupt_64.dll"+63941FE: E8 2F ED 39 FF                                -  call Disrupt_64.dll+5732F32
+"Disrupt_64.dll"+6394203: 48 89 C1                                      -  mov rcx,rax
+}
+
+health:
+  db F3 0F 10 41 18
+
+  unregistersymbol(pPlayerHealth)
+unregistersymbol(health)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: "Disrupt_64.dll"+4799F60
+
+"Disrupt_64.dll"+4799F50: 48 8D 05 E9 85 4C FF                       -  lea rax,[Disrupt_64.dll+3C62540]
+"Disrupt_64.dll"+4799F57: C3                                         -  ret
+"Disrupt_64.dll"+4799F58: CC                                         -  int 3
+"Disrupt_64.dll"+4799F59: CC                                         -  int 3
+"Disrupt_64.dll"+4799F5A: CC                                         -  int 3
+"Disrupt_64.dll"+4799F5B: CC                                         -  int 3
+"Disrupt_64.dll"+4799F5C: CC                                         -  int 3
+"Disrupt_64.dll"+4799F5D: CC                                         -  int 3
+"Disrupt_64.dll"+4799F5E: CC                                         -  int 3
+"Disrupt_64.dll"+4799F5F: CC                                         -  int 3
+// ---------- INJECTING HERE ----------
+"Disrupt_64.dll"+4799F60: F3 0F 10 41 18                             -  movss xmm0,[rcx+18]
+// ---------- DONE INJECTING  ----------
+"Disrupt_64.dll"+4799F65: C3                                         -  ret
+"Disrupt_64.dll"+4799F66: CC                                         -  int 3
+"Disrupt_64.dll"+4799F67: CC                                         -  int 3
+"Disrupt_64.dll"+4799F68: 48 89 D0                                   -  mov rax,rdx
+"Disrupt_64.dll"+4799F6B: 8B 51 50                                   -  mov edx,[rcx+50]
+"Disrupt_64.dll"+4799F6E: 4C 89 C1                                   -  mov rcx,r8
+"Disrupt_64.dll"+4799F71: 48 01 C2                                   -  add rdx,rax
+"Disrupt_64.dll"+4799F74: E9 0E 1B 87 01                             -  jmp Disrupt_64.dll+600BA87
+"Disrupt_64.dll"+4799F79: CC                                         -  int 3
+"Disrupt_64.dll"+4799F7A: CC                                         -  int 3
+}
+
+///*********************************///
+
+dealloc(newmem6)
+healrhWriteOnCriticalHitAOB: //"Disrupt_64.dll"+6167854:
+db F3 0F 10 51 18
+//Alt: movss xmm2,[rcx+18]
+unregistersymbol(healrhWriteOnCriticalHitAOB)
+
+</AssemblerScript>
+      <Hotkeys>
+        <Hotkey>
+          <Action>Activate</Action>
+          <Keys>
+            <Key>123</Key>
+          </Keys>
+          <ID>0</ID>
+        </Hotkey>
+      </Hotkeys>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>413</ID>
+          <Description>"modified STN's Infinite Health script"</Description>
+          <LastState Value="" RealAddress="00000000"/>
+          <Color>808080</Color>
+          <GroupHeader>1</GroupHeader>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>310</ID>
+          <Description>"health"</Description>
+          <Color>0000FF</Color>
+          <VariableType>Float</VariableType>
+          <Address>pPlayerHealth</Address>
+          <Offsets>
+            <Offset>18</Offset>
+          </Offsets>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>311</ID>
+              <Description>"health max"</Description>
+              <Color>0000FF</Color>
+              <VariableType>Float</VariableType>
+              <Address>+4</Address>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>350</ID>
+      <Description>"no-clip .3"</Description>
+      <Options moHideChildren="1"/>
+      <LastState/>
+      <Color>FF0000</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>[ENABLE]
+//code from here to '[DISABLE]' will be used to enable the cheat
+define(noclipbasespeed,(float)0.4)
+define(shiftkeyspeedmultiplier,(float)8)
+define(altkeyspeedmultiplier,(float)0.3)
+
+alloc(values_noclip,1024,"Disrupt_64.dll")
+label(pCoords)
+registersymbol(pCoords)
+label(pMovement)
+registersymbol(pMovement)
+label(aNvY)
+registersymbol(aNvY)
+label(aNvX)
+registersymbol(aNvX)
+label(pNv)
+registersymbol(pNv)
+label(fMovement)
+registersymbol(fMovement)
+label(bNoClip)
+registersymbol(bNoClip)
+label(pPlayerCoordBase1)
+registersymbol(pPlayerCoordBase1)
+label(fNoClipSpeedMultiplier)
+registersymbol(fNoClipSpeedMultiplier)
+label(fZDirection)
+registersymbol(fZDirection)
+
+values_noclip:
+pCoords:
+dq 0
+pMovement:
+dq 0
+
+aNvY:
+dq 0
+dq 0
+aNvX:
+dq 0
+dq 0
+
+pNv:
+dq 0
+fMovement:
+dq 0
+
+bNoClip:
+dd 0
+
+pPlayerCoordBase1:
+dq 0
+
+fNoClipSpeedMultiplier:
+dd (float)1
+fZDirection:
+dd 0
+
+///***********************************************///
+
+aobscanmodule(movementWriteAOB,Disrupt_64.dll,8B 02 89 41 38 8B 42 04 89 41 3C C3 E0 8B 02 89 41 40 C3)
+registersymbol(movementWriteAOB)
+
+alloc(newmem,2048,movementWriteAOB) //"Disrupt_64.dll"+6111070)
+label(returnhere)
+label(originalcode)
+label(exit)
+
+newmem: //this is allocated memory, you have read,write,execute access
+//place your code here
+mov [pMovement],rcx
+pushfq
+push rbx
+mov rbx,fMovement
+
+mov eax,[rdx+4]
+cmp eax,b4222169
+jne @f
+xor eax,eax
+
+@@:
+mov [rbx],eax
+
+mov eax,[rdx]
+cmp eax,b33bbd2e
+jne @f
+xor eax,eax
+
+@@:
+mov [rbx+4],eax
+
+pop rbx
+popfq
+
+originalcode:
+mov eax,[rdx]
+mov [rcx+38],eax
+
+exit:
+jmp returnhere
+
+///
+
+movementWriteAOB: //"Disrupt_64.dll"+6111070:
+jmp newmem
+returnhere:
+
+///***********************************************///
+
+aobscanmodule(camInfoWrite1AOB,Disrupt_64.dll,48 01 C2 41 8B 00 89 02 41 8B 40 04 89 42 04 41 8B 40 08)
+registersymbol(camInfoWrite1AOB)
+
+alloc(newmem2,2048,camInfoWrite1AOB+3) //"Disrupt_64.dll"+6B2C511)
+label(returnhere2)
+label(originalcode2)
+label(exit2)
+
+newmem2: //this is allocated memory, you have read,write,execute access
+//place your code here
+mov [pNv],rdx
+push rbx
+mov rbx,aNvY
+mov eax,[r8]
+mov [rbx],eax
+mov eax,[r8+8]
+mov [rbx+4],eax
+mov eax,[r8+4]
+mov [rbx+8],eax
+/*
+mov rbx,aNvX
+mov eax,[r8+4c]
+mov [rbx],eax
+mov eax,[r8+5c]
+mov [rbx+4],eax
+*/
+
+@@:
+pop rbx
+
+originalcode2:
+mov eax,[r8]
+mov [rdx],eax
+
+exit2:
+jmp returnhere2
+
+///
+
+camInfoWrite1AOB+3: //"Disrupt_64.dll"+6B2C511:
+jmp newmem2
+returnhere2:
+
+///***********************************************///
+
+aobscanmodule(camInfoWrite2AOB,Disrupt_64.dll,F3 0F 11 72 54 8B 42 0C 0F 28 74 24)
+registersymbol(camInfoWrite2AOB)
+
+alloc(newmem6,2048,camInfoWrite2AOB) //"Disrupt_64.dll"+6B2C5AF)
+label(returnhere6)
+label(originalcode6)
+label(exit6)
+
+newmem6: //this is allocated memory, you have read,write,execute access
+//place your code here
+push rbx
+mov rbx,aNvX
+mov eax,[rdx+4c]
+mov [rbx],eax
+movss [rbx+4],xmm6
+
+@@:
+pop rbx
+
+originalcode6:
+movss [rdx+54],xmm6
+
+exit6:
+jmp returnhere6
+
+///
+
+camInfoWrite2AOB: //"Disrupt_64.dll"+6B2C5AF:
+jmp newmem6
+returnhere6:
+
+///***********************************************///
+
+aobscanmodule(characterCoordsWriteAOB,Disrupt_64.dll,8B 5C 24 48 0F 29 47 70)
+registersymbol(characterCoordsWriteAOB)
+
+alloc(newmem11,2048,characterCoordsWriteAOB) //"Disrupt_64.dll"+68DB95A)
+label(returnhere11)
+label(originalcode11)
+label(exit11)
+
+newmem11: //this is allocated memory, you have read,write,execute access
+//place your code here
+//player check
+push rsi
+mov rsi,[pCoords]
+cmp rdi,rsi
+pop rsi
+jne originalcode11
+
+@@:
+cmp byte ptr [bNoClip],1
+jne originalcode11
+
+//freeze coord
+movaps xmm0,[rdi+70]
+
+//store registers, xmms
+push rax
+push r8
+push r9
+sub rsp,10
+movdqu dqword [rsp],xmm3
+sub rsp,10
+movdqu dqword [rsp],xmm4
+
+//do y
+//get y movement
+mov r8,fMovement
+test r8,r8
+jz @f
+movss xmm4,[r8]
+shufps xmm4,xmm4,00 //broadcast
+
+//apply speed
+mov eax,noclipbasespeed
+movd xmm3,eax
+shufps xmm3,xmm3,00 //broadcast
+mulps xmm4,xmm3
+movss xmm3,[fNoClipSpeedMultiplier]
+shufps xmm3,xmm3,00 //broadcast
+mulps xmm4,xmm3
+
+//apply vector
+mov r9,aNvY
+test r9,r9
+jz @f
+movups xmm3,[r9]
+mulps xmm4,xmm3
+
+//update new coord
+addps xmm0,xmm4
+
+//do x
+//get x movement
+movss xmm4,[r8+4]
+shufps xmm4,xmm4,e0 //copy to 2nd
+
+//apply speed
+mov eax,noclipbasespeed
+movd xmm3,eax
+shufps xmm3,xmm3,e0 //copy to 2nd
+mulps xmm4,xmm3
+movss xmm3,[fNoClipSpeedMultiplier]
+shufps xmm3,xmm3,00 //broadcast
+mulps xmm4,xmm3
+
+//apply vector
+mov r9,aNvX
+test r9,r9
+jz @f
+movups xmm3,[r9]
+mulps xmm4,xmm3
+
+//update new coord
+addps xmm0,xmm4
+
+//do z
+//get z direction
+movss xmm4,[fZDirection]
+shufps xmm4,xmm4,c6 //place z direction to 3rd element
+
+//apply speed
+mov eax,noclipbasespeed
+movd xmm3,eax
+shufps xmm3,xmm3,00
+mulps xmm4,xmm3
+movss xmm3,[fNoClipSpeedMultiplier]
+shufps xmm3,xmm3,00 //broadcast
+mulps xmm4,xmm3
+
+//update new coord
+addps xmm0,xmm4
+
+
+@@:
+//restore registers, xmms
+//end
+movdqu xmm4,dqword [rsp]
+add rsp,10
+movdqu xmm3,dqword [rsp]
+add rsp,10
+pop r9
+pop r8
+pop rax
+
+originalcode11:
+mov ebx,[rsp+48]
+movaps [rdi+70],xmm0
+
+exit11:
+jmp returnhere11
+
+///
+
+characterCoordsWriteAOB: //"Disrupt_64.dll"+68DB95A:
+jmp newmem11
+nop
+nop
+nop
+returnhere11:
+
+///***********************************************///
+
+aobscanmodule(characterCoordsReadAOB,Disrupt_64.dll,F3 0F 10 40 70 F3 0F 10 68 74 F3 0F 10 50 78)
+registersymbol(characterCoordsReadAOB)
+
+alloc(newmem17,2048,characterCoordsReadAOB) //"Disrupt_64.dll"+68BE4DF)
+label(returnhere17)
+label(originalcode17)
+label(exit17)
+
+newmem17: //this is allocated memory, you have read,write,execute access
+//place your code here
+pushfq
+//cmp [rcx+24],100
+//jbe @f
+
+//mov rax,[rcx+18]
+//test rax,rax
+//jz @f
+//cmp [rax+3c],1
+//jne @f
+mov rax,[pPlayerCoordBase1]
+cmp rax,rcx
+mov rax,[rcx+4d0]
+jne @f
+movss xmm0,[rax+70]
+mov [pCoords],rax
+
+@@:
+popfq
+mov rax,[rcx+4d0]
+
+originalcode17:
+movss xmm0,[rax+70]
+
+exit17:
+jmp returnhere17
+
+///
+
+characterCoordsReadAOB: //"Disrupt_64.dll"+68BE4DF:
+jmp newmem17
+returnhere17:
+
+///***********************************************///
+
+aobscanmodule(playerCoordBase1Fetch2AOB,Disrupt_64.dll,48 8B 1F 89 F1 E8 ** ** ** ** 45)
+registersymbol(playerCoordBase1Fetch2AOB)
+
+alloc(newmem19,2048,playerCoordBase1Fetch2AOB) //"Disrupt_64.dll"+62C5500)
+label(returnhere19)
+label(originalcode19)
+label(exit19)
+
+newmem19: //this is allocated memory, you have read,write,execute access
+//place your code here
+//mov [pPlayerCoordBase1],rdi
+
+originalcode19:
+mov rbx,[rdi]
+mov ecx,esi
+
+exit19:
+jmp returnhere19
+
+///
+
+playerCoordBase1Fetch2AOB: //"Disrupt_64.dll"+62C5500:
+jmp newmem19
+returnhere19:
+
+///***********************************************///
+
+aobscanmodule(playerCoordBase1Fetch3AOB,Disrupt_64.dll,4C 8B 00 48 8D 54 24 70 48 89 C1 ** ** ** ** ** ** ** F3 0F 10)
+registersymbol(playerCoordBase1Fetch3AOB)
+
+alloc(newmem24,2048,playerCoordBase1Fetch3AOB) //"Disrupt_64.dll"+50D603D)
+label(returnhere24)
+label(originalcode24)
+label(exit24)
+
+newmem24: //this is allocated memory, you have read,write,execute access
+//place your code here
+mov r8,[rax+2b8]
+mov [pPlayerCoordBase1],r8
+
+originalcode24:
+mov r8,[rax]
+lea rdx,[rsp+70]
+
+exit24:
+jmp returnhere24
+
+///
+
+playerCoordBase1Fetch3AOB: //"Disrupt_64.dll"+50D603D:
+jmp newmem24
+nop
+nop
+nop
+returnhere24:
+
+///***********************************************///
+
+label(bEndThread_WatchDogs2_noClip_keylistener_mem)
+registersymbol(bEndThread_WatchDogs2_noClip_keylistener_mem)
+
+alloc(WatchDogs2_noClip_keylistener_mem,2048,"Disrupt_64.dll")
+registersymbol(WatchDogs2_noClip_keylistener_mem)
+createthread(WatchDogs2_noClip_keylistener_mem)
+label(keylistenerstart)
+label(keylistenerend)
+label(keylistenerexit)
+label(fTempZDirection)
+label(fTempNoClipSpeedMultiplier)
+label(fNoClipSpeedMultiplierMod1)
+registersymbol(fNoClipSpeedMultiplierMod1)
+label(fNoClipSpeedMultiplierMod2)
+registersymbol(fNoClipSpeedMultiplierMod2)
+
+WatchDogs2_noClip_keylistener_mem:
+sub rsp,28
+
+keylistenerstart:
+
+cmp byte ptr [bNoClip],1
+je @f
+jmp keylistenerend
+
+@@:
+mov dword ptr [fTempNoClipSpeedMultiplier],(float)1
+
+mov rcx,10 //SHIFT key
+push rcx
+call GetAsyncKeyState
+add rsp,08
+shr ax,#15
+cmp ax,1
+jne @f
+mov ecx,[fNoClipSpeedMultiplierMod1]
+mov [fTempNoClipSpeedMultiplier],ecx
+
+@@:
+mov rcx,12 //ALT key
+push rcx
+call GetAsyncKeyState
+add rsp,08
+shr ax,#15
+cmp ax,1
+jne @f
+mov ecx,[fNoClipSpeedMultiplierMod2]
+mov [fTempNoClipSpeedMultiplier],ecx
+
+@@:
+mov dword ptr [fTempZDirection],0
+
+mov rcx,'R'
+push rcx
+call GetAsyncKeyState
+add rsp,08
+shr ax,#15
+cmp ax,1
+jne @f
+mov dword ptr [fTempZDirection],(float)1
+jmp keylistenerend
+
+@@:
+
+mov rcx,'F'
+push rcx
+call GetAsyncKeyState
+add rsp,08
+shr ax,#15
+cmp ax,1
+jne @f
+mov dword ptr [fTempZDirection],(float)-1
+jmp keylistenerend
+
+keylistenerend:
+mov ecx,[fTempNoClipSpeedMultiplier]
+mov [fNoClipSpeedMultiplier],ecx
+mov ecx,[fTempZDirection]
+mov [fZDirection],ecx
+mov rcx,#100
+call Sleep
+cmp dword ptr [bEndThread_WatchDogs2_noClip_keylistener_mem],1
+jne keylistenerstart
+
+keylistenerexit:
+add rsp,28
+mov dword ptr [bEndThread_WatchDogs2_noClip_keylistener_mem],2
+ret
+
+///
+bEndThread_WatchDogs2_noClip_keylistener_mem:
+dd 0
+fTempZDirection:
+dd 0
+fTempNoClipSpeedMultiplier:
+dd 1
+fNoClipSpeedMultiplierMod1: //shift key pressed speed
+dd shiftkeyspeedmultiplier
+fNoClipSpeedMultiplierMod2: //alt key pressed speed
+dd altkeyspeedmultiplier
+///
+
+
+
+
+[DISABLE]
+//code from here till the end of the code will be used to disable the cheat
+//obtained from SubBeam's ACS script - start//
+{$lua}
+
+if( syntaxcheck == false ) then --actual execution
+  local starttime = getTickCount()
+
+if readInteger( "bEndThread_WatchDogs2_noClip_keylistener_mem" ) == 0 then --could be 2 already
+  writeInteger( "bEndThread_WatchDogs2_noClip_keylistener_mem", 1 ) --tell the thread to kill itself
+end
+
+while( getTickCount() &lt; starttime + 1000 ) and ( readInteger( "bEndThread_WatchDogs2_noClip_keylistener_mem" ) ~=2 ) do --wait till it has finished
+  sleep( 20 )
+end
+
+if( getTickCount() &gt; starttime + 1000 ) then --could happen when the window is shown
+  showMessage( 'Disabling the thread failed!' )
+  error( 'Thread disabling failed!' )
+end
+  sleep( 1 )
+end
+
+{$asm}
+//obtained from SubBeam's ACS script - end//
+
+//bEndThread_WatchDogs2_noClip_keylistener_mem:
+//dd 1
+
+///***********************************************///
+
+dealloc(values_noclip)
+unregistersymbol(pCoords)
+unregistersymbol(pMovement)
+unregistersymbol(aNvY)
+unregistersymbol(aNvX)
+unregistersymbol(pNv)
+unregistersymbol(fMovement)
+unregistersymbol(bNoClip)
+unregistersymbol(pPlayerCoordBase1)
+unregistersymbol(fNoClipSpeedMultiplier)
+unregistersymbol(fZDirection)
+
+///***********************************************///
+
+dealloc(newmem)
+movementWriteAOB: //"Disrupt_64.dll"+6111070:
+db 8B 02 89 41 38
+//Alt: mov eax,[rdx]
+//Alt: mov [rcx+38],eax
+
+///***********************************************///
+
+dealloc(newmem2)
+camInfoWrite1AOB+3: //"Disrupt_64.dll"+6B2C511:
+db 41 8B 00 89 02
+//Alt: mov eax,[r8]
+//Alt: mov [rdx],eax
+
+///***********************************************///
+
+dealloc(newmem6)
+camInfoWrite2AOB: //"Disrupt_64.dll"+6B2C5AF:
+db F3 0F 11 72 54
+//Alt: movss [rdx+54],xmm6
+
+///***********************************************///
+
+dealloc(newmem11)
+characterCoordsWriteAOB: //"Disrupt_64.dll"+68DB95A:
+db 8B 5C 24 48 0F 29 47 70
+//Alt: mov ebx,[rsp+48]
+//Alt: movaps [rdi+70],xmm0
+
+///***********************************************///
+
+dealloc(newmem17)
+characterCoordsReadAOB: //"Disrupt_64.dll"+68BE4DF:
+db F3 0F 10 40 70
+//Alt: movss xmm0,[rax+70]
+
+///***********************************************///
+
+dealloc(newmem19)
+playerCoordBase1Fetch2AOB: //"Disrupt_64.dll"+62C5500:
+db 48 8B 1F 89 F1
+//Alt: mov rbx,[rdi]
+//Alt: mov ecx,esi
+
+///***********************************************///
+
+dealloc(newmem24)
+playerCoordBase1Fetch3AOB: //"Disrupt_64.dll"+50D603D:
+db 4C 8B 00 48 8D 54 24 70
+//Alt: mov r8,[rax]
+//Alt: lea rdx,[rsp+70]
+
+///***********************************************///
+
+unregistersymbol(bEndThread_WatchDogs2_noClip_keylistener_mem)
+
+dealloc(WatchDogs2_noClip_keylistener_mem)
+unregistersymbol(WatchDogs2_noClip_keylistener_mem)
+unregistersymbol(fNoClipSpeedMultiplierMod1)
+unregistersymbol(fNoClipSpeedMultiplierMod2)
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>351</ID>
+          <Description>"status"</Description>
+          <Options moHideChildren="1"/>
+          <Color>008000</Color>
+          <VariableType>Byte</VariableType>
+          <Address>bNoClip</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>33</Key>
+                <Key>34</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+              <ActivateSound TTS="EN">no-clip Activated</ActivateSound>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>33</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+              <ActivateSound TTS="EN">no-clip Deactivated</ActivateSound>
+            </Hotkey>
+          </Hotkeys>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>352</ID>
+              <Description>"[pMovement]"</Description>
+              <LastState Value="" RealAddress="00000000"/>
+              <ShowAsHex>1</ShowAsHex>
+              <Color>000080</Color>
+              <VariableType>Array of byte</VariableType>
+              <ByteLength>0</ByteLength>
+              <Address>pMovement</Address>
+              <Offsets>
+                <Offset>0</Offset>
+              </Offsets>
+              <CheatEntries>
+                <CheatEntry>
+                  <ID>353</ID>
+                  <Description>"y"</Description>
+                  <Color>808080</Color>
+                  <VariableType>Float</VariableType>
+                  <Address>+3c</Address>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>354</ID>
+                  <Description>"x"</Description>
+                  <Color>808080</Color>
+                  <VariableType>Float</VariableType>
+                  <Address>+38</Address>
+                </CheatEntry>
+              </CheatEntries>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>355</ID>
+              <Description>"[pCoords]"</Description>
+              <LastState Value="" RealAddress="00000000"/>
+              <ShowAsHex>1</ShowAsHex>
+              <Color>000080</Color>
+              <VariableType>Array of byte</VariableType>
+              <ByteLength>0</ByteLength>
+              <Address>pCoords</Address>
+              <Offsets>
+                <Offset>0</Offset>
+              </Offsets>
+              <CheatEntries>
+                <CheatEntry>
+                  <ID>356</ID>
+                  <Description>"y"</Description>
+                  <Color>0000FF</Color>
+                  <VariableType>Float</VariableType>
+                  <Address>+70</Address>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>357</ID>
+                  <Description>"x"</Description>
+                  <Color>0000FF</Color>
+                  <VariableType>Float</VariableType>
+                  <Address>+74</Address>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>358</ID>
+                  <Description>"z"</Description>
+                  <Color>0000FF</Color>
+                  <VariableType>Float</VariableType>
+                  <Address>+78</Address>
+                </CheatEntry>
+              </CheatEntries>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>359</ID>
+              <Description>"[pNv]"</Description>
+              <LastState Value="" RealAddress="00000000"/>
+              <ShowAsHex>1</ShowAsHex>
+              <Color>000080</Color>
+              <VariableType>Array of byte</VariableType>
+              <ByteLength>0</ByteLength>
+              <Address>pNv</Address>
+              <Offsets>
+                <Offset>0</Offset>
+              </Offsets>
+              <CheatEntries>
+                <CheatEntry>
+                  <ID>360</ID>
+                  <Description>"[aNvY]"</Description>
+                  <LastState Value="" RealAddress="00000000"/>
+                  <ShowAsHex>1</ShowAsHex>
+                  <Color>000080</Color>
+                  <VariableType>Array of byte</VariableType>
+                  <ByteLength>0</ByteLength>
+                  <Address>+0</Address>
+                  <CheatEntries>
+                    <CheatEntry>
+                      <ID>361</ID>
+                      <Description>"y"</Description>
+                      <Color>808080</Color>
+                      <VariableType>Float</VariableType>
+                      <Address>+0</Address>
+                    </CheatEntry>
+                    <CheatEntry>
+                      <ID>362</ID>
+                      <Description>"x"</Description>
+                      <Color>808080</Color>
+                      <VariableType>Float</VariableType>
+                      <Address>+8</Address>
+                    </CheatEntry>
+                    <CheatEntry>
+                      <ID>363</ID>
+                      <Description>"z"</Description>
+                      <Color>808080</Color>
+                      <VariableType>Float</VariableType>
+                      <Address>+4</Address>
+                    </CheatEntry>
+                  </CheatEntries>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>364</ID>
+                  <Description>"[aNvX]"</Description>
+                  <LastState Value="" RealAddress="0000004C"/>
+                  <ShowAsHex>1</ShowAsHex>
+                  <Color>000080</Color>
+                  <VariableType>Array of byte</VariableType>
+                  <ByteLength>0</ByteLength>
+                  <Address>+4c</Address>
+                  <CheatEntries>
+                    <CheatEntry>
+                      <ID>365</ID>
+                      <Description>"y"</Description>
+                      <Color>808080</Color>
+                      <VariableType>Float</VariableType>
+                      <Address>+0</Address>
+                    </CheatEntry>
+                    <CheatEntry>
+                      <ID>366</ID>
+                      <Description>"x"</Description>
+                      <Color>808080</Color>
+                      <VariableType>Float</VariableType>
+                      <Address>+8</Address>
+                    </CheatEntry>
+                    <CheatEntry>
+                      <ID>367</ID>
+                      <Description>"z"</Description>
+                      <Color>808080</Color>
+                      <VariableType>Float</VariableType>
+                      <Address>+4</Address>
+                    </CheatEntry>
+                  </CheatEntries>
+                </CheatEntry>
+              </CheatEntries>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>368</ID>
+              <Description>"[fMovement]"</Description>
+              <LastState Value="" RealAddress="00000000"/>
+              <ShowAsHex>1</ShowAsHex>
+              <Color>000080</Color>
+              <VariableType>Array of byte</VariableType>
+              <ByteLength>0</ByteLength>
+              <Address>fMovement</Address>
+              <CheatEntries>
+                <CheatEntry>
+                  <ID>369</ID>
+                  <Description>"y"</Description>
+                  <Color>808080</Color>
+                  <VariableType>Float</VariableType>
+                  <Address>+0</Address>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>370</ID>
+                  <Description>"x"</Description>
+                  <Color>808080</Color>
+                  <VariableType>Float</VariableType>
+                  <Address>+4</Address>
+                </CheatEntry>
+              </CheatEntries>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>371</ID>
+              <Description>"[aNvY]"</Description>
+              <LastState Value="" RealAddress="00000000"/>
+              <ShowAsHex>1</ShowAsHex>
+              <Color>000080</Color>
+              <VariableType>Array of byte</VariableType>
+              <ByteLength>0</ByteLength>
+              <Address>aNvY</Address>
+              <CheatEntries>
+                <CheatEntry>
+                  <ID>372</ID>
+                  <Description>"y"</Description>
+                  <Color>808080</Color>
+                  <VariableType>Float</VariableType>
+                  <Address>+0</Address>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>373</ID>
+                  <Description>"x"</Description>
+                  <Color>808080</Color>
+                  <VariableType>Float</VariableType>
+                  <Address>+4</Address>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>374</ID>
+                  <Description>"z"</Description>
+                  <Color>808080</Color>
+                  <VariableType>Float</VariableType>
+                  <Address>+8</Address>
+                </CheatEntry>
+              </CheatEntries>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>375</ID>
+              <Description>"[aNvX]"</Description>
+              <LastState Value="" RealAddress="00000000"/>
+              <ShowAsHex>1</ShowAsHex>
+              <Color>000080</Color>
+              <VariableType>Array of byte</VariableType>
+              <ByteLength>0</ByteLength>
+              <Address>aNvX</Address>
+              <CheatEntries>
+                <CheatEntry>
+                  <ID>376</ID>
+                  <Description>"y"</Description>
+                  <Color>808080</Color>
+                  <VariableType>Float</VariableType>
+                  <Address>+0</Address>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>377</ID>
+                  <Description>"x"</Description>
+                  <Color>808080</Color>
+                  <VariableType>Float</VariableType>
+                  <Address>+4</Address>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>378</ID>
+                  <Description>"z"</Description>
+                  <Color>808080</Color>
+                  <VariableType>Float</VariableType>
+                  <Address>+8</Address>
+                </CheatEntry>
+              </CheatEntries>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>379</ID>
+          <Description>"PageUp_PaugeDown : activate noclip"</Description>
+          <LastState Value="" RealAddress="00000000"/>
+          <Color>808080</Color>
+          <GroupHeader>1</GroupHeader>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>380</ID>
+          <Description>"PageUp_Home : de-activate noclip"</Description>
+          <LastState Value="" RealAddress="00000000"/>
+          <Color>808080</Color>
+          <GroupHeader>1</GroupHeader>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>944</ID>
+      <Description>"time of day mod .2"</Description>
+      <Options moHideChildren="1"/>
+      <LastState/>
+      <Color>FF0000</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>[ENABLE]
+//code from here to '[DISABLE]' will be used to enable the cheat
+define(day_length,(float)86400)
+
+aobscanmodule(timeOfDayWriteAOB,Disrupt_64.dll,48 8B 02 0F 29 74 24 ** F3 0F 10 32)
+registersymbol(timeOfDayWriteAOB)
+
+label(pTimeOfDay)
+registersymbol(pTimeOfDay)
+label(bAdvanceTimeOfDay)
+registersymbol(bAdvanceTimeOfDay)
+label(bRewindTimeOfDay)
+registersymbol(bRewindTimeOfDay)
+label(fTimeOfDayMod)
+registersymbol(fTimeOfDayMod)
+
+alloc(newmem,2048,timeOfDayWriteAOB) //"Disrupt_64.dll"+61B744B)
+label(returnhere)
+label(originalcode_timeofdaymod)
+registersymbol(originalcode_timeofdaymod)
+label(exit)
+
+newmem: //this is allocated memory, you have read,write,execute access
+//place your code here
+mov [pTimeOfDay],rcx
+
+//
+sub rsp,10
+movdqu dqword [rsp],xmm1
+sub rsp,10
+movdqu dqword [rsp],xmm2
+//
+
+movss xmm1,[fTimeOfDayMod+c]
+mov eax,[bAdvanceTimeOfDay]
+test al,al
+jnz @f
+mulss xmm1,[fTimeOfDayMod+10]
+mov eax,[bRewindTimeOfDay]
+test al,al
+jnz @f
+xorps xmm1,xmm1
+
+@@:
+movss [fTimeOfDayMod+4],xmm1
+
+@@:
+movss xmm1,[fTimeOfDayMod]
+comiss xmm1,[fTimeOfDayMod+4]
+jb inctodm
+ja dectodm
+jmp settodm
+
+inctodm:
+addss xmm1,[fTimeOfDayMod+8]
+comiss xmm1,[fTimeOfDayMod+4]
+jbe settodm
+movss xmm1,[fTimeOfDayMod+4]
+jmp settodm
+
+dectodm:
+subss xmm1,[fTimeOfDayMod+8]
+comiss xmm1,[fTimeOfDayMod+4]
+jae settodm
+movss xmm1,[fTimeOfDayMod+4]
+jmp settodm
+
+settodm:
+movss [fTimeOfDayMod],xmm1
+
+@@:
+mov eax,day_length
+movss xmm1,[rdx]
+addss xmm1,[fTimeOfDayMod]
+xorps xmm2,xmm2
+comiss xmm1,xmm2
+jae @f
+movd xmm2,eax
+addss xmm1,xmm2
+jmp settod
+
+@@:
+movd xmm2,eax
+comiss xmm1,xmm2
+jbe settod
+subss xmm1,xmm2
+//xorps xmm1,xmm1
+
+settod:
+movss [rdx],xmm1
+
+//
+end:
+movdqu xmm2,dqword [rsp]
+add rsp,10
+movdqu xmm1,dqword [rsp]
+add rsp,10
+//
+
+originalcode_timeofdaymod:
+readmem(timeOfDayWriteAOB,8)
+//mov rax,[rdx]
+//movaps [rsp+20],xmm6
+
+exit:
+jmp returnhere
+
+///
+pTimeOfDay:
+dq 0
+bAdvanceTimeOfDay:
+dd 0
+bRewindTimeOfDay:
+dd 0
+fTimeOfDayMod:
+dd 0
+dd 0
+dd (float)10
+dd (float)200
+dd (float)-1
+///
+
+timeOfDayWriteAOB: //"Disrupt_64.dll"+61B744B:
+jmp newmem
+nop
+nop
+nop
+returnhere:
+
+///********************************************///
+
+label(bEndThread_timeOfDay_keylistener_mem)
+registersymbol(bEndThread_timeOfDay_keylistener_mem)
+label(bAdvanceTimeOfDayTmp)
+label(bRewindTimeOfDayTmp)
+
+alloc(timeOfDay_keylistener_mem,2048,"Disrupt_64.dll")
+registersymbol(timeOfDay_keylistener_mem)
+createthread(timeOfDay_keylistener_mem)
+label(keylistenerstart)
+label(keylistenerend)
+label(keylistenerexit)
+
+timeOfDay_keylistener_mem:
+sub rsp,28
+
+keylistenerstart:
+mov dword ptr [bAdvanceTimeOfDayTmp],0
+mov dword ptr [bRewindTimeOfDayTmp],0
+
+mov rcx,10 //SHIFT key
+push rcx
+call GetAsyncKeyState
+add rsp,08
+shr ax,#15
+cmp ax,1
+jne keylistenerend
+
+mov rcx,22 //PAGE DOWN key
+push rcx
+call GetAsyncKeyState
+add rsp,08
+shr ax,#15
+cmp ax,1
+jne @f
+mov dword ptr [bAdvanceTimeOfDayTmp],1
+jmp keylistenerend
+
+@@:
+mov rcx,21 //PAGE UP key
+push rcx
+call GetAsyncKeyState
+add rsp,08
+shr ax,#15
+cmp ax,1
+jne @f
+mov dword ptr [bRewindTimeOfDayTmp],1
+jmp keylistenerend
+
+keylistenerend:
+mov eax,[bAdvanceTimeOfDayTmp]
+mov [bAdvanceTimeOfDay],eax
+mov eax,[bRewindTimeOfDayTmp]
+mov [bRewindTimeOfDay],eax
+mov rcx,#100
+call Sleep
+cmp dword ptr [bEndThread_timeOfDay_keylistener_mem],1
+jne keylistenerstart
+
+keylistenerexit:
+add rsp,28
+mov dword ptr [bEndThread_timeOfDay_keylistener_mem],2
+ret
+
+///
+bEndThread_timeOfDay_keylistener_mem:
+dd 0
+bAdvanceTimeOfDayTmp:
+dd 0
+bRewindTimeOfDayTmp:
+dd 0
+///
+
+
+
+ 
+ 
+[DISABLE]
+//code from here till the end of the code will be used to disable the cheat
+//obtained from SubBeam's ACS script - start//
+{$lua}
+
+if( syntaxcheck == false ) then --actual execution
+  local starttime = getTickCount()
+
+if readInteger( "bEndThread_timeOfDay_keylistener_mem" ) == 0 then --could be 2 already
+  writeInteger( "bEndThread_timeOfDay_keylistener_mem", 1 ) --tell the thread to kill itself
+end
+
+while( getTickCount() &lt; starttime + 1000 ) and ( readInteger( "bEndThread_timeOfDay_keylistener_mem" ) ~=2 ) do --wait till it has finished
+  sleep( 20 )
+end
+
+if( getTickCount() &gt; starttime + 1000 ) then --could happen when the window is shown
+  showMessage( 'Disabling the thread failed!' )
+  error( 'Thread disabling failed!' )
+end
+  sleep( 1 )
+end
+
+{$asm}
+//obtained from SubBeam's ACS script - end//
+
+//bEndThread_timeOfDay_keylistener_mem:
+//dd 1
+
+///********************************************///
+
+dealloc(newmem)
+timeOfDayWriteAOB: //"Disrupt_64.dll"+61B744B:
+readmem(originalcode_timeofdaymod,8)
+//db 48 8B 02 0F 29 74 24 20
+//Alt: mov rax,[rdx]
+//Alt: movaps [rsp+20],xmm6
+
+///********************************************///
+
+unregistersymbol(bEndThread_timeOfDay_keylistener_mem)
+
+dealloc(timeOfDay_keylistener_mem)
+unregistersymbol(timeOfDay_keylistener_mem)
+</AssemblerScript>
+      <Hotkeys>
+        <Hotkey>
+          <Action>Activate</Action>
+          <Keys>
+            <Key>123</Key>
+          </Keys>
+          <ID>0</ID>
+        </Hotkey>
+      </Hotkeys>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>945</ID>
+          <Description>"Shift_PageUp to rewind"</Description>
+          <Options moHideChildren="1"/>
+          <LastState Value="" RealAddress="00000000"/>
+          <Color>808080</Color>
+          <GroupHeader>1</GroupHeader>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>946</ID>
+              <Description>"bAdvanceTimeOfDay"</Description>
+              <DropDownList DescriptionOnly="1" DisplayValueAsItem="1">0:no
+1:yes
+</DropDownList>
+              <Color>008000</Color>
+              <VariableType>Byte</VariableType>
+              <Address>bAdvanceTimeOfDay</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>947</ID>
+              <Description>"bRewindTimeOfDay"</Description>
+              <DropDownList DescriptionOnly="1" DisplayValueAsItem="1">0:no
+1:yes
+</DropDownList>
+              <Color>008000</Color>
+              <VariableType>Byte</VariableType>
+              <Address>bRewindTimeOfDay</Address>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>948</ID>
+          <Description>"Shift_PageDown to advance"</Description>
+          <Options moHideChildren="1"/>
+          <LastState Value="" RealAddress="00000000"/>
+          <Color>808080</Color>
+          <GroupHeader>1</GroupHeader>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>949</ID>
+              <Description>"fTimeOfDayMod"</Description>
+              <Color>008000</Color>
+              <VariableType>Float</VariableType>
+              <Address>fTimeOfDayMod</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>950</ID>
+              <Description>"fTimeOfDayMod+4"</Description>
+              <Color>008000</Color>
+              <VariableType>Float</VariableType>
+              <Address>fTimeOfDayMod+4</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>951</ID>
+              <Description>"fTimeOfDayMod+8"</Description>
+              <Color>008000</Color>
+              <VariableType>Float</VariableType>
+              <Address>fTimeOfDayMod+8</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>952</ID>
+              <Description>"fTimeOfDayMod+c"</Description>
+              <Color>008000</Color>
+              <VariableType>Float</VariableType>
+              <Address>fTimeOfDayMod+c</Address>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>953</ID>
+          <Description>"current time of day"</Description>
+          <Color>0000FF</Color>
+          <VariableType>Float</VariableType>
+          <Address>pTimeOfDay</Address>
+          <Offsets>
+            <Offset>[timeOfDayWriteAOB+17]</Offset>
+          </Offsets>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>1064</ID>
+      <Description>"game speed fetch"</Description>
+      <Options moHideChildren="1"/>
+      <LastState/>
+      <Color>FF0000</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>[ENABLE]
+//code from here to '[DISABLE]' will be used to enable the cheat
+aobscanmodule(gameSpeedReadAOB,Disrupt_64.dll,F2 0F 10 40 ** 48 ** ** ** ** ** ** 66 0F 5A C0 0F)
+registersymbol(gameSpeedReadAOB)
+
+label(pGameSpeed)
+registersymbol(pGameSpeed)
+label(iGameSpeedOffset)
+registersymbol(iGameSpeedOffset)
+
+alloc(newmem,2048,gameSpeedReadAOB) //"Disrupt_64.dll"+6306E4D)
+label(returnhere)
+label(originalcode_gamespeedfetch)
+registersymbol(originalcode_gamespeedfetch)
+label(exit)
+
+newmem: //this is allocated memory, you have read,write,execute access
+//place your code here
+mov [pGameSpeed],rax
+
+originalcode_gamespeedfetch:
+readmem(gameSpeedReadAOB,5)
+//movsd xmm0,[rax+78]
+
+exit:
+jmp returnhere
+
+///
+pGameSpeed:
+dq 0
+iGameSpeedOffset:
+readmem(gameSpeedReadAOB+4,1)
+db 00 00 00
+///
+
+gameSpeedReadAOB: //"Disrupt_64.dll"+6306E4D:
+jmp newmem
+returnhere:
+
+
+ 
+ 
+[DISABLE]
+//code from here till the end of the code will be used to disable the cheat
+dealloc(newmem)
+gameSpeedReadAOB: //"Disrupt_64.dll"+6306E4D:
+readmem(originalcode_gamespeedfetch,5)
+//db F2 0F 10 40 78
+//Alt: movsd xmm0,[rax+78]
+
+unregistersymbol(originalcode_gamespeedfetch)
+unregistersymbol(pGameSpeed)
+unregistersymbol(iGameSpeedOffset)
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>1068</ID>
+          <Description>"game speed"</Description>
+          <Color>0000FF</Color>
+          <VariableType>Double</VariableType>
+          <Address>pGameSpeed</Address>
+          <Offsets>
+            <Offset>[iGameSpeedOffset]</Offset>
+          </Offsets>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>96</Key>
+                <Key>97</Key>
+              </Keys>
+              <Value>0.6</Value>
+              <ID>0</ID>
+              <ActivateSound TTS="EN">slow motion 1</ActivateSound>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>96</Key>
+                <Key>98</Key>
+              </Keys>
+              <Value>0.4</Value>
+              <ID>1</ID>
+              <ActivateSound TTS="EN">slow motion 2</ActivateSound>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>96</Key>
+                <Key>99</Key>
+              </Keys>
+              <Value>0.2</Value>
+              <ID>2</ID>
+              <ActivateSound TTS="EN">slow motion 3</ActivateSound>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>96</Key>
+                <Key>110</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>3</ID>
+              <ActivateSound TTS="EN">slow motion deactivated</ActivateSound>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>1070</ID>
+          <Description>"numpad0_1/2/3 - different slowmo speed"</Description>
+          <LastState Value="" RealAddress="00000000"/>
+          <Color>808080</Color>
+          <GroupHeader>1</GroupHeader>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>1069</ID>
+          <Description>"numpad0_. - reset"</Description>
+          <LastState Value="" RealAddress="00000000"/>
+          <Color>808080</Color>
+          <GroupHeader>1</GroupHeader>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols/>
+  <Comments>http://forum.cheatengine.org/viewtopic.php?p=5716693#5716693
+</Comments>
+</CheatTable>

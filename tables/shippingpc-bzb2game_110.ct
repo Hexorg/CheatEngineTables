@@ -1,0 +1,1450 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="14">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>20</ID>
+      <Description>"Base"</Description>
+      <Options moHideChildren="1"/>
+      <Color>80000008</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>[ENABLE]
+{==============================================================================
+ = Base Cheat
+ = - allocates MyData global memory
+ = - Sets up script to get global pointers
+ ==============================================================================
+}
+
+//-----------------------------------------------------------------------------
+// Allocate 4k for our data and code
+// - Each cheat will store it's data in it's own area, MyData+100, +200, etc.
+
+globalalloc(MyData,4096) // 4096 bytes
+globalalloc(MyCode,4096) // 4096 bytes
+
+// base pointer to player
+//     pBase+BC: start of characters, size 6C
+//         [[pBase]+BC]+10 - Jack's available upgrade points
+//                     +14,18,1C,20 - the four stats
+//         [[pBase]+BC]+7C - Rachel's available upgrade points
+//         [[pBase]+BC]+E8 - Luxo's (?) available upgrade points
+//         [[pBase]+BC]+154 - Brian's (?) available upgrade points
+//     pBase+138: pointer to player, used in other cheats to make sure we're
+//                  working with the player and not something else
+//         [[pBase]+138]+3C: Zombie Kill Counter
+//         [[pBase]+138]+40: XP Earned Counter (not for levelling?)
+//
+
+// Globals that can be easily access in the cheat table, loaded by this base
+// script
+label(pBase)
+label(pPlayer)
+label(pCharacterBase)
+label(CharacterId)
+label(pCurrentCharacterPoints)
+label(pUnknown1)
+label(pInventory)
+label(InventoryItemId)
+label(pInventoryCount)
+registersymbol(pPlayer)
+registersymbol(pBase)
+registersymbol(pCharacterBase)
+registersymbol(CharacterId)
+registersymbol(pCurrentCharacterPoints)
+registersymbol(pUnknown1)
+registersymbol(pInventory)
+registersymbol(InventoryItemId) // user inputs this
+registersymbol(pInventoryCount) // we set this
+
+
+MyData:
+pBase:
+    dd 0
+pPlayer:
+    dd 0
+pCharacterBase:
+    dd 0
+CharacterId:
+    dd 0
+pCurrentCharacterPoints:
+    dd 0
+pUnknown1: // [pBase+120], has inventory at 9c
+    dd 0
+pInventory:
+    dd 0
+InventoryItemId:
+    dd 0
+pInventoryCount:
+    dd 0
+
+{ CODE TO REPLACE:
+143379d (ShippingPC-Bzb2Game.exe+103379d)
+ShippingPC-Bzb2Game.GetStackOwnerClass+79051D - 68 F0547701           - push ShippingPC-Bzb2Game.TootleOptimizeVertexMemory+2E9380
+ShippingPC-Bzb2Game.GetStackOwnerClass+790522 - 68 33020000           - push 00000233
+ShippingPC-Bzb2Game.GetStackOwnerClass+790527 - 68 C8567701           - push ShippingPC-Bzb2Game.TootleOptimizeVertexMemory+2E9558
+ShippingPC-Bzb2Game.GetStackOwnerClass+79052C - 68 9C567701           - push ShippingPC-Bzb2Game.TootleOptimizeVertexMemory+2E952C
+ShippingPC-Bzb2Game.GetStackOwnerClass+790531 - E8 4A6B05FF           - call ShippingPC-Bzb2Game.exe+8A300
+ShippingPC-Bzb2Game.GetStackOwnerClass+790536 - 83 C4 10              - add esp,10
+ShippingPC-Bzb2Game.GetStackOwnerClass+790539 - 8B 87 B4000000        - mov eax,[edi+000000B4] -- EDI is pBase, set eax to pCharacaterBase
+ShippingPC-Bzb2Game.GetStackOwnerClass+79053F - 6B F6 6C              - imul esi,esi,6C
+ShippingPC-Bzb2Game.GetStackOwnerClass+790542 - 8B 44 06 10           - mov eax,[esi+eax+10]
+ShippingPC-Bzb2Game.GetStackOwnerClass+790546 - 5F                    - pop edi
+ShippingPC-Bzb2Game.GetStackOwnerClass+790547 - 5E                    - pop esi
+ShippingPC-Bzb2Game.GetStackOwnerClass+790548 - C3                    - ret
+}
+
+// skip 9 to get to "imul esi,esi,6C"
+AOBSCAN(MyCode_AOB, 83 c4 10 8b 87 b4 00 00 00 6b f6 6c 8b 44 06 10 5f 5e c3)
+
+// labels we need for code:
+label(MyCode_Target)
+label(MyCode_Return)
+label(MyCode_Replace)
+label(MyCode_SkipInventory)
+label(MyCode_InventoryLoop)
+label(MyCode_InventoryDone)
+label(MyCode_InventoryFound)
+registersymbol(MyCode_Replace)
+
+// my actual code, start compiling at MyCode, store that address in label
+// MyCode_Target also for readability
+MyCode:
+MyCode_Target:
+    mov [pBase],edi
+    mov eax,[edi+00000138] // ok because we repeat unchanged instruction below
+    mov [pPlayer],eax
+    mov eax,[edi+000000b4] // instruction before so eax is normal value
+    mov [pCharacterBase],eax
+    mov [CharacterId],esi
+    mov eax,[edi+00000120]
+    mov [pUnknown1],eax
+    mov eax,[eax+9c]
+    mov [pInventory],eax
+
+    // do we set inventory location?
+    cmp [InventoryItemId],0
+    je MyCode_SkipInventory
+
+    push edi // pInventory
+    push ebx // offset, 00, 20, 40, 60, 80, etc, to item id
+    sub esp,8 // room for storage at ESP and ESP+4
+
+    mov ebx,0 // Offset, stop when equal or greater than 1820
+    mov edi,[pInventory]
+    mov [pInventoryCount],0 // init to 0 if not found
+MyCode_InventoryLoop:
+    mov eax,[edi+ebx]
+    cmp eax,[InventoryItemId]
+    je MyCode_InventoryFound
+    add ebx,20
+    cmp ebx,1820
+    jl MyCode_InventoryLoop
+    jmp MyCode_InventoryDone
+
+MyCode_InventoryFound:
+    // found the item, [edi+ebx] points to ID
+    lea eax,[edi+ebx+8]
+    mov [pInventoryCount],eax
+
+MyCode_InventoryDone:
+    add esp,8
+    pop ebx
+    pop edi
+
+MyCode_SkipInventory:
+    mov eax,[edi+000000B4]
+    imul esi,esi,6c // replaced instruction 1
+    push eax
+    lea eax,[esi+eax+10]
+    mov [pCurrentCharacterPoints],eax
+    pop eax
+    mov eax,[esi+eax+10] // replaced instruction 2
+    jmp MyCode_Return
+
+MyCode_AOB+9:
+MyCode_Replace:
+    jmp MyCode_Target
+    nop
+    nop
+MyCode_Return:
+
+[DISABLE]
+MyCode_Replace:
+    imul esi,esi,6c // replaced instruction 1
+    db 8b 44 06 10 // replaced instruction 2
+    // mov eax,[esi+eax+10] produces 8b 44 30 10 in CE
+
+unregistersymbol(MyCode_Replace)
+unregistersymbol(pPlayer)
+unregistersymbol(pBase)
+unregistersymbol(pCharacterBase)
+unregistersymbol(CharacterId)
+unregistersymbol(pCurrentCharacterPoints)
+unregistersymbol(pUnknown1)
+unregistersymbol(pInventory)
+unregistersymbol(InventoryItemId)
+unregistersymbol(pInventoryCount)
+
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>25</ID>
+          <Description>"Pointers"</Description>
+          <Options moHideChildren="1"/>
+          <Color>80000008</Color>
+          <GroupHeader>1</GroupHeader>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>89</ID>
+              <Description>"Values"</Description>
+              <Color>80000008</Color>
+              <GroupHeader>1</GroupHeader>
+              <CheatEntries>
+                <CheatEntry>
+                  <ID>29</ID>
+                  <Description>"Money"</Description>
+                  <Color>80000008</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>[pBase]+6C</Address>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>49</ID>
+                  <Description>"Current Character Points"</Description>
+                  <Color>80000008</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>[pCurrentCharacterPoints]</Address>
+                </CheatEntry>
+              </CheatEntries>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>21</ID>
+              <Description>"pBase"</Description>
+              <ShowAsHex>1</ShowAsHex>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pBase</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>22</ID>
+              <Description>"pPlayer"</Description>
+              <ShowAsHex>1</ShowAsHex>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pPlayer</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>23</ID>
+              <Description>"pCharacterBase"</Description>
+              <ShowAsHex>1</ShowAsHex>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pCharacterBase</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>48</ID>
+              <Description>"pInventory"</Description>
+              <ShowAsHex>1</ShowAsHex>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pInventory</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>24</ID>
+              <Description>"CharacterId"</Description>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>CharacterId</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>88</ID>
+              <Description>"__DEBUG__"</Description>
+              <Options moHideChildren="1"/>
+              <Color>80000008</Color>
+              <GroupHeader>1</GroupHeader>
+              <CheatEntries>
+                <CheatEntry>
+                  <ID>65</ID>
+                  <Description>"Cheat1_AddressAmmo"</Description>
+                  <ShowAsHex>1</ShowAsHex>
+                  <Color>80000008</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>Cheat1_AddressAmmo</Address>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>67</ID>
+                  <Description>"Cheat1_Ammo"</Description>
+                  <Color>80000008</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>[Cheat1_AddressAmmo]+2C4</Address>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>66</ID>
+                  <Description>"Cheat1_AddressHealth"</Description>
+                  <ShowAsHex>1</ShowAsHex>
+                  <Color>80000008</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>Cheat1_AddressHealth</Address>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>68</ID>
+                  <Description>"Cheat1_Health"</Description>
+                  <Color>80000008</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>[Cheat1_AddressHealth]+2E8</Address>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>69</ID>
+                  <Description>"Cheat1_Clip"</Description>
+                  <Color>80000008</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>[Cheat1_AddressAmmo]+2E0</Address>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>75</ID>
+                  <Description>"[Cheat4_AddressHealth]+2E8"</Description>
+                  <Color>80000008</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>[Cheat4_AddressHealth]+2E8</Address>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>77</ID>
+                  <Description>"[Cheat4_AddressHealth]+2EC"</Description>
+                  <Color>80000008</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>[Cheat4_AddressHealth]+2EC</Address>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>76</ID>
+                  <Description>"Cheat4_BadCount"</Description>
+                  <Color>80000008</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>Cheat4_BadCount</Address>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>83</ID>
+                  <Description>"Cheat5_BadCount"</Description>
+                  <Color>80000008</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>Cheat5_BadCount</Address>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>82</ID>
+                  <Description>"Cheat5_BadAddress"</Description>
+                  <ShowAsHex>1</ShowAsHex>
+                  <Color>80000008</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>Cheat5_BadAddress</Address>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>84</ID>
+                  <Description>"Cheat5_AddressHealth"</Description>
+                  <Color>80000008</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>Cheat5_AddressHealth</Address>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>85</ID>
+                  <Description>"Cheat5_AddressHealthBase"</Description>
+                  <Color>80000008</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>Cheat5_AddressHealthBase</Address>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>90</ID>
+                  <Description>"CODE - Kill Quest Check"</Description>
+                  <Color>80000008</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>ShippingPC-Bzb2Game.exe+1060FEA</Address>
+                </CheatEntry>
+              </CheatEntries>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>26</ID>
+          <Description>"No Reload + Unlimited Ammo + God"</Description>
+          <Options moHideChildren="1"/>
+          <Color>80000008</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[ENABLE]
+{==============================================================================
+ = Cheat 1: No Reload + Ammo
+ = - clip ammo is separate, so not reloading keeps your ammo full
+ = - check, could be god mode too?
+ =       - no, health doesn't APPEAR to decrease, but I can still die,
+ =       - girl seems to die when I have xtra damage on with burning zombie
+ =       - machine gun
+ ==============================================================================
+}
+
+{ CODE TO REPLACE:
+ShippingPC-Bzb2Game.exe+49090 - 8B 4C 24 10           - mov ecx,[esp+10]
+ShippingPC-Bzb2Game.exe+49094 - 89 01                 - mov [ecx],eax &lt;&lt; CODE
+ShippingPC-Bzb2Game.exe+49096 - 83 C4 08              - add esp,08
+ShippingPC-Bzb2Game.exe+49099 - C2 0800               - ret 0008
+ShippingPC-Bzb2Game.exe+4909C - 8B 54 24 10           - mov edx,[esp+10]
+}
+
+// skip 4 to get mov [ecx],eax
+AOBSCAN(Cheat1_AOB, 8b 4c 24 10 89 01 83 c4 08 c2 08 00 8b 54 24 10)
+
+// labels for data
+label(Cheat1_AddressAmmo) // base, current is +2C4, per shot is +2C8,
+                          // max is +2D4, max clip is +2DC, clip is +2E0
+label(Cheat1_AddressHealth) // base, health is +2E8 (of 20,000?)
+label(Cheat1_FlagReload)
+label(Cheat1_FlagAmmo)
+label(Cheat1_FlagGod)
+registersymbol(Cheat1_AddressAmmo)
+registersymbol(Cheat1_AddressHealth)
+registersymbol(Cheat1_FlagReload)
+registersymbol(Cheat1_FlagAmmo)
+registersymbol(Cheat1_FlagGod)
+
+
+// labels we need for code:
+label(Cheat1_Target)
+label(Cheat1_Replace)
+label(Cheat1_Return)
+label(Cheat1_NotAmmo)
+label(Cheat1_NotReload)
+label(Cheat1_NotHealth)
+label(Cheat1_Fix)
+label(Cheat1_Exit)
+registersymbol(Cheat1_Replace)
+
+MyCode+0100:
+Cheat1_Target:
+    // do normal actions if we are not dealing with ammo
+    cmp edi, ecx
+    jne Cheat1_Exit
+    cmp edi,[esp+10] // stores address to be changed
+    jne Cheat1_Exit
+
+    // now make edi the base and check for it
+    mov edi,[esp+14]
+    cmp edi,[esp+24]
+    jne Cheat1_Fix
+    cmp edi,[esp+44] // also d8 for ammo and clip at least, maybe not health
+    jne Cheat1_Fix
+
+    // now check offset to determine what we are using
+    mov ecx,[esp+10]
+    sub ecx,edi
+    cmp ecx,02c4
+    jne Cheat1_NotAmmo
+
+    mov [Cheat1_AddressAmmo],edi
+    cmp [Cheat1_FlagAmmo],0 // make sure ammo cheat is flagged
+    je Cheat1_Fix
+    mov eax,[edi+2d4] // max ammo is at current ammo + 10
+    jmp Cheat1_Fix
+
+Cheat1_NotAmmo:
+    cmp ecx,02e0
+    jne Cheat1_NotReload
+
+    mov [Cheat1_AddressAmmo],edi
+    cmp [Cheat1_FlagReload],0 // make sure reload cheat is flagged
+    je Cheat1_Fix
+    mov eax,[edi+2dc] // max clp is at current clip - 04
+    jmp Cheat1_Fix
+
+Cheat1_NotReload:
+    cmp ecx,02e8
+    jne Cheat1_NotHealth
+
+    mov [Cheat1_AddressHealth],edi
+    cmp [Cheat1_FlagGod],0 // make sure reload cheat is flagged
+    je Cheat1_Fix
+    //mov eax,4E20 // 20,000 decimal
+    mov eax,[edi+2ec]
+    //shr eax,4 // for testing, make health 1/16
+    jmp Cheat1_Fix
+
+Cheat1_NotHealth:
+    nop // nops to make it easy to find for debugging
+    nop
+    nop
+    nop
+    nop
+    nop
+
+Cheat1_Fix:
+    // if we get here, we know that edi and ecx were originally the value from
+    // [esp+10] and they may have been changed, so reload them
+    mov ecx,[esp+10]
+    mov edi,ecx
+
+Cheat1_Exit:
+    mov [ecx],eax
+    add esp,08
+    jmp Cheat1_Return
+
+Cheat1_AddressAmmo:
+    dd 0
+Cheat1_AddressHealth:
+    dd 0
+Cheat1_FlagAmmo:
+    dd 1
+Cheat1_FlagReload:
+    dd 1
+Cheat1_FlagGod:
+    dd 1
+
+
+Cheat1_AOB+4:
+Cheat1_Replace:
+    jmp Cheat1_Target
+Cheat1_Return:
+
+//-----------------------------------------------------------------------------
+// disable replaces the instruction
+[DISABLE]
+Cheat1_Replace:
+    db 89 01 // mov [ecx],eax
+    db 83 C4 08 // add esp,08
+
+unregistersymbol(Cheat1_Replace)
+unregistersymbol(Cheat1_AddressAmmo)
+unregistersymbol(Cheat1_AddressHealth)
+unregistersymbol(Cheat1_FlagReload)
+unregistersymbol(Cheat1_FlagAmmo)
+unregistersymbol(Cheat1_FlagGod)
+
+</AssemblerScript>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>70</ID>
+              <Description>"Flag: Ammo"</Description>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>Cheat1_FlagAmmo</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>71</ID>
+              <Description>"Flag: Reload"</Description>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>Cheat1_FlagReload</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>72</ID>
+              <Description>"Flag: God"</Description>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>Cheat1_FlagGod</Address>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>27</ID>
+          <Description>"Bonus Damage"</Description>
+          <Options moHideChildren="1"/>
+          <Color>80000008</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[ENABLE]
+{==============================================================================
+ = Cheat 2: Extra Damage
+ = - damage taking from zombies is multiplied by 16
+ ==============================================================================
+}
+
+{ CODE TO REPLACE:
+ShippingPC-Bzb2Game.exe+48BBD - 8B 44 24 10           - mov eax,[esp+10]
+ShippingPC-Bzb2Game.exe+48BC1 - 29 03                 - sub [ebx],eax &lt;&lt; CODE
+ShippingPC-Bzb2Game.exe+48BC3 - 8B 1B                 - mov ebx,[ebx]
+ShippingPC-Bzb2Game.exe+48BC5 - 8B 4C 24 14           - mov ecx,[esp+14]
+ShippingPC-Bzb2Game.exe+48BC9 - 5E                    - pop esi
+ShippingPC-Bzb2Game.exe+48BCA - 89 19                 - mov [ecx],ebx
+}
+
+// skip 4 to get mov [ecx],eax
+aobscan(Cheat2_AOB,8b 44 24 10 29 03 8b 1b 8b 4c 24 14 5e 89 19)
+
+// labels we need for code:
+label(Cheat2_Target)
+label(Cheat2_Exit)
+label(Cheat2_Replace)
+label(Cheat2_Return)
+label(Cheat2_FixECX)
+registersymbol(Cheat2_Replace) // so [DISABLE] can use it
+
+// data user can change - will multiply damage by this and divide by 100
+label(Cheat2_Percent)
+registersymbol(Cheat2_Percent)
+
+// Cheat1 is at MyCode+0100, Cheat2 is MyCode+0200, etc.
+MyCode+0200:
+Cheat2_Target:
+    // TODO: can probably change to one comparison using static pointers
+    // set in Base now
+    cmp ecx,eax
+    jne Cheat2_Exit
+    cmp ecx,edx
+    je Cheat2_Exit
+
+    // if EAX is 0, why even bother subtracting it?
+    cmp eax,0
+    je Cheat2_Exit
+
+    // if EBX is EDI + 20c, good (creature at least I think)
+    // ECX == EAX so we can use it as a temporary variable
+    mov ecx,ebx
+    sub ecx,edi
+    cmp ecx,020c
+    jne Cheat2_FixECX
+
+    mov ecx,edx
+    mov edx,0
+    mul [Cheat2_Percent]
+    push ebx
+    mov ebx,100
+    div ebx
+    pop ebx
+    mov edx,ecx
+    // made it all the way, do not go to FixECX so we can break there on bad
+    mov ecx,eax
+    jmp Cheat2_Exit
+
+Cheat2_FixECX:
+    mov ecx,eax
+
+Cheat2_Exit:
+    sub [ebx],eax
+    mov ebx,[ebx]
+    mov ecx,[esp+14]
+    jmp Cheat2_Return
+
+//-----------------------------------------------------------------------------
+// user-changeable variables
+Cheat2_Percent:
+    dd 190
+
+
+//-----------------------------------------------------------------------------
+//replace game code
+Cheat2_AOB+4:
+Cheat2_Replace:
+    jmp Cheat2_Target
+    nop
+    nop
+    nop
+Cheat2_Return:
+
+//-----------------------------------------------------------------------------
+// disable replaces the instruction
+[DISABLE]
+Cheat2_Replace:
+    db 29 03             // sub [ebx],eax
+    db 8b 1b             // mov ebx,[ebx]
+    db 8b 4c 24 14       // mov ecx,[esp+14]
+
+unregistersymbol(Cheat2_Replace)
+unregistersymbol(Cheat2_Percent)
+
+
+//============================================================================
+// How I found it ...
+//============================================================================
+{
+CHEAT 2: Alter EAX to do more damage to zombies
+
+1) Got a couple of police zombies to be beating on me themselves with full
+    health
+2) Scan for 4 bytes, range 2-100000 as a starting point (health probably
+    in there, although could be float ratio, taking a guess)
+3) Hit zombies, Scan for decreased value
+4) Do other stuff, but DO NOT HIT ZOMBIES, Scan for unchanged value
+7) Repeat 3 and 4, plus do more of the range checks
+8) Eventually I had 2 values only, so I added them to the list
+9) Right-clicking to find code that writes to those values didn't show
+   Anything until I hit the zombies in the game, so I found it
+10) Breakpoint on that code did not get triggered except by me hitting
+    zombies, so that is PROBABLY all it is used for
+11) Noticed that aim was off with shotgun, I had only tested with fists
+    because they did less damage and let me do more searches.  Further
+    investigation finds that ECX == EAX when hitting zombies, but not
+    other times.  Other times ECX == EDX
+}
+</AssemblerScript>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Toggle Activation</Action>
+              <Keys>
+                <Key>115</Key>
+              </Keys>
+              <ID>0</ID>
+            </Hotkey>
+          </Hotkeys>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>87</ID>
+              <Description>"Cheat2_Percent"</Description>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>Cheat2_Percent</Address>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>74</ID>
+          <Description>"God (On every frame)"</Description>
+          <Options moHideChildren="1"/>
+          <Color>80000008</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[ENABLE]
+{==============================================================================
+ = Cheat 4: God mode - called each frame
+ = - this is comparison with 0 normally to see when dieing
+ = - happens even when game paused
+ ==============================================================================
+}
+
+{ CODE TO REPLACE:
+ShippingPC-Bzb2Game.GetStackOwnerClass+7B359A - 50                    - push eax
+ShippingPC-Bzb2Game.GetStackOwnerClass+7B359B - E8 309CFFFF           - call ShippingPC-Bzb2Game.GetStackOwnerClass+7AD1D0
+ShippingPC-Bzb2Game.GetStackOwnerClass+7B35A0 - 83 C4 04              - add esp,04
+ShippingPC-Bzb2Game.GetStackOwnerClass+7B35A3 - 39 98 E8020000        - cmp [eax+000002E8],ebx &lt;&lt; CODE
+ShippingPC-Bzb2Game.GetStackOwnerClass+7B35A9 - 89 44 24 14           - mov [esp+14],eax
+ShippingPC-Bzb2Game.GetStackOwnerClass+7B35AD - 7E 1A                 - jle ShippingPC-Bzb2Game.GetStackOwnerClass+7B35C9
+ShippingPC-Bzb2Game.GetStackOwnerClass+7B35AF - F7 80 CC040000 00200000 - test [eax+000004CC],2000
+ShippingPC-Bzb2Game.GetStackOwnerClass+7B35B9 - 75 0E                 - jne ShippingPC-Bzb2Game.GetStackOwnerClass+7B35C9
+ShippingPC-Bzb2Game.GetStackOwnerClass+7B35BB - 8D 54 24 14           - lea edx,[esp+14]
+ShippingPC-Bzb2Game.GetStackOwnerClass+7B35BF - 52                    - push edx
+ShippingPC-Bzb2Game.GetStackOwnerClass+7B35C0 - 8D 4C 24 2C           - lea ecx,[esp+2C]
+}
+
+// skip 9 to get to cmp [eax+00002e8],ebx
+AOBSCAN(Cheat4_AOB, 50 e8 ?? ?? ?? ?? 83 c4 04 39 98 e8 02 00 00 89 44 24 14)
+
+// labels for data
+label(Cheat4_AddressHealth) // base, health is +2E8 (of 20,000?)
+label(Cheat4_BadCount) // how many calls iddn't pass test (final call when
+                       // switching zones for instance)
+registersymbol(Cheat4_AddressHealth)
+registersymbol(Cheat4_BadCount)
+
+// labels we need for code:
+label(Cheat4_Target)
+label(Cheat4_Replace)
+label(Cheat4_Return)
+label(Cheat4_Skip)
+registersymbol(Cheat4_Replace)
+
+MyCode+400:
+Cheat4_Target:
+    // EAX should JUST be health base
+    mov [Cheat4_AddressHealth],eax
+    push ebx
+    mov ebx,[eax+000002EC]
+    cmp ebx,[eax+000002E8] // max less than current
+    jle Cheat4_Skip
+    cmp [eax+000002E8],0000ffff // current greater than 65535
+    jge Cheat4_Skip
+    cmp [eax+000002EC],0000ffff // max greater than 65535
+    jge Cheat4_Skip
+
+    // set current to max
+    mov [eax+000002E8],ebx
+
+    pop ebx // value to compare, should be 0 here I think
+    cmp [eax+000002E8],ebx // (current health with 0
+    jmp Cheat4_Return
+
+Cheat4_Skip:
+    inc [Cheat4_BadCount]
+    pop ebx
+    cmp [eax+000002E8],ebx // (current health with 0
+    jmp Cheat4_Return
+
+Cheat4_AddressHealth:
+    dd 0
+Cheat4_BadCount:
+    dd 0
+
+//-----------------------------------------------------------------------------
+// Replace existing code with jump to our assembled code
+Cheat4_AOB+9:
+Cheat4_Replace:
+    jmp Cheat4_Target
+    nop
+Cheat4_Return:
+
+//-----------------------------------------------------------------------------
+// disable replaces the instruction to jump to our code with the original
+[DISABLE]
+Cheat4_Replace:
+    db 39 98 E8 02 00 00 // cmp [eax+2E8],ebx
+
+unregistersymbol(Cheat4_Replace)
+unregistersymbol(Cheat4_AddressHealth)
+unregistersymbol(Cheat4_BadCount)
+
+</AssemblerScript>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>81</ID>
+          <Description>"Cheat 5 - God Mode 2"</Description>
+          <Color>80000008</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[ENABLE]
+{==============================================================================
+ = Cheat 5: God mode
+ =   - writing only when I lose health, or maybe even die
+ =   - possibly called for ammo and clip too?
+ ==============================================================================
+}
+
+{ CODE TO REPLACE:
+WHEN I DIED:
+0044907A - 7D 0C - jnl 00449088
+0044907C - 8B 44 24 10  - mov eax,[esp+10]
+00449080 - 89 08  - mov [eax],ecx &lt;&lt;
+00449082 - 83 C4 08 - add esp,08
+00449085 - C2 0800 - ret 0008
+
+EAX=134A02E8
+EBX=0DBBD300
+ECX=00000000
+EDX=024AE498
+ESI=024AE5D4
+EDI=134A02E8
+ESP=024AE494
+EBP=00000000
+EIP=00449082
+
+Second time
+EAX=17F31AE8 &lt;&lt; edi,health
+EBX=0DB3D300
+ECX=0
+EDX=024AE1F8 &lt;&lt; ESP+04
+ESI=024AE328 &lt;&lt; ESP+134
+EDI=17F31AE8 &lt;&lt; eax,health
+EBP=0
+ESP=024AE1F4
+EIP=00449080
+
+0044906F - 8B 44 24 04
+00449073 - 8B 4C 24 10
+00449077 - 3B C1
+00449079 - 5E
+0044907A - 7D 0C
+0044907C - 8B 44 24 10
+00449080 - 89 08        &lt;&lt; mov [eax],ecx
+00449082 - 83 C4 08     &lt;&lt; add esp,08
+00449085 - C2 0800
+
+8B 44 24 04 8B 4C 24 10 3B C1 5E 7D 0C 8B 44 24 10 89 08 83 C4 08 C2 08 00
+                                                   ?? ?? ?? ?? ??
+
+Stack:
+    0000: FFFFFF39 - I THINK that is -c7, what health SHOULD be but changed to 0
+    0004: 00004A38 - Max Health (should be same as [EAX+4]
+    0008: 0045516a - return address
+    000C: 00000000 - zero?  changed value? compare?
+    0010: 1334FAE8 - HEALTH ADDRESS, eax, HEALTH BASE+2E8
+    0014: 1334F800 - HEALTH BASE - HEALTH ADDRESS-2E8
+    0024: 1334F800 - HEALTH BASE
+    0038: 1074BD00
+    0044: 1334F800 - HEALTH BASE
+    0054: 1334F854 - base+54
+    0064: 1334F854 - base+54
+    0100: 18B1FC00 - ??
+    0104: 18BA1500 - ??
+    012C: 1334F800 - HEALTH BASE
+}
+
+
+// skip 17 (11 hex) to get to mov [eax],ecx
+AOBSCAN(Cheat5_AOB, 8B 44 24 04 8B 4C 24 10 3B C1 5E 7D 0C 8B 44 24 10 89 08 83 C4 08 C2 08 00)
+
+// labels for data
+label(Cheat5_AddressHealth) // actual health, base is - 02E8
+label(Cheat5_AddressHealthBase) // actual health, base is - 02E8
+label(Cheat5_BadCount) // how many calls iddn't pass test (not health)
+label(Cheat5_BadAddress) // last address that was not health
+registersymbol(Cheat5_AddressHealth)
+registersymbol(Cheat5_AddressHealthBase)
+registersymbol(Cheat5_BadCount)
+registersymbol(Cheat5_BadAddress)
+
+// labels we need for code:
+label(Cheat5_Target)
+label(Cheat5_Replace)
+label(Cheat5_Return)
+label(Cheat5_FixEax)
+label(Cheat5_Skip)
+label(Cheat5_Exit)
+registersymbol(Cheat5_Replace)
+
+MyCode+500:
+Cheat5_Target:
+    // EAX must be EDI
+    cmp eax,edi
+    jne Cheat5_Skip
+
+    // ok, they should equal ESP+10
+    cmp eax,[esp+10]
+    jne Cheat5_Skip
+
+    // and -2E8 should be base, esp+14, esp+24, esp+44
+    sub eax,2e8
+    cmp eax,[esp+14]
+    jne Cheat5_FixEax
+    cmp eax,[esp+24]
+    jne Cheat5_FixEax
+    cmp eax,[esp+44]
+    jne Cheat5_FixEax
+    // esp+4 should be max health, [edi+4], maybe just initial frame health?
+    mov eax,[esp+4]
+    cmp eax,[edi+4]
+    jne Cheat5_FixEax
+
+    // ok, we are most likely dealing with player health
+    mov [Cheat5_AddressHealth],edi
+    mov eax,[esp+14]
+    mov [Cheat5_AddressHealthBase],eax
+
+    // only fix health if below zero?
+    mov eax,edi
+    cmp ecx,0
+    jg Cheat5_Exit
+    mov ecx,[edi+4] // full health (works for the ammo this sees too?)
+    mov ecx,100 // keep at brink of death
+    jmp Cheat5_Exit
+
+Cheat5_FixEax:
+    mov eax,edi
+
+Cheat5_Skip:
+    inc [Cheat5_BadCount]
+    mov [Cheat5_BadAddress],eax
+
+Cheat5_Exit:
+    mov [eax],ecx
+    add esp,08
+    jmp Cheat5_Return
+
+Cheat5_AddressHealth:
+    dd 0
+Cheat5_AddressHealthBase:
+    dd 0
+Cheat5_BadCount:
+    dd 0
+Cheat5_BadAddress:
+    dd 0
+
+//-----------------------------------------------------------------------------
+// Replace existing code with jump to our assembled code
+Cheat5_AOB+11:
+Cheat5_Replace:
+    jmp Cheat5_Target
+Cheat5_Return:
+
+//-----------------------------------------------------------------------------
+// disable replaces the instruction to jump to our code with the original
+[DISABLE]
+Cheat5_Replace:
+    db 89 08       // mov [eax],ecx
+    db 83 c4 08    // add esp,08
+
+unregistersymbol(Cheat5_Replace)
+unregistersymbol(Cheat5_AddressHealth)
+unregistersymbol(Cheat5_AddressHealthBase)
+unregistersymbol(Cheat5_BadCount)
+
+</AssemblerScript>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>86</ID>
+          <Description>"ONE TIME - Give Inventory"</Description>
+          <Color>80000008</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[ENABLE]
+alloc(InventoryCheat,1024)
+registersymbol(InventoryCheat)
+
+label(Loop)
+label(Done)
+label(ChangeItem)
+label(Skip1)
+label(Skip2)
+label(Skip3)
+
+InventoryCheat:
+    mov edi,[pInventory]
+    cmp edi,0
+    je Done
+
+    // item offsets to change
+    // c40 to dc0, but not greater (actually 1 greater ok)
+    mov eax,c40
+Loop:
+    cmp eax,e00
+    jg Done
+    call ChangeItem
+    add eax,20
+    jmp Loop
+
+Done:
+    ret
+
+ChangeItem:
+    cmp [edi+eax+8],0
+    jg Skip1
+    mov [edi+eax+8],1
+
+Skip1:
+    cmp [edi+eax+c],0
+    jg Skip2
+    mov [edi+eax+c],1
+
+Skip2:
+    cmp [edi+eax+10],0
+    jg Skip3
+    mov [edi+eax+10],1
+
+Skip3:
+    ret
+
+// start executing on a new thread, changes data but doesn't interrupt
+// the game
+CreateThread(InventoryCheat)
+
+[DISABLE]
+unregistersymbol(InventoryCheat)
+
+
+</AssemblerScript>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Toggle Activation</Action>
+              <Keys>
+                <Key>121</Key>
+              </Keys>
+              <ID>0</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols>
+    <SymbolEntry>
+      <Name>MyData</Name>
+      <Address>1C6C0000</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>MyCode</Name>
+      <Address>1CA70000</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>pPlayer</Name>
+      <Address>1C6C0004</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>pBase</Name>
+      <Address>1C6C0000</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>pCharacterBase</Name>
+      <Address>1C6C0008</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>CharacterId</Name>
+      <Address>1C6C000C</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>pCurrentCharacterPoints</Name>
+      <Address>1C6C0010</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>pUnknown1</Name>
+      <Address>1C6C0014</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>pInventory</Name>
+      <Address>1C6C0018</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>InventoryItemId</Name>
+      <Address>1C6C001C</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>pInventoryCount</Name>
+      <Address>1C6C0020</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>MyCode_Replace</Name>
+      <Address>014337BF</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>Cheat2_Replace</Name>
+      <Address>00448BC1</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>Cheat2_Percent</Name>
+      <Address>1CA70257</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>Cheat1_AddressAmmo</Name>
+      <Address>1CA701C4</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>Cheat1_AddressHealth</Name>
+      <Address>1CA701C8</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>Cheat1_FlagReload</Name>
+      <Address>1CA701D0</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>Cheat1_FlagAmmo</Name>
+      <Address>1CA701CC</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>Cheat1_FlagGod</Name>
+      <Address>1CA701D4</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>Cheat1_Replace</Name>
+      <Address>00449094</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>Cheat4_AddressHealth</Name>
+      <Address>1CA7045D</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>Cheat4_BadCount</Name>
+      <Address>1CA70461</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>Cheat4_Replace</Name>
+      <Address>01456823</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>Cheat5_AddressHealth</Name>
+      <Address>1CA70582</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>Cheat5_AddressHealthBase</Name>
+      <Address>1CA70586</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>Cheat5_BadCount</Name>
+      <Address>1CA7058A</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>Cheat5_BadAddress</Name>
+      <Address>1CA7058E</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>Cheat5_Replace</Name>
+      <Address>00449080</Address>
+    </SymbolEntry>
+  </UserdefinedSymbols>
+  <Structures StructVersion="2">
+    <Structure Name="Base" AutoFill="0" AutoCreate="1" DefaultHex="0" AutoDestroy="1" DoNotSaveLocal="1" AutoCreateStructsize="128">
+      <Elements>
+        <Element Offset="0" Vartype="Pointer" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="4" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Hexadecimal"/>
+        <Element Offset="8" Vartype="Pointer" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="12" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="16" Vartype="Pointer" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="20" Vartype="Pointer" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="24" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="28" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="32" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Hexadecimal"/>
+        <Element Offset="36" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Hexadecimal"/>
+        <Element Offset="40" Vartype="Pointer" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="44" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Hexadecimal"/>
+        <Element Offset="48" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="52" Vartype="Pointer" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="56" Vartype="Float" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="60" Vartype="Float" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="64" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="68" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="72" Vartype="Pointer" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="76" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="80" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="84" Vartype="Pointer" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="88" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="92" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="96" Vartype="Pointer" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="100" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="104" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="108" Vartype="4 Bytes" Bytesize="4" Description="Money" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="112" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Hexadecimal"/>
+        <Element Offset="116" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="120" Vartype="Pointer" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="124" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="128" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="132" Vartype="Pointer" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="136" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="140" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="144" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="148" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="152" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="156" Vartype="Pointer" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="160" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="164" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="168" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="172" Vartype="Float" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="176" Vartype="Float" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="180" Vartype="Pointer" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="184" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="188" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="192" Vartype="Pointer" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="196" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="200" Vartype="Float" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="204" Vartype="Float" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="208" Vartype="Float" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="212" Vartype="Float" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="216" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="220" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="224" Vartype="Float" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="228" Vartype="Float" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="232" Vartype="Float" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="236" Vartype="Pointer" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="240" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="244" Vartype="Float" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="248" Vartype="Float" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="252" Vartype="Float" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="256" Vartype="Float" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="260" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="264" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="268" Vartype="Float" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="272" Vartype="Float" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="276" Vartype="Float" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="280" Vartype="Pointer" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="284" Vartype="Pointer" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="288" Vartype="Pointer" Bytesize="4" Description="pTest" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="292" Vartype="Pointer" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="296" Vartype="Pointer" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="300" Vartype="Pointer" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="304" Vartype="Pointer" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="308" Vartype="Pointer" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="312" Vartype="Pointer" Bytesize="4" Description="pPlayer" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="316" Vartype="Pointer" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="320" Vartype="Pointer" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="324" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="328" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="332" Vartype="Pointer" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="336" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Hexadecimal"/>
+        <Element Offset="340" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="344" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Hexadecimal"/>
+        <Element Offset="348" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="352" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="356" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="360" Vartype="Float" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="364" Vartype="Float" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="368" Vartype="Float" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="372" Vartype="Float" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="376" Vartype="Float" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="380" Vartype="Float" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="384" Vartype="Float" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="388" Vartype="Float" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="392" Vartype="Float" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="396" Vartype="Float" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="400" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="404" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="408" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Hexadecimal"/>
+        <Element Offset="412" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="416" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="420" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="424" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="428" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="432" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="436" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="440" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="444" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="448" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="452" Vartype="Pointer" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="456" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="460" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="464" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="468" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="472" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="476" Vartype="Pointer" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="480" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="484" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="488" Vartype="Pointer" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="492" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="496" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="500" Vartype="Pointer" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="504" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="508" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+      </Elements>
+    </Structure>
+    <Structure Name="Test" AutoFill="0" AutoCreate="1" DefaultHex="0" AutoDestroy="1" DoNotSaveLocal="1" AutoCreateStructsize="128">
+      <Elements>
+        <Element Offset="0" Vartype="Pointer" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="4" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Hexadecimal"/>
+        <Element Offset="8" Vartype="Pointer" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="12" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="16" Vartype="Pointer" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="20" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="24" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="28" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="32" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="36" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="40" Vartype="Pointer" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="44" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Hexadecimal"/>
+        <Element Offset="48" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="52" Vartype="Pointer" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="56" Vartype="Pointer" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="60" Vartype="Pointer" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="64" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="68" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="72" Vartype="Pointer" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="76" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="80" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="84" Vartype="Pointer" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="88" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="92" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="96" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="100" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="104" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="108" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="112" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="116" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="120" Vartype="Pointer" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="124" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="128" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="132" Vartype="Pointer" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="136" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="140" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="144" Vartype="Pointer" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="148" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="152" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="156" Vartype="Pointer" Bytesize="4" Description="pInventory (0x20 size structs)" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="160" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="164" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="168" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="172" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="176" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="180" Vartype="Pointer" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="184" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="188" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="192" Vartype="Pointer" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="196" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="200" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="204" Vartype="Pointer" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="208" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="212" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="216" Vartype="Pointer" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="220" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="224" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="228" Vartype="Pointer" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="232" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="236" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="240" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="244" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="248" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="252" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="256" Vartype="Pointer" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="260" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="264" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="268" Vartype="Pointer" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="272" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="276" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="280" Vartype="Pointer" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="284" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="288" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="292" Vartype="Byte" Bytesize="1" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="293" Vartype="Byte" Bytesize="1" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="294" Vartype="Byte" Bytesize="1" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="295" Vartype="Byte" Bytesize="1" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="296" Vartype="Float" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="300" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="304" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="308" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="312" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="316" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="320" Vartype="Pointer" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="324" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="328" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="332" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="336" Vartype="Pointer" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="340" Vartype="Pointer" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="344" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="348" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="352" Vartype="Float" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="356" Vartype="Float" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="360" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="364" Vartype="Float" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="368" Vartype="Float" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="372" Vartype="Pointer" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="376" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="380" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="384" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Hexadecimal"/>
+        <Element Offset="388" Vartype="Float" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="392" Vartype="Float" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="396" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="400" Vartype="Float" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="404" Vartype="Float" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="408" Vartype="Float" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="412" Vartype="Float" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="416" Vartype="Float" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="420" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="424" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="428" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="432" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Hexadecimal"/>
+        <Element Offset="436" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="440" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="444" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="448" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="452" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="456" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Hexadecimal"/>
+        <Element Offset="460" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="464" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="468" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="472" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="476" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="480" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="484" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="488" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="492" Vartype="Pointer" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="496" Vartype="Byte" Bytesize="1" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="497" Vartype="Byte" Bytesize="1" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="498" Vartype="Byte" Bytesize="1" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="499" Vartype="Byte" Bytesize="1" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="500" Vartype="Pointer" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="504" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="508" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+      </Elements>
+    </Structure>
+    <Structure Name="Character" AutoFill="0" AutoCreate="1" DefaultHex="0" AutoDestroy="1" DoNotSaveLocal="1" AutoCreateStructsize="128">
+      <Elements>
+        <Element Offset="0" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Hexadecimal"/>
+        <Element Offset="4" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="8" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="12" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="16" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="20" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="24" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="28" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="32" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="36" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Hexadecimal"/>
+        <Element Offset="40" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="44" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Hexadecimal"/>
+        <Element Offset="48" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="52" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Hexadecimal"/>
+        <Element Offset="56" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="60" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="64" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Hexadecimal"/>
+        <Element Offset="68" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="72" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="76" Vartype="Pointer" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="80" Vartype="Float" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="84" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Hexadecimal"/>
+        <Element Offset="88" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="92" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Hexadecimal"/>
+        <Element Offset="96" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="100" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+        <Element Offset="104" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer"/>
+      </Elements>
+    </Structure>
+  </Structures>
+</CheatTable>

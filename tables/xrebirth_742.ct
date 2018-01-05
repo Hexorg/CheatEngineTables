@@ -1,0 +1,2473 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="21">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>73</ID>
+      <Description>"[X] &lt;== X Rebirth 4.00-208311 x64 Steam Script 2.2"</Description>
+      <Options moHideChildren="1" moDeactivateChildrenAsWell="1"/>
+      <LastState/>
+      <Color>FF0000</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>{
+===========================================
+ Game Title    : X-REBIRTH
+ Game Version  : 4.00 (208311)
+ Game Sponsor  : Fennix102
+ Proces Name   : XRebirth.exe (64 bits)
+ Script Version: 2.2
+ CE Version    : 6.5
+ Release date  : 26-Feb-2016
+ Author        : Recifense
+ History:
+ 27-Jun-14: First Release (version 2.20 - Steam)
+ 09-Jul-14: Release for (version 2.20-184360 - Steam)
+ 29-Oct-14: Release for (version 2.51-187332 - Steam)
+ 11-Dec-14: Release for (version 3.00-189926 - Steam)
+ 18-Dec-14: Release for (version 3.10-190048 - Steam)
+ 03-Feb-15: Release for (version 3.20-190820 - Steam) (S1.2)
+ 15-Mar-15: Release for (version 3.50-192864 - Steam)
+ 20-Mar-15: Release for (version 3.51-193058 - Steam) (S2.0)
+ 21-Mar-15: Fixed a crash (S2.1)
+ 27-Mar-15: Release for (version 3.52-193370 - Steam)
+ 02-Apr-15: Release for (version 3.53-193580 - Steam)
+ 05-Sep-15: Release for (version 3.60-198327 - Steam)
+ 25-Sep-15: Release for (version 3.61-200382 - Steam)
+ 10-Oct-15: Release for (version 3.61-201320 - Steam)
+ 04-Nov-15: Release for (version 3.61-202267 - Steam)
+ 26-Feb-16: Release for (version 4.00-208311 - Steam)(CE65)
+ Features:
+ - Minimum Money
+ - God Mode
+ - Unlimited Shield
+ - Unlimited Missiles
+ - Some Pointers
+===========================================
+}
+
+//=========================================
+// Checking CE version
+{$lua}
+  if(getCEVersion() &lt; 6.5) then
+    ShowMessage('Sorry. CE version should be 6.5 or above')
+  end
+{$asm}
+
+//=========================================
+// Checking Selected Process
+{$lua}
+  if(process == nil) then
+    ShowMessage('No process was selected')
+  elseif (process ~= "XRebirth.exe") then
+    ShowMessage('Error. Expected Process = XRebirth.exe')
+  end
+{$asm}
+
+//=========================================
+// Definitions
+define(LUDO,"XRebirth.exe")
+define(MHPR,XRebirth.exe+00432eb5) //##==*=======#
+define(MPSP,XRebirth.exe+0017d9ed) //#====#==#===#
+define(MSSD,XRebirth.exe+0011f302) //#=#####=#=###
+define(MSME,XRebirth.exe+001fd39b) //=#======#===#
+define(MSM1,XRebirth.exe+001fdbf2) //--======#===#
+define(MPIY,XRebirth.exe+0010285a) //------==#===#
+define(MSHL,XRebirth.exe+0017c33d) //--------N===#
+
+define(RPSP,XRebirth.exe+00888C07) //----========#
+
+//=========================================
+// Constants used in the script (that can be changed)
+define(ctCE64,(float)6.5)
+define(ctMMMY,#99999999999999900)   // Minimum Money
+
+//=========================================
+[ENABLE]
+//=========================================
+//LuaCall(CheckVersion())
+//=========================================
+// Check if script is compatible to this game version
+// If false the script will not be loaded
+
+assert(MHPR,48 8b 01 48 83 c4 20 5b 48 ff 60 08 33 c0 48 83 c4 20 5b c3 cc cc)
+assert(MPSP,48 8b 83 a0 02 00 00 f3 0f 5e 40 60 0f 28 74 24 20 48 83 c4 30 5b)
+assert(MSSD,f2 0f 11 51 f0 89 41 e8 c3 cc cc cc cc cc f2 0f 10 41 f0 c3 cc cc)
+assert(MSME,0f 42 4a 28 29 4a 28 48 83 c4 20 5b c3 cc cc cc cc cc cc cc cc 48)
+assert(MSM1,0f 42 4a 28 29 4a 28 48 83 c4 20 5b c3 cc 48 89 5c 24 08 57 48 83)
+assert(MPIY,48 83 7e 10 01 ?? ?? 48 8b 3e ?? ?? 48 8b fe 4a 8b 3c 27 48 8b d7)
+assert(MSHL,f3 0f 11 8f 98 02 00 00 f3 0f 5c f9 0f 28 c7 0f 54 05 ?? ?? ?? ??)
+
+//=========================================
+alloc(MyCode,4096,$process)
+//=========================================
+// Declaration section
+label(_MonHumanPlayer)
+label(_BackMHP)
+label(_ExitMHP)
+label(_MonPlayerShip)
+label(_MonPS00)
+label(_MonPS01)
+label(_BackMPS)
+label(_ExitMPS)
+label(_MonShipShield)
+label(_BackMSS)
+label(_ExitMSS)
+label(_MonShipMissile)
+label(_BackMSM)
+label(_ExitMSM)
+label(_MonShipMissile1)
+label(_BackSM1)
+label(_ExitSM1)
+label(_MonPlayerInv)
+label(_BackMPI)
+label(_ExitMPI)
+label(_MonShipHull)
+label(_BackMSH)
+label(_ExitMSH)
+label(iEnableMMM)
+label(iEnableMSD)
+label(iEnableGMD)
+label(iEnableMSM)
+label(liMinMoney)
+label(pPlayer)
+label(pShipHull)
+label(pShipShield)
+label(pShield)
+label(pHull)
+label(pInv)
+label(pItem)
+label(iInvIndex)
+label(iMaxIndex)
+label(aLast)
+label(iCount1)
+label(iCount2)
+label(pShield2)
+label(pHull2)
+label(pInfo2)
+
+//=========================================
+// Registering Symbols
+registersymbol(MyCode)
+registersymbol(iEnableMMM)
+registersymbol(iEnableMSD)
+registersymbol(iEnableGMD)
+registersymbol(iEnableMSM)
+registersymbol(liMinMoney)
+registersymbol(pPlayer)
+registersymbol(pShipHull)
+registersymbol(pShipShield)
+registersymbol(pShield2)
+registersymbol(pHull2)
+registersymbol(pInfo2)
+registersymbol(pInv)
+registersymbol(pItem)
+registersymbol(iInvIndex)
+registersymbol(iMaxIndex)
+registersymbol(aLast)
+registersymbol(iCount1)
+registersymbol(iCount2)
+
+//=========================================
+MyCode:
+//========================================= 400
+// When Money is Visible
+_MonHumanPlayer:
+ push r15
+
+ mov r15,aLast
+ mov dword ptr [r15],'_MHP'
+
+ mov r15,pPlayer
+ mov [r15],rcx
+
+ mov r15,iEnableMMM
+ cmp dword ptr [r15],0
+ je _ExitMHP                       // Jump if feature is disabled
+
+ mov r15,liMinMoney
+ mov rax,[r15]
+ cmp rax,[rcx+10]
+ js _ExitMHP
+
+ mov [rcx+10],rax
+
+_ExitMHP:
+ pop r15
+
+ mov rax,[rcx]                     // Original code
+ add rsp,20                        // Original code
+ jmp _BackMHP                      // Back to main code
+
+//========================================= 400
+// Called all the time
+// RBX = Hull_64_Real
+_MonPlayerShip:
+ mov rax,[rsp+38]
+
+ push r15
+
+ mov r15,aLast
+ mov dword ptr [r15],'_MHS'
+
+ push rcx
+
+ mov rcx,RPSP
+
+ cmp rax,rcx
+ jne _ExitMPS
+
+ mov r15,pHull2
+ mov [pHull2],rbx
+
+ mov r15,iCount1
+ inc dword ptr [r15]
+
+ mov rax,[rbx+000002f0] //* 2f8 // 4a8
+ mov r15,pInfo2
+ mov [r15],rax
+ test rax,rax
+ jz _ExitMPS
+
+ mov r15,iCount1
+ dec dword ptr [r15]
+
+ mov eax,[rax+08]
+ cmp eax,'play'
+ jne _ExitMPS
+
+ mov rax,[rbx+00000360] //*368 //518
+ test rax,rax
+ jnz _ExitMPS
+
+ mov rcx,[rbx+000002a0]            // Get pShield
+
+ mov r15,pShipHull
+ mov [r15],rbx
+ mov r15,pShipShield
+ mov [r15],rcx
+ lea rax,[rcx+000000a0]
+ mov r15,pShield
+ mov [r15],rax
+ mov r15,pHull
+ mov [r15],rbx
+
+ mov r15,iEnableMSD
+ cmp dword ptr [r15],0
+ je _MonPS00                       // Jump if feature is disabled
+
+ mov eax,[rcx+60]
+ mov [rcx+00000088],eax
+
+_MonPS00:
+ mov r15,iEnableGMD
+ cmp dword ptr [r15],0
+ je _MonPS01                       // Jump if feature is disabled
+
+ mov eax,[rbx+00000294]
+ mov [rbx+00000298],eax
+
+_MonPS01:
+ mov r15,pInv
+ mov rcx,[r15]
+ test rcx,rcx
+ jz _ExitMPS
+
+ mov r15,iInvIndex
+ mov eax,[r15]
+ test eax,eax
+ jz _ExitMPS
+
+ mov eax,[rcx+18]
+ mov r15,iMaxIndex
+ mov [r15],eax
+ mov r15,iInvIndex
+ cmp eax,[r15]
+ js _ExitMPS
+
+ mov rcx,[rcx]
+ test rcx,rcx
+ jz _ExitMPS
+
+ mov r15,iInvIndex
+ xor rax,rax
+ mov eax,[r15]
+ lea rax,[rax*4]
+ lea rax,[rcx+rax*4-10]
+ mov r15,pItem
+ mov [r15],rax
+
+_ExitMPS:
+ pop rcx
+ pop r15
+
+ mov rax,[rbx+000002a0]            // Original code (get pShield)
+ jmp _BackMPS                      // Back to main code
+
+//========================================= 360
+// Called when shield or turbo bust is used
+// RCX = pShield
+_MonShipShield:
+ push r15
+
+ mov r15,aLast
+ mov dword ptr [r15],'_MSS'
+
+ movsd [rcx-10],xmm2               // Original code
+
+ mov r15,pShield
+ cmp rcx,[r15]
+ jne _ExitMSS
+
+ mov r15,iEnableMSD
+ cmp dword ptr [r15],0
+ je _ExitMSS                       // Jump if feature is disabled
+
+ mov dword ptr [rcx-10],0
+ mov dword ptr [rcx-0c],0
+
+ cmp eax,[rcx-18]
+ jns _ExitMSS
+
+ mov eax,[rcx-18]
+
+_ExitMSS:
+ pop r15
+ jmp _BackMSS                      // Back to main code
+
+//========================================= 400
+// Called when missile is shot
+// R10 = pHull
+_MonShipMissile:
+ push r15
+
+ mov r15,aLast
+ mov dword ptr [r15],'_MSM'
+
+ cmovb ecx,[rdx+28]                 // Original code
+
+ mov r15,pShipHull
+ cmp r10,[r15]
+ jne _ExitMSM
+
+ mov r15,iEnableMSM
+ cmp dword ptr [r15],0
+ je _ExitMSM                       // Jump if feature is disabled
+
+ add [rdx+28],ecx
+
+_ExitMSM:
+ pop r15
+
+ sub [rdx+28],ecx                  // Original code (upd missile)
+ jmp _BackMSM                      // Back to main code
+
+//========================================= 400
+// Called when missile is shot
+// R10 = pHull
+_MonShipMissile1:
+ push r15
+
+ mov r15,aLast
+ mov dword ptr [r15],'_SM1'
+
+ cmovb ecx,[rdx+28]                // Original code
+
+ mov r15,pShipHull
+ cmp r10,[r15]
+ jne _ExitSM1
+
+ mov r15,iEnableMSM
+ cmp dword ptr [r15],0
+ je _ExitSM1                       // Jump if feature is disabled
+
+ add [rdx+28],ecx
+
+_ExitSM1:
+ pop r15
+
+ sub [rdx+28],ecx                  // Original code (upd missile)
+ jmp _BackSM1                      // Back to main code
+
+//========================================= 360
+// When opening the inventory
+_MonPlayerInv:
+ push r15
+
+ mov r15,pInv
+ mov [r15],rsi
+
+_ExitMPI:
+ pop r15
+
+ cmp qword ptr [rsi+10],01         // Original code
+ jmp _BackMPI                      // Back to main code
+
+//========================================= new 360
+// Called when Hull is changed
+// RDI = pShipHull
+_MonShipHull:
+ push r15
+
+ mov r15,aLast
+ mov dword ptr [r15],'_MSH'
+
+ mov r15,pShipHull
+ cmp rdi,[r15]
+ jne _ExitMSH
+
+ mov r15,iEnableGMD
+ cmp dword ptr [r15],0
+ je _ExitMSH                       // Jump if feature is disabled
+
+ movss xmm1,[rdi+00000294]
+
+_ExitMSH:
+ pop r15
+ movss [rdi+00000298],xmm1         // Original Code (set cHull)
+ jmp _BackMSH                      // Back to main code
+
+//=========================================
+ db '=============================================&gt;'
+ db 'CE6.5 Script by Recifense 022616'
+//=========================================
+// Variables
+iEnableMMM:
+ dd 0
+iEnableMSD:
+ dd 0
+iEnableGMD:
+ dd 0
+iEnableMSM:
+ dd 0
+liMinMoney:
+ dq ctMMMY
+pPlayer:
+ dq 0
+pShipHull:
+ dq MyCode
+pShipShield:
+ dq MyCode
+pHull:
+ dq MyCode
+pShield:
+ dq MyCode
+pInv:
+ dq 0
+pItem:
+ dq 0
+iMaxIndex:
+ dd 0
+iInvIndex:
+ dd 1
+aLast:
+ db 'CE65'
+iCount1:
+ dd 0
+iCount2:
+ dd 0
+pHull2:
+ dq 0
+pShield2:
+ dq 0
+pInfo2:
+ dq 0
+
+//=========================================
+// Hacking Points
+MHPR:
+ jmp _MonHumanPlayer
+ nop
+ nop
+_BackMHP:
+
+MPSP:
+ jmp _MonPlayerShip
+ nop
+ nop
+_BackMPS:
+
+MSSD:
+ jmp _MonShipShield
+_BackMSS:
+
+MSME:
+ jmp _MonShipMissile
+ nop
+ nop
+_BackMSM:
+
+MSM1:
+ jmp _MonShipMissile1
+ nop
+ nop
+_BackSM1:
+
+MPIY:
+ jmp _MonPlayerInv
+_BackMPI:
+
+MSHL:
+ jmp _MonShipHull
+ nop
+ nop
+ nop
+_BackMSH:
+
+//=========================================
+// Script for Restoring Original Codes
+[DISABLE]
+MHPR:
+// mov rax,[rcx]
+// add rsp,20
+ db 48 8b 01 48 83 c4 20
+
+MPSP:
+// mov rax,[rbx+000002a0]
+ db 48 8b 83 a0 02 00 00
+
+MSSD:
+// movsd [rcx-10],xmm2
+ db f2 0f 11 51 f0
+
+MSME:
+// cmovb ecx,[rdx+28]
+// sub [rdx+28],ecx
+ db 0f 42 4a 28 29 4a 28
+
+MSM1:
+// cmovb ecx,[rdx+28]
+// sub [rdx+28],ecx
+ db 0f 42 4a 28 29 4a 28
+
+MPIY:
+// cmp qword ptr [rsi+10],01
+ db 48 83 7e 10 01
+
+MSHL:
+// movss [rdi+00000298],xmm1
+ db f3 0f 11 8f 98 02 00 00
+
+//=========================================
+// Unregistering Symbols
+unregistersymbol(MyCode)
+unregistersymbol(iEnableMMM)
+unregistersymbol(iEnableMSD)
+unregistersymbol(iEnableGMD)
+unregistersymbol(iEnableMSM)
+unregistersymbol(liMinMoney)
+unregistersymbol(pPlayer)
+unregistersymbol(pShipHull)
+unregistersymbol(pShipShield)
+unregistersymbol(pShield2)
+unregistersymbol(pHull2)
+unregistersymbol(pInfo2)
+unregistersymbol(pInv)
+unregistersymbol(pItem)
+unregistersymbol(iInvIndex)
+unregistersymbol(iMaxIndex)
+unregistersymbol(aLast)
+unregistersymbol(iCount1)
+unregistersymbol(iCount2)
+
+//=========================================
+dealloc(MyCode)
+//============= Scripts End ===============
+
+// ****************************************
+// NOTES
+// ****************************************
+{
+
+}
+
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>100</ID>
+          <Description>"[X] &lt;== Minimum Money"</Description>
+          <LastState/>
+          <Color>C08000</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[enable]
+define(test,LUDO)
+
+{$LUA}
+writeInteger("iEnableMMM",1)
+getAddressList().getMemoryRecordByID(100).Color = 0x00008000
+{$ASM}
+
+[disable]
+{$LUA}
+writeInteger("iEnableMMM",0)
+getAddressList().getMemoryRecordByID(100).Color = 0x00c08000
+{$ASM}
+
+</AssemblerScript>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>101</ID>
+          <Description>"[X] &lt;== Unlimited Shield - Longer Boost"</Description>
+          <LastState/>
+          <Color>008000</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[enable]
+define(test,LUDO)
+
+{$LUA}
+writeInteger("iEnableMSD",1)
+getAddressList().getMemoryRecordByID(101).Color = 0x00008000
+{$ASM}
+
+[disable]
+{$LUA}
+writeInteger("iEnableMSD",0)
+getAddressList().getMemoryRecordByID(101).Color = 0x00c08000
+{$ASM}
+
+</AssemblerScript>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>102</ID>
+          <Description>"[X] &lt;== God Mode"</Description>
+          <LastState/>
+          <Color>008000</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[enable]
+define(test,LUDO)
+
+{$LUA}
+writeInteger("iEnableGMD",1)
+getAddressList().getMemoryRecordByID(102).Color = 0x00008000
+{$ASM}
+
+[disable]
+{$LUA}
+writeInteger("iEnableGMD",0)
+getAddressList().getMemoryRecordByID(102).Color = 0x00c08000
+{$ASM}
+
+</AssemblerScript>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>103</ID>
+          <Description>"[X] &lt;== Unlimited Missiles"</Description>
+          <LastState/>
+          <Color>008000</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[enable]
+define(test,LUDO)
+
+{$LUA}
+writeInteger("iEnableMSM",1)
+getAddressList().getMemoryRecordByID(103).Color = 0x00008000
+{$ASM}
+
+[disable]
+{$LUA}
+writeInteger("iEnableMSM",0)
+getAddressList().getMemoryRecordByID(103).Color = 0x00c08000
+{$ASM}
+
+</AssemblerScript>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>228</ID>
+      <Description>"[X] &lt;== Table/Script Information"</Description>
+      <Options moHideChildren="1"/>
+      <LastState/>
+      <Color>0000FF</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>[enable]
+define(test,LUDO)
+
+{$LUA}
+getMainForm().CommentButton.doClick()
+{$ASM}
+
+[disable]
+
+</AssemblerScript>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>314</ID>
+      <Description>"Inventory Slot (Arranged by Item Acquirement from First to Last)"</Description>
+      <Options moHideChildren="1"/>
+      <LastState Value="" RealAddress="00000000"/>
+      <GroupHeader>1</GroupHeader>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>231</ID>
+          <Description>"Slot 1"</Description>
+          <LastState Value="1000" RealAddress="7FF7679F0A28"/>
+          <VariableType>4 Bytes</VariableType>
+          <Address>"XRebirth.exe"+019C1CB8</Address>
+          <Offsets>
+            <Offset>8</Offset>
+            <Offset>0</Offset>
+            <Offset>70</Offset>
+            <Offset>0</Offset>
+            <Offset>3B8</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>232</ID>
+          <Description>"Slot 2"</Description>
+          <LastState Value="1031" RealAddress="7FF7679F0A38"/>
+          <VariableType>4 Bytes</VariableType>
+          <Address>"XRebirth.exe"+019C1CB8</Address>
+          <Offsets>
+            <Offset>18</Offset>
+            <Offset>0</Offset>
+            <Offset>70</Offset>
+            <Offset>0</Offset>
+            <Offset>3B8</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>237</ID>
+          <Description>"Slot 3"</Description>
+          <LastState Value="1059" RealAddress="7FF7679F0A48"/>
+          <VariableType>4 Bytes</VariableType>
+          <Address>"XRebirth.exe"+019C1CB8</Address>
+          <Offsets>
+            <Offset>28</Offset>
+            <Offset>0</Offset>
+            <Offset>70</Offset>
+            <Offset>0</Offset>
+            <Offset>3B8</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>236</ID>
+          <Description>"Slot 4"</Description>
+          <LastState Value="1000" RealAddress="7FF7679F0A58"/>
+          <VariableType>4 Bytes</VariableType>
+          <Address>"XRebirth.exe"+019C1CB8</Address>
+          <Offsets>
+            <Offset>38</Offset>
+            <Offset>0</Offset>
+            <Offset>70</Offset>
+            <Offset>0</Offset>
+            <Offset>3B8</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>235</ID>
+          <Description>"Slot 5"</Description>
+          <LastState Value="1000" RealAddress="7FF7679F0A68"/>
+          <VariableType>4 Bytes</VariableType>
+          <Address>"XRebirth.exe"+019C1CB8</Address>
+          <Offsets>
+            <Offset>48</Offset>
+            <Offset>0</Offset>
+            <Offset>70</Offset>
+            <Offset>0</Offset>
+            <Offset>3B8</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>234</ID>
+          <Description>"Slot 6"</Description>
+          <LastState Value="10000" RealAddress="7FF7679F0A78"/>
+          <VariableType>4 Bytes</VariableType>
+          <Address>"XRebirth.exe"+019C1CB8</Address>
+          <Offsets>
+            <Offset>58</Offset>
+            <Offset>0</Offset>
+            <Offset>70</Offset>
+            <Offset>0</Offset>
+            <Offset>3B8</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>233</ID>
+          <Description>"Slot 7"</Description>
+          <LastState Value="1003" RealAddress="7FF7679F0A88"/>
+          <VariableType>4 Bytes</VariableType>
+          <Address>"XRebirth.exe"+019C1CB8</Address>
+          <Offsets>
+            <Offset>68</Offset>
+            <Offset>0</Offset>
+            <Offset>70</Offset>
+            <Offset>0</Offset>
+            <Offset>3B8</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>239</ID>
+          <Description>"Slot 8"</Description>
+          <LastState Value="1000" RealAddress="7FF7679F0A98"/>
+          <VariableType>4 Bytes</VariableType>
+          <Address>"XRebirth.exe"+019C1CB8</Address>
+          <Offsets>
+            <Offset>78</Offset>
+            <Offset>0</Offset>
+            <Offset>70</Offset>
+            <Offset>0</Offset>
+            <Offset>3B8</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>240</ID>
+          <Description>"Slot 9"</Description>
+          <LastState Value="1000" RealAddress="7FF7679F0AA8"/>
+          <VariableType>4 Bytes</VariableType>
+          <Address>"XRebirth.exe"+019C1CB8</Address>
+          <Offsets>
+            <Offset>88</Offset>
+            <Offset>0</Offset>
+            <Offset>70</Offset>
+            <Offset>0</Offset>
+            <Offset>3B8</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>241</ID>
+          <Description>"Slot 10"</Description>
+          <LastState Value="1000" RealAddress="7FF7679F0AB8"/>
+          <VariableType>4 Bytes</VariableType>
+          <Address>"XRebirth.exe"+019C1CB8</Address>
+          <Offsets>
+            <Offset>98</Offset>
+            <Offset>0</Offset>
+            <Offset>70</Offset>
+            <Offset>0</Offset>
+            <Offset>3B8</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>242</ID>
+          <Description>"Slot 11"</Description>
+          <LastState Value="1000" RealAddress="7FF7679F0AC8"/>
+          <VariableType>4 Bytes</VariableType>
+          <Address>"XRebirth.exe"+019C1CB8</Address>
+          <Offsets>
+            <Offset>A8</Offset>
+            <Offset>0</Offset>
+            <Offset>70</Offset>
+            <Offset>0</Offset>
+            <Offset>3B8</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>243</ID>
+          <Description>"Slot 12"</Description>
+          <LastState Value="1000" RealAddress="7FF7679F0AD8"/>
+          <VariableType>4 Bytes</VariableType>
+          <Address>"XRebirth.exe"+019C1CB8</Address>
+          <Offsets>
+            <Offset>B8</Offset>
+            <Offset>0</Offset>
+            <Offset>70</Offset>
+            <Offset>0</Offset>
+            <Offset>3B8</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>244</ID>
+          <Description>"Slot 13"</Description>
+          <LastState Value="1034" RealAddress="7FF7679F0AE8"/>
+          <VariableType>4 Bytes</VariableType>
+          <Address>"XRebirth.exe"+019C1CB8</Address>
+          <Offsets>
+            <Offset>C8</Offset>
+            <Offset>0</Offset>
+            <Offset>70</Offset>
+            <Offset>0</Offset>
+            <Offset>3B8</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>245</ID>
+          <Description>"Slot 14"</Description>
+          <LastState Value="1000" RealAddress="7FF7679F0AF8"/>
+          <VariableType>4 Bytes</VariableType>
+          <Address>"XRebirth.exe"+019C1CB8</Address>
+          <Offsets>
+            <Offset>D8</Offset>
+            <Offset>0</Offset>
+            <Offset>70</Offset>
+            <Offset>0</Offset>
+            <Offset>3B8</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>246</ID>
+          <Description>"Slot 15"</Description>
+          <LastState Value="1000" RealAddress="7FF7679F0B08"/>
+          <VariableType>4 Bytes</VariableType>
+          <Address>"XRebirth.exe"+019C1CB8</Address>
+          <Offsets>
+            <Offset>E8</Offset>
+            <Offset>0</Offset>
+            <Offset>70</Offset>
+            <Offset>0</Offset>
+            <Offset>3B8</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>247</ID>
+          <Description>"Slot 16"</Description>
+          <LastState Value="1000" RealAddress="7FF7679F0B18"/>
+          <VariableType>4 Bytes</VariableType>
+          <Address>"XRebirth.exe"+019C1CB8</Address>
+          <Offsets>
+            <Offset>F8</Offset>
+            <Offset>0</Offset>
+            <Offset>70</Offset>
+            <Offset>0</Offset>
+            <Offset>3B8</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>248</ID>
+          <Description>"Slot 17"</Description>
+          <LastState Value="1046" RealAddress="7FF7679F0B28"/>
+          <VariableType>4 Bytes</VariableType>
+          <Address>"XRebirth.exe"+019C1CB8</Address>
+          <Offsets>
+            <Offset>108</Offset>
+            <Offset>0</Offset>
+            <Offset>70</Offset>
+            <Offset>0</Offset>
+            <Offset>3B8</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>249</ID>
+          <Description>"Slot 18"</Description>
+          <LastState Value="1009" RealAddress="7FF7679F0B38"/>
+          <VariableType>4 Bytes</VariableType>
+          <Address>"XRebirth.exe"+019C1CB8</Address>
+          <Offsets>
+            <Offset>118</Offset>
+            <Offset>0</Offset>
+            <Offset>70</Offset>
+            <Offset>0</Offset>
+            <Offset>3B8</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>250</ID>
+          <Description>"Slot 19"</Description>
+          <LastState Value="1000" RealAddress="7FF7679F0B48"/>
+          <VariableType>4 Bytes</VariableType>
+          <Address>"XRebirth.exe"+019C1CB8</Address>
+          <Offsets>
+            <Offset>128</Offset>
+            <Offset>0</Offset>
+            <Offset>70</Offset>
+            <Offset>0</Offset>
+            <Offset>3B8</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>251</ID>
+          <Description>"Slot 20"</Description>
+          <LastState Value="1000" RealAddress="7FF7679F0B58"/>
+          <VariableType>4 Bytes</VariableType>
+          <Address>"XRebirth.exe"+019C1CB8</Address>
+          <Offsets>
+            <Offset>138</Offset>
+            <Offset>0</Offset>
+            <Offset>70</Offset>
+            <Offset>0</Offset>
+            <Offset>3B8</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>252</ID>
+          <Description>"Slot 21"</Description>
+          <LastState Value="1065" RealAddress="7FF7679F0B68"/>
+          <VariableType>4 Bytes</VariableType>
+          <Address>"XRebirth.exe"+019C1CB8</Address>
+          <Offsets>
+            <Offset>148</Offset>
+            <Offset>0</Offset>
+            <Offset>70</Offset>
+            <Offset>0</Offset>
+            <Offset>3B8</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>253</ID>
+          <Description>"Slot 22"</Description>
+          <LastState Value="1000" RealAddress="7FF7679F0B78"/>
+          <VariableType>4 Bytes</VariableType>
+          <Address>"XRebirth.exe"+019C1CB8</Address>
+          <Offsets>
+            <Offset>158</Offset>
+            <Offset>0</Offset>
+            <Offset>70</Offset>
+            <Offset>0</Offset>
+            <Offset>3B8</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>254</ID>
+          <Description>"Slot 23"</Description>
+          <LastState Value="1000" RealAddress="7FF7679F0B88"/>
+          <VariableType>4 Bytes</VariableType>
+          <Address>"XRebirth.exe"+019C1CB8</Address>
+          <Offsets>
+            <Offset>168</Offset>
+            <Offset>0</Offset>
+            <Offset>70</Offset>
+            <Offset>0</Offset>
+            <Offset>3B8</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>255</ID>
+          <Description>"Slot 24"</Description>
+          <LastState Value="1000" RealAddress="7FF7679F0B98"/>
+          <VariableType>4 Bytes</VariableType>
+          <Address>"XRebirth.exe"+019C1CB8</Address>
+          <Offsets>
+            <Offset>178</Offset>
+            <Offset>0</Offset>
+            <Offset>70</Offset>
+            <Offset>0</Offset>
+            <Offset>3B8</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>256</ID>
+          <Description>"Slot 25"</Description>
+          <LastState Value="1000" RealAddress="7FF7679F0BA8"/>
+          <VariableType>4 Bytes</VariableType>
+          <Address>"XRebirth.exe"+019C1CB8</Address>
+          <Offsets>
+            <Offset>188</Offset>
+            <Offset>0</Offset>
+            <Offset>70</Offset>
+            <Offset>0</Offset>
+            <Offset>3B8</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>257</ID>
+          <Description>"Slot 26"</Description>
+          <LastState Value="1000" RealAddress="7FF7679F0BB8"/>
+          <VariableType>4 Bytes</VariableType>
+          <Address>"XRebirth.exe"+019C1CB8</Address>
+          <Offsets>
+            <Offset>198</Offset>
+            <Offset>0</Offset>
+            <Offset>70</Offset>
+            <Offset>0</Offset>
+            <Offset>3B8</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>258</ID>
+          <Description>"Slot 27"</Description>
+          <LastState Value="1000" RealAddress="7FF7679F0BC8"/>
+          <VariableType>4 Bytes</VariableType>
+          <Address>"XRebirth.exe"+019C1CB8</Address>
+          <Offsets>
+            <Offset>1A8</Offset>
+            <Offset>0</Offset>
+            <Offset>70</Offset>
+            <Offset>0</Offset>
+            <Offset>3B8</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>259</ID>
+          <Description>"Slot 28"</Description>
+          <LastState Value="1000" RealAddress="7FF7679F0BD8"/>
+          <VariableType>4 Bytes</VariableType>
+          <Address>"XRebirth.exe"+019C1CB8</Address>
+          <Offsets>
+            <Offset>1B8</Offset>
+            <Offset>0</Offset>
+            <Offset>70</Offset>
+            <Offset>0</Offset>
+            <Offset>3B8</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>260</ID>
+          <Description>"Slot 29"</Description>
+          <LastState Value="1239" RealAddress="7FF7679F0BE8"/>
+          <VariableType>4 Bytes</VariableType>
+          <Address>"XRebirth.exe"+019C1CB8</Address>
+          <Offsets>
+            <Offset>1C8</Offset>
+            <Offset>0</Offset>
+            <Offset>70</Offset>
+            <Offset>0</Offset>
+            <Offset>3B8</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>261</ID>
+          <Description>"Slot 30"</Description>
+          <LastState Value="1000" RealAddress="7FF7679F0BF8"/>
+          <VariableType>4 Bytes</VariableType>
+          <Address>"XRebirth.exe"+019C1CB8</Address>
+          <Offsets>
+            <Offset>1D8</Offset>
+            <Offset>0</Offset>
+            <Offset>70</Offset>
+            <Offset>0</Offset>
+            <Offset>3B8</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>262</ID>
+          <Description>"Slot 31"</Description>
+          <LastState Value="1000" RealAddress="7FF7679F0C08"/>
+          <VariableType>4 Bytes</VariableType>
+          <Address>"XRebirth.exe"+019C1CB8</Address>
+          <Offsets>
+            <Offset>1E8</Offset>
+            <Offset>0</Offset>
+            <Offset>70</Offset>
+            <Offset>0</Offset>
+            <Offset>3B8</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>263</ID>
+          <Description>"Slot 32"</Description>
+          <LastState Value="1000" RealAddress="7FF7679F0C18"/>
+          <VariableType>4 Bytes</VariableType>
+          <Address>"XRebirth.exe"+019C1CB8</Address>
+          <Offsets>
+            <Offset>1F8</Offset>
+            <Offset>0</Offset>
+            <Offset>70</Offset>
+            <Offset>0</Offset>
+            <Offset>3B8</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>264</ID>
+          <Description>"Slot 33"</Description>
+          <LastState Value="1000" RealAddress="7FF7679F0C28"/>
+          <VariableType>4 Bytes</VariableType>
+          <Address>"XRebirth.exe"+019C1CB8</Address>
+          <Offsets>
+            <Offset>208</Offset>
+            <Offset>0</Offset>
+            <Offset>70</Offset>
+            <Offset>0</Offset>
+            <Offset>3B8</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>265</ID>
+          <Description>"Slot 34"</Description>
+          <LastState Value="1000" RealAddress="7FF7679F0C38"/>
+          <VariableType>4 Bytes</VariableType>
+          <Address>"XRebirth.exe"+019C1CB8</Address>
+          <Offsets>
+            <Offset>218</Offset>
+            <Offset>0</Offset>
+            <Offset>70</Offset>
+            <Offset>0</Offset>
+            <Offset>3B8</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>266</ID>
+          <Description>"Slot 35"</Description>
+          <LastState Value="1000" RealAddress="7FF7679F0C48"/>
+          <VariableType>4 Bytes</VariableType>
+          <Address>"XRebirth.exe"+019C1CB8</Address>
+          <Offsets>
+            <Offset>228</Offset>
+            <Offset>0</Offset>
+            <Offset>70</Offset>
+            <Offset>0</Offset>
+            <Offset>3B8</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>267</ID>
+          <Description>"Slot 36"</Description>
+          <LastState Value="1000" RealAddress="7FF7679F0C58"/>
+          <VariableType>4 Bytes</VariableType>
+          <Address>"XRebirth.exe"+019C1CB8</Address>
+          <Offsets>
+            <Offset>238</Offset>
+            <Offset>0</Offset>
+            <Offset>70</Offset>
+            <Offset>0</Offset>
+            <Offset>3B8</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>268</ID>
+          <Description>"Slot 37"</Description>
+          <LastState Value="1000" RealAddress="7FF7679F0C68"/>
+          <VariableType>4 Bytes</VariableType>
+          <Address>"XRebirth.exe"+019C1CB8</Address>
+          <Offsets>
+            <Offset>248</Offset>
+            <Offset>0</Offset>
+            <Offset>70</Offset>
+            <Offset>0</Offset>
+            <Offset>3B8</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>269</ID>
+          <Description>"Slot 38"</Description>
+          <LastState Value="1000" RealAddress="7FF7679F0C78"/>
+          <VariableType>4 Bytes</VariableType>
+          <Address>"XRebirth.exe"+019C1CB8</Address>
+          <Offsets>
+            <Offset>258</Offset>
+            <Offset>0</Offset>
+            <Offset>70</Offset>
+            <Offset>0</Offset>
+            <Offset>3B8</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>270</ID>
+          <Description>"Slot 39"</Description>
+          <LastState Value="1000" RealAddress="7FF7679F0C88"/>
+          <VariableType>4 Bytes</VariableType>
+          <Address>"XRebirth.exe"+019C1CB8</Address>
+          <Offsets>
+            <Offset>268</Offset>
+            <Offset>0</Offset>
+            <Offset>70</Offset>
+            <Offset>0</Offset>
+            <Offset>3B8</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>271</ID>
+          <Description>"Slot 40"</Description>
+          <LastState Value="9492" RealAddress="7FF7679F0C98"/>
+          <VariableType>4 Bytes</VariableType>
+          <Address>"XRebirth.exe"+019C1CB8</Address>
+          <Offsets>
+            <Offset>278</Offset>
+            <Offset>0</Offset>
+            <Offset>70</Offset>
+            <Offset>0</Offset>
+            <Offset>3B8</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>272</ID>
+          <Description>"Slot 41"</Description>
+          <LastState Value="9453" RealAddress="7FF7679F0CA8"/>
+          <VariableType>4 Bytes</VariableType>
+          <Address>"XRebirth.exe"+019C1CB8</Address>
+          <Offsets>
+            <Offset>288</Offset>
+            <Offset>0</Offset>
+            <Offset>70</Offset>
+            <Offset>0</Offset>
+            <Offset>3B8</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>273</ID>
+          <Description>"Slot 42"</Description>
+          <LastState Value="9430" RealAddress="7FF7679F0CB8"/>
+          <VariableType>4 Bytes</VariableType>
+          <Address>"XRebirth.exe"+019C1CB8</Address>
+          <Offsets>
+            <Offset>298</Offset>
+            <Offset>0</Offset>
+            <Offset>70</Offset>
+            <Offset>0</Offset>
+            <Offset>3B8</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>274</ID>
+          <Description>"Slot 43"</Description>
+          <LastState Value="9435" RealAddress="7FF7679F0CC8"/>
+          <VariableType>4 Bytes</VariableType>
+          <Address>"XRebirth.exe"+019C1CB8</Address>
+          <Offsets>
+            <Offset>2A8</Offset>
+            <Offset>0</Offset>
+            <Offset>70</Offset>
+            <Offset>0</Offset>
+            <Offset>3B8</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>275</ID>
+          <Description>"Slot 44"</Description>
+          <LastState Value="1231" RealAddress="7FF7679F0CD8"/>
+          <VariableType>4 Bytes</VariableType>
+          <Address>"XRebirth.exe"+019C1CB8</Address>
+          <Offsets>
+            <Offset>2B8</Offset>
+            <Offset>0</Offset>
+            <Offset>70</Offset>
+            <Offset>0</Offset>
+            <Offset>3B8</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>276</ID>
+          <Description>"Slot 45"</Description>
+          <LastState Value="1000" RealAddress="7FF7679F0CE8"/>
+          <VariableType>4 Bytes</VariableType>
+          <Address>"XRebirth.exe"+019C1CB8</Address>
+          <Offsets>
+            <Offset>2C8</Offset>
+            <Offset>0</Offset>
+            <Offset>70</Offset>
+            <Offset>0</Offset>
+            <Offset>3B8</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>277</ID>
+          <Description>"Slot 46"</Description>
+          <LastState Value="1000" RealAddress="7FF7679F0CF8"/>
+          <VariableType>4 Bytes</VariableType>
+          <Address>"XRebirth.exe"+019C1CB8</Address>
+          <Offsets>
+            <Offset>2D8</Offset>
+            <Offset>0</Offset>
+            <Offset>70</Offset>
+            <Offset>0</Offset>
+            <Offset>3B8</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>278</ID>
+          <Description>"Slot 47"</Description>
+          <LastState Value="1000" RealAddress="7FF7679F0D08"/>
+          <VariableType>4 Bytes</VariableType>
+          <Address>"XRebirth.exe"+019C1CB8</Address>
+          <Offsets>
+            <Offset>2E8</Offset>
+            <Offset>0</Offset>
+            <Offset>70</Offset>
+            <Offset>0</Offset>
+            <Offset>3B8</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>279</ID>
+          <Description>"Slot 48"</Description>
+          <LastState Value="1000" RealAddress="7FF7679F0D18"/>
+          <VariableType>4 Bytes</VariableType>
+          <Address>"XRebirth.exe"+019C1CB8</Address>
+          <Offsets>
+            <Offset>2F8</Offset>
+            <Offset>0</Offset>
+            <Offset>70</Offset>
+            <Offset>0</Offset>
+            <Offset>3B8</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>280</ID>
+          <Description>"Slot 49"</Description>
+          <LastState Value="1000" RealAddress="7FF7679F0D28"/>
+          <VariableType>4 Bytes</VariableType>
+          <Address>"XRebirth.exe"+019C1CB8</Address>
+          <Offsets>
+            <Offset>308</Offset>
+            <Offset>0</Offset>
+            <Offset>70</Offset>
+            <Offset>0</Offset>
+            <Offset>3B8</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>281</ID>
+          <Description>"Slot 50"</Description>
+          <LastState Value="1000" RealAddress="7FF7679F0D38"/>
+          <VariableType>4 Bytes</VariableType>
+          <Address>"XRebirth.exe"+019C1CB8</Address>
+          <Offsets>
+            <Offset>318</Offset>
+            <Offset>0</Offset>
+            <Offset>70</Offset>
+            <Offset>0</Offset>
+            <Offset>3B8</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>282</ID>
+          <Description>"Slot 51"</Description>
+          <LastState Value="1000" RealAddress="7FF7679F0D48"/>
+          <VariableType>4 Bytes</VariableType>
+          <Address>"XRebirth.exe"+019C1CB8</Address>
+          <Offsets>
+            <Offset>328</Offset>
+            <Offset>0</Offset>
+            <Offset>70</Offset>
+            <Offset>0</Offset>
+            <Offset>3B8</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>283</ID>
+          <Description>"Slot 52"</Description>
+          <LastState Value="1000" RealAddress="7FF7679F0D58"/>
+          <VariableType>4 Bytes</VariableType>
+          <Address>"XRebirth.exe"+019C1CB8</Address>
+          <Offsets>
+            <Offset>338</Offset>
+            <Offset>0</Offset>
+            <Offset>70</Offset>
+            <Offset>0</Offset>
+            <Offset>3B8</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>284</ID>
+          <Description>"Slot 53"</Description>
+          <LastState Value="9409" RealAddress="7FF7679F0D68"/>
+          <VariableType>4 Bytes</VariableType>
+          <Address>"XRebirth.exe"+019C1CB8</Address>
+          <Offsets>
+            <Offset>348</Offset>
+            <Offset>0</Offset>
+            <Offset>70</Offset>
+            <Offset>0</Offset>
+            <Offset>3B8</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>285</ID>
+          <Description>"Slot 54"</Description>
+          <LastState Value="9485" RealAddress="7FF7679F0D78"/>
+          <VariableType>4 Bytes</VariableType>
+          <Address>"XRebirth.exe"+019C1CB8</Address>
+          <Offsets>
+            <Offset>358</Offset>
+            <Offset>0</Offset>
+            <Offset>70</Offset>
+            <Offset>0</Offset>
+            <Offset>3B8</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>286</ID>
+          <Description>"Slot 55"</Description>
+          <LastState Value="10000" RealAddress="7FF7679F0D88"/>
+          <VariableType>4 Bytes</VariableType>
+          <Address>"XRebirth.exe"+019C1CB8</Address>
+          <Offsets>
+            <Offset>368</Offset>
+            <Offset>0</Offset>
+            <Offset>70</Offset>
+            <Offset>0</Offset>
+            <Offset>3B8</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>287</ID>
+          <Description>"Slot 56"</Description>
+          <LastState Value="10000" RealAddress="7FF7679F0D98"/>
+          <VariableType>4 Bytes</VariableType>
+          <Address>"XRebirth.exe"+019C1CB8</Address>
+          <Offsets>
+            <Offset>378</Offset>
+            <Offset>0</Offset>
+            <Offset>70</Offset>
+            <Offset>0</Offset>
+            <Offset>3B8</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>288</ID>
+          <Description>"Slot 57"</Description>
+          <LastState Value="1001" RealAddress="7FF7679F0DA8"/>
+          <VariableType>4 Bytes</VariableType>
+          <Address>"XRebirth.exe"+019C1CB8</Address>
+          <Offsets>
+            <Offset>388</Offset>
+            <Offset>0</Offset>
+            <Offset>70</Offset>
+            <Offset>0</Offset>
+            <Offset>3B8</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>289</ID>
+          <Description>"Slot 58"</Description>
+          <LastState Value="0" RealAddress="7FF7679F0DB8"/>
+          <VariableType>4 Bytes</VariableType>
+          <Address>"XRebirth.exe"+019C1CB8</Address>
+          <Offsets>
+            <Offset>398</Offset>
+            <Offset>0</Offset>
+            <Offset>70</Offset>
+            <Offset>0</Offset>
+            <Offset>3B8</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>290</ID>
+          <Description>"Slot 59"</Description>
+          <LastState Value="1738476032" RealAddress="7FF7679F0DC8"/>
+          <VariableType>4 Bytes</VariableType>
+          <Address>"XRebirth.exe"+019C1CB8</Address>
+          <Offsets>
+            <Offset>3A8</Offset>
+            <Offset>0</Offset>
+            <Offset>70</Offset>
+            <Offset>0</Offset>
+            <Offset>3B8</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>291</ID>
+          <Description>"Slot 60"</Description>
+          <LastState Value="223638816" RealAddress="7FF7679F0DD8"/>
+          <VariableType>4 Bytes</VariableType>
+          <Address>"XRebirth.exe"+019C1CB8</Address>
+          <Offsets>
+            <Offset>3B8</Offset>
+            <Offset>0</Offset>
+            <Offset>70</Offset>
+            <Offset>0</Offset>
+            <Offset>3B8</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>292</ID>
+          <Description>"Slot 61"</Description>
+          <LastState Value="1746621472" RealAddress="7FF7679F0DE8"/>
+          <VariableType>4 Bytes</VariableType>
+          <Address>"XRebirth.exe"+019C1CB8</Address>
+          <Offsets>
+            <Offset>3C8</Offset>
+            <Offset>0</Offset>
+            <Offset>70</Offset>
+            <Offset>0</Offset>
+            <Offset>3B8</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>293</ID>
+          <Description>"Slot 62"</Description>
+          <LastState Value="1738478480" RealAddress="7FF7679F0DF8"/>
+          <VariableType>4 Bytes</VariableType>
+          <Address>"XRebirth.exe"+019C1CB8</Address>
+          <Offsets>
+            <Offset>3D8</Offset>
+            <Offset>0</Offset>
+            <Offset>70</Offset>
+            <Offset>0</Offset>
+            <Offset>3B8</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>294</ID>
+          <Description>"Slot 63"</Description>
+          <LastState Value="31" RealAddress="7FF7679F0E08"/>
+          <VariableType>4 Bytes</VariableType>
+          <Address>"XRebirth.exe"+019C1CB8</Address>
+          <Offsets>
+            <Offset>3E8</Offset>
+            <Offset>0</Offset>
+            <Offset>70</Offset>
+            <Offset>0</Offset>
+            <Offset>3B8</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>295</ID>
+          <Description>"Slot 64"</Description>
+          <LastState Value="3489037312" RealAddress="7FF7679F0E18"/>
+          <VariableType>4 Bytes</VariableType>
+          <Address>"XRebirth.exe"+019C1CB8</Address>
+          <Offsets>
+            <Offset>3F8</Offset>
+            <Offset>0</Offset>
+            <Offset>70</Offset>
+            <Offset>0</Offset>
+            <Offset>3B8</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>296</ID>
+          <Description>"Slot 65"</Description>
+          <LastState Value="0" RealAddress="7FF7679F0E28"/>
+          <VariableType>4 Bytes</VariableType>
+          <Address>"XRebirth.exe"+019C1CB8</Address>
+          <Offsets>
+            <Offset>408</Offset>
+            <Offset>0</Offset>
+            <Offset>70</Offset>
+            <Offset>0</Offset>
+            <Offset>3B8</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>297</ID>
+          <Description>"Slot 66"</Description>
+          <LastState Value="1746312688" RealAddress="7FF7679F0E38"/>
+          <VariableType>4 Bytes</VariableType>
+          <Address>"XRebirth.exe"+019C1CB8</Address>
+          <Offsets>
+            <Offset>418</Offset>
+            <Offset>0</Offset>
+            <Offset>70</Offset>
+            <Offset>0</Offset>
+            <Offset>3B8</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>298</ID>
+          <Description>"Slot 67"</Description>
+          <LastState Value="1623321104" RealAddress="7FF7679F0E48"/>
+          <VariableType>4 Bytes</VariableType>
+          <Address>"XRebirth.exe"+019C1CB8</Address>
+          <Offsets>
+            <Offset>428</Offset>
+            <Offset>0</Offset>
+            <Offset>70</Offset>
+            <Offset>0</Offset>
+            <Offset>3B8</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>299</ID>
+          <Description>"Slot 68"</Description>
+          <LastState Value="0" RealAddress="7FF7679F0E58"/>
+          <VariableType>4 Bytes</VariableType>
+          <Address>"XRebirth.exe"+019C1CB8</Address>
+          <Offsets>
+            <Offset>438</Offset>
+            <Offset>0</Offset>
+            <Offset>70</Offset>
+            <Offset>0</Offset>
+            <Offset>3B8</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>300</ID>
+          <Description>"Slot 69"</Description>
+          <LastState Value="0" RealAddress="7FF7679F0E68"/>
+          <VariableType>4 Bytes</VariableType>
+          <Address>"XRebirth.exe"+019C1CB8</Address>
+          <Offsets>
+            <Offset>448</Offset>
+            <Offset>0</Offset>
+            <Offset>70</Offset>
+            <Offset>0</Offset>
+            <Offset>3B8</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>301</ID>
+          <Description>"Slot 71"</Description>
+          <LastState Value="0" RealAddress="7FF7679F0E78"/>
+          <VariableType>4 Bytes</VariableType>
+          <Address>"XRebirth.exe"+019C1CB8</Address>
+          <Offsets>
+            <Offset>458</Offset>
+            <Offset>0</Offset>
+            <Offset>70</Offset>
+            <Offset>0</Offset>
+            <Offset>3B8</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>302</ID>
+          <Description>"Slot 72"</Description>
+          <LastState Value="0" RealAddress="7FF7679F0E88"/>
+          <VariableType>4 Bytes</VariableType>
+          <Address>"XRebirth.exe"+019C1CB8</Address>
+          <Offsets>
+            <Offset>468</Offset>
+            <Offset>0</Offset>
+            <Offset>70</Offset>
+            <Offset>0</Offset>
+            <Offset>3B8</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>303</ID>
+          <Description>"Slot 73"</Description>
+          <LastState Value="1101182890" RealAddress="7FF7679F0E98"/>
+          <VariableType>4 Bytes</VariableType>
+          <Address>"XRebirth.exe"+019C1CB8</Address>
+          <Offsets>
+            <Offset>478</Offset>
+            <Offset>0</Offset>
+            <Offset>70</Offset>
+            <Offset>0</Offset>
+            <Offset>3B8</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>304</ID>
+          <Description>"Slot 74"</Description>
+          <LastState Value="1043346432" RealAddress="7FF7679F0EA8"/>
+          <VariableType>4 Bytes</VariableType>
+          <Address>"XRebirth.exe"+019C1CB8</Address>
+          <Offsets>
+            <Offset>488</Offset>
+            <Offset>0</Offset>
+            <Offset>70</Offset>
+            <Offset>0</Offset>
+            <Offset>3B8</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>305</ID>
+          <Description>"Slot 75"</Description>
+          <LastState Value="3271663280" RealAddress="7FF7679F0EB8"/>
+          <VariableType>4 Bytes</VariableType>
+          <Address>"XRebirth.exe"+019C1CB8</Address>
+          <Offsets>
+            <Offset>498</Offset>
+            <Offset>0</Offset>
+            <Offset>70</Offset>
+            <Offset>0</Offset>
+            <Offset>3B8</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>306</ID>
+          <Description>"Slot 76"</Description>
+          <LastState Value="1101182890" RealAddress="7FF7679F0EC8"/>
+          <VariableType>4 Bytes</VariableType>
+          <Address>"XRebirth.exe"+019C1CB8</Address>
+          <Offsets>
+            <Offset>4A8</Offset>
+            <Offset>0</Offset>
+            <Offset>70</Offset>
+            <Offset>0</Offset>
+            <Offset>3B8</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>307</ID>
+          <Description>"Slot 77"</Description>
+          <LastState Value="1043346432" RealAddress="7FF7679F0ED8"/>
+          <VariableType>4 Bytes</VariableType>
+          <Address>"XRebirth.exe"+019C1CB8</Address>
+          <Offsets>
+            <Offset>4B8</Offset>
+            <Offset>0</Offset>
+            <Offset>70</Offset>
+            <Offset>0</Offset>
+            <Offset>3B8</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>308</ID>
+          <Description>"Slot 78"</Description>
+          <LastState Value="1128556495" RealAddress="7FF7679F0EE8"/>
+          <VariableType>4 Bytes</VariableType>
+          <Address>"XRebirth.exe"+019C1CB8</Address>
+          <Offsets>
+            <Offset>4C8</Offset>
+            <Offset>0</Offset>
+            <Offset>70</Offset>
+            <Offset>0</Offset>
+            <Offset>3B8</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>309</ID>
+          <Description>"Slot 79"</Description>
+          <LastState Value="1101182890" RealAddress="7FF7679F0EF8"/>
+          <VariableType>4 Bytes</VariableType>
+          <Address>"XRebirth.exe"+019C1CB8</Address>
+          <Offsets>
+            <Offset>4D8</Offset>
+            <Offset>0</Offset>
+            <Offset>70</Offset>
+            <Offset>0</Offset>
+            <Offset>3B8</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>310</ID>
+          <Description>"Slot 81"</Description>
+          <LastState Value="1043346432" RealAddress="7FF7679F0F08"/>
+          <VariableType>4 Bytes</VariableType>
+          <Address>"XRebirth.exe"+019C1CB8</Address>
+          <Offsets>
+            <Offset>4E8</Offset>
+            <Offset>0</Offset>
+            <Offset>70</Offset>
+            <Offset>0</Offset>
+            <Offset>3B8</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>311</ID>
+          <Description>"Slot 82"</Description>
+          <LastState Value="1065353216" RealAddress="7FF7679F0F18"/>
+          <VariableType>4 Bytes</VariableType>
+          <Address>"XRebirth.exe"+019C1CB8</Address>
+          <Offsets>
+            <Offset>4F8</Offset>
+            <Offset>0</Offset>
+            <Offset>70</Offset>
+            <Offset>0</Offset>
+            <Offset>3B8</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>312</ID>
+          <Description>"Slot 83"</Description>
+          <LastState Value="1738474112" RealAddress="7FF7679F0F28"/>
+          <VariableType>4 Bytes</VariableType>
+          <Address>"XRebirth.exe"+019C1CB8</Address>
+          <Offsets>
+            <Offset>508</Offset>
+            <Offset>0</Offset>
+            <Offset>70</Offset>
+            <Offset>0</Offset>
+            <Offset>3B8</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>313</ID>
+          <Description>"Slot 84"</Description>
+          <LastState Value="0" RealAddress="7FF7679F0F38"/>
+          <VariableType>4 Bytes</VariableType>
+          <Address>"XRebirth.exe"+019C1CB8</Address>
+          <Offsets>
+            <Offset>518</Offset>
+            <Offset>0</Offset>
+            <Offset>70</Offset>
+            <Offset>0</Offset>
+            <Offset>3B8</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>316</ID>
+          <Description>"Slot 85"</Description>
+          <LastState Value="0" RealAddress="7FF7679F0F48"/>
+          <VariableType>4 Bytes</VariableType>
+          <Address>"XRebirth.exe"+019C1CB8</Address>
+          <Offsets>
+            <Offset>528</Offset>
+            <Offset>0</Offset>
+            <Offset>70</Offset>
+            <Offset>0</Offset>
+            <Offset>3B8</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>317</ID>
+          <Description>"Slot 86"</Description>
+          <LastState Value="1738476992" RealAddress="7FF7679F0F58"/>
+          <VariableType>4 Bytes</VariableType>
+          <Address>"XRebirth.exe"+019C1CB8</Address>
+          <Offsets>
+            <Offset>538</Offset>
+            <Offset>0</Offset>
+            <Offset>70</Offset>
+            <Offset>0</Offset>
+            <Offset>3B8</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>318</ID>
+          <Description>"Slot 87"</Description>
+          <LastState Value="224332752" RealAddress="7FF7679F0F68"/>
+          <VariableType>4 Bytes</VariableType>
+          <Address>"XRebirth.exe"+019C1CB8</Address>
+          <Offsets>
+            <Offset>548</Offset>
+            <Offset>0</Offset>
+            <Offset>70</Offset>
+            <Offset>0</Offset>
+            <Offset>3B8</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>319</ID>
+          <Description>"Slot 88"</Description>
+          <LastState Value="1738601488" RealAddress="7FF7679F0F78"/>
+          <VariableType>4 Bytes</VariableType>
+          <Address>"XRebirth.exe"+019C1CB8</Address>
+          <Offsets>
+            <Offset>558</Offset>
+            <Offset>0</Offset>
+            <Offset>70</Offset>
+            <Offset>0</Offset>
+            <Offset>3B8</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>320</ID>
+          <Description>"Slot 89"</Description>
+          <LastState Value="1738478480" RealAddress="7FF7679F0F88"/>
+          <VariableType>4 Bytes</VariableType>
+          <Address>"XRebirth.exe"+019C1CB8</Address>
+          <Offsets>
+            <Offset>568</Offset>
+            <Offset>0</Offset>
+            <Offset>70</Offset>
+            <Offset>0</Offset>
+            <Offset>3B8</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>321</ID>
+          <Description>"Slot 90"</Description>
+          <LastState Value="47" RealAddress="7FF7679F0F98"/>
+          <VariableType>4 Bytes</VariableType>
+          <Address>"XRebirth.exe"+019C1CB8</Address>
+          <Offsets>
+            <Offset>578</Offset>
+            <Offset>0</Offset>
+            <Offset>70</Offset>
+            <Offset>0</Offset>
+            <Offset>3B8</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>322</ID>
+          <Description>"Slot 91"</Description>
+          <LastState Value="0" RealAddress="7FF7679F0FA8"/>
+          <VariableType>4 Bytes</VariableType>
+          <Address>"XRebirth.exe"+019C1CB8</Address>
+          <Offsets>
+            <Offset>588</Offset>
+            <Offset>0</Offset>
+            <Offset>70</Offset>
+            <Offset>0</Offset>
+            <Offset>3B8</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>323</ID>
+          <Description>"Slot 92"</Description>
+          <LastState Value="0" RealAddress="7FF7679F0FB8"/>
+          <VariableType>4 Bytes</VariableType>
+          <Address>"XRebirth.exe"+019C1CB8</Address>
+          <Offsets>
+            <Offset>598</Offset>
+            <Offset>0</Offset>
+            <Offset>70</Offset>
+            <Offset>0</Offset>
+            <Offset>3B8</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>324</ID>
+          <Description>"Slot 93"</Description>
+          <LastState Value="1738735344" RealAddress="7FF7679F0FC8"/>
+          <VariableType>4 Bytes</VariableType>
+          <Address>"XRebirth.exe"+019C1CB8</Address>
+          <Offsets>
+            <Offset>5A8</Offset>
+            <Offset>0</Offset>
+            <Offset>70</Offset>
+            <Offset>0</Offset>
+            <Offset>3B8</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>325</ID>
+          <Description>"Slot 94"</Description>
+          <LastState Value="3440026592" RealAddress="7FF7679F0FD8"/>
+          <VariableType>4 Bytes</VariableType>
+          <Address>"XRebirth.exe"+019C1CB8</Address>
+          <Offsets>
+            <Offset>5B8</Offset>
+            <Offset>0</Offset>
+            <Offset>70</Offset>
+            <Offset>0</Offset>
+            <Offset>3B8</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>326</ID>
+          <Description>"Slot 95"</Description>
+          <LastState Value="0" RealAddress="7FF7679F0FE8"/>
+          <VariableType>4 Bytes</VariableType>
+          <Address>"XRebirth.exe"+019C1CB8</Address>
+          <Offsets>
+            <Offset>5C8</Offset>
+            <Offset>0</Offset>
+            <Offset>70</Offset>
+            <Offset>0</Offset>
+            <Offset>3B8</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>327</ID>
+          <Description>"Slot 96"</Description>
+          <LastState Value="0" RealAddress="7FF7679F0FF8"/>
+          <VariableType>4 Bytes</VariableType>
+          <Address>"XRebirth.exe"+019C1CB8</Address>
+          <Offsets>
+            <Offset>5D8</Offset>
+            <Offset>0</Offset>
+            <Offset>70</Offset>
+            <Offset>0</Offset>
+            <Offset>3B8</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>328</ID>
+          <Description>"Slot 97"</Description>
+          <LastState Value="0" RealAddress="7FF7679F1008"/>
+          <VariableType>4 Bytes</VariableType>
+          <Address>"XRebirth.exe"+019C1CB8</Address>
+          <Offsets>
+            <Offset>5E8</Offset>
+            <Offset>0</Offset>
+            <Offset>70</Offset>
+            <Offset>0</Offset>
+            <Offset>3B8</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>329</ID>
+          <Description>"Slot 98"</Description>
+          <LastState Value="196671" RealAddress="7FF7679F1018"/>
+          <VariableType>4 Bytes</VariableType>
+          <Address>"XRebirth.exe"+019C1CB8</Address>
+          <Offsets>
+            <Offset>5F8</Offset>
+            <Offset>0</Offset>
+            <Offset>70</Offset>
+            <Offset>0</Offset>
+            <Offset>3B8</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>330</ID>
+          <Description>"Slot 99"</Description>
+          <LastState Value="1115816975" RealAddress="7FF7679F1028"/>
+          <VariableType>4 Bytes</VariableType>
+          <Address>"XRebirth.exe"+019C1CB8</Address>
+          <Offsets>
+            <Offset>608</Offset>
+            <Offset>0</Offset>
+            <Offset>70</Offset>
+            <Offset>0</Offset>
+            <Offset>3B8</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>331</ID>
+          <Description>"Slot 100"</Description>
+          <LastState Value="3254792506" RealAddress="7FF7679F1038"/>
+          <VariableType>4 Bytes</VariableType>
+          <Address>"XRebirth.exe"+019C1CB8</Address>
+          <Offsets>
+            <Offset>618</Offset>
+            <Offset>0</Offset>
+            <Offset>70</Offset>
+            <Offset>0</Offset>
+            <Offset>3B8</Offset>
+          </Offsets>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>397</ID>
+      <Description>"Faction Relations (Max Relation=+30 value = 1)"</Description>
+      <LastState Value="" RealAddress="00000000"/>
+      <GroupHeader>1</GroupHeader>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>334</ID>
+          <Description>"Player to Faction Relations"</Description>
+          <Options moRecursiveSetValue="1"/>
+          <LastState Value="" RealAddress="00000000"/>
+          <GroupHeader>1</GroupHeader>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>382</ID>
+              <Description>"to Plutach Mining Corporation"</Description>
+              <LastState Value="3" RealAddress="7FF760664548"/>
+              <VariableType>Float</VariableType>
+              <Address>"XRebirth.exe"+017A9248</Address>
+              <Offsets>
+                <Offset>38</Offset>
+                <Offset>18</Offset>
+                <Offset>38</Offset>
+                <Offset>8</Offset>
+                <Offset>1C0</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>393</ID>
+              <Description>"to Heart of Albion"</Description>
+              <LastState Value="4" RealAddress="7FF7606645A8"/>
+              <VariableType>Float</VariableType>
+              <Address>"XRebirth.exe"+017A9248</Address>
+              <Offsets>
+                <Offset>98</Offset>
+                <Offset>18</Offset>
+                <Offset>38</Offset>
+                <Offset>8</Offset>
+                <Offset>1C0</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>387</ID>
+              <Description>"to Beryll"</Description>
+              <LastState Value="5" RealAddress="7FF760664608"/>
+              <VariableType>Float</VariableType>
+              <Address>"XRebirth.exe"+017A9248</Address>
+              <Offsets>
+                <Offset>F8</Offset>
+                <Offset>18</Offset>
+                <Offset>38</Offset>
+                <Offset>8</Offset>
+                <Offset>1C0</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>383</ID>
+              <Description>"to Ledda Industrial"</Description>
+              <LastState Value="6" RealAddress="7FF760664668"/>
+              <VariableType>Float</VariableType>
+              <Address>"XRebirth.exe"+017A9248</Address>
+              <Offsets>
+                <Offset>158</Offset>
+                <Offset>18</Offset>
+                <Offset>38</Offset>
+                <Offset>8</Offset>
+                <Offset>1C0</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>389</ID>
+              <Description>"to Wholesome Foods"</Description>
+              <LastState Value="0" RealAddress="7FF7CC0A7D18"/>
+              <VariableType>Float</VariableType>
+              <Address>"XRebirth.exe"+017A9248</Address>
+              <Offsets>
+                <Offset>A8</Offset>
+                <Offset>30</Offset>
+                <Offset>38</Offset>
+                <Offset>8</Offset>
+                <Offset>1C0</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>405</ID>
+              <Description>""</Description>
+              <LastState Value="1" RealAddress="7FF7CD5880B8"/>
+              <VariableType>Float</VariableType>
+              <Address>"XRebirth.exe"+017A9248</Address>
+              <Offsets>
+                <Offset>388</Offset>
+                <Offset>48</Offset>
+                <Offset>50</Offset>
+                <Offset>8</Offset>
+                <Offset>1C0</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>406</ID>
+              <Description>"to No Limits"</Description>
+              <LastState Value="8" RealAddress="7FF7CC0A7B68"/>
+              <VariableType>Float</VariableType>
+              <Address>"XRebirth.exe"+017A9248</Address>
+              <Offsets>
+                <Offset>38</Offset>
+                <Offset>130</Offset>
+                <Offset>50</Offset>
+                <Offset>8</Offset>
+                <Offset>1C0</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>404</ID>
+              <Description>"to Albion Energy Subsidiary"</Description>
+              <LastState Value="9" RealAddress="7FF7CC0A7BC8"/>
+              <VariableType>Float</VariableType>
+              <Address>"XRebirth.exe"+017A9248</Address>
+              <Offsets>
+                <Offset>98</Offset>
+                <Offset>130</Offset>
+                <Offset>50</Offset>
+                <Offset>8</Offset>
+                <Offset>1C0</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>394</ID>
+              <Description>"to Republic of Cantera"</Description>
+              <LastState Value="10" RealAddress="7FF7CC0A7CB8"/>
+              <VariableType>Float</VariableType>
+              <Address>"XRebirth.exe"+017A9248</Address>
+              <Offsets>
+                <Offset>48</Offset>
+                <Offset>30</Offset>
+                <Offset>38</Offset>
+                <Offset>8</Offset>
+                <Offset>1C0</Offset>
+              </Offsets>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>373</ID>
+          <Description>"Faction to Player Relations"</Description>
+          <Options moRecursiveSetValue="1"/>
+          <LastState Value="" RealAddress="00000000"/>
+          <GroupHeader>1</GroupHeader>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>363</ID>
+              <Description>"from Plutach Mining Corporation"</Description>
+              <LastState Value="3" RealAddress="7FF7CD6F7B28"/>
+              <VariableType>Float</VariableType>
+              <Address>"XRebirth.exe"+017A91D0</Address>
+              <Offsets>
+                <Offset>38</Offset>
+                <Offset>18</Offset>
+                <Offset>38</Offset>
+                <Offset>8</Offset>
+                <Offset>1C0</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>338</ID>
+              <Description>"from Heart of Albion"</Description>
+              <LastState Value="4" RealAddress="7FF7606D3CD8"/>
+              <VariableType>Float</VariableType>
+              <Address>"XRebirth.exe"+017A91A0</Address>
+              <Offsets>
+                <Offset>38</Offset>
+                <Offset>18</Offset>
+                <Offset>38</Offset>
+                <Offset>8</Offset>
+                <Offset>1C0</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>384</ID>
+              <Description>"from Beryll"</Description>
+              <LastState Value="5" RealAddress="7FF76064FBE8"/>
+              <VariableType>Float</VariableType>
+              <Address>"XRebirth.exe"+017A9218</Address>
+              <Offsets>
+                <Offset>38</Offset>
+                <Offset>18</Offset>
+                <Offset>38</Offset>
+                <Offset>8</Offset>
+                <Offset>1C0</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>385</ID>
+              <Description>"from Ledda Industrial"</Description>
+              <LastState Value="6" RealAddress="7FF762707F88"/>
+              <VariableType>Float</VariableType>
+              <Address>"XRebirth.exe"+017A91F0</Address>
+              <Offsets>
+                <Offset>38</Offset>
+                <Offset>18</Offset>
+                <Offset>38</Offset>
+                <Offset>8</Offset>
+                <Offset>1C0</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>386</ID>
+              <Description>"from Wholesome Foods"</Description>
+              <LastState Value="7" RealAddress="7FF76250F7D8"/>
+              <VariableType>Float</VariableType>
+              <Address>"XRebirth.exe"+017A9188</Address>
+              <Offsets>
+                <Offset>38</Offset>
+                <Offset>18</Offset>
+                <Offset>38</Offset>
+                <Offset>8</Offset>
+                <Offset>1C0</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>402</ID>
+              <Description>"from No Limits"</Description>
+              <LastState Value="8" RealAddress="7FF7624EDE48"/>
+              <VariableType>Float</VariableType>
+              <Address>"XRebirth.exe"+017A9200</Address>
+              <Offsets>
+                <Offset>38</Offset>
+                <Offset>18</Offset>
+                <Offset>38</Offset>
+                <Offset>8</Offset>
+                <Offset>1C0</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>381</ID>
+              <Description>"from Albion Energy Subsidiary"</Description>
+              <LastState Value="9" RealAddress="7FF76064F078"/>
+              <VariableType>Float</VariableType>
+              <Address>"XRebirth.exe"+017A9228</Address>
+              <Offsets>
+                <Offset>38</Offset>
+                <Offset>18</Offset>
+                <Offset>38</Offset>
+                <Offset>8</Offset>
+                <Offset>1C0</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>401</ID>
+              <Description>"to Republic of Cantera"</Description>
+              <LastState Value="10" RealAddress="7FF7641C26B8"/>
+              <VariableType>Float</VariableType>
+              <Address>"XRebirth.exe"+017A9220</Address>
+              <Offsets>
+                <Offset>38</Offset>
+                <Offset>18</Offset>
+                <Offset>38</Offset>
+                <Offset>8</Offset>
+                <Offset>1C0</Offset>
+              </Offsets>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols>
+    <SymbolEntry>
+      <Name>Recifense</Name>
+      <Address>20160226</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>iEnableMMM</Name>
+      <Address>7FF7CF0A03F0</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>iEnableMSD</Name>
+      <Address>7FF7CF0A03F4</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>iEnableGMD</Name>
+      <Address>7FF7CF0A03F8</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>iEnableMSM</Name>
+      <Address>7FF7CF0A03FC</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>liMinMoney</Name>
+      <Address>7FF7CF0A0400</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>pPlayer</Name>
+      <Address>7FF7CF0A0408</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>pShipHull</Name>
+      <Address>7FF7CF0A0410</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>pShipShield</Name>
+      <Address>7FF7CF0A0418</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>pShield2</Name>
+      <Address>7FF7CF0A045C</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>pHull2</Name>
+      <Address>7FF7CF0A0454</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>pInfo2</Name>
+      <Address>7FF7CF0A0464</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>pInv</Name>
+      <Address>7FF7CF0A0430</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>pItem</Name>
+      <Address>7FF7CF0A0438</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>iInvIndex</Name>
+      <Address>7FF7CF0A0444</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>iMaxIndex</Name>
+      <Address>7FF7CF0A0440</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>aLast</Name>
+      <Address>7FF7CF0A0448</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>iCount1</Name>
+      <Address>7FF7CF0A044C</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>iCount2</Name>
+      <Address>7FF7CF0A0450</Address>
+    </SymbolEntry>
+  </UserdefinedSymbols>
+  <Comments>===========================================
+ Game Title    : X-REBIRTH
+ Game Version  : 4.00 (208311)
+ Game Sponsor  : Fennix102
+ Proces Name   : XRebirth.exe (64 bits)
+ Script Version: 2.2
+ CE Version    : 6.5
+ Release date  : 26-Feb-2016
+ Author        : Recifense
+ History:
+ 27-Jun-14: First Release (version 2.20 - Steam)
+ 09-Jul-14: Release for (version 2.20-184360 - Steam)
+ 29-Oct-14: Release for (version 2.51-187332 - Steam)
+ 11-Dec-14: Release for (version 3.00-189926 - Steam)
+ 18-Dec-14: Release for (version 3.10-190048 - Steam)
+ 03-Feb-15: Release for (version 3.20-190820 - Steam) (S1.2)
+ 15-Mar-15: Release for (version 3.50-192864 - Steam)
+ 20-Mar-15: Release for (version 3.51-193058 - Steam) (S2.0)
+ 21-Mar-15: Fixed a crash (S2.1)
+ 27-Mar-15: Release for (version 3.52-193370 - Steam)
+ 02-Apr-15: Release for (version 3.53-193580 - Steam)
+ 05-Sep-15: Release for (version 3.60-198327 - Steam)
+ 25-Sep-15: Release for (version 3.61-200382 - Steam)
+ 10-Oct-15: Release for (version 3.61-201320 - Steam)
+ 04-Nov-15: Release for (version 3.61-202267 - Steam)
+ 26-Feb-16: Release for (version 4.00-208311 - Steam)(CE65)
+ Features:
+ - Minimum Money      [1]
+ - Unlimited Shield   [2]
+ - God Mode           [3]
+ - Unlimited Missile  [4]
+ - Some Pointers
+===========================================
+[1] Just look at the player's info or make the money change;
+[2] For player's current controlled ship;
+[3] For player's current controlled ship;
+[4] For player's current controlled ship;
+===========================================
+[USAGE]
+1) Run CE64;
+2) Run Game;
+3) Load the game process "XRebirth.exe" in CE;
+4) Load this table and activate the main script;
+5) Now Activate the script of each cheat you want to use;
+6) Game On;
+===========================================
+[HOTKEYS]
+None defined
+===========================================
+[ADVICE]
+When you can,save the game before starting using table/cheat. So you can always come back in case you don't like the result.
+===========================================
+[INFO]
+Tested on Win 10 64bits
+===========================================
+Cheers!
+</Comments>
+</CheatTable>

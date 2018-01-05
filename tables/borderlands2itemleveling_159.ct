@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="14">
+  <Forms>
+    <CETrainer>8592CF6ED34010C68D43FC37503856A252C41DA9EA05AEB6E32851DDD86A16453DAED7937895CD6EB5DE340D471E82D7E3C65B20B1B6E326AD109CBCEB99F97DDFCCECF79E61A06C7C69A3281E0BB971A318494C39C8D7092C55EFE72B6B0274552AF3AE87C47DEFB7D15FD04295BD5F861F0A59809C12C12B7F90D3F9BE52B0B901BEF5727A4339DDD06FD065CDD59E813DC82B24045B505E889D1DE17B4505B72EA6BA6E98C0033090C3A590C3B686615E5457838851E0AA73E1B7D7CE849DF288890A6CAFF9E820593B99A8684DB6DFDE8B3991003CD225200D477799610ECC8B267180B26016274D9FA6F1AC4DF3D8653F6074C56D07B356F8DF761C84F3B4F66E1A8D58827360FE2445D7F15D12849D9AD7A9BD69D4BC56CDFCF834126B22D41AF67E86A5A6478209E99C10DF8DE279743BCDD0349D9D603FFF1D7B71C4C6CB2510F502EB6A6CB8554A703F4AD2791C7E45289DB5C845873C6F905F0EC86B3BE0A414B2F21DBC0E85AEDD184F2AFD7623F566F4369E6DE6643C86A548095859CD2A2E5F0CE64323777E58C30F0DAF7367BAD045F0A8486DDD76091BC1126F9972E382AA5D63AD38CCCE32C757FE082A22696BEB7D5462BE82E1F1B5796D266B1EC0D9496EF3E7931B10451FB082C2393B1C75AC95EE13760B85579562573610D79BE0AA76118A47C7D7676D98AC737DD1AD1AFF09FF01</CETrainer>
+  </Forms>
+  <CheatEntries>
+    <CheatEntry>
+      <ID>0</ID>
+      <Description>"Change Item Level"</Description>
+      <Color>80000008</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>[ENABLE]
+alloc(newmem,2048)
+label(returnhere)
+aobscan(codeAOB,8B 81 D0 01 00 00 C3 CC CC )
+label(code)
+registersymbol(code)
+
+alloc(data,32)
+label(ItemAddressBase)
+label(DesiredLevel)
+registersymbol(ItemAddressBase)
+registersymbol(DesiredLevel)
+
+data:
+ItemAddressBase:
+dd 00
+DesiredLevel:
+dd 00
+
+newmem:
+mov [ItemAddressBase],ecx
+mov eax,[ecx+000001D0] // original code
+jmp returnhere
+
+codeAOB:
+code:
+jmp newmem
+nop
+returnhere:
+
+[DISABLE]
+code:
+//Alt: mov eax,[ecx+000001D0]
+db 8B 81 D0 01 00 00
+
+unregistersymbol(code)
+dealloc(newmem)
+
+unregistersymbol(ItemAddressBase)
+unregistersymbol(DesiredLevel)
+dealloc(data)
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>1</ID>
+          <Description>"Desired Level"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>DesiredLevel</Address>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols/>
+  <LuaScript>errorOnLookupFailure(false)
+strings_add(getAutoAttachList(), "Borderlands2.exe")
+
+function ItemLevelUpdate()
+
+  local active = memoryrecord_isActive(memrec0)
+
+  if not active then
+    memoryrecord_freeze(memrec0)
+  end
+
+  if readInteger("ItemAddressBase") == nil then return end
+  local DesiredLevel = readInteger("DesiredLevel")
+
+  if DesiredLevel==0 then
+    local PlayerLevel = readInteger("[[[ItemAddressBase]+1EC]+3EC]+258")
+    if PlayerLevel ~= nil then
+      DesiredLevel = PlayerLevel
+    end
+  end
+
+  local offset="8B4"
+  if readQword("[ItemAddressBase]+4C")==0 then -- weapon ?
+    offset="E3C"
+  end
+
+  local success = writeInteger("[ItemAddressBase]+"..offset,DesiredLevel)
+  if success then beep() end
+end
+
+if hotkey1~=nil then object_destroy(hotkey1);hotkey1=nil;end
+hotkey1 = createHotkey("ItemLevelUpdate",VK_F2)
+
+addresslist=getAddressList()
+memrec0=addresslist_getMemoryRecordByID(addresslist,0)
+
+if enableMemrecTimer~=nil then object_destroy(enableMemrecTimer); enableMemrecTimer = nil; end
+enableMemrecTimer = createTimer(CETrainer,false)
+timer_setInterval(enableMemrecTimer, 6000)
+timer_onTimer(enableMemrecTimer, function (sender)
+  timer_setEnabled(enableMemrecTimer, false)
+  memoryrecord_freeze(memrec0)
+end)
+
+form_show(CETrainer)
+function CloseClick()
+  closeCE()
+  return caFree --onClick doesn't care, but onClose would like a result
+end
+
+function onOpenProcess(processid)
+  timer_setEnabled(enableMemrecTimer, true)
+end
+</LuaScript>
+</CheatTable>

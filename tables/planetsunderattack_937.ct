@@ -1,0 +1,897 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="18">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>103823</ID>
+      <Description>"&lt;----- SCRIPT: Enable Me!"</Description>
+      <LastState Activated="1" />
+      <Color>FF0000</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>{ Game   : game.exe
+  Version:
+  Date   : 2015-03-31
+  Author : Jason
+
+
+}
+
+{==============================================================================
+ = ENABLE section - assembled when script activated
+ ==============================================================================}
+[ENABLE]
+
+{------------------------------------------------------------------------------
+ - Injection points - scan for game code to overwrite with jumps to oour code
+ ------------------------------------------------------------------------------}
+aobscanmodule(money_inject,game.exe,F3 0F 10 6E D4) // each frame when money increasing
+aobscanmodule(ships_inject,game.exe,8B 91 B4 04 00 00 01 50 04) // each frame for each planet
+
+{------------------------------------------------------------------------------
+ - Allocate 4kb in the game process and start assembling in the newly
+ - allocated memory
+ ------------------------------------------------------------------------------}
+alloc(newmem,$1000)
+
+newmem:
+
+{------------------------------------------------------------------------------
+ - Variables to use in the cheat table
+ ------------------------------------------------------------------------------}
+label(fMinimumMoney)
+label(pMoney)
+label(bZeroEnemyPoints)
+label(iMinPlayerShips)
+label(iMaxEnemyShips)
+label(bAutoUpgrade)
+label(bInstantUpgrade)
+
+fMinimumMoney: // will set player money to this if it is less
+  dd 0
+pMoney: // set to lowest found pointer, so start with highest possible value
+  dd FFFFFFFF
+bZeroEnemyPoints: // will keep enemies from gaining points
+  dd 0
+iMinPlayerShips:
+  dd 0
+iMaxEnemyShips:
+  dd 0
+bAutoUpgrade:
+  dd 0
+bInstantUpgrade:
+  dd 0
+
+  dd 0
+  dq 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+
+{------------------------------------------------------------------------------
+ - Code for money - executed when money increases, set pMoney pointer and
+ - ensure money is at the minimum requested value, and zero enemy points
+ - if requested.
+ ------------------------------------------------------------------------------}
+label(money_code)
+label(money_is_player)
+label(money_not_player)
+label(money_done)
+label(money_return)
+
+money_code:
+  // here the pointer we care about is in ESI
+  pushad                 // save registers, will be stored for this run in config memory
+  pushfd                 // save flags, will be stored for this run in config memory
+
+  sub esi,2c
+  cmp esi,[pMoney]
+  je money_is_player // if pointer is equal, we have the player
+  ja money_not_player // if pointer is later, it is enemy
+  mov [pMoney],esi // lower than stored pointer, THIS is the player
+money_is_player:
+  mov eax,[fMinimumMoney]
+  cmp eax,[esi+2c]
+  jng money_done
+  mov [esi+2c],eax
+  jmp money_done
+
+money_not_player:
+  cmp dword ptr [bZeroEnemyPoints],1
+  jne money_done
+  xor eax,eax
+  mov [esi+30],eax // zero out domination points/king of the hill counter
+
+money_done:
+  popfd                  // restore flags
+  popad                  // restore registers
+
+  movss xmm5,[esi-2C] // original code
+  jmp money_return
+
+{------------------------------------------------------------------------------
+ - Code for ships - executed each frame for each planet.  Raise player ships
+ - to a minimum value, keep enemy ships from going above a certain value, and
+ - process upgrade cheats for the planet.
+ ------------------------------------------------------------------------------}
+
+label(ships_code)
+label(ships_is_player)
+label(ships_is_enemy)
+label(ships_done)
+label(ships_return)
+
+ships_code:
+  // here the pointer we care about is in ecx
+  pushad                 // save registers, will be stored for this run in config memory
+  pushfd                 // save flags, will be stored for this run in config memory
+
+  mov eax,[ecx+454]
+  cmp eax,1
+  je ships_is_player
+  jg ships_is_enemy
+  jmp ships_done  // must be neutral
+
+ships_is_player:
+  mov eax,[iMinPlayerShips]
+  test eax,eax
+  label(skip_minships)
+  jz skip_minships
+  cmp eax,[ecx+000004B4]
+  jna skip_minships
+  mov [ecx+000004B4],eax
+skip_minships:
+  cmp dword ptr [bAutoUpgrade],1
+  label(skip_autoupgrade)
+  label(skip_instantupgrade)
+  jne skip_autoupgrade
+  mov eax, 3
+  mov dword ptr [ecx+05e0],eax // set upgrade level to 3
+skip_autoupgrade:
+  cmp dword ptr [bInstantUpgrade],1
+  jne skip_instantupgrade
+  mov eax, dword ptr [ecx+5e4]
+  test eax,eax
+  jz skip_instantupgrade // we're not upgrading, could be 2?
+  mov eax,(float)0.10
+  cmp eax,dword ptr [ecx+05d8]
+  jg skip_instantupgrade
+  mov dword ptr [ecx+05d8],eax // low time remaining
+skip_instantupgrade:
+  jmp ships_done
+
+ships_is_enemy:
+  mov eax,[iMaxEnemyShips]
+  test eax,eax
+  jz ships_done
+  cmp eax,[ecx+000004B4]
+  jnb ships_done
+  mov [ecx+000004B4],eax
+  jmp ships_done
+
+ships_done:
+  popfd                  // restore flags
+  popad                  // restore registers
+
+  mov edx,[ecx+000004B4] // original code
+  jmp ships_return
+
+{------------------------------------------------------------------------------
+ - Injection points - overwrite game code to call our code
+ ------------------------------------------------------------------------------}
+money_inject:
+  jmp money_code
+money_return:
+
+ships_inject:
+  jmp ships_code
+  nop
+ships_return:
+
+{------------------------------------------------------------------------------
+ - Register symbols for use in the table, and to restore original game code
+ - when the scripts are deactivated
+ ------------------------------------------------------------------------------}
+registersymbol(money_inject)
+registersymbol(ships_inject)
+
+registersymbol(fMinimumMoney)
+registersymbol(pMoney)
+registersymbol(bZeroEnemyPoints)
+registersymbol(iMinPlayerShips)
+registersymbol(iMaxEnemyShips)
+registersymbol(bAutoUpgrade)
+registersymbol(bInstantUpgrade)
+
+{==============================================================================
+ = DISABLE section - assembled when script deactivated
+ ==============================================================================}
+[DISABLE]
+
+money_inject:
+  db F3 0F 10 6E D4
+
+ships_inject:
+  db 8B 91 B4 04 00 00
+
+unregistersymbol(money_inject)
+unregistersymbol(ships_inject)
+
+unregistersymbol(fMinimumMoney)
+unregistersymbol(pMoney)
+unregistersymbol(bZeroEnemyPoints)
+unregistersymbol(iMinPlayerShips)
+unregistersymbol(iMaxEnemyShips)
+unregistersymbol(bAutoUpgrade)
+unregistersymbol(bInstantUpgrade)
+dealloc(newmem)
+
+{
+// money_inject - called each frame for each side, but only when money is increasing
+// Note: the lowest address the player (probably always)
+// ORIGINAL CODE - INJECTION POINT: "game.exe"+1515CC
+"game.exe"+1515A6: 80 BF F4 B9 87 01 00     -  cmp byte ptr [edi+game.exe+147B9F4],00
+"game.exe"+1515AD: 0F 85 1C 01 00 00        -  jne game.exe+1516CF
+"game.exe"+1515B3: 8B 46 E0                 -  mov eax,[esi-20]
+"game.exe"+1515B6: 85 C0                    -  test eax,eax
+"game.exe"+1515B8: 75 0E                    -  jne game.exe+1515C8
+"game.exe"+1515BA: 39 46 E4                 -  cmp [esi-1C],eax
+"game.exe"+1515BD: 75 09                    -  jne game.exe+1515C8
+"game.exe"+1515BF: F3 0F 11 0E              -  movss [esi],xmm1
+"game.exe"+1515C3: E9 07 01 00 00           -  jmp game.exe+1516CF
+"game.exe"+1515C8: F3 0F 10 06              -  movss xmm0,[esi]                  // load money into xmm0
+// ---------- INJECTING HERE ----------
+"game.exe"+1515CC: F3 0F 10 6E D4           -  movss xmm5,[esi-2C]               // load max money in xmm5 for comparison
+// ---------- DONE INJECTING  ----------
+"game.exe"+1515D1: 0F 2F E8                 -  comiss xmm5,xmm0
+"game.exe"+1515D4: 0F 86 D4 00 00 00        -  jbe game.exe+1516AE
+"game.exe"+1515DA: 0F 28 CB                 -  movaps xmm1,xmm3
+"game.exe"+1515DD: 0F 28 C3                 -  movaps xmm0,xmm3
+"game.exe"+1515E0: 85 C0                    -  test eax,eax
+"game.exe"+1515E2: 7E 19                    -  jle game.exe+1515FD
+"game.exe"+1515E4: 48                       -  dec eax
+"game.exe"+1515E5: 0F 28 F8                 -  movaps xmm7,xmm0
+"game.exe"+1515E8: F3 0F 58 F9              -  addss xmm7,xmm1
+"game.exe"+1515EC: 0F 28 CF                 -  movaps xmm1,xmm7
+
+// ships_inject - called every frame for each planet
+// ORIGINAL CODE - INJECTION POINT: "game.exe"+151215
+"game.exe"+1511E0: 8B 0C 9D 60 AC 95 01        -  mov ecx,[ebx*4+game.exe+155AC60]
+"game.exe"+1511E7: EB 02                       -  jmp game.exe+1511EB
+"game.exe"+1511E9: 33 C9                       -  xor ecx,ecx
+"game.exe"+1511EB: 83 B9 60 04 00 00 02        -  cmp dword ptr [ecx+00000460],02
+"game.exe"+1511F2: 0F 84 13 01 00 00           -  je game.exe+15130B
+"game.exe"+1511F8: 8B 81 54 04 00 00           -  mov eax,[ecx+00000454]
+"game.exe"+1511FE: 8D 14 C5 00 00 00 00        -  lea edx,[eax*8+00000000]
+"game.exe"+151205: 2B D0                       -  sub edx,eax
+"game.exe"+151207: FF 04 D5 94 C8 87 01        -  inc [edx*8+game.exe+147C894]
+"game.exe"+15120E: 8D 04 D5 88 C8 87 01        -  lea eax,[edx*8+game.exe+147C888]
+// ---------- INJECTING HERE ----------
+"game.exe"+151215: 8B 91 B4 04 00 00           -  mov edx,[ecx+000004B4]
+// ---------- DONE INJECTING  ----------
+"game.exe"+15121B: 01 50 04                    -  add [eax+04],edx
+"game.exe"+15121E: 8B 91 B4 04 00 00           -  mov edx,[ecx+000004B4]
+"game.exe"+151224: 01 50 08                    -  add [eax+08],edx
+"game.exe"+151227: 8B A9 DC 05 00 00           -  mov ebp,[ecx+000005DC]
+"game.exe"+15122D: 83 FD 05                    -  cmp ebp,05
+"game.exe"+151230: 74 6A                       -  je game.exe+15129C
+"game.exe"+151232: 83 FD 06                    -  cmp ebp,06
+"game.exe"+151235: 74 65                       -  je game.exe+15129C
+"game.exe"+151237: 83 FD 07                    -  cmp ebp,07
+"game.exe"+15123A: 74 60                       -  je game.exe+15129C
+}
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>103824</ID>
+          <Description>"Cheat: Money"</Description>
+          <LastState Activated="1" />
+          <Color>80000008</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[ENABLE]
+fMinimumMoney:
+  dd (float)999.0
+
+[DISABLE]
+fMinimumMoney:
+  dd 0
+
+</AssemblerScript>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>103830</ID>
+          <Description>"Cheat: Zero Enemy Points"</Description>
+          <LastState Activated="0" />
+          <Color>80000008</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[ENABLE]
+bZeroEnemyPoints:
+  dd 1
+
+[DISABLE]
+bZeroEnemyPoints:
+  dd 0
+
+</AssemblerScript>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>103834</ID>
+          <Description>"Cheat: Minimum 10 Player Ships"</Description>
+          <LastState Activated="1" />
+          <Color>80000008</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[ENABLE]
+iMinPlayerShips:
+  dd 10
+
+[DISABLE]
+iMinPlayerShips:
+  dd 0
+
+</AssemblerScript>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>103835</ID>
+          <Description>"Cheat: Max 1 Enemy Ship Per Planet"</Description>
+          <LastState Activated="0" />
+          <Color>80000008</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[ENABLE]
+iMaxEnemyShips:
+  dd 1
+
+[DISABLE]
+iMaxEnemyShips:
+  dd 0
+
+</AssemblerScript>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>103833</ID>
+          <Description>"Cheat: Instant Upgrade"</Description>
+          <LastState Activated="1" />
+          <Color>80000008</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[ENABLE]
+bInstantUpgrade:
+  dd 1
+
+[DISABLE]
+bInstantUpgrade:
+  dd 0
+
+</AssemblerScript>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>103832</ID>
+          <Description>"Cheat: Auto Upgrade"</Description>
+          <LastState Activated="0" />
+          <Color>80000008</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[ENABLE]
+bAutoUpgrade:
+  dd 1
+
+[DISABLE]
+bAutoUpgrade:
+  dd 0
+
+</AssemblerScript>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols>
+    <SymbolEntry>
+      <Name>UtilCopyData64</Name>
+      <Address>4859EE0000</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>TEST_MSB</Name>
+      <Address>4862700000</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>TEST_MOPS</Name>
+      <Address>D595B70000</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>UtilCopyData</Name>
+      <Address>1BCB0000</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>TEST_SAMPLE_FPU_64</Name>
+      <Address>D59FC20000</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>TEST_DATA</Name>
+      <Address>D595371000</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>TEST_SAMPLE_FPU_64_CODE</Name>
+      <Address>D595370000</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>TEST_AP</Name>
+      <Address>603C460000</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>MyGetKeyState64</Name>
+      <Address>4859EF0000</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>TEST_MOPR</Name>
+      <Address>D59FB20000</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>UtilCopyData64_Enabled</Name>
+      <Address>4859EEFFF8</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>UtilCopyData64_Count</Name>
+      <Address>4859EEFFF0</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>iEnableMPR</Name>
+      <Address>7FF77BA80266</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>iEnableGMD</Name>
+      <Address>7FF77BA8026A</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>iEnableMPC</Name>
+      <Address>7FF77BA8026E</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>iCurPlayer</Name>
+      <Address>7FF77BA80272</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>pShipArray</Name>
+      <Address>7FF77BA80276</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>TEST_MONEY</Name>
+      <Address>1D1C0000</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>TEST_SHIPS</Name>
+      <Address>0D500000</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>TEST_SHIPSB</Name>
+      <Address>1D2C0000</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>UtilCopyData_Enabled</Name>
+      <Address>1BCBFFFC</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>UtilCopyData_Count</Name>
+      <Address>1BCBFFF8</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>TEST_SHIPS2</Name>
+      <Address> 00551215</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>TEST_MONEY1</Name>
+      <Address> 005515CC</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>money_inject</Name>
+      <Address> 005515CC</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>ships_inject</Name>
+      <Address> 00551215</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>fMinimumMoney</Name>
+      <Address>1D840000</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>pMoney</Name>
+      <Address>1D840004</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>bZeroEnemyPoints</Name>
+      <Address>1D840008</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>iMinPlayerShips</Name>
+      <Address>1D84000C</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>iMaxEnemyShips</Name>
+      <Address>1D840010</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>bAutoUpgrade</Name>
+      <Address>1D840014</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>bInstantUpgrade</Name>
+      <Address>1D840018</Address>
+    </SymbolEntry>
+  </UserdefinedSymbols>
+  <Structures StructVersion="2">
+    <Structure Name="Money1" AutoFill="0" AutoCreate="1" DefaultHex="0" AutoDestroy="0" DoNotSaveLocal="0" AutoCreateStructsize="4096">
+      <Elements>
+        <Element Offset="256" Vartype="Float" Bytesize="4" Description="Max Money?" DisplayMethod="Unsigned Integer" BackgroundColor="80000005" />
+        <Element Offset="260" Vartype="4 Bytes" Bytesize="4" Description="Total Ships" DisplayMethod="Unsigned Integer" BackgroundColor="80000005" />
+        <Element Offset="264" Vartype="4 Bytes" Bytesize="4" Description="Ships on Planets" DisplayMethod="Unsigned Integer" BackgroundColor="80000005" />
+        <Element Offset="268" Vartype="4 Bytes" Bytesize="4" Description="Planet Count" DisplayMethod="Unsigned Integer" BackgroundColor="80000005" />
+        <Element Offset="300" Vartype="Float" Bytesize="4" Description="Current Money" DisplayMethod="Unsigned Integer" BackgroundColor="80000005" />
+        <Element Offset="304" Vartype="Float" Bytesize="4" Description="Domination Points" DisplayMethod="Unsigned Integer" BackgroundColor="80000005" />
+      </Elements>
+    </Structure>
+    <Structure Name="UtilCopyData" AutoFill="0" AutoCreate="1" DefaultHex="0" AutoDestroy="1" DoNotSaveLocal="1" AutoCreateStructsize="512">
+      <Elements>
+        <Element Offset="0" Vartype="Pointer" Bytesize="4" Description="Unique Value" DisplayMethod="Unsigned Integer" BackgroundColor="80000005" />
+        <Element Offset="4" Vartype="4 Bytes" Bytesize="4" Description="Count" DisplayMethod="Unsigned Integer" BackgroundColor="80000005" />
+        <Element Offset="8" Vartype="Pointer" Bytesize="4" Description="Stack (ESP)" DisplayMethod="Unsigned Integer" BackgroundColor="80000005" />
+        <Element Offset="12" Vartype="Pointer" Bytesize="4" Description="Stack (EBP)" DisplayMethod="Unsigned Integer" BackgroundColor="80000005" />
+        <Element Offset="16" Vartype="Pointer" Bytesize="4" Description="Memory" DisplayMethod="Unsigned Integer" BackgroundColor="80000005" />
+        <Element Offset="20" Vartype="Pointer" Bytesize="4" ChildStruct="FXSAVE" Description="FXSave" DisplayMethod="Unsigned Integer" BackgroundColor="80000005" />
+        <Element Offset="24" Vartype="Pointer" Bytesize="4" ChildStruct="XMM" Description="XMM" DisplayMethod="Unsigned Integer" BackgroundColor="80000005" />
+        <Element Offset="28" Vartype="Pointer" Bytesize="4" ChildStruct="FPU" Description="FPU" DisplayMethod="Unsigned Integer" BackgroundColor="80000005" />
+        <Element Offset="220" Vartype="4 Bytes" Bytesize="4" Description="FLAGS" DisplayMethod="Hexadecimal" BackgroundColor="80000005" />
+        <Element Offset="224" Vartype="4 Bytes" Bytesize="4" Description="EDI" DisplayMethod="Hexadecimal" BackgroundColor="80000005" />
+        <Element Offset="228" Vartype="4 Bytes" Bytesize="4" Description="ESI" DisplayMethod="Hexadecimal" BackgroundColor="80000005" />
+        <Element Offset="232" Vartype="4 Bytes" Bytesize="4" Description="EBP" DisplayMethod="Hexadecimal" BackgroundColor="80000005" />
+        <Element Offset="236" Vartype="4 Bytes" Bytesize="4" Description="ESP" DisplayMethod="Hexadecimal" BackgroundColor="80000005" />
+        <Element Offset="240" Vartype="4 Bytes" Bytesize="4" Description="EBX" DisplayMethod="Hexadecimal" BackgroundColor="80000005" />
+        <Element Offset="244" Vartype="4 Bytes" Bytesize="4" Description="EDX" DisplayMethod="Hexadecimal" BackgroundColor="80000005" />
+        <Element Offset="248" Vartype="4 Bytes" Bytesize="4" Description="ECX" DisplayMethod="Hexadecimal" BackgroundColor="80000005" />
+        <Element Offset="252" Vartype="4 Bytes" Bytesize="4" Description="EAX" DisplayMethod="Hexadecimal" BackgroundColor="80000005" />
+      </Elements>
+    </Structure>
+    <Structure Name="FXSAVE" AutoFill="0" AutoCreate="1" DefaultHex="0" AutoDestroy="0" DoNotSaveLocal="0" AutoCreateStructsize="4096">
+      <Elements>
+        <Element Offset="0" Vartype="2 Bytes" Bytesize="2" Description="FCW (Control word)" DisplayMethod="Hexadecimal" BackgroundColor="80000005" />
+        <Element Offset="2" Vartype="2 Bytes" Bytesize="2" Description="FSW (Status word)" DisplayMethod="Hexadecimal" BackgroundColor="80000005" />
+        <Element Offset="4" Vartype="2 Bytes" Bytesize="2" Description="FTW (Tag word)" DisplayMethod="Hexadecimal" BackgroundColor="80000005" />
+        <Element Offset="6" Vartype="2 Bytes" Bytesize="2" Description="FOP (lower 11-bit opcode)" DisplayMethod="Hexadecimal" BackgroundColor="80000005" />
+        <Element Offset="8" Vartype="4 Bytes" Bytesize="4" Description="IP" DisplayMethod="Hexadecimal" BackgroundColor="80000005" />
+        <Element Offset="12" Vartype="2 Bytes" Bytesize="2" Description="CS" DisplayMethod="Hexadecimal" BackgroundColor="80000005" />
+        <Element Offset="16" Vartype="4 Bytes" Bytesize="4" Description="DP" DisplayMethod="Hexadecimal" BackgroundColor="80000005" />
+        <Element Offset="20" Vartype="2 Bytes" Bytesize="2" Description="DS" DisplayMethod="Hexadecimal" BackgroundColor="80000005" />
+        <Element Offset="24" Vartype="4 Bytes" Bytesize="4" Description="MXCSR" DisplayMethod="Hexadecimal" BackgroundColor="80000005" />
+        <Element Offset="32" Vartype="Array of byte" Bytesize="16" Description="ST0" DisplayMethod="Hexadecimal" BackgroundColor="80000005" />
+        <Element Offset="48" Vartype="Array of byte" Bytesize="16" Description="ST1" DisplayMethod="Hexadecimal" BackgroundColor="80000005" />
+        <Element Offset="64" Vartype="Array of byte" Bytesize="16" Description="ST2" DisplayMethod="Hexadecimal" BackgroundColor="80000005" />
+        <Element Offset="80" Vartype="Array of byte" Bytesize="16" Description="ST3" DisplayMethod="Hexadecimal" BackgroundColor="80000005" />
+        <Element Offset="96" Vartype="Array of byte" Bytesize="16" Description="ST4" DisplayMethod="Hexadecimal" BackgroundColor="80000005" />
+        <Element Offset="112" Vartype="Array of byte" Bytesize="16" Description="ST5" DisplayMethod="Hexadecimal" BackgroundColor="80000005" />
+        <Element Offset="128" Vartype="Array of byte" Bytesize="16" Description="ST6" DisplayMethod="Hexadecimal" BackgroundColor="80000005" />
+        <Element Offset="144" Vartype="Array of byte" Bytesize="16" Description="ST7" DisplayMethod="Hexadecimal" BackgroundColor="80000005" />
+        <Element Offset="160" Vartype="Float" Bytesize="4" Description="XMM0" DisplayMethod="Unsigned Integer" BackgroundColor="80000005" />
+        <Element Offset="176" Vartype="Float" Bytesize="4" Description="XMM1" DisplayMethod="Unsigned Integer" BackgroundColor="80000005" />
+        <Element Offset="192" Vartype="Float" Bytesize="4" Description="XMM2" DisplayMethod="Unsigned Integer" BackgroundColor="80000005" />
+        <Element Offset="208" Vartype="Float" Bytesize="4" Description="XMM3" DisplayMethod="Unsigned Integer" BackgroundColor="80000005" />
+        <Element Offset="224" Vartype="Float" Bytesize="4" Description="XMM4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005" />
+        <Element Offset="240" Vartype="Float" Bytesize="4" Description="XMM5" DisplayMethod="Unsigned Integer" BackgroundColor="80000005" />
+        <Element Offset="256" Vartype="Float" Bytesize="4" Description="XMM6" DisplayMethod="Unsigned Integer" BackgroundColor="80000005" />
+        <Element Offset="272" Vartype="Float" Bytesize="4" Description="XMM7" DisplayMethod="Unsigned Integer" BackgroundColor="80000005" />
+      </Elements>
+    </Structure>
+    <Structure Name="XMM" AutoFill="0" AutoCreate="1" DefaultHex="0" AutoDestroy="0" DoNotSaveLocal="0" AutoCreateStructsize="4096">
+      <Elements>
+        <Element Offset="0" Vartype="Float" Bytesize="4" Description="XMM0" DisplayMethod="Unsigned Integer" BackgroundColor="80000005" />
+        <Element Offset="16" Vartype="Float" Bytesize="4" Description="XMM1" DisplayMethod="Unsigned Integer" BackgroundColor="80000005" />
+        <Element Offset="32" Vartype="Float" Bytesize="4" Description="XMM2" DisplayMethod="Unsigned Integer" BackgroundColor="80000005" />
+        <Element Offset="48" Vartype="Float" Bytesize="4" Description="XMM3" DisplayMethod="Unsigned Integer" BackgroundColor="80000005" />
+        <Element Offset="64" Vartype="Float" Bytesize="4" Description="XMM4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005" />
+        <Element Offset="80" Vartype="Float" Bytesize="4" Description="XMM5" DisplayMethod="Unsigned Integer" BackgroundColor="80000005" />
+        <Element Offset="96" Vartype="Float" Bytesize="4" Description="XMM6" DisplayMethod="Unsigned Integer" BackgroundColor="80000005" />
+        <Element Offset="112" Vartype="Float" Bytesize="4" Description="XMM7" DisplayMethod="Unsigned Integer" BackgroundColor="80000005" />
+      </Elements>
+    </Structure>
+    <Structure Name="FPU" AutoFill="0" AutoCreate="1" DefaultHex="0" AutoDestroy="0" DoNotSaveLocal="0" AutoCreateStructsize="4096">
+      <Elements>
+        <Element Offset="0" Vartype="Float" Bytesize="4" Description="ST0" DisplayMethod="Unsigned Integer" BackgroundColor="80000005" />
+        <Element Offset="4" Vartype="Float" Bytesize="4" Description="ST1" DisplayMethod="Unsigned Integer" BackgroundColor="80000005" />
+        <Element Offset="8" Vartype="Float" Bytesize="4" Description="ST2" DisplayMethod="Unsigned Integer" BackgroundColor="80000005" />
+        <Element Offset="12" Vartype="Float" Bytesize="4" Description="ST3" DisplayMethod="Unsigned Integer" BackgroundColor="80000005" />
+        <Element Offset="16" Vartype="Float" Bytesize="4" Description="ST4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005" />
+        <Element Offset="20" Vartype="Float" Bytesize="4" Description="ST5" DisplayMethod="Unsigned Integer" BackgroundColor="80000005" />
+        <Element Offset="24" Vartype="Float" Bytesize="4" Description="ST6" DisplayMethod="Unsigned Integer" BackgroundColor="80000005" />
+        <Element Offset="28" Vartype="Float" Bytesize="4" Description="ST7" DisplayMethod="Unsigned Integer" BackgroundColor="80000005" />
+      </Elements>
+    </Structure>
+    <Structure Name="AmmoUse" AutoFill="0" AutoCreate="1" DefaultHex="0" AutoDestroy="0" DoNotSaveLocal="0" AutoCreateStructsize="4096">
+      <Elements />
+    </Structure>
+    <Structure Name="UtilCopyData64" AutoFill="0" AutoCreate="1" DefaultHex="0" AutoDestroy="1" DoNotSaveLocal="1" AutoCreateStructsize="4096">
+      <Elements>
+        <Element Offset="0" Vartype="Pointer" Bytesize="4" Description="Address" DisplayMethod="Unsigned Integer" BackgroundColor="80000005" />
+        <Element Offset="8" Vartype="8 Bytes" Bytesize="8" Description="Count" DisplayMethod="Unsigned Integer" BackgroundColor="80000005" />
+        <Element Offset="16" Vartype="Pointer" Bytesize="4" Description="Stack-&gt;" DisplayMethod="Unsigned Integer" BackgroundColor="80000005" />
+        <Element Offset="32" Vartype="Pointer" Bytesize="4" Description="Memory-&gt;" DisplayMethod="Unsigned Integer" BackgroundColor="80000005" />
+        <Element Offset="40" Vartype="Pointer" Bytesize="4" Description="FPU/FX" DisplayMethod="Unsigned Integer" BackgroundColor="80000005" />
+        <Element Offset="48" Vartype="Pointer" Bytesize="4" ChildStruct="XMM" Description="XMM" DisplayMethod="Unsigned Integer" BackgroundColor="80000005" />
+        <Element Offset="56" Vartype="Pointer" Bytesize="4" ChildStruct="FPU" Description="FPU" DisplayMethod="Unsigned Integer" BackgroundColor="80000005" />
+        <Element Offset="128" Vartype="8 Bytes" Bytesize="8" Description="FLAGS" DisplayMethod="Hexadecimal" BackgroundColor="80000005" />
+        <Element Offset="136" Vartype="8 Bytes" Bytesize="8" Description="RAX" DisplayMethod="Hexadecimal" BackgroundColor="80000005" />
+        <Element Offset="144" Vartype="8 Bytes" Bytesize="8" Description="RBX" DisplayMethod="Hexadecimal" BackgroundColor="80000005" />
+        <Element Offset="152" Vartype="8 Bytes" Bytesize="8" Description="RCX" DisplayMethod="Hexadecimal" BackgroundColor="80000005" />
+        <Element Offset="160" Vartype="8 Bytes" Bytesize="8" Description="RDX" DisplayMethod="Hexadecimal" BackgroundColor="80000005" />
+        <Element Offset="168" Vartype="8 Bytes" Bytesize="8" Description="RSI" DisplayMethod="Hexadecimal" BackgroundColor="80000005" />
+        <Element Offset="176" Vartype="8 Bytes" Bytesize="8" Description="RDI" DisplayMethod="Hexadecimal" BackgroundColor="80000005" />
+        <Element Offset="184" Vartype="8 Bytes" Bytesize="8" Description="R8" DisplayMethod="Hexadecimal" BackgroundColor="80000005" />
+        <Element Offset="192" Vartype="8 Bytes" Bytesize="8" Description="R9" DisplayMethod="Hexadecimal" BackgroundColor="80000005" />
+        <Element Offset="200" Vartype="8 Bytes" Bytesize="8" Description="R10" DisplayMethod="Hexadecimal" BackgroundColor="80000005" />
+        <Element Offset="208" Vartype="8 Bytes" Bytesize="8" Description="R11" DisplayMethod="Hexadecimal" BackgroundColor="80000005" />
+        <Element Offset="216" Vartype="8 Bytes" Bytesize="8" Description="R12" DisplayMethod="Hexadecimal" BackgroundColor="80000005" />
+        <Element Offset="224" Vartype="8 Bytes" Bytesize="8" Description="R13" DisplayMethod="Hexadecimal" BackgroundColor="80000005" />
+        <Element Offset="232" Vartype="8 Bytes" Bytesize="8" Description="R14" DisplayMethod="Hexadecimal" BackgroundColor="80000005" />
+        <Element Offset="240" Vartype="8 Bytes" Bytesize="8" Description="R15" DisplayMethod="Hexadecimal" BackgroundColor="80000005" />
+        <Element Offset="248" Vartype="8 Bytes" Bytesize="8" Description="RBP" DisplayMethod="Hexadecimal" BackgroundColor="80000005" />
+      </Elements>
+    </Structure>
+    <Structure Name="UtilCopyData" AutoFill="0" AutoCreate="1" DefaultHex="0" AutoDestroy="1" DoNotSaveLocal="1" AutoCreateStructsize="512">
+      <Elements>
+        <Element Offset="0" Vartype="Pointer" Bytesize="4" Description="Unique Value" DisplayMethod="Unsigned Integer" BackgroundColor="80000005" />
+        <Element Offset="4" Vartype="4 Bytes" Bytesize="4" Description="Count" DisplayMethod="Unsigned Integer" BackgroundColor="80000005" />
+        <Element Offset="8" Vartype="Pointer" Bytesize="4" Description="Stack (ESP)" DisplayMethod="Unsigned Integer" BackgroundColor="80000005" />
+        <Element Offset="12" Vartype="Pointer" Bytesize="4" Description="Stack (EBP)" DisplayMethod="Unsigned Integer" BackgroundColor="80000005" />
+        <Element Offset="16" Vartype="Pointer" Bytesize="4" Description="Memory" DisplayMethod="Unsigned Integer" BackgroundColor="80000005" />
+        <Element Offset="20" Vartype="Pointer" Bytesize="4" ChildStruct="FXSAVE" Description="FXSave" DisplayMethod="Unsigned Integer" BackgroundColor="80000005" />
+        <Element Offset="24" Vartype="Pointer" Bytesize="4" ChildStruct="XMM" Description="XMM" DisplayMethod="Unsigned Integer" BackgroundColor="80000005" />
+        <Element Offset="28" Vartype="Pointer" Bytesize="4" ChildStruct="FPU" Description="FPU" DisplayMethod="Unsigned Integer" BackgroundColor="80000005" />
+        <Element Offset="220" Vartype="4 Bytes" Bytesize="4" Description="FLAGS" DisplayMethod="Hexadecimal" BackgroundColor="80000005" />
+        <Element Offset="224" Vartype="4 Bytes" Bytesize="4" Description="EDI" DisplayMethod="Hexadecimal" BackgroundColor="80000005" />
+        <Element Offset="228" Vartype="4 Bytes" Bytesize="4" Description="ESI" DisplayMethod="Hexadecimal" BackgroundColor="80000005" />
+        <Element Offset="232" Vartype="4 Bytes" Bytesize="4" Description="EBP" DisplayMethod="Hexadecimal" BackgroundColor="80000005" />
+        <Element Offset="236" Vartype="4 Bytes" Bytesize="4" Description="ESP" DisplayMethod="Hexadecimal" BackgroundColor="80000005" />
+        <Element Offset="240" Vartype="4 Bytes" Bytesize="4" Description="EBX" DisplayMethod="Hexadecimal" BackgroundColor="80000005" />
+        <Element Offset="244" Vartype="4 Bytes" Bytesize="4" Description="EDX" DisplayMethod="Hexadecimal" BackgroundColor="80000005" />
+        <Element Offset="248" Vartype="4 Bytes" Bytesize="4" Description="ECX" DisplayMethod="Hexadecimal" BackgroundColor="80000005" />
+        <Element Offset="252" Vartype="4 Bytes" Bytesize="4" Description="EAX" DisplayMethod="Hexadecimal" BackgroundColor="80000005" />
+      </Elements>
+    </Structure>
+    <Structure Name="FXSAVE" AutoFill="0" AutoCreate="1" DefaultHex="0" AutoDestroy="0" DoNotSaveLocal="0" AutoCreateStructsize="4096">
+      <Elements>
+        <Element Offset="0" Vartype="2 Bytes" Bytesize="2" Description="FCW (Control word)" DisplayMethod="Hexadecimal" BackgroundColor="80000005" />
+        <Element Offset="2" Vartype="2 Bytes" Bytesize="2" Description="FSW (Status word)" DisplayMethod="Hexadecimal" BackgroundColor="80000005" />
+        <Element Offset="4" Vartype="2 Bytes" Bytesize="2" Description="FTW (Tag word)" DisplayMethod="Hexadecimal" BackgroundColor="80000005" />
+        <Element Offset="6" Vartype="2 Bytes" Bytesize="2" Description="FOP (lower 11-bit opcode)" DisplayMethod="Hexadecimal" BackgroundColor="80000005" />
+        <Element Offset="8" Vartype="4 Bytes" Bytesize="4" Description="IP" DisplayMethod="Hexadecimal" BackgroundColor="80000005" />
+        <Element Offset="12" Vartype="2 Bytes" Bytesize="2" Description="CS" DisplayMethod="Hexadecimal" BackgroundColor="80000005" />
+        <Element Offset="16" Vartype="4 Bytes" Bytesize="4" Description="DP" DisplayMethod="Hexadecimal" BackgroundColor="80000005" />
+        <Element Offset="20" Vartype="2 Bytes" Bytesize="2" Description="DS" DisplayMethod="Hexadecimal" BackgroundColor="80000005" />
+        <Element Offset="24" Vartype="4 Bytes" Bytesize="4" Description="MXCSR" DisplayMethod="Hexadecimal" BackgroundColor="80000005" />
+        <Element Offset="32" Vartype="Array of byte" Bytesize="16" Description="ST0" DisplayMethod="Hexadecimal" BackgroundColor="80000005" />
+        <Element Offset="48" Vartype="Array of byte" Bytesize="16" Description="ST1" DisplayMethod="Hexadecimal" BackgroundColor="80000005" />
+        <Element Offset="64" Vartype="Array of byte" Bytesize="16" Description="ST2" DisplayMethod="Hexadecimal" BackgroundColor="80000005" />
+        <Element Offset="80" Vartype="Array of byte" Bytesize="16" Description="ST3" DisplayMethod="Hexadecimal" BackgroundColor="80000005" />
+        <Element Offset="96" Vartype="Array of byte" Bytesize="16" Description="ST4" DisplayMethod="Hexadecimal" BackgroundColor="80000005" />
+        <Element Offset="112" Vartype="Array of byte" Bytesize="16" Description="ST5" DisplayMethod="Hexadecimal" BackgroundColor="80000005" />
+        <Element Offset="128" Vartype="Array of byte" Bytesize="16" Description="ST6" DisplayMethod="Hexadecimal" BackgroundColor="80000005" />
+        <Element Offset="144" Vartype="Array of byte" Bytesize="16" Description="ST7" DisplayMethod="Hexadecimal" BackgroundColor="80000005" />
+        <Element Offset="160" Vartype="Float" Bytesize="4" Description="XMM0" DisplayMethod="Unsigned Integer" BackgroundColor="80000005" />
+        <Element Offset="176" Vartype="Float" Bytesize="4" Description="XMM1" DisplayMethod="Unsigned Integer" BackgroundColor="80000005" />
+        <Element Offset="192" Vartype="Float" Bytesize="4" Description="XMM2" DisplayMethod="Unsigned Integer" BackgroundColor="80000005" />
+        <Element Offset="208" Vartype="Float" Bytesize="4" Description="XMM3" DisplayMethod="Unsigned Integer" BackgroundColor="80000005" />
+        <Element Offset="224" Vartype="Float" Bytesize="4" Description="XMM4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005" />
+        <Element Offset="240" Vartype="Float" Bytesize="4" Description="XMM5" DisplayMethod="Unsigned Integer" BackgroundColor="80000005" />
+        <Element Offset="256" Vartype="Float" Bytesize="4" Description="XMM6" DisplayMethod="Unsigned Integer" BackgroundColor="80000005" />
+        <Element Offset="272" Vartype="Float" Bytesize="4" Description="XMM7" DisplayMethod="Unsigned Integer" BackgroundColor="80000005" />
+      </Elements>
+    </Structure>
+    <Structure Name="XMM" AutoFill="0" AutoCreate="1" DefaultHex="0" AutoDestroy="0" DoNotSaveLocal="0" AutoCreateStructsize="4096">
+      <Elements>
+        <Element Offset="0" Vartype="Float" Bytesize="4" Description="XMM0" DisplayMethod="Unsigned Integer" BackgroundColor="80000005" />
+        <Element Offset="16" Vartype="Float" Bytesize="4" Description="XMM1" DisplayMethod="Unsigned Integer" BackgroundColor="80000005" />
+        <Element Offset="32" Vartype="Float" Bytesize="4" Description="XMM2" DisplayMethod="Unsigned Integer" BackgroundColor="80000005" />
+        <Element Offset="48" Vartype="Float" Bytesize="4" Description="XMM3" DisplayMethod="Unsigned Integer" BackgroundColor="80000005" />
+        <Element Offset="64" Vartype="Float" Bytesize="4" Description="XMM4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005" />
+        <Element Offset="80" Vartype="Float" Bytesize="4" Description="XMM5" DisplayMethod="Unsigned Integer" BackgroundColor="80000005" />
+        <Element Offset="96" Vartype="Float" Bytesize="4" Description="XMM6" DisplayMethod="Unsigned Integer" BackgroundColor="80000005" />
+        <Element Offset="112" Vartype="Float" Bytesize="4" Description="XMM7" DisplayMethod="Unsigned Integer" BackgroundColor="80000005" />
+      </Elements>
+    </Structure>
+    <Structure Name="FPU" AutoFill="0" AutoCreate="1" DefaultHex="0" AutoDestroy="0" DoNotSaveLocal="0" AutoCreateStructsize="4096">
+      <Elements>
+        <Element Offset="0" Vartype="Float" Bytesize="4" Description="ST0" DisplayMethod="Unsigned Integer" BackgroundColor="80000005" />
+        <Element Offset="4" Vartype="Float" Bytesize="4" Description="ST1" DisplayMethod="Unsigned Integer" BackgroundColor="80000005" />
+        <Element Offset="8" Vartype="Float" Bytesize="4" Description="ST2" DisplayMethod="Unsigned Integer" BackgroundColor="80000005" />
+        <Element Offset="12" Vartype="Float" Bytesize="4" Description="ST3" DisplayMethod="Unsigned Integer" BackgroundColor="80000005" />
+        <Element Offset="16" Vartype="Float" Bytesize="4" Description="ST4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005" />
+        <Element Offset="20" Vartype="Float" Bytesize="4" Description="ST5" DisplayMethod="Unsigned Integer" BackgroundColor="80000005" />
+        <Element Offset="24" Vartype="Float" Bytesize="4" Description="ST6" DisplayMethod="Unsigned Integer" BackgroundColor="80000005" />
+        <Element Offset="28" Vartype="Float" Bytesize="4" Description="ST7" DisplayMethod="Unsigned Integer" BackgroundColor="80000005" />
+      </Elements>
+    </Structure>
+    <Structure Name="AmmoUse" AutoFill="0" AutoCreate="1" DefaultHex="0" AutoDestroy="0" DoNotSaveLocal="0" AutoCreateStructsize="4096">
+      <Elements />
+    </Structure>
+    <Structure Name="UtilCopyData64" AutoFill="0" AutoCreate="1" DefaultHex="0" AutoDestroy="1" DoNotSaveLocal="1" AutoCreateStructsize="4096">
+      <Elements>
+        <Element Offset="0" Vartype="Pointer" Bytesize="4" Description="Address" DisplayMethod="Unsigned Integer" BackgroundColor="80000005" />
+        <Element Offset="8" Vartype="8 Bytes" Bytesize="8" Description="Count" DisplayMethod="Unsigned Integer" BackgroundColor="80000005" />
+        <Element Offset="16" Vartype="Pointer" Bytesize="4" Description="Stack-&gt;" DisplayMethod="Unsigned Integer" BackgroundColor="80000005" />
+        <Element Offset="32" Vartype="Pointer" Bytesize="4" Description="Memory-&gt;" DisplayMethod="Unsigned Integer" BackgroundColor="80000005" />
+        <Element Offset="40" Vartype="Pointer" Bytesize="4" Description="FPU/FX" DisplayMethod="Unsigned Integer" BackgroundColor="80000005" />
+        <Element Offset="48" Vartype="Pointer" Bytesize="4" ChildStruct="XMM" Description="XMM" DisplayMethod="Unsigned Integer" BackgroundColor="80000005" />
+        <Element Offset="56" Vartype="Pointer" Bytesize="4" ChildStruct="FPU" Description="FPU" DisplayMethod="Unsigned Integer" BackgroundColor="80000005" />
+        <Element Offset="128" Vartype="8 Bytes" Bytesize="8" Description="FLAGS" DisplayMethod="Hexadecimal" BackgroundColor="80000005" />
+        <Element Offset="136" Vartype="8 Bytes" Bytesize="8" Description="RAX" DisplayMethod="Hexadecimal" BackgroundColor="80000005" />
+        <Element Offset="144" Vartype="8 Bytes" Bytesize="8" Description="RBX" DisplayMethod="Hexadecimal" BackgroundColor="80000005" />
+        <Element Offset="152" Vartype="8 Bytes" Bytesize="8" Description="RCX" DisplayMethod="Hexadecimal" BackgroundColor="80000005" />
+        <Element Offset="160" Vartype="8 Bytes" Bytesize="8" Description="RDX" DisplayMethod="Hexadecimal" BackgroundColor="80000005" />
+        <Element Offset="168" Vartype="8 Bytes" Bytesize="8" Description="RSI" DisplayMethod="Hexadecimal" BackgroundColor="80000005" />
+        <Element Offset="176" Vartype="8 Bytes" Bytesize="8" Description="RDI" DisplayMethod="Hexadecimal" BackgroundColor="80000005" />
+        <Element Offset="184" Vartype="8 Bytes" Bytesize="8" Description="R8" DisplayMethod="Hexadecimal" BackgroundColor="80000005" />
+        <Element Offset="192" Vartype="8 Bytes" Bytesize="8" Description="R9" DisplayMethod="Hexadecimal" BackgroundColor="80000005" />
+        <Element Offset="200" Vartype="8 Bytes" Bytesize="8" Description="R10" DisplayMethod="Hexadecimal" BackgroundColor="80000005" />
+        <Element Offset="208" Vartype="8 Bytes" Bytesize="8" Description="R11" DisplayMethod="Hexadecimal" BackgroundColor="80000005" />
+        <Element Offset="216" Vartype="8 Bytes" Bytesize="8" Description="R12" DisplayMethod="Hexadecimal" BackgroundColor="80000005" />
+        <Element Offset="224" Vartype="8 Bytes" Bytesize="8" Description="R13" DisplayMethod="Hexadecimal" BackgroundColor="80000005" />
+        <Element Offset="232" Vartype="8 Bytes" Bytesize="8" Description="R14" DisplayMethod="Hexadecimal" BackgroundColor="80000005" />
+        <Element Offset="240" Vartype="8 Bytes" Bytesize="8" Description="R15" DisplayMethod="Hexadecimal" BackgroundColor="80000005" />
+        <Element Offset="248" Vartype="8 Bytes" Bytesize="8" Description="RBP" DisplayMethod="Hexadecimal" BackgroundColor="80000005" />
+      </Elements>
+    </Structure>
+    <Structure Name="UtilCopyData" AutoFill="0" AutoCreate="1" DefaultHex="0" AutoDestroy="1" DoNotSaveLocal="1" AutoCreateStructsize="512">
+      <Elements>
+        <Element Offset="0" Vartype="Pointer" Bytesize="4" Description="Unique Value" DisplayMethod="Unsigned Integer" BackgroundColor="80000005" />
+        <Element Offset="4" Vartype="4 Bytes" Bytesize="4" Description="Count" DisplayMethod="Unsigned Integer" BackgroundColor="80000005" />
+        <Element Offset="8" Vartype="Pointer" Bytesize="4" Description="Stack (ESP)" DisplayMethod="Unsigned Integer" BackgroundColor="80000005" />
+        <Element Offset="12" Vartype="Pointer" Bytesize="4" Description="Stack (EBP)" DisplayMethod="Unsigned Integer" BackgroundColor="80000005" />
+        <Element Offset="16" Vartype="Pointer" Bytesize="4" Description="Memory" DisplayMethod="Unsigned Integer" BackgroundColor="80000005" />
+        <Element Offset="20" Vartype="Pointer" Bytesize="4" Description="FXSave" DisplayMethod="Unsigned Integer" BackgroundColor="80000005" />
+        <Element Offset="24" Vartype="Pointer" Bytesize="4" Description="XMM" DisplayMethod="Unsigned Integer" BackgroundColor="80000005" />
+        <Element Offset="28" Vartype="Pointer" Bytesize="4" Description="FPU" DisplayMethod="Unsigned Integer" BackgroundColor="80000005" />
+        <Element Offset="220" Vartype="4 Bytes" Bytesize="4" Description="FLAGS" DisplayMethod="Hexadecimal" BackgroundColor="80000005" />
+        <Element Offset="224" Vartype="4 Bytes" Bytesize="4" Description="EDI" DisplayMethod="Hexadecimal" BackgroundColor="80000005" />
+        <Element Offset="228" Vartype="4 Bytes" Bytesize="4" Description="ESI" DisplayMethod="Hexadecimal" BackgroundColor="80000005" />
+        <Element Offset="232" Vartype="4 Bytes" Bytesize="4" Description="EBP" DisplayMethod="Hexadecimal" BackgroundColor="80000005" />
+        <Element Offset="236" Vartype="4 Bytes" Bytesize="4" Description="ESP" DisplayMethod="Hexadecimal" BackgroundColor="80000005" />
+        <Element Offset="240" Vartype="4 Bytes" Bytesize="4" Description="EBX" DisplayMethod="Hexadecimal" BackgroundColor="80000005" />
+        <Element Offset="244" Vartype="4 Bytes" Bytesize="4" Description="EDX" DisplayMethod="Hexadecimal" BackgroundColor="80000005" />
+        <Element Offset="248" Vartype="4 Bytes" Bytesize="4" Description="ECX" DisplayMethod="Hexadecimal" BackgroundColor="80000005" />
+        <Element Offset="252" Vartype="4 Bytes" Bytesize="4" Description="EAX" DisplayMethod="Hexadecimal" BackgroundColor="80000005" />
+      </Elements>
+    </Structure>
+    <Structure Name="FXSAVE" AutoFill="0" AutoCreate="1" DefaultHex="0" AutoDestroy="0" DoNotSaveLocal="0" AutoCreateStructsize="4096">
+      <Elements>
+        <Element Offset="0" Vartype="2 Bytes" Bytesize="2" Description="FCW (Control word)" DisplayMethod="Hexadecimal" BackgroundColor="80000005" />
+        <Element Offset="2" Vartype="2 Bytes" Bytesize="2" Description="FSW (Status word)" DisplayMethod="Hexadecimal" BackgroundColor="80000005" />
+        <Element Offset="4" Vartype="2 Bytes" Bytesize="2" Description="FTW (Tag word)" DisplayMethod="Hexadecimal" BackgroundColor="80000005" />
+        <Element Offset="6" Vartype="2 Bytes" Bytesize="2" Description="FOP (lower 11-bit opcode)" DisplayMethod="Hexadecimal" BackgroundColor="80000005" />
+        <Element Offset="8" Vartype="4 Bytes" Bytesize="4" Description="IP" DisplayMethod="Hexadecimal" BackgroundColor="80000005" />
+        <Element Offset="12" Vartype="2 Bytes" Bytesize="2" Description="CS" DisplayMethod="Hexadecimal" BackgroundColor="80000005" />
+        <Element Offset="16" Vartype="4 Bytes" Bytesize="4" Description="DP" DisplayMethod="Hexadecimal" BackgroundColor="80000005" />
+        <Element Offset="20" Vartype="2 Bytes" Bytesize="2" Description="DS" DisplayMethod="Hexadecimal" BackgroundColor="80000005" />
+        <Element Offset="24" Vartype="4 Bytes" Bytesize="4" Description="MXCSR" DisplayMethod="Hexadecimal" BackgroundColor="80000005" />
+        <Element Offset="32" Vartype="Array of byte" Bytesize="16" Description="ST0" DisplayMethod="Hexadecimal" BackgroundColor="80000005" />
+        <Element Offset="48" Vartype="Array of byte" Bytesize="16" Description="ST1" DisplayMethod="Hexadecimal" BackgroundColor="80000005" />
+        <Element Offset="64" Vartype="Array of byte" Bytesize="16" Description="ST2" DisplayMethod="Hexadecimal" BackgroundColor="80000005" />
+        <Element Offset="80" Vartype="Array of byte" Bytesize="16" Description="ST3" DisplayMethod="Hexadecimal" BackgroundColor="80000005" />
+        <Element Offset="96" Vartype="Array of byte" Bytesize="16" Description="ST4" DisplayMethod="Hexadecimal" BackgroundColor="80000005" />
+        <Element Offset="112" Vartype="Array of byte" Bytesize="16" Description="ST5" DisplayMethod="Hexadecimal" BackgroundColor="80000005" />
+        <Element Offset="128" Vartype="Array of byte" Bytesize="16" Description="ST6" DisplayMethod="Hexadecimal" BackgroundColor="80000005" />
+        <Element Offset="144" Vartype="Array of byte" Bytesize="16" Description="ST7" DisplayMethod="Hexadecimal" BackgroundColor="80000005" />
+        <Element Offset="160" Vartype="Float" Bytesize="4" Description="XMM0" DisplayMethod="Unsigned Integer" BackgroundColor="80000005" />
+        <Element Offset="176" Vartype="Float" Bytesize="4" Description="XMM1" DisplayMethod="Unsigned Integer" BackgroundColor="80000005" />
+        <Element Offset="192" Vartype="Float" Bytesize="4" Description="XMM2" DisplayMethod="Unsigned Integer" BackgroundColor="80000005" />
+        <Element Offset="208" Vartype="Float" Bytesize="4" Description="XMM3" DisplayMethod="Unsigned Integer" BackgroundColor="80000005" />
+        <Element Offset="224" Vartype="Float" Bytesize="4" Description="XMM4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005" />
+        <Element Offset="240" Vartype="Float" Bytesize="4" Description="XMM5" DisplayMethod="Unsigned Integer" BackgroundColor="80000005" />
+        <Element Offset="256" Vartype="Float" Bytesize="4" Description="XMM6" DisplayMethod="Unsigned Integer" BackgroundColor="80000005" />
+        <Element Offset="272" Vartype="Float" Bytesize="4" Description="XMM7" DisplayMethod="Unsigned Integer" BackgroundColor="80000005" />
+      </Elements>
+    </Structure>
+    <Structure Name="XMM" AutoFill="0" AutoCreate="1" DefaultHex="0" AutoDestroy="0" DoNotSaveLocal="0" AutoCreateStructsize="4096">
+      <Elements>
+        <Element Offset="0" Vartype="Float" Bytesize="4" Description="XMM0" DisplayMethod="Unsigned Integer" BackgroundColor="80000005" />
+        <Element Offset="16" Vartype="Float" Bytesize="4" Description="XMM1" DisplayMethod="Unsigned Integer" BackgroundColor="80000005" />
+        <Element Offset="32" Vartype="Float" Bytesize="4" Description="XMM2" DisplayMethod="Unsigned Integer" BackgroundColor="80000005" />
+        <Element Offset="48" Vartype="Float" Bytesize="4" Description="XMM3" DisplayMethod="Unsigned Integer" BackgroundColor="80000005" />
+        <Element Offset="64" Vartype="Float" Bytesize="4" Description="XMM4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005" />
+        <Element Offset="80" Vartype="Float" Bytesize="4" Description="XMM5" DisplayMethod="Unsigned Integer" BackgroundColor="80000005" />
+        <Element Offset="96" Vartype="Float" Bytesize="4" Description="XMM6" DisplayMethod="Unsigned Integer" BackgroundColor="80000005" />
+        <Element Offset="112" Vartype="Float" Bytesize="4" Description="XMM7" DisplayMethod="Unsigned Integer" BackgroundColor="80000005" />
+      </Elements>
+    </Structure>
+    <Structure Name="FPU" AutoFill="0" AutoCreate="1" DefaultHex="0" AutoDestroy="0" DoNotSaveLocal="0" AutoCreateStructsize="4096">
+      <Elements>
+        <Element Offset="0" Vartype="Float" Bytesize="4" Description="ST0" DisplayMethod="Unsigned Integer" BackgroundColor="80000005" />
+        <Element Offset="4" Vartype="Float" Bytesize="4" Description="ST1" DisplayMethod="Unsigned Integer" BackgroundColor="80000005" />
+        <Element Offset="8" Vartype="Float" Bytesize="4" Description="ST2" DisplayMethod="Unsigned Integer" BackgroundColor="80000005" />
+        <Element Offset="12" Vartype="Float" Bytesize="4" Description="ST3" DisplayMethod="Unsigned Integer" BackgroundColor="80000005" />
+        <Element Offset="16" Vartype="Float" Bytesize="4" Description="ST4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005" />
+        <Element Offset="20" Vartype="Float" Bytesize="4" Description="ST5" DisplayMethod="Unsigned Integer" BackgroundColor="80000005" />
+        <Element Offset="24" Vartype="Float" Bytesize="4" Description="ST6" DisplayMethod="Unsigned Integer" BackgroundColor="80000005" />
+        <Element Offset="28" Vartype="Float" Bytesize="4" Description="ST7" DisplayMethod="Unsigned Integer" BackgroundColor="80000005" />
+      </Elements>
+    </Structure>
+    <Structure Name="AmmoUse" AutoFill="0" AutoCreate="1" DefaultHex="0" AutoDestroy="0" DoNotSaveLocal="0" AutoCreateStructsize="4096">
+      <Elements />
+    </Structure>
+    <Structure Name="UtilCopyData64" AutoFill="0" AutoCreate="1" DefaultHex="0" AutoDestroy="1" DoNotSaveLocal="1" AutoCreateStructsize="4096">
+      <Elements>
+        <Element Offset="0" Vartype="Pointer" Bytesize="4" Description="Address" DisplayMethod="Unsigned Integer" BackgroundColor="80000005" />
+        <Element Offset="8" Vartype="8 Bytes" Bytesize="8" Description="Count" DisplayMethod="Unsigned Integer" BackgroundColor="80000005" />
+        <Element Offset="16" Vartype="Pointer" Bytesize="4" Description="Stack-&gt;" DisplayMethod="Unsigned Integer" BackgroundColor="80000005" />
+        <Element Offset="32" Vartype="Pointer" Bytesize="4" Description="Memory-&gt;" DisplayMethod="Unsigned Integer" BackgroundColor="80000005" />
+        <Element Offset="40" Vartype="Pointer" Bytesize="4" Description="FPU/FX" DisplayMethod="Unsigned Integer" BackgroundColor="80000005" />
+        <Element Offset="48" Vartype="Pointer" Bytesize="4" Description="XMM" DisplayMethod="Unsigned Integer" BackgroundColor="80000005" />
+        <Element Offset="56" Vartype="Pointer" Bytesize="4" Description="FPU" DisplayMethod="Unsigned Integer" BackgroundColor="80000005" />
+        <Element Offset="128" Vartype="8 Bytes" Bytesize="8" Description="FLAGS" DisplayMethod="Hexadecimal" BackgroundColor="80000005" />
+        <Element Offset="136" Vartype="8 Bytes" Bytesize="8" Description="RAX" DisplayMethod="Hexadecimal" BackgroundColor="80000005" />
+        <Element Offset="144" Vartype="8 Bytes" Bytesize="8" Description="RBX" DisplayMethod="Hexadecimal" BackgroundColor="80000005" />
+        <Element Offset="152" Vartype="8 Bytes" Bytesize="8" Description="RCX" DisplayMethod="Hexadecimal" BackgroundColor="80000005" />
+        <Element Offset="160" Vartype="8 Bytes" Bytesize="8" Description="RDX" DisplayMethod="Hexadecimal" BackgroundColor="80000005" />
+        <Element Offset="168" Vartype="8 Bytes" Bytesize="8" Description="RSI" DisplayMethod="Hexadecimal" BackgroundColor="80000005" />
+        <Element Offset="176" Vartype="8 Bytes" Bytesize="8" Description="RDI" DisplayMethod="Hexadecimal" BackgroundColor="80000005" />
+        <Element Offset="184" Vartype="8 Bytes" Bytesize="8" Description="R8" DisplayMethod="Hexadecimal" BackgroundColor="80000005" />
+        <Element Offset="192" Vartype="8 Bytes" Bytesize="8" Description="R9" DisplayMethod="Hexadecimal" BackgroundColor="80000005" />
+        <Element Offset="200" Vartype="8 Bytes" Bytesize="8" Description="R10" DisplayMethod="Hexadecimal" BackgroundColor="80000005" />
+        <Element Offset="208" Vartype="8 Bytes" Bytesize="8" Description="R11" DisplayMethod="Hexadecimal" BackgroundColor="80000005" />
+        <Element Offset="216" Vartype="8 Bytes" Bytesize="8" Description="R12" DisplayMethod="Hexadecimal" BackgroundColor="80000005" />
+        <Element Offset="224" Vartype="8 Bytes" Bytesize="8" Description="R13" DisplayMethod="Hexadecimal" BackgroundColor="80000005" />
+        <Element Offset="232" Vartype="8 Bytes" Bytesize="8" Description="R14" DisplayMethod="Hexadecimal" BackgroundColor="80000005" />
+        <Element Offset="240" Vartype="8 Bytes" Bytesize="8" Description="R15" DisplayMethod="Hexadecimal" BackgroundColor="80000005" />
+        <Element Offset="248" Vartype="8 Bytes" Bytesize="8" Description="RBP" DisplayMethod="Hexadecimal" BackgroundColor="80000005" />
+      </Elements>
+    </Structure>
+    <Structure Name="MSB_Ship" AutoFill="0" AutoCreate="1" DefaultHex="0" AutoDestroy="0" DoNotSaveLocal="0" AutoCreateStructsize="4096">
+      <Elements>
+        <Element Offset="0" Vartype="4 Bytes" Bytesize="4" Description="2/3/6 alife, FFs dead" DisplayMethod="Hexadecimal" BackgroundColor="80000005" />
+        <Element Offset="4" Vartype="4 Bytes" Bytesize="4" Description="Smallish ID if alive, FFs if dead" DisplayMethod="Hexadecimal" BackgroundColor="80000005" />
+        <Element Offset="20" Vartype="4 Bytes" Bytesize="4" Description="FFs for most, 1 for flagship?" DisplayMethod="Signed Integer" BackgroundColor="80000005" />
+        <Element Offset="56" Vartype="4 Bytes" Bytesize="4" Description="Remaining Movement" DisplayMethod="Unsigned Integer" BackgroundColor="80000005" />
+        <Element Offset="60" Vartype="4 Bytes" Bytesize="4" Description="Remaining Actions" DisplayMethod="Unsigned Integer" BackgroundColor="80000005" />
+        <Element Offset="72" Vartype="4 Bytes" Bytesize="4" Description="Damage Taken" DisplayMethod="Unsigned Integer" BackgroundColor="80000005" />
+        <Element Offset="76" Vartype="4 Bytes" Bytesize="4" Description="Crits?" DisplayMethod="Unsigned Integer" BackgroundColor="80000005" />
+        <Element Offset="80" Vartype="4 Bytes" Bytesize="4" Description="Crits?" DisplayMethod="Unsigned Integer" BackgroundColor="80000005" />
+        <Element Offset="92" Vartype="4 Bytes" Bytesize="4" Description="Frames?  30 if full" DisplayMethod="Signed Integer" BackgroundColor="80000005" />
+        <Element Offset="96" Vartype="2 Bytes" Bytesize="2" Description="Flags (0004 means has fired, 0001 means moving))" DisplayMethod="Hexadecimal" BackgroundColor="80000005" />
+        <Element Offset="98" Vartype="Byte" Bytesize="1" Description="0x10 for player?" DisplayMethod="Hexadecimal" BackgroundColor="80000005" />
+        <Element Offset="100" Vartype="Byte" Bytesize="1" Description="Flags?" DisplayMethod="Hexadecimal" BackgroundColor="80000005" />
+        <Element Offset="116" Vartype="4 Bytes" Bytesize="4" Description="Engines" DisplayMethod="Unsigned Integer" BackgroundColor="80000005" />
+        <Element Offset="120" Vartype="4 Bytes" Bytesize="4" Description="Shields" DisplayMethod="Unsigned Integer" BackgroundColor="80000005" />
+        <Element Offset="124" Vartype="4 Bytes" Bytesize="4" Description="Armor" DisplayMethod="Unsigned Integer" BackgroundColor="80000005" />
+        <Element Offset="128" Vartype="4 Bytes" Bytesize="4" Description="Lasers" DisplayMethod="Unsigned Integer" BackgroundColor="80000005" />
+        <Element Offset="132" Vartype="4 Bytes" Bytesize="4" Description="Plasma Cannon" DisplayMethod="Unsigned Integer" BackgroundColor="80000005" />
+        <Element Offset="136" Vartype="4 Bytes" Bytesize="4" Description="Torpedoes" DisplayMethod="Unsigned Integer" BackgroundColor="80000005" />
+        <Element Offset="140" Vartype="4 Bytes" Bytesize="4" Description="Sensors" DisplayMethod="Unsigned Integer" BackgroundColor="80000005" />
+        <Element Offset="144" Vartype="4 Bytes" Bytesize="4" Description="Stealth" DisplayMethod="Unsigned Integer" BackgroundColor="80000005" />
+        <Element Offset="148" Vartype="4 Bytes" Bytesize="4" Description="Fighters" DisplayMethod="Unsigned Integer" BackgroundColor="80000005" />
+        <Element Offset="152" Vartype="4 Bytes" Bytesize="4" Description="?? 1 for player, 3/7 for enemies?" DisplayMethod="Unsigned Integer" BackgroundColor="80000005" />
+        <Element Offset="204" Vartype="4 Bytes" Bytesize="4" Description="How far moved" DisplayMethod="Unsigned Integer" BackgroundColor="80000005" />
+      </Elements>
+    </Structure>
+    <Structure Name="MONEY" AutoFill="0" AutoCreate="1" DefaultHex="0" AutoDestroy="0" DoNotSaveLocal="0" AutoCreateStructsize="4096">
+      <Elements>
+        <Element Offset="276" Vartype="Float" Bytesize="4" Description="Total Ships?" DisplayMethod="Unsigned Integer" BackgroundColor="80000005" />
+        <Element Offset="280" Vartype="Float" Bytesize="4" Description="Total Ships?" DisplayMethod="Unsigned Integer" BackgroundColor="80000005" />
+      </Elements>
+    </Structure>
+    <Structure Name="PLANET1" AutoFill="0" AutoCreate="1" DefaultHex="0" AutoDestroy="0" DoNotSaveLocal="0" AutoCreateStructsize="4096">
+      <Elements>
+        <Element Offset="1108" Vartype="4 Bytes" Bytesize="4" Description="Side" DisplayMethod="Unsigned Integer" BackgroundColor="80FFFF" />
+        <Element Offset="1204" Vartype="4 Bytes" Bytesize="4" Description="Ships" DisplayMethod="Unsigned Integer" BackgroundColor="80FFFF" />
+        <Element Offset="1488" Vartype="Float" Bytesize="4" Description="Upgrade Total Time" DisplayMethod="Unsigned Integer" BackgroundColor="80FFFF" />
+        <Element Offset="1496" Vartype="Float" Bytesize="4" Description="Upgrade Time Remaining" DisplayMethod="Unsigned Integer" BackgroundColor="80FFFF" />
+        <Element Offset="1500" Vartype="4 Bytes" Bytesize="4" Description="Upgrade Count" DisplayMethod="Unsigned Integer" BackgroundColor="80FFFF" />
+        <Element Offset="1504" Vartype="4 Bytes" Bytesize="4" Description="Upgrade Level" DisplayMethod="Unsigned Integer" BackgroundColor="80FFFF" />
+        <Element Offset="1508" Vartype="4 Bytes" Bytesize="4" Description="Upgrading Flag" DisplayMethod="Unsigned Integer" BackgroundColor="80FFFF" />
+        <Element Offset="1512" Vartype="4 Bytes" Bytesize="4" Description="Upgrade Target Level" DisplayMethod="Unsigned Integer" BackgroundColor="80FFFF" />
+      </Elements>
+    </Structure>
+    <Structure Name="MoneyMoney" AutoFill="0" AutoCreate="1" DefaultHex="0" AutoDestroy="0" DoNotSaveLocal="0" AutoCreateStructsize="4096">
+      <Elements>
+      </Elements>
+    </Structure>
+    <Structure Name="MoneyMinus2C" AutoFill="0" AutoCreate="1" DefaultHex="0" AutoDestroy="0" DoNotSaveLocal="0" AutoCreateStructsize="4096">
+      <Elements>
+        <Element Offset="0" Vartype="Float" Bytesize="4" Description="Max Money" DisplayMethod="Unsigned Integer" BackgroundColor="80000005" />
+        <Element Offset="4" Vartype="4 Bytes" Bytesize="4" Description="Total Ships" DisplayMethod="Unsigned Integer" BackgroundColor="80000005" />
+        <Element Offset="8" Vartype="4 Bytes" Bytesize="4" Description="Planet Ships" DisplayMethod="Unsigned Integer" BackgroundColor="80000005" />
+        <Element Offset="12" Vartype="4 Bytes" Bytesize="4" Description="Planet Count" DisplayMethod="Unsigned Integer" BackgroundColor="80000005" />
+        <Element Offset="16" Vartype="4 Bytes" Bytesize="4" Description="Fleet Count?" DisplayMethod="Unsigned Integer" BackgroundColor="80000005" />
+        <Element Offset="48" Vartype="Float" Bytesize="4" Description="VictoryCondition1" DisplayMethod="Unsigned Integer" BackgroundColor="80000005" />
+        <Element Offset="52" Vartype="4 Bytes" Bytesize="4" Description="VictoryCondition2" DisplayMethod="Unsigned Integer" BackgroundColor="80000005" />
+      </Elements>
+    </Structure>
+  </Structures>
+</CheatTable>

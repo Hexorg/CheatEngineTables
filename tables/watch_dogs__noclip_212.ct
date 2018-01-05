@@ -1,0 +1,375 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="18">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>72228</ID>
+      <Description>"no-clip"</Description>
+      <Options moHideChildren="1"/>
+      <LastState Activated="0"/>
+      <Color>80000008</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>[ENABLE]
+//code from here to '[DISABLE]' will be used to enable the cheat
+aobscanmodule(charCoordWriteAOB,Disrupt_b64.dll,0F 29 80 20 01 00 00 48 8B 8D 30 01 00 00)
+registersymbol(charCoordWriteAOB)
+aobscanmodule(normVectorReadAOB,Disrupt_b64.dll,F3 44 0F 10 40 4C F3 0F 10 78 50)
+registersymbol(normVectorReadAOB)
+aobscanmodule(axisXReadAOB,Disrupt_b64.dll,F3 0F 10 5B 14 44 0F 29 44 24 20)
+registersymbol(axisXReadAOB)
+
+///
+
+alloc(fFlyModeCoord,16,"Disrupt_b64.dll")
+registersymbol(fFlyModeCoord)
+
+label(bFlyMode)
+registersymbol(bFlyMode)
+label(bFirstActivate)
+registersymbol(bFirstActivate)
+label(pPlayerCoord)
+registersymbol(pPlayerCoord)
+
+label(pNormVector)
+registersymbol(pNormVector)
+
+label(pMovementInfo)
+registersymbol(pMovementInfo)
+
+///
+
+alloc(newmem,2048,"Disrupt_b64.dll") //+CB2527)
+label(returnhere)
+label(originalcode)
+label(exit)
+
+newmem: //this is allocated memory, you have read,write,execute access
+//place your code here
+mov rcx,[rax+20]
+test rcx,rcx
+jz originalcode
+mov ecx,[rcx+20]
+test ecx,ecx
+jnz originalcode
+mov [pPlayerCoord],rax
+
+cmp byte ptr [bFlyMode],1
+je @f
+mov byte ptr [bFirstActivate],1
+jmp originalcode
+
+@@:
+cmp byte ptr [bFirstActivate],1
+jne @f
+mov byte ptr [bFirstActivate],0
+movaps [fFlyModeCoord],xmm0
+
+@@:
+xorps xmm14,xmm14
+xorps xmm15,xmm15
+
+///do x axis
+mov rcx,[pMovementInfo]
+test rcx,rcx
+jz @f
+movss xmm15,[rcx+14]
+shufps xmm15,xmm15,c0 //set stick x axis to all but most significant element
+
+mov ecx,(float)0.5
+movd xmm14,ecx
+shufps xmm14,xmm14,00
+mulps xmm15,xmm14     //apply "speed"
+
+mov rcx,[pNormVector]
+test rcx,rcx
+jz @f
+movups xmm14,[rcx+4c]
+mulps xmm15,xmm14     //apply vector
+
+addps xmm15,[fFlyModeCoord]
+movaps [fFlyModeCoord],xmm15
+
+///do y axis
+mov rcx,[pMovementInfo]
+test rcx,rcx
+jz @f
+movss xmm15,[rcx+10]
+shufps xmm15,xmm15,c4 //copy stick y axis to 3rd element
+mov ecx,(float)-1
+movd xmm14,ecx
+mulss xmm15,xmm14     //neg least significant element
+shufps xmm15,xmm15,d8 //swap 2nd and 3rd element
+shufps xmm15,xmm15,e1 //swap least and 2rd element
+
+mov ecx,(float)0.5
+movd xmm14,ecx
+shufps xmm14,xmm14,00
+mulps xmm15,xmm14     //apply "speed"
+
+mov rcx,[pNormVector]
+test rcx,rcx
+jz @f
+movups xmm14,[rcx+4c]
+shufps xmm14,xmm14,e1 //swap least and 2rd element, as we're doing y axis
+mulps xmm15,xmm14     //apply vector
+
+addps xmm15,[fFlyModeCoord]
+movaps [fFlyModeCoord],xmm15
+
+//update player coord with flying coord
+@@:
+xorps xmm14,xmm14
+xorps xmm15,xmm15
+movaps xmm0,[fFlyModeCoord]
+
+originalcode:
+movaps [rax+00000120],xmm0
+
+exit:
+jmp returnhere
+
+///
+bFlyMode:
+db 0
+bFirstActivate:
+db 1
+pPlayerCoord:
+dq 0
+///
+
+charCoordWriteAOB: //"Disrupt_b64.dll"+CB2527:
+jmp newmem
+nop
+nop
+returnhere:
+
+///
+
+alloc(newmem2,2048,"Disrupt_b64.dll") //+17BCD77)
+label(returnhere2)
+label(originalcode2)
+label(exit2)
+
+newmem2: //this is allocated memory, you have read,write,execute access
+//place your code here
+mov [pNormVector],rax
+
+originalcode2:
+movss xmm8,[rax+4C]
+
+exit2:
+jmp returnhere2
+
+///
+pNormVector:
+dq 0
+///
+
+normVectorReadAOB: //"Disrupt_b64.dll"+17BCD77:
+jmp newmem2
+nop
+returnhere2:
+
+///
+
+alloc(newmem3,2048,"Disrupt_b64.dll") //+1DE9D17)
+label(returnhere3)
+label(originalcode3)
+label(exit3)
+
+newmem3: //this is allocated memory, you have read,write,execute access
+//place your code here
+mov [pMovementInfo],rbx
+
+originalcode3:
+movss xmm3,[rbx+14]
+
+exit3:
+jmp returnhere3
+
+///
+pMovementInfo:
+dq 0
+///
+
+axisXReadAOB: //"Disrupt_b64.dll"+1DE9D17:
+jmp newmem3
+returnhere3:
+
+
+ 
+ 
+[DISABLE]
+//code from here till the end of the code will be used to disable the cheat
+dealloc(newmem)
+charCoordWriteAOB: //"Disrupt_b64.dll"+CB2527:
+db 0F 29 80 20 01 00 00
+//Alt: movaps [rax+00000120],xmm0
+unregistersymbol(charCoordWriteAOB)
+dealloc(newmem2)
+normVectorReadAOB: //"Disrupt_b64.dll"+17BCD77:
+db F3 44 0F 10 40 4C
+//Alt: movss xmm8,[rax+4C]
+unregistersymbol(normVectorReadAOB)
+dealloc(newmem3)
+axisXReadAOB: //"Disrupt_b64.dll"+1DE9D17:
+db F3 0F 10 5B 14
+//Alt: movss xmm3,[rbx+14]
+unregistersymbol(axisXReadAOB)
+
+///
+
+dealloc(fFlyModeCoord)
+unregistersymbol(fFlyModeCoord)
+
+unregistersymbol(bFlyMode)
+unregistersymbol(bFirstActivate)
+unregistersymbol(pPlayerCoord)
+
+unregistersymbol(pNormVector)
+
+unregistersymbol(pMovementInfo)
+</AssemblerScript>
+      <Hotkeys>
+        <Hotkey>
+          <Action>Activate</Action>
+          <Keys>
+            <Key>123</Key>
+          </Keys>
+          <ID>0</ID>
+        </Hotkey>
+      </Hotkeys>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>72237</ID>
+          <Description>"status"</Description>
+          <DropDownList ReadOnly="1" DescriptionOnly="1" DisplayValueAsItem="1">0:disable
+1:no-clip enabled
+</DropDownList>
+          <LastState Value="??" Activated="0" RealAddress="00000000"/>
+          <Color>80000008</Color>
+          <VariableType>Byte</VariableType>
+          <Address>bFlyMode</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>80</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>18</Key>
+                <Key>80</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>72229</ID>
+          <Description>"X"</Description>
+          <LastState Value="??" Activated="0" RealAddress="00000000"/>
+          <Color>80000008</Color>
+          <VariableType>Float</VariableType>
+          <Address>pPlayerCoord</Address>
+          <Offsets>
+            <Offset>120</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>72230</ID>
+          <Description>"Y"</Description>
+          <LastState Value="??" Activated="0" RealAddress="00000000"/>
+          <Color>80000008</Color>
+          <VariableType>Float</VariableType>
+          <Address>pPlayerCoord</Address>
+          <Offsets>
+            <Offset>124</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>72231</ID>
+          <Description>"Z"</Description>
+          <LastState Value="??" Activated="0" RealAddress="00000000"/>
+          <Color>80000008</Color>
+          <VariableType>Float</VariableType>
+          <Address>pPlayerCoord</Address>
+          <Offsets>
+            <Offset>128</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>72238</ID>
+          <Description>""</Description>
+          <Options moHideChildren="1"/>
+          <LastState Value="" Activated="0" RealAddress="00000000"/>
+          <Color>80000008</Color>
+          <GroupHeader>1</GroupHeader>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>72232</ID>
+              <Description>"pNormVector+4c"</Description>
+              <LastState Value="??" Activated="0" RealAddress="00000000"/>
+              <Color>80000008</Color>
+              <VariableType>Float</VariableType>
+              <Address>pNormVector</Address>
+              <Offsets>
+                <Offset>4C</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>72233</ID>
+              <Description>"pNormVector+50"</Description>
+              <LastState Value="??" Activated="0" RealAddress="00000000"/>
+              <Color>80000008</Color>
+              <VariableType>Float</VariableType>
+              <Address>pNormVector</Address>
+              <Offsets>
+                <Offset>50</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>72234</ID>
+              <Description>"pNormVector+54"</Description>
+              <LastState Value="??" Activated="0" RealAddress="00000000"/>
+              <Color>80000008</Color>
+              <VariableType>Float</VariableType>
+              <Address>pNormVector</Address>
+              <Offsets>
+                <Offset>54</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>72235</ID>
+              <Description>"axis X"</Description>
+              <LastState Value="??" Activated="0" RealAddress="00000000"/>
+              <Color>80000008</Color>
+              <VariableType>Float</VariableType>
+              <Address>pMovementInfo</Address>
+              <Offsets>
+                <Offset>14</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>72236</ID>
+              <Description>"axis Y"</Description>
+              <LastState Value="??" Activated="0" RealAddress="00000000"/>
+              <Color>80000008</Color>
+              <VariableType>Float</VariableType>
+              <Address>pMovementInfo</Address>
+              <Offsets>
+                <Offset>10</Offset>
+              </Offsets>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols/>
+  <Comments>http://forum.cheatengine.org/viewtopic.php?p=5640069#5640069</Comments>
+</CheatTable>

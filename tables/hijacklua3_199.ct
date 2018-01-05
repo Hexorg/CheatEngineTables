@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="14">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>3</ID>
+      <Description>"hook lua"</Description>
+      <Color>80000008</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>[enable]
+//code locations
+label(FrequentlyUsedLuaFunction_hook)
+label(FrequentlyUsedLuaFunction_ReturnHere)
+label(InjectedLuaConsole)
+label(InjectedLuaConsole_InvalidLuaState)
+//variables:
+label(LuaStatePointer)
+label(command)
+//locate the functions
+
+alloc(MyCode,2048) //room for MyCode
+
+lua5.1-32.lua_gettop+A:
+  jmp FrequentlyUsedLuaFunction_hook
+FrequentlyUsedLuaFunction_ReturnHere:
+
+
+MyCode:
+FrequentlyUsedLuaFunction_hook:
+push eax
+mov eax,dword [esp+8]
+mov dword [LuaStatePointer],eax
+pop eax
+//original code
+sar eax,4
+retn
+//jmp FrequentlyUsedLuaFunction_ReturnHere
+
+InjectedLuaConsole:
+cmp dword [LuaStatePointer],0
+je InjectedLuaConsole_InvalidLuaState
+ push command
+ push dword [LuaStatePointer]
+ call lua5.1-32.luaL_loadstring
+ add esp, 8             //lua_loadstring is a cdecl 2 argument function
+ push 0
+ push -1
+ push 0
+ push dword [LuaStatePointer]
+ call lua5.1-32.lua_pcall
+ add esp,10
+InjectedLuaConsole_InvalidLuaState:
+ret
+//variables
+LuaStatePointer:
+dd 0
+command:
+db 'playerStats.Health = 300',0
+
+registersymbol(command) //add a string to your cheat table with address "LuaCommandToRun"
+registersymbol(InjectedLuaConsole)
+
+
+[disable]
+lua5.1-32.lua_gettop+A:
+sar eax,4
+retn
+
+dealloc(MyCode)
+unregistersymbol(command)
+unregistersymbol(InjectedLuaConsole)
+</AssemblerScript>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>4</ID>
+      <Description>"run command"</Description>
+      <Color>80000008</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>[enable]
+createthread(InjectedLuaConsole)
+[disable]
+createthread(InjectedLuaConsole)
+</AssemblerScript>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>2</ID>
+      <Description>"current command"</Description>
+      <Color>80000008</Color>
+      <VariableType>String</VariableType>
+      <Length>200</Length>
+      <Unicode>0</Unicode>
+      <ZeroTerminate>1</ZeroTerminate>
+      <Address>command</Address>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols>
+    <SymbolEntry>
+      <Name>command</Name>
+      <Address>08EA0049</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>InjectedLuaConsole</Name>
+      <Address>08EA0010</Address>
+    </SymbolEntry>
+  </UserdefinedSymbols>
+  <LuaScript>openProcess('cheatengine-i386.exe')
+
+playerStats = {}
+playerStats.Health = 30
+
+if MyTimer~=nil then
+   object_destroy(MyTimer);
+   MyTimer=nil;
+end
+
+
+function CheckHealth(sender)
+  if playerStats.Health &gt;=100 then
+    timer_setEnabled(sender, false)
+    showMessage('success')
+  end
+end
+
+
+MyTimer = createTimer(nil,true)
+timer_setInterval(MyTimer, 1000)
+timer_onTimer(MyTimer, CheckHealth)
+</LuaScript>
+</CheatTable>

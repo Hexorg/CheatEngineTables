@@ -1,0 +1,1131 @@
+<?xml version="1.0"?>
+<CheatTable CheatEngineTableVersion="11">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>96</ID>
+      <Description>"[X] &lt;== Sengoku v1.03 Script"</Description>
+      <Options moHideChildren="1"/>
+      <Color>80000008</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>{
+===========================================
+ Game Title    : Sengoku
+ Game Version  : 1.03
+ Script Version: 1.0
+ CE Version    : 6.1
+ Release date  : 15-Dec-2011 (adapted from version v1.02)
+ Author        : Recifense
+ Features:
+ - God Mode (For player's army and garrison)
+ - Minimum Morale (For player's army during battle)
+ - Minimum Wealth (50000)
+ - Minimum Honor  (50)
+ - Maximum Player's Age (50)
+ - Minimum Player's Vitality (Health = 9 and Fertility = 90%)
+ - Army Movement between adjacent province in 1 day
+ - Weak Enemy (Battle ends in few days)
+ - Province's garrison full (on selecting a player's province)
+ - Province's Levy full (Infantry and Calvary, on selecting a player's province)
+ - No Recently Conquered Revolt Risk (on selecting a player's province)
+ - Improvement/Construction in 1 day (Village, Castle, Religious Building and Guilds)
+ - Master returns in 1 day
+===========================================
+}
+
+[ENABLE]
+//=========================================
+// Check if script is compatible to this game version
+// If false the script will not be loaded
+
+assert(sengokugame.exe+1ccddd,8b 8e f8 03 00 00) //ok ok
+assert(sengokugame.exe+25f143,8b 89 84 12 00 00) //ok ok
+assert(sengokugame.exe+0cf35a,01 86 c8 00 00 00) //ok ok
+assert(sengokugame.exe+0c4985,8b f1 8b 46 34)    //ok ok
+assert(sengokugame.exe+0c4a72,89 77 34 5f 5e)    //ok ok
+assert(sengokugame.exe+0c4acb,89 4e 38 5e 8b e5) //ok ok
+assert(sengokugame.exe+071bcd,8b 8e ac 01 00 00) //ok ok
+assert(sengokugame.exe+079e5e,8b 8d bc fe ff ff) //ok ok
+assert(sengokugame.exe+25f6fb,8b 86 c0 13 00 00) //ok ok
+assert(sengokugame.exe+072248,5f 89 4e 20 5e)    //ok ok
+
+//=========================================
+alloc(MyCode,1024)
+//=========================================
+// Declaration section
+label(_MonPlayer)
+label(_MonP0)
+label(_MonP1)
+label(_BackMP)
+label(_ExitMP)
+label(_MonValues)
+label(_MonV0)
+label(_BackMV)
+label(_ExitMV)
+label(_MonAMP)
+label(_BackMAM)
+label(_ExitMAM)
+label(_MonBattle)
+label(_MonB0)
+label(_MonB1)
+label(_MonB10)
+label(_MonB11)
+label(_MonB12)
+label(_MonB13)
+label(_MonB2)
+label(_BackMB)
+label(_ExitMB)
+label(_MonAssaultH)
+label(_BackMAH)
+label(_ExitMAH)
+label(_MonAssaultM)
+label(_BackMAMo)
+label(_ExitMAMo)
+label(_MonRegion)
+label(_MonR0)
+label(_MonR1)
+label(_BackMR)
+label(_ExitMR)
+label(_MonImprovement)
+label(_BackMI)
+label(_ExitMI)
+label(_MonMasterReturn)
+label(_BackMMR)
+label(_ExitMMR)
+label(_MonUnderAssault)
+label(_MonU0)
+label(_MonU1)
+label(_BackMUA)
+label(_ExitMUA)
+label(pUnit)
+label(pArmy)
+label(pPlayer)
+label(pRegion)
+label(iEnableGM)
+label(iEnableMW)
+label(iEnableMH)
+label(iEnableMAM)
+label(iEnableMM)
+label(iEnableMI)
+label(iEnableMMR)
+label(iEnableMG)
+label(iEnableMR)
+label(iEnableWF)
+label(iEnableMA)
+label(iEnableMC)
+label(iEnableMV)
+
+//=========================================
+// Registering Symbols
+registersymbol(MyCode)
+registersymbol(pUnit)
+registersymbol(pArmy)
+registersymbol(pPlayer)
+registersymbol(pRegion)
+registersymbol(iEnableMW)
+registersymbol(iEnableMAM)
+registersymbol(iEnableMH)
+registersymbol(iEnableGM)
+registersymbol(iEnableMM)
+registersymbol(iEnableMI)
+registersymbol(iEnableMMR)
+registersymbol(iEnableMG)
+registersymbol(iEnableMR)
+registersymbol(iEnableWF)
+registersymbol(iEnableMA)
+registersymbol(iEnableMC)
+registersymbol(iEnableMV)
+
+//=========================================
+MyCode:
+//========================================= //ok ok
+_MonPlayer:
+ cmp byte ptr [edx+40],01
+ jne _ExitMP
+
+ mov [pPlayer],edx
+
+ cmp dword ptr [iEnableMA],0       // Age
+ je _MonP0                         // Jump if feature is disabled
+
+ mov ecx,[edx+000001e4]            // Get Age
+ cmp ecx,#50
+ jle _ExitMP
+
+ sub ecx,#50                       // ECX = Current Age - 50
+ imul ecx,ecx,#365                 // Years
+ imul ecx,ecx,#24                  // 24 hours
+ add [edx+44],ecx                  // Adjust Born date
+ add [edx+000012fc],ecx            // Adjust Born date
+
+ mov dword ptr [edx+000001e4],#50  // Age = 50
+
+_MonP0:
+ cmp dword ptr [iEnableMV],0       // Vitality = Health + Fertility
+ je _ExitMP                        // Jump if feature is disabled
+
+ mov ecx,#9000
+ cmp ecx,[edx+000002cc]            // Health
+ jle _MonP1
+
+ mov [edx+000002cc],ecx
+
+_MonP1:
+ mov ecx,#900
+ cmp ecx,[edx+000002c4]            // Fertility
+ jle _ExitMP
+
+ mov [edx+000002c4],ecx
+
+_ExitMP:
+ mov ecx,[esi+000003F8]            // Original code
+ jmp _BackMP                       // Back to main code
+
+//========================================= //ok ok
+_MonValues:
+ cmp ecx,[pPlayer]
+ jne _ExitMV
+
+ cmp dword ptr [iEnableMW],0       // Wealth
+ je _MonV0                         // Jump if feature is disabled
+
+ mov eax,#50000000
+ cmp eax,[ecx+00001284]
+ jle _MonV0
+
+ mov [ecx+00001284],eax
+
+_MonV0:
+ cmp dword ptr [iEnableMH],0       // Honor
+ je _ExitMV                        // Jump if feature is disabled
+
+ mov eax,#50000
+ cmp eax,[ecx+000002d4]
+ jle _ExitMV
+
+ mov [ecx+000002d4],eax
+
+_ExitMV:
+ mov ecx,[ecx+00001284]            // Original code
+ jmp _BackMV                       // Back to main code
+
+//========================================= //ok ok
+// Army Movement Points
+_MonAMP:
+ add [esi+000000C8],eax            // Original code
+
+ mov eax,[esi+000000A4]
+ cmp eax,[pPlayer]
+ jne _ExitMAM
+
+ mov [pArmy],esi
+
+ cmp dword ptr [iEnableMAM],0      // Army Movement Points
+ je _ExitMAM                       // Jump if feature is disabled
+
+ mov [esi+000000C8],edx
+
+_ExitMAM:
+ jmp _BackMAM                      // Back to main code
+
+//========================================= //ok ok
+_MonBattle:
+ push ebx
+ push edi
+
+ mov eax,[ecx+5C]                  // Original code
+ cmp eax,[pPlayer]
+ jne _ExitMB
+// ------------ Player ---------
+ cmp dword ptr [iEnableGM],0       // %HP
+ je _ExitMB                        // Jump if feature is disabled
+
+ mov eax,#1000
+ mov [ecx+34],eax                  // %HP = 100%
+ xor eax,eax
+ mov [ecx+0000008C],eax            // value2decrease = 0
+
+_MonB0:
+ cmp dword ptr [iEnableMM],0       // Morale
+ je _ExitMB                        // Jump if feature is disabled
+
+ xor eax,eax
+ mov [ecx+00000090],eax            // value2decrease = 0
+
+ mov eax,#1000
+ cmp eax,[ecx+38]                  // Morale = 1
+ jle _ExitMB
+
+ mov [ecx+38],eax                  // Morale = 1
+ jmp _ExitMB
+// ------------ Enemy ---------
+_MonB1:
+ cmp dword ptr [iEnableWF],0       // Weak Foe
+ je _ExitMB                        // Jump if feature is disabled
+
+ mov eax,[ecx+00000094]            // Get Army
+ mov esi,[eax+000000ac]            // Get current region (province)
+
+ mov edi,[esi+000008f0]            // Get ppDefenders
+ test edi,edi                      // Is there a defender?
+ jz _MonB11                        // Jump if false
+// Check if player is a defender
+ mov ebx,[edi+08]                  // Get ppArmy
+ mov edi,[ebx+24]                  // Get p1stArmy
+ mov edi,[edi]                     // Get army
+ mov edi,[edi+000000a4]            // Get owner
+ cmp edi,[pPlayer]                 // Is it a player's army?
+ je _MonB10                        // Jump if true
+
+ mov edi,[ebx+28]                  // Get plstArmy
+ mov edi,[edi]                     // Get army
+ mov edi,[edi+000000a4]            // Get owner
+ cmp edi,[pPlayer]                 // Is it a player's army?
+ jne _MonB11                       // Jump if false
+
+// Check if this army is an attacker
+_MonB10:
+ mov edi,[esi+000008f8]            // Get ppAttackers
+ test edi,edi                      // Is there an attacker?
+ jz _ExitMB                        // Jump if false
+ jmp _MonB13
+
+_MonB11:
+// Check if player is an attacker
+ mov ebx,[edi+08]                  // Get ppArmy
+ mov edi,[ebx+24]                  // Get p1stArmy
+ mov edi,[edi]                     // Get army
+ mov edi,[edi+000000a4]            // Get owner
+ cmp edi,[pPlayer]                 // Is it a player's army?
+ je _MonB12                        // Jump if true
+
+ mov edi,[ebx+28]                  // Get plstArmy
+ mov edi,[edi]                     // Get army
+ mov edi,[edi+000000a4]            // Get owner
+ cmp edi,[pPlayer]                 // Is it a player's army?
+ jne _ExitMB                       // Jump if false
+
+// Check if this army is a defender
+_MonB12:
+ mov edi,[esi+000008f0]            // Get ppDefenders
+ test edi,edi                      // Is there a defender?
+ jz _ExitMB                        // Jump if false
+// Check if this army is an enemy (defender or attacker)
+_MonB13:
+ mov ebx,[edi+08]                  // Get ppArmy
+ mov edi,[ebx+24]                  // Get p1stArmy
+ mov edi,[edi]                     // Get army
+ mov edi,[edi+000000a4]            // Get owner
+ cmp edi,eax                       // Is it a this army?
+ je _MonB2                         // Jump if true
+
+ mov edi,[ebx+28]                  // Get plstArmy
+ mov edi,[edi]                     // Get army
+ mov edi,[edi+000000a4]            // Get owner
+ cmp edi,eax                       // Is it this army?
+ jne _ExitMB                       // Jump if false
+
+_MonB2:
+ mov eax,[ecx+0000008c]            // Get HP value2decrease
+ lea eax,[eax+eax*4]               // Multiply it by 5
+ mov [ecx+0000008c],eax            // Update HP value2decrease
+
+ mov eax,[ecx+00000090]            // Get Morale value2decrease
+ lea eax,[eax+eax*4]               // Multiply it by 5
+ mov [ecx+00000090],eax            // Update Morale value2decrease
+
+_ExitMB:
+ pop edi
+ pop ebx
+
+ mov esi,ecx                       // Original code (esi = regiment)
+ mov eax,[esi+34]                  // Original code (eax = HP)
+ jmp _BackMB                       // Back to main code
+
+//========================================= //ok ok
+// God Mode
+_MonAssaultH:
+ push eax
+
+ mov eax,[edi+5C]                  // Original code
+ cmp eax,[pPlayer]
+ jne _ExitMAH
+
+ mov [pUnit],edi
+
+ cmp dword ptr [iEnableGM],0       // %HP
+ je _ExitMAH                       // Jump if feature is disabled
+
+ xor esi,esi
+ mov [edi+0000008c],esi
+
+ mov esi,#1000                     // %HP = 100%
+
+_ExitMAH:
+ pop eax
+
+ mov [edi+34],esi                  // Original code
+ pop edi                           // Original code
+ pop esi                           // Original code
+ jmp _BackMAH                      // Back to main code
+
+ //========================================= //ok ok
+ // Minimum Morale
+_MonAssaultM:
+ push eax
+
+ mov eax,[esi+5C]                  // Original code
+ cmp eax,[pPlayer]
+ jne _ExitMAMo
+
+ mov [pUnit],esi
+
+ cmp dword ptr [iEnableMM],0       // Morale
+ je _ExitMAMo                      // Jump if feature is disabled
+
+ mov eax,#1000                     // Morale = 1
+ cmp eax,ecx
+ jle _ExitMAMo
+
+ mov ecx,eax
+
+_ExitMAMo:
+ pop eax
+
+ mov [esi+38],ecx                  // Original code
+ pop esi                           // Original code
+ mov esp,ebp                       // Original code
+ jmp _BackMAMo                     // Back to main code
+
+//========================================= //ok ok
+// Activated on Selecting a Region/Province
+_MonRegion:
+ push esi
+
+ lea esi,[esi-08]
+
+ mov [pRegion],esi
+
+ mov ecx,[esi+00000a88]            // Get pOtherInfo
+ mov ecx,[ecx+00000170]            // Get pOwner
+ cmp ecx,[pPlayer]
+ jne _ExitMR
+
+ cmp dword ptr [iEnableMG],0       // Garrison
+ je _MonR0                         // Jump if feature is disabled
+
+ mov ecx,#1000
+ imul ecx,[esi+00000b30]           // Fort level
+ mov [esi+20],ecx                  // Garrison = Maximum
+
+_MonR0:
+ cmp dword ptr [iEnableMR],0       // Regiment
+ je _MonR1                         // Jump if feature is disabled
+
+ mov ecx,[esi+00000a5c]            // Infantry
+ mov [esi+00000a50],ecx
+ mov ecx,[esi+00000a60]            // Cavalry
+ mov [esi+00000a54],ecx
+
+_MonR1:
+ cmp dword ptr [iEnableMC],0       // Recently Conquered
+ je _ExitMR                        // Jump if feature is disabled
+
+ mov ecx,[esi+0000008c8]           // Get Flag
+ test ecx,ecx                      // Recently Conquered ?
+ jz _ExitMR                        // Jump if false
+
+ mov ecx,[esi+000008bc]
+ mov [esi+000008c4],ecx            // Make the trick :)
+
+_ExitMR:
+ pop esi
+
+ mov ecx,[esi+000001AC]            // Original code
+ jmp _BackMR                       // Back to main code
+
+//========================================= //ok ok
+// Improvement on Provinces (In 1 day)
+// EBX = pRegion
+_MonImprovement:
+ mov ecx,[ebp-00000144]            // Original code
+
+ cmp dword ptr [iEnableMI],0       // Improvemnt
+ je _ExitMI                        // Jump if feature is disabled
+
+ mov edx,[edi+00000a88]            // Get pOtherInfo
+ mov edx,[edx+00000170]            // Get pOwner
+ cmp edx,[pPlayer]
+ jne _ExitMI
+
+ mov edx,[ecx]                     // Get Current Date
+ mov [eax],edx                     // Make Conclusion date = current date
+
+_ExitMI:
+ jmp _BackMI                       // Back to main code
+
+//========================================= //ok ok
+// Quick return of a master  (in 1 day)
+_MonMasterReturn:
+ cmp dword ptr [iEnableMMR],0      // Master Quick Return
+ je _ExitMMR                       // Jump if feature is disabled
+
+ mov eax,[esi+000013C0]            // Get date
+ test eax,eax                      // Is he really returning ?
+ jz _ExitMMR                       // Jump if false
+
+ mov eax,[esi+00000250]
+ cmp eax,[pPlayer]
+ jne _ExitMMR
+
+ mov eax,[edi+000001bc]            // Get current date
+ mov [esi+000013C0],eax            // Make it returning date :)
+
+_ExitMMR:
+ mov eax,[esi+000013C0]            // Original code
+ jmp _BackMMR                      // Back to main code
+
+//========================================= //ok ok
+_MonUnderAssault:
+ push ebx
+
+ mov edi,[esi+00000a88]            // Get pOtherInfo
+ mov edi,[edi+00000170]            // Get pOwner
+ cmp edi,[pPlayer]
+ jne _MonU0
+
+// ------------ Player ---------
+ cmp dword ptr [iEnableGM],0       // Garrison Soldiers
+ je _ExitMUA                       // Jump if feature is disabled
+
+ mov ecx,eax                       // Garrison = Maximum
+ jmp _ExitMUA
+
+// ------------ enemy ---------
+_MonU0:
+ cmp dword ptr [iEnableWF],0       // Weak Foe
+ je _ExitMUA                       // Jump if feature is disabled
+
+ mov edi,[esi+000008f8]            // Get ppAttacker
+ test edi,edi
+ jz _ExitMUA
+
+ mov ebx,[edi+08]                  // Get ppArmy
+ mov edi,[ebx+24]                  // Get p1stArmy
+ mov edi,[edi]                     // Get army
+ mov edi,[edi+000000a4]            // Get owner
+ cmp edi,[pPlayer]                 // Is it a player's army?
+ je _MonU1                         // Jump if false
+
+ mov edi,[ebx+28]                  // Get plstArmy
+ mov edi,[edi]                     // Get army
+ mov edi,[edi+000000a4]            // Get owner
+ cmp edi,[pPlayer]                 // Is it a player's army?
+ jne _ExitMUA                      // Jump if false
+
+_MonU1:
+ mov edi,[esi+20]                  // Get Garrison
+ shr edi,1                         // Devide it by 2
+ cmp edi,ecx
+ jge _ExitMUA
+
+ mov ecx,edi                       // ECX = current Garrison / 2
+
+_ExitMUA:
+ pop ebx
+
+ pop edi                           // Original code
+ mov [esi+20],ecx                  // Original code
+ pop esi                           // Original code
+ jmp _BackMUA                      // Back to main code
+
+//=========================================
+ db '========================&gt;'
+ db 'CE6.1 Script by Recifense 121511'
+//=========================================
+// Variables
+iEnableGM:
+ dd 1
+iEnableMW:
+ dd 1
+iEnableMH:
+ dd 1
+iEnableMM:
+ dd 1
+iEnableMAM:
+ dd 1
+iEnableMI:
+ dd 1
+iEnableMMR:
+ dd 1
+iEnableMG:
+ dd 1
+iEnableMR:
+ dd 1
+iEnableWF:
+ dd 1
+iEnableMC:
+ dd 1
+iEnableMA:
+ dd 0
+iEnableMV:
+ dd 0
+pUnit:
+ dd 0
+pArmy:
+ dd 0
+pRegion:
+ dd 0
+pPlayer:
+ dd MyCode
+
+//=========================================
+// Hacking Points
+//sengokugame.exe+1c47fd: OK
+//sengokugame.exe+1cb63d: ok
+sengokugame.exe+1ccddd:
+ jmp _MonPlayer
+ nop
+_BackMP:
+
+//sengokugame.exe+251353: ok
+//sengokugame.exe+25d493: ok
+sengokugame.exe+25f143:
+ jmp _MonValues
+ nop
+_BackMV:
+
+//sengokugame.exe+0cae8a: ok
+//sengokugame.exe+0ce8da: ok
+sengokugame.exe+0cf35a:
+ jmp _MonAMP
+ nop
+_BackMAM:
+
+//sengokugame.exe+0c0775: ok
+//sengokugame.exe+0c4175: ok
+sengokugame.exe+0c4985:
+ jmp _MonBattle
+_BackMB:
+
+//sengokugame.exe+0c0862: ok
+//sengokugame.exe+0c4262: ok
+sengokugame.exe+0c4a72:
+ jmp _MonAssaultH
+_BackMAH:
+
+//sengokugame.exe+0c08bb: ok
+//sengokugame.exe+0c42bb: ok
+sengokugame.exe+0c4acb:
+ jmp _MonAssaultM
+ nop
+_BackMAMo:
+
+//sengokugame.exe+06f44d: ok
+//sengokugame.exe+0716dd: ok
+sengokugame.exe+071bcd:
+ jmp _MonRegion
+ nop
+_BackMR:
+
+//sengokugame.exe+0775a8: ok
+//sengokugame.exe+07997e: ok
+sengokugame.exe+079e5e:
+ jmp _MonImprovement
+ nop
+_BackMI:
+
+//sengokugame.exe+2518d6: ok
+//sengokugame.exe+25da2b: ok
+sengokugame.exe+25f6fb:
+ jmp _MonMasterReturn
+ nop
+_BackMMR:
+
+//sengokugame.exe+06fa58: ok
+//sengokugame.exe+071d58: ok
+sengokugame.exe+072248:
+ jmp _MonUnderAssault
+_BackMUA:
+
+//=========================================
+// Script for Restoring Original Codes
+[DISABLE]
+//sengokugame.exe+1c47fd: ok
+// mov ecx,[esi+0000023C]
+// db 8b 8e 3c 02 00 00
+//sengokugame.exe+1cb63d: ok
+sengokugame.exe+1ccddd:
+// mov ecx,[esi+000003F8]
+ db 8b 8e f8 03 00 00
+
+//sengokugame.exe+251353: ok
+//sengokugame.exe+25d493: ok
+sengokugame.exe+25f143:
+// mov ecx,[ecx+00001284]
+ db 8b 89 84 12 00 00
+
+//sengokugame.exe+0cae8a: ok
+//sengokugame.exe+0ce8da: ok
+sengokugame.exe+0cf35a:
+// add [esi+000000C8],eax
+ db 01 86 c8 00 00 00
+
+//sengokugame.exe+0c0775: ok
+//sengokugame.exe+0c4175: ok
+sengokugame.exe+0c4985:
+// mov esi,ecx
+// mov eax,[esi+34]
+ db 8b f1 8b 46 34
+
+//sengokugame.exe+0c0862: ok
+//sengokugame.exe+0c4262: ok
+sengokugame.exe+0c4a72:
+// mov [edi+34],esi
+// pop edi
+// pop esi
+ db 89 77 34 5f 5e
+
+//sengokugame.exe+0c08bb: ok
+//sengokugame.exe+0c42bb: ok
+sengokugame.exe+0c4acb:
+// mov [esi+38],ecx
+// pop esi
+// mov esp,ebp
+ db 89 4e 38 5e 8b e5
+
+//sengokugame.exe+06f44d: ok
+//sengokugame.exe+0716dd: ok
+sengokugame.exe+071bcd:
+// mov ecx,[esi+000001AC]
+ db 8b 8e ac 01 00 00
+
+//sengokugame.exe+0775a8: ok
+// mov ecx,[edi]
+// cmp ecx,[eax]
+// mov ecx,esi
+// db 8b 0f 3b 08 8b ce
+//sengokugame.exe+07997e: ok
+sengokugame.exe+079e5e:
+// mov ecx,[ebp-00000144]
+ db 8b 8d bc fe ff ff
+
+//sengokugame.exe+2518d6: ok
+//sengokugame.exe+25da2b: ok
+sengokugame.exe+25f6fb:
+// mov eax,[esi+000013C0]
+ db 8b 86 c0 13 00 00
+
+//sengokugame.exe+06fa58: ok
+//sengokugame.exe+071d58: ok
+sengokugame.exe+072248:
+// pop edi
+// mov [esi+20],ecx
+// pop esi
+ db 5f 89 4e 20 5e
+
+//=========================================
+// Unregistering Symbols
+unregistersymbol(MyCode)
+unregistersymbol(pUnit)
+unregistersymbol(pArmy)
+unregistersymbol(pPlayer)
+unregistersymbol(pRegion)
+unregistersymbol(iEnableMW)
+unregistersymbol(iEnableMAM)
+unregistersymbol(iEnableMH)
+unregistersymbol(iEnableGM)
+unregistersymbol(iEnableMM)
+unregistersymbol(iEnableMI)
+unregistersymbol(iEnableMMR)
+unregistersymbol(iEnableMG)
+unregistersymbol(iEnableMR)
+unregistersymbol(iEnableWF)
+unregistersymbol(iEnableMA)
+unregistersymbol(iEnableMC)
+unregistersymbol(iEnableMV)
+
+//=========================================
+dealloc(MyCode)
+//============= Scripts End ===============
+
+// ****************************************
+// NOTES
+// ****************************************
+{
+Sengoku:
+
+1 day       = 00000018 = 24 hours
+24-may-1467 = 03607A40 = 56654400
+01-Jan-1467 = 03606CA8 = 56650920
+
+================================
+v=1.01c
+
+struc PERSON:
+0000 = 0092dce4
+000c = iPersonID
+0040 = bHumanPlayerLeader = 01
+0044 = iBornDate
+004c = pClanInfo
+0058 = pSelf
+00cc = pp1stMaster
+00d0 = ppLstMaster
+00d4 = i#Masters
+0184 = aName or pName (if &gt; 16)
+0194 = iNameSize
+01e4 = iAge
+01f8 = pClan
+0250 = pLeader (person)
+0254 = pLeader (person)
+02c4 = iFertility
+02cc = iHealth
+02d4 = iHonor
+02d8 = pp1stSpecialAttribute
+02dc = ppLstSpecialAttribute
+02e0 = i#SpecialAttributes
+02fc = pSpecialTitle
+0288 = iAdditionalFertility
+028c = iAdditionalHealth
+1284 = iWealth
+12fc = iBornDate
+1310 = pSelf
+132b = aDNA	:)
+13b8 = pActionType
+13bc = pWhere (which province)
+13c0 = iReturningDate
+13d0 = pSelf
+1414 = i#Court
+
+struct CLAN:
+0000 = 0092e398
+0030 = aName
+0040 = iNameSize
+
+struct PROVINCE (REGION):
+0000 = 0090c28c
+000c = iFlagSelected
+0020 = iGarrison  (Maximum = FortLevel * 1000)
+01b4 = pProvinceInfo
+01d4 = pSelf
+01e0 = ppEvents
+01e8 = i#Events
+01f0 = iLevySize
+01f4 = iMinimumRevoltRisk
+01F8 = iRevoltRisk (Local)
+01FC = iRevoltRisk (National)
+0200 = iTaxRevenue
+0204 = iTaxModifier (Local)
+0208 = iTaxModifier(National)
+020C = iArmyMorale
+0210 = iLandForceLimitModifier
+0214 = iAttrition
+0218 = iMaxAttrition
+021C = iSupplyLimit
+0220 = iFortLevel
+0224 = iRegimentRecruitmentSpeed
+0228 = iGarrisonGrowth
+022C = iDiscipline
+0230 = idefensive
+0234 = iDefensive
+0238 = iMonthlyHonor (guild)
+023C = iMaintenanceCost
+0240 = iMartial
+0244 = iIntrigue
+0248 = iDiplomacy
+024C = i%Fertility
+0250 = iHealth
+0254 = iInfantryLevy
+0258 = InfantryShock
+025C = iInfantryFire (guild)
+0260 = iInfantryShock (guild)
+0264 = CavalryLevy
+0268 = CalvaryMorale
+026C = iCalvaryFire (guild)
+0270 = CavalryShock (guild)
+0274 = ModifierArtilleryLevy
+0278 = ModifierArtilleryMorale
+027C = ModifierArtilleryFire
+0280 = ModifierArtilleryShock
+0284 = iLocalMovementSpeed
+0288 = iLocalLevyReinforceSpeed
+028C = iLevyReinforceSpeed
+0290 = iRetinueReinforceSpeed
+0294 = iLeaderMorale
+0298 = iLeaderFire
+029C = LeaderShock
+02A0 = iSiegeValue
+02A4 = iModifierLeaderManeuver
+02A8 = iShintoRelation
+02AC = iBuddhistRelation
+02B0 = iChristianRelation
+02B4 = iRetinueCap (Improv+guild)
+02B8 = i%Chance2HireNinja
+02BC = iMonthlyArquebusProduction
+02C0 = i%ChanceToRecruitRonin
+02cc = pSelf
+08c4 = iConqueredDate
+08c8 = iFlagRecentlyConquered
+08d0 = pp1stArmy
+08d4 = ppLstArmy
+08d8 = i#Army
+08e0 = pp1stArmy2
+08e4 = ppLstArmy2
+08e8 = i#Army2
+08f0 = pp1stDefenderArmy
+08f8 = pp1stAttackerArmy
+0948 = pSelf
+0954 = p1stImprovement (Castle)
+0958 = pLstImprovement
+095c = i#Improvement
+0a44 = i#Guilds
+0a50 = iCurrent#Infantry
+0a54 = iCurrent#Cavalry
+0a5c = iMaximum#Infantry
+0a60 = iMaximum#Cavalry
+0a88 = pOtherInfo
+0b30 = iFortLevel
+
+struct PROVINCEINFO:
+0000 = 0090c314
+0038 = pProvince
+0084 = aName
+0094 = iNameSize
+
+struct OTHERINFO:
+0000 = 0092e8e0
+0008 = aName
+0018 = iNameSize
+0170 = pLeader
+0174 = pLeader
+0324 = pSelf
+03d8 = pSelf
+
+struct ARMY:
+0000 = 00907140
+0008 = 0090711c
+0038 = pp1stRegiment
+003c = ppLstRegiment
+0040 = i#Regiments	(each regiment has maximun 250 soldiers)
+00a4 = pClan
+00a8 = pCommander
+00ac = pCurrentProvince
+00b0 = pLastProvince
+00b4 = pIndexDestination (Province)
+00b8 = pIndexDestination (Province)
+00bc = i#ProvinceUntilDestination
+00c8 = iCurrentMovePointsUntilDestination
+00d8 = aName or pName (if &gt; 16)
+00e8 = iNameSize
+0138 = iDateArrivingDestination
+
+struct REGIMENT:
+0000 = 0090b1b8
+0030 = pType
+0034 = i%HP    (1000 = 100%)
+0038 = iMorale (1000 = 1)
+003c = pRaiseProvince
+0040 = paTypeName
+0050 = iTypeNameSize
+005c = pLeader
+0084 = pLeader
+008c = i%HP2Decrease
+0090 = iMorale2Decrease
+0094 = pArmy
+}
+
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>37</ID>
+          <Description>"Enable/Disable God Mode"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableGM</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>38</ID>
+          <Description>"Enable/Disable Minimum Wealth"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMW</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>39</ID>
+          <Description>"Enable/Disable Minimum Honor"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMH</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>40</ID>
+          <Description>"Enable/Disable Army's Minimum Morale"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMM</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>41</ID>
+          <Description>"Enable/Disable Army Movement in 1 Day"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMAM</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>67</ID>
+          <Description>"Enable/Disable Improvement/Construction in 1 Day"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMI</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>72</ID>
+          <Description>"Enable/Disable Master Return in 1 Day"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMMR</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>73</ID>
+          <Description>"Enable/Disable Province Full Garrison"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMG</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>74</ID>
+          <Description>"Enable/Disable Province Full Regiment"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMR</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>90</ID>
+          <Description>"Enable/Disable Weak Enemy"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableWF</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>94</ID>
+          <Description>"Enable/Disable No Recently Conquered Revolt Risk"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMC</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>92</ID>
+          <Description>"Enable/Disable Leader's Maximum Age"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMA</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>95</ID>
+          <Description>"Enable/Disable Leader's Minmum Vitality"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMV</Address>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols>
+    <SymbolEntry>
+      <Name>MyCode</Name>
+      <Address>048A0000</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>pUnit</Name>
+      <Address>048A0503</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>pArmy</Name>
+      <Address>048A0507</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>pPlayer</Name>
+      <Address>048A050F</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>pRegion</Name>
+      <Address>048A050B</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>iEnableMW</Name>
+      <Address>048A04D3</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>iEnableMAM</Name>
+      <Address>048A04DF</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>iEnableMH</Name>
+      <Address>048A04D7</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>iEnableGM</Name>
+      <Address>048A04CF</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>iEnableMM</Name>
+      <Address>048A04DB</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>iEnableMI</Name>
+      <Address>048A04E3</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>iEnableMMR</Name>
+      <Address>048A04E7</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>iEnableMG</Name>
+      <Address>048A04EB</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>iEnableMR</Name>
+      <Address>048A04EF</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>iEnableWF</Name>
+      <Address>048A04F3</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>iEnableMA</Name>
+      <Address>048A04FB</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>iEnableMC</Name>
+      <Address>048A04F7</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>iEnableMV</Name>
+      <Address>048A04FF</Address>
+    </SymbolEntry>
+  </UserdefinedSymbols>
+  <Comments>===========================================
+ Game Title    : Sengoku
+ Game Version  : 1.03
+ Process Name  : SengokuGame.exe
+ Script Version: 1.0
+ CE Version    : 6.1
+ Release date  : 15-Dec-2011 (adapted from version v1.02)
+ Author        : Recifense
+ Features:
+ - God Mode (For player's army and garrison)
+ - Minimum Morale (For player's army during battle)
+ - Minimum Wealth (50000) [1]
+ - Minimum Honor  (50) [1]
+ - Maximum Player's Age (50) [1]
+ - Minimum Player's Vitality (Health = 9 and Fertility = 90%) [1]
+ - Army Movement between adjacent province in 1 day
+ - Weak Enemy (Battle ends in few days)
+ - Province's garrison full (on selecting a player's province)
+ - Province's Levy full (Infantry and Calvary, on selecting a player's province)
+ - No Recently Conquered Revolt Risk (on selecting a player's province)
+ - Improvement/Construction in 1 day (Village, Castle, Religious Building and Guilds)
+ - Master returns in 1 day
+===========================================
+[1] Just click in other player's province and, then, in one of yours;
+</Comments>
+</CheatTable>

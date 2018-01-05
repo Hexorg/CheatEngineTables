@@ -1,0 +1,321 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="18">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>1</ID>
+      <Description>"Sacrifice AOB script"</Description>
+      <Options moHideChildren="1"/>
+      <LastState Activated="0"/>
+      <Color>80000008</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>[ENABLE]
+aobscanmodule(aobPointerGrabber,Sacrifice.exe,8B 86 44 0B 00 00 8D 4C 24 28)
+aobscanmodule(aobHealthDamager,Sacrifice.exe,66 89 86 CE 08 00 00 8B 86 30 04 00 00)
+aobscanmodule(aobSpeedTicker,Sacrifice.exe,0F BF 86 CA 08 00 00 89 44 24 20)
+
+alloc(newmem,4096)
+
+label(aobPointerGrabber_r)
+registersymbol(aobPointerGrabber_r)
+
+label(lblPointerGrabber)
+label(lblPointerGrabberSkipMinMana)
+label(lblPointerGrabberSkipInfiniteMana)
+label(lblPointerGrabberSkipMinSouls)
+label(lblPointerGrabberRet)
+
+label(bEnableMinMana)
+label(iMinMana)
+label(bEnableInfiniteMana)
+label(bEnableMinSouls)
+label(iMinSouls)
+registersymbol(bEnableMinMana)
+registersymbol(iMinMana)
+registersymbol(bEnableInfiniteMana)
+registersymbol(bEnableMinSouls)
+registersymbol(iMinSouls)
+
+label(pPlayer)
+registersymbol(pPlayer)
+
+label(aobHealthDamager_r)
+registersymbol(aobHealthDamager_r)
+
+label(lblHealthDamager)
+label(lblHealthDamagerSkipGodMode)
+label(lblHealthDamagerSkip)
+label(lblHealthDamagerRet)
+
+label(bEnableGodMode)
+registersymbol(bEnableGodMode)
+
+label(aobSpeedTicker_r)
+registersymbol(aobSpeedTicker_r)
+
+label(lblSpeedTicker)
+label(lblSpeedTickerSkipMinHealth)
+label(lblSpeedTickerSkipHealth)
+label(lblSpeedTickerSkipSpeed)
+label(lblSpeedTickerSkip)
+label(lblSpeedTickerRet)
+
+label(bEnableMinHealth)
+label(iMinHealth)
+label(bEnableSpeedMultiplier)
+label(fSpeedMultiplier)
+registersymbol(bEnableMinHealth)
+registersymbol(iMinHealth)
+registersymbol(bEnableSpeedMultiplier)
+registersymbol(fSpeedMultiplier)
+
+newmem:
+bEnableMinMana:
+dd 1
+iMinMana:
+dd (int)2000
+bEnableInfiniteMana:
+dd 1
+bEnableMinSouls:
+dd 1
+iMinSouls:
+dd (int)5
+bEnableGodMode:
+dd 1
+bEnableMinHealth:
+dd 1
+iMinHealth:
+dd (int)2000
+bEnableSpeedMultiplier:
+dd 1
+fSpeedMultiplier:
+dd (float)2.5
+
+lblPointerGrabber:
+mov dword ptr [pPlayer],esi
+
+cmp dword ptr [bEnableMinMana],1
+jne short lblPointerGrabberSkipMinMana
+mov eax,[iMinMana]
+cmp dword ptr [esi+B24],eax
+jge short lblPointerGrabberSkipMinMana
+mov dword ptr [esi+B24],eax
+lblPointerGrabberSkipMinMana:
+
+cmp dword ptr [bEnableInfiniteMana],1
+jne short lblPointerGrabberSkipInfiniteMana
+mov eax,[esi+B24]
+cmp dword ptr [esi+B20],eax
+jge short lblPointerGrabberSkipInfiniteMana
+mov dword ptr [esi+B20],eax
+lblPointerGrabberSkipInfiniteMana:
+
+cmp dword ptr [bEnableMinSouls],1
+jne short lblPointerGrabberSkipMinSouls
+mov eax,[iMinSouls]
+cmp dword ptr [esi+B44],eax
+jge short lblPointerGrabberSkipMinSouls
+mov dword ptr [esi+B44],eax
+lblPointerGrabberSkipMinSouls:
+
+mov eax,[esi+00000B44] // Original code
+jmp lblPointerGrabberRet
+pPlayer:
+dd 0
+
+lblHealthDamager:
+push ebx
+
+mov ebx,[pPlayer]
+test ebx,ebx
+jz lblHealthDamagerSkip
+cmp dword ptr [esi+1C4],ebx
+jne lblHealthDamagerSkip
+
+cmp dword ptr [bEnableGodMode],1
+jne short lblHealthDamagerSkipGodMode
+mov ax,[esi+8FE]
+lblHealthDamagerSkipGodMode:
+lblHealthDamagerSkip:
+pop ebx
+mov [esi+000008CE],ax // Original code
+jmp lblHealthDamagerRet
+
+lblSpeedTicker:
+mov eax,[pPlayer]
+test eax,eax
+jz lblSpeedTickerSkip
+cmp dword ptr [esi+1C4],eax
+jne lblSpeedTickerSkip
+
+cmp dword ptr [bEnableMinHealth],1
+jne short lblSpeedTickerSkipMinHealth
+mov eax,[iMinHealth]
+cmp dword ptr [esi+8FE],eax
+jge short lblSpeedTickerSkipMinHealth
+mov dword ptr [esi+8FE],eax
+lblSpeedTickerSkipMinHealth:
+
+cmp dword ptr [bEnableGodMode],1
+jne short lblSpeedTickerSkipHealth
+mov ax,[esi+8FE]
+mov word ptr [esi+8CE],ax
+lblSpeedTickerSkipHealth:
+
+cmp dword ptr [bEnableSpeedMultiplier],1
+jne short lblSpeedTickerSkipSpeed
+fild word ptr [esi+8FA]
+fmul dword ptr [fSpeedMultiplier]
+fistp word ptr [esi+8CA]
+lblSpeedTickerSkipSpeed:
+
+lblSpeedTickerSkip:
+movsx eax,word ptr [esi+000008CA] // Original code
+jmp lblSpeedTickerRet
+
+aobSpeedTicker:
+aobSpeedTicker_r:
+jmp lblSpeedTicker
+nop
+nop
+lblSpeedTickerRet:
+
+aobHealthDamager:
+aobHealthDamager_r:
+jmp lblHealthDamager
+nop
+nop
+lblHealthDamagerRet:
+
+aobPointerGrabber:
+aobPointerGrabber_r:
+jmp lblPointerGrabber
+nop
+lblPointerGrabberRet:
+
+[DISABLE]
+aobPointerGrabber_r:
+db 8B 86 44 0B 00 00
+
+unregistersymbol(aobPointerGrabber_r)
+
+unregistersymbol(bEnableMinMana)
+unregistersymbol(iMinMana)
+unregistersymbol(bEnableInfiniteMana)
+unregistersymbol(bEnableMinSouls)
+unregistersymbol(iMinSouls)
+
+unregistersymbol(pPlayer)
+
+aobHealthDamager_r:
+db 66 89 86 CE 08 00 00
+
+unregistersymbol(aobHealthDamager_r)
+
+unregistersymbol(bEnableGodMode)
+
+aobSpeedTicker_r:
+db 0F BF 86 CA 08 00 00
+
+unregistersymbol(aobSpeedTicker_r)
+
+unregistersymbol(bEnableMinHealth)
+unregistersymbol(iMinHealth)
+unregistersymbol(bEnableSpeedMultiplier)
+unregistersymbol(fSpeedMultiplier)
+
+dealloc(newmem)
+
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>20</ID>
+          <Description>"bEnableMinHealth"</Description>
+          <LastState Value="??" Activated="0" RealAddress="00000000"/>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>bEnableMinHealth</Address>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>21</ID>
+              <Description>"iMinHealth"</Description>
+              <LastState Value="??" Activated="0" RealAddress="00000000"/>
+              <Color>FF0000</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>iMinHealth</Address>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>10</ID>
+          <Description>"bEnableGodMode"</Description>
+          <LastState Value="??" Activated="0" RealAddress="00000000"/>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>bEnableGodMode</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>2</ID>
+          <Description>"bEnableMinSouls"</Description>
+          <LastState Value="??" Activated="0" RealAddress="00000000"/>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>bEnableMinSouls</Address>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>3</ID>
+              <Description>"iMinSouls"</Description>
+              <LastState Value="??" Activated="0" RealAddress="00000000"/>
+              <Color>FF0000</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>iMinSouls</Address>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>6</ID>
+          <Description>"bEnableInfiniteMana"</Description>
+          <LastState Value="??" Activated="0" RealAddress="00000000"/>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>bEnableInfiniteMana</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>5</ID>
+          <Description>"bEnableMinMana"</Description>
+          <LastState Value="??" Activated="0" RealAddress="00000000"/>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>bEnableMinMana</Address>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>4</ID>
+              <Description>"iMinMana"</Description>
+              <LastState Value="??" Activated="0" RealAddress="00000000"/>
+              <Color>FF0000</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>iMinMana</Address>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>15</ID>
+          <Description>"bEnableSpeedMultiplier"</Description>
+          <LastState Value="??" Activated="0" RealAddress="00000000"/>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>bEnableSpeedMultiplier</Address>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>16</ID>
+              <Description>"fSpeedMultiplier"</Description>
+              <LastState Value="??" Activated="0" RealAddress="00000000"/>
+              <Color>FF0000</Color>
+              <VariableType>Float</VariableType>
+              <Address>fSpeedMultiplier</Address>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+  </CheatEntries>
+</CheatTable>

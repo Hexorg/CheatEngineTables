@@ -1,0 +1,921 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="20">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>106882</ID>
+      <Description>"&lt;C-Ins&gt;/&lt;S-Ins&gt; = enable/disable cheats"</Description>
+      <Options moHideChildren="1" moManualExpandCollapse="1" moAllowManualCollapseAndExpand="1"/>
+      <LastState/>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>// Game   : TransOcean2.exe
+// Version: V1.0.2
+// Date   : 11.5.2016
+// Author : V3
+
+{$lua}
+if syntaxcheck==true then return '' end
+
+if (LaunchMonoDataCollector()==0) then
+  error("no mono")
+end
+{$asm}
+
+
+
+[ENABLE]
+
+////////////////////////////////////////////////////////////////////////////////
+globalalloc(pPlayer, $10, Cargo:DynamicSQLiteController:GetPlayerID)
+pPlayer:
+  dq 0000000000000000
+
+globalalloc(iPlayerID, $10, Cargo:DynamicSQLiteController:GetPlayerID)
+iPlayerID:
+  dd 00000000
+
+globalalloc(liAddCredits, $10, Cargo:DynamicSQLiteController:GetPlayerID)
+liAddCredits:
+  dq 0000000000000000
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+aobscanregion(INJ_getPlayerID, Cargo:DynamicSQLiteController:GetPlayerID, Cargo:DynamicSQLiteController:GetPlayerID+200, 48 63 47 40)
+registersymbol(INJ_getPlayerID)
+
+globalalloc(MEM_getPlayerID, $100, INJ_getPlayerID+0)
+MEM_getPlayerID:
+  readmem(INJ_getPlayerID+0, $10)
+
+
+
+_getPlayerID_code:
+  readmem(INJ_getPlayerID+0, 7)
+  mov qword ptr [pPlayer], rdi
+  mov dword ptr [iPlayerID], eax
+
+  cmp qword ptr [liAddCredits], 0000000000000000
+  je _getPlayerID_original_code
+
+  push rax
+  mov rax, [rdi+00000070] // (ObscuredLong) Credits.hiddenValue
+  xor rax, [rdi+00000068] // (ObscuredLong) Credits.currentCryptoKey
+  add rax, qword ptr [liAddCredits]
+  mov [rdi+00000078], rax // (ObscuredLong) Credits.fakeValue
+  xor rax, [rdi+00000068] // (ObscuredLong) Credits.currentCryptoKey
+  mov [rdi+00000070], rax // (ObscuredLong) Credits.hiddenValue
+  mov qword ptr [liAddCredits], 0000000000000000
+  pop rax
+
+_getPlayerID_original_code:
+  //readmem(INJ_getPlayerID+0, 7)
+  jmp _getPlayerID_return
+
+
+
+INJ_getPlayerID+0:
+  jmp _getPlayerID_code
+  db 90 90
+_getPlayerID_return:
+
+{
+Cargo:DynamicSQLiteController:GetPlayerID+4f:  41 FF D3                       -  call r11d
+Cargo:DynamicSQLiteController:GetPlayerID+52:  48 83 C4 20                    -  add rsp,20
+Cargo:DynamicSQLiteController:GetPlayerID+56:  EB 2D                          -  jmp Cargo:DynamicSQLiteController:GetPlayerID+85
+Cargo:DynamicSQLiteController:GetPlayerID+58:  48 8B 7D A8                    -  mov rdi,[rbp-58]
+Cargo:DynamicSQLiteController:GetPlayerID+5c:  0F B6 47 44                    -  movzx eax,byte ptr [rdi+44] // IsAI
+Cargo:DynamicSQLiteController:GetPlayerID+60:  85 C0                          -  test eax,eax
+Cargo:DynamicSQLiteController:GetPlayerID+62:  75 21                          -  jne Cargo:DynamicSQLiteController:GetPlayerID+85
+Cargo:DynamicSQLiteController:GetPlayerID+64:  0F B6 47 45                    -  movzx eax,byte ptr [rdi+45] // IsOnlinePlayer
+Cargo:DynamicSQLiteController:GetPlayerID+68:  85 C0                          -  test eax,eax
+Cargo:DynamicSQLiteController:GetPlayerID+6a:  75 19                          -  jne Cargo:DynamicSQLiteController:GetPlayerID+85
+// ---------- INJECTING HERE ----------
+Cargo:DynamicSQLiteController:GetPlayerID+6c:  48 63 47 40                    -  movsxd  rax,dword ptr [rdi+40] // PlayerID
+Cargo:DynamicSQLiteController:GetPlayerID+70:  89 45 94                       -  mov [rbp-6C],eax
+// ---------- DONE INJECTING ----------
+Cargo:DynamicSQLiteController:GetPlayerID+73:  48 83 EC 08                    -  sub rsp,08
+Cargo:DynamicSQLiteController:GetPlayerID+77:  E8 41 00 00 00                 -  call Cargo:DynamicSQLiteController:GetPlayerID+bd
+Cargo:DynamicSQLiteController:GetPlayerID+7c:  48 83 C4 08                    -  add rsp,08
+Cargo:DynamicSQLiteController:GetPlayerID+80:  E9 AF 00 00 00                 -  jmp Cargo:DynamicSQLiteController:GetPlayerID+134
+Cargo:DynamicSQLiteController:GetPlayerID+85:  48 8B CD                       -  mov rcx,rbp
+Cargo:DynamicSQLiteController:GetPlayerID+88:  48 83 C1 98                    -  add rcx,-68
+Cargo:DynamicSQLiteController:GetPlayerID+8c:  41 BA 40 18 22 3F              -  mov r10d,3F221840
+Cargo:DynamicSQLiteController:GetPlayerID+92:  48 83 EC 20                    -  sub rsp,20
+Cargo:DynamicSQLiteController:GetPlayerID+96:  49 BB C0 23 57 05 00 00 00 00  -  mov r11,Enumerator:MoveNext
+Cargo:DynamicSQLiteController:GetPlayerID+a0:  41 FF D3                       -  call r11d
+}
+
+
+
+[DISABLE]
+
+////////////////////////////////////////////////////////////////////////////////
+dealloc(pPlayer)
+unregistersymbol(pPlayer)
+
+dealloc(iPlayerID)
+unregistersymbol(iPlayerID)
+
+dealloc(liAddCredits)
+unregistersymbol(liAddCredits)
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+INJ_getPlayerID:
+  readmem(MEM_getPlayerID, $10)
+unregistersymbol(INJ_getPlayerID)
+dealloc(MEM_getPlayerID)
+unregistersymbol(MEM_getPlayerID)
+
+</AssemblerScript>
+      <Hotkeys>
+        <Hotkey>
+          <Action>Activate</Action>
+          <Keys>
+            <Key>17</Key>
+            <Key>45</Key>
+          </Keys>
+          <ID>0</ID>
+        </Hotkey>
+        <Hotkey>
+          <Action>Deactivate</Action>
+          <Keys>
+            <Key>16</Key>
+            <Key>45</Key>
+          </Keys>
+          <ID>1</ID>
+        </Hotkey>
+      </Hotkeys>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>106889</ID>
+          <Description>"reputation"</Description>
+          <Color>FF8000</Color>
+          <VariableType>Float</VariableType>
+          <Address>pPlayer</Address>
+          <Offsets>
+            <Offset>5C</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>106888</ID>
+          <Description>"rank"</Description>
+          <Color>FF8000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>pPlayer</Address>
+          <Offsets>
+            <Offset>60</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>106890</ID>
+          <Description>"experience"</Description>
+          <Color>FF8000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>pPlayer</Address>
+          <Offsets>
+            <Offset>64</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>106898</ID>
+          <Description>"victory points"</Description>
+          <Color>FF8000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>pPlayer</Address>
+          <Offsets>
+            <Offset>8C</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>106897</ID>
+          <Description>"credits (fake value)"</Description>
+          <Color>0080FF</Color>
+          <VariableType>8 Bytes</VariableType>
+          <Address>pPlayer</Address>
+          <Offsets>
+            <Offset>78</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>106899</ID>
+          <Description>"&lt;C-PgUp&gt;/&lt;C-PgDn&gt; = +/- 10M credits"</Description>
+          <VariableType>8 Bytes</VariableType>
+          <Address>liAddCredits</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Increase Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>33</Key>
+              </Keys>
+              <Value>10000000</Value>
+              <ID>0</ID>
+              <ActivateSound>Activate</ActivateSound>
+              <DeactivateSound/>
+            </Hotkey>
+            <Hotkey>
+              <Action>Decrease Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>34</Key>
+              </Keys>
+              <Value>10000000</Value>
+              <ID>1</ID>
+              <ActivateSound>Deactivate</ActivateSound>
+              <DeactivateSound/>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>2</ID>
+          <Description>"&lt;C-F5&gt;/&lt;S-F5&gt; = speedup ships on map"</Description>
+          <Options moHideChildren="1" moManualExpandCollapse="1" moAllowManualCollapseAndExpand="1"/>
+          <LastState/>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>// Game   : TransOcean2.exe
+// Version: V1.0.2
+// Date   : 11.5.2016
+// Author : V3
+
+{$lua}
+if syntaxcheck==true then return '' end
+
+if (LaunchMonoDataCollector()==0) then
+  error("no mono")
+end
+{$asm}
+
+
+
+[ENABLE]
+
+////////////////////////////////////////////////////////////////////////////////
+aobscanregion(INJ_shipSpeed, Cargo:Ship3DMove:MoveShip, Cargo:Ship3DMove:MoveShip+2000, F3 0F 10 86 B8 00 00 00)
+registersymbol(INJ_shipSpeed)
+
+globalalloc(MEM_shipSpeed, $100, INJ_shipSpeed+0)
+MEM_shipSpeed:
+  readmem(INJ_shipSpeed+0, $10)
+{
+registersymbol(pPlayerShipData)
+pPlayerShipData:
+  dq 0000000000000000
+}
+registersymbol(fSpeedUpFactor)
+fSpeedUpFactor:
+  dd (float)5.00
+
+registersymbol(bMaxFuelMaxCondition)
+bMaxFuelMaxCondition:
+  dd 00000000
+
+
+
+_shipSpeed_code:
+  readmem(INJ_shipSpeed+0, 8)
+
+  push rax
+  mov rax, [rsi+00000048]           // playerShipData
+  mov eax, dword ptr [rax+00000094] // PlayerID
+  cmp eax, dword ptr [iPlayerID]
+  jne _shipSpeed_exit
+
+  mulss xmm0, dword ptr [fSpeedUpFactor]
+
+  cmp dword ptr [bMaxFuelMaxCondition], 00000000
+  je _shipSpeed_exit
+
+  mov rax, [rsi+00000048] // playerShipData
+  //mov qword ptr [pPlayerShipData], rax
+  fild dword ptr [rax+0000012c] // FuelCapacity
+  fstp dword ptr [rax+000000b0] // FuelLoaded
+  mov dword ptr [rax+000000b4], (float)100.00 // Condition
+
+_shipSpeed_exit:
+  pop rax
+
+_shipSpeed_original_code:
+  //readmem(INJ_shipSpeed+0, 8)
+  jmp _shipSpeed_return
+
+
+
+INJ_shipSpeed+0:
+  jmp _shipSpeed_code
+  db 90 90 90
+_shipSpeed_return:
+
+{
+Cargo:Ship3DMove:MoveShip+19a  48 8B 8D 48 FE FF FF           -  mov rcx,[rbp-000001B8]
+Cargo:Ship3DMove:MoveShip+1a1  48 89 48 08                    -  mov [rax+08],rcx
+Cargo:Ship3DMove:MoveShip+1a5  E9 B3 13 00 00                 -  jmp Cargo:Ship3DMove:MoveShip+155d
+Cargo:Ship3DMove:MoveShip+1aa  48 8B 46 48                    -  mov rax,[rsi+48]
+Cargo:Ship3DMove:MoveShip+1ae  F3 0F 10 80 B4 00 00 00        -  movss xmm0,[rax+000000B4]
+Cargo:Ship3DMove:MoveShip+1b6  F3 0F 5A C0                    -  cvtss2sd xmm0,xmm0
+Cargo:Ship3DMove:MoveShip+1ba  66 0F 57 C9                    -  xorpd xmm1,xmm1
+Cargo:Ship3DMove:MoveShip+1be  66 0F 2F C8                    -  comisd xmm1,xmm0
+Cargo:Ship3DMove:MoveShip+1c2  76 05                          -  jna Cargo:Ship3DMove:MoveShip+1c9
+Cargo:Ship3DMove:MoveShip+1c4  E9 94 13 00 00                 -  jmp Cargo:Ship3DMove:MoveShip+155d
+// ---------- INJECTING HERE ----------
+Cargo:Ship3DMove:MoveShip+1c9  F3 0F 10 86 B8 00 00 00        -  movss xmm0,[rsi+000000B8] // actualSpeedInKnots
+// ---------- DONE INJECTING ----------
+Cargo:Ship3DMove:MoveShip+1d1  F3 0F 5A C0                    -  cvtss2sd xmm0,xmm0
+Cargo:Ship3DMove:MoveShip+1d5  F2 0F 5A E8                    -  cvtsd2ss xmm5,xmm0
+Cargo:Ship3DMove:MoveShip+1d9  F3 0F 11 AD 44 FD FF FF        -  movss [rbp-000002BC],xmm5
+Cargo:Ship3DMove:MoveShip+1e1  F3 0F 10 85 44 FD FF FF        -  movss xmm0,[rbp-000002BC]
+Cargo:Ship3DMove:MoveShip+1e9  F3 0F 5A C0                    -  cvtss2sd xmm0,xmm0
+Cargo:Ship3DMove:MoveShip+1ed  BA 01 00 00 00                 -  mov edx,00000001
+Cargo:Ship3DMove:MoveShip+1f2  F2 0F 5A C0                    -  cvtsd2ss xmm0,xmm0
+Cargo:Ship3DMove:MoveShip+1f6  48 83 EC 20                    -  sub rsp,20
+Cargo:Ship3DMove:MoveShip+1fa  49 BB 30 61 4E 40 00 00 00 00  -  mov r11,Deck13HH:GlobalHelpers:KnotsToUnitsPerHour
+Cargo:Ship3DMove:MoveShip+204  41 FF D3                       -  call r11d
+}
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+aobscanregion(INJ_shipWear, Cargo:Ship3DMove:MoveShip, Cargo:Ship3DMove:MoveShip+2000, F3 0F 10 86 A0 00 00 00)
+registersymbol(INJ_shipWear)
+
+globalalloc(MEM_shipWear, $100, INJ_shipWear+C)
+MEM_shipWear:
+  readmem(INJ_shipWear+C, $10)
+
+
+
+_shipWear_code:
+  readmem(INJ_shipWear+C, 8)
+
+  push rax
+  mov rax, [rsi+00000048]           // playerShipData
+  mov eax, dword ptr [rax+00000094] // PlayerID
+  cmp eax, dword ptr [iPlayerID]
+  pop rax
+  jne _shipWear_original_code
+
+  divss xmm1, dword ptr [fSpeedUpFactor]
+  //movss [rbp-0000028C], xmm1
+  db F3 0F 11
+  readmem(INJ_shipWear+F, 5)
+
+_shipWear_original_code:
+  //readmem(INJ_shipWear+C, 8)
+  jmp _shipWear_return
+
+
+
+INJ_shipWear+C:
+  jmp _shipWear_code
+  db 90 90 90
+_shipWear_return:
+
+{
+Cargo:Ship3DMove:MoveShip+1238:  48 8B 85 30 FD FF FF           -  mov rax,[rbp-000002D0]
+Cargo:Ship3DMove:MoveShip+123f:  41 89 40 10                    -  mov [r8+10],eax
+Cargo:Ship3DMove:MoveShip+1243:  48 8B CE                       -  mov rcx,rsi
+Cargo:Ship3DMove:MoveShip+1246:  BA 99 00 00 00                 -  mov edx,00000099
+Cargo:Ship3DMove:MoveShip+124b:  48 83 EC 20                    -  sub rsp,20
+Cargo:Ship3DMove:MoveShip+124f:  49 BB CD A6 78 3D 00 00 00 00  -  mov r11,000000003D78A6CD
+Cargo:Ship3DMove:MoveShip+1259:  41 FF D3                       -  call r11d
+Cargo:Ship3DMove:MoveShip+125c:  48 83 C4 20                    -  add rsp,20
+// ---------- AOB STARTS HERE ----------
+Cargo:Ship3DMove:MoveShip+1260:  F3 0F 10 86 A0 00 00 00        -  movss xmm0,[rsi+000000A0]
+Cargo:Ship3DMove:MoveShip+1268:  F3 0F 5A C0                    -  cvtss2sd xmm0,xmm0
+// ---------- INJECTING HERE ----------
+Cargo:Ship3DMove:MoveShip+126c:  F3 0F 10 8D 74 FD FF FF        -  movss xmm1,[rbp-0000028C]
+// ---------- DONE INJECTING ----------
+Cargo:Ship3DMove:MoveShip+1274:  F3 0F 5A C9                    -  cvtss2sd xmm1,xmm1
+Cargo:Ship3DMove:MoveShip+1278:  F2 0F 58 C1                    -  addsd xmm0,xmm1
+Cargo:Ship3DMove:MoveShip+127c:  F2 0F 5A E8                    -  cvtsd2ss xmm5,xmm0
+Cargo:Ship3DMove:MoveShip+1280:  F3 0F 11 AE A0 00 00 00        -  movss [rsi+000000A0],xmm5
+Cargo:Ship3DMove:MoveShip+1288:  F3 0F 10 86 A0 00 00 00        -  movss xmm0,[rsi+000000A0]
+Cargo:Ship3DMove:MoveShip+1290:  F3 0F 5A C0                    -  cvtss2sd xmm0,xmm0
+Cargo:Ship3DMove:MoveShip+1294:  F3 0F 10 0D 24 03 00 00        -  movss xmm1,[Cargo:Ship3DMove:MoveShip+15c0]
+Cargo:Ship3DMove:MoveShip+129c:  F3 0F 5A C9                    -  cvtss2sd xmm1,xmm1
+Cargo:Ship3DMove:MoveShip+12a0:  F3 0F 10 15 08 03 00 00        -  movss xmm2,[Cargo:Ship3DMove:MoveShip+15b0]
+Cargo:Ship3DMove:MoveShip+12a8:  F3 0F 5A D2                    -  cvtss2sd xmm2,xmm2
+}
+
+
+
+[DISABLE]
+
+////////////////////////////////////////////////////////////////////////////////
+INJ_shipSpeed+0:
+  readmem(MEM_shipSpeed, $10)
+unregistersymbol(INJ_shipSpeed)
+dealloc(MEM_shipSpeed)
+unregistersymbol(MEM_shipSpeed)
+
+//unregistersymbol(pPlayerShipData)
+unregistersymbol(fSpeedUpFactor)
+unregistersymbol(bMaxFuelMaxCondition)
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+INJ_shipWear+C:
+  readmem(MEM_shipWear, $10)
+unregistersymbol(INJ_shipWear)
+dealloc(MEM_shipWear)
+unregistersymbol(MEM_shipWear)
+
+</AssemblerScript>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Activate</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>116</Key>
+              </Keys>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Deactivate</Action>
+              <Keys>
+                <Key>16</Key>
+                <Key>116</Key>
+              </Keys>
+              <ID>1</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Activate</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>45</Key>
+              </Keys>
+              <ID>2</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Deactivate</Action>
+              <Keys>
+                <Key>16</Key>
+                <Key>45</Key>
+              </Keys>
+              <ID>3</ID>
+            </Hotkey>
+          </Hotkeys>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>106879</ID>
+              <Description>"speedup factor"</Description>
+              <Color>FF8000</Color>
+              <VariableType>Float</VariableType>
+              <Address>fSpeedUpFactor</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>106900</ID>
+              <Description>"&lt;A-F5&gt; = max fuel + max condition"</Description>
+              <LastState/>
+              <VariableType>Auto Assembler Script</VariableType>
+              <AssemblerScript>// Game   : TransOcean2.exe
+// Version: V1.0.2
+// Date   : 21.5.2016
+// Author : V3
+
+
+
+[ENABLE]
+
+////////////////////////////////////////////////////////////////////////////////
+bMaxFuelMaxCondition:
+  dd 00000001
+
+
+
+[DISABLE]
+
+////////////////////////////////////////////////////////////////////////////////
+bMaxFuelMaxCondition:
+  dd 00000000
+
+</AssemblerScript>
+              <Hotkeys>
+                <Hotkey>
+                  <Action>Activate</Action>
+                  <Keys>
+                    <Key>18</Key>
+                    <Key>116</Key>
+                  </Keys>
+                  <ID>0</ID>
+                </Hotkey>
+                <Hotkey>
+                  <Action>Deactivate</Action>
+                  <Keys>
+                    <Key>16</Key>
+                    <Key>116</Key>
+                  </Keys>
+                  <ID>1</ID>
+                </Hotkey>
+                <Hotkey>
+                  <Action>Deactivate</Action>
+                  <Keys>
+                    <Key>16</Key>
+                    <Key>45</Key>
+                  </Keys>
+                  <ID>2</ID>
+                </Hotkey>
+              </Hotkeys>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>106886</ID>
+          <Description>"&lt;C-F6&gt;/&lt;S-F6&gt; = instant manual cast-in/out"</Description>
+          <LastState/>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>// Game   : TransOcean2.exe
+// Version: V1.0.2
+// Date   : 19.5.2016
+// Author : V3
+
+{$lua}
+if syntaxcheck==true then return '' end
+
+if (LaunchMonoDataCollector()==0) then
+  error("no mono")
+end
+{$asm}
+
+
+
+[ENABLE]
+
+////////////////////////////////////////////////////////////////////////////////
+aobscanregion(INJ_instantCastInOut, Cargo.Minigame:MinigameController:RefreshTimeDisplay, Cargo.Minigame:MinigameController:RefreshTimeDisplay+200, BAxxxxxxxx 4Cxxxx 4883EC20 49BBxxxxxxxxxxxxxxxx 41FFD3 4883C420 48)
+registersymbol(INJ_instantCastInOut)
+
+globalalloc(MEM_instantCastInOut, $100, INJ_instantCastInOut+0)
+MEM_instantCastInOut:
+  readmem(INJ_instantCastInOut+0, $10)
+
+
+
+_instantCastInOut_code:
+  cmp dword ptr [rsi+00000160], 00000001 // gameMode == GAMEMODE_CASTIN ?
+  jne _instantCastInOut_CastOut
+
+  mov byte ptr [rsi+000001E0], 01 // TargetState
+  mov byte ptr [rsi+00000164], 01 // GameOver
+  mov edx, 000000D4 // MINIGAME_CASTIN_SUCCESS
+  xor r8d, r8d
+  jmp _instantCastInOut_return
+
+_instantCastInOut_CastOut:
+  cmp dword ptr [rsi+00000160], 00000002 // gameMode == GAMEMODE_CASTOUT ?
+  jne _instantCastInOut_original_code
+
+  mov byte ptr [rsi+000001E0], 01 // TargetState
+  mov byte ptr [rsi+00000164], 01 // GameOver
+  mov edx, 000000D5 // MINIGAME_CASTOUT_SUCCESS
+  xor r8d, r8d
+  jmp _instantCastInOut_return
+
+_instantCastInOut_original_code:
+  readmem(INJ_instantCastInOut+0, 8)
+  jmp _instantCastInOut_return
+
+
+
+INJ_instantCastInOut+0:
+  jmp _instantCastInOut_code
+  db 90 90 90
+_instantCastInOut_return:
+
+{
+Cargo.Minigame:MinigameController:RefreshTimeDisplay+191:  48 83 EC 20                    -  sub rsp,20
+Cargo.Minigame:MinigameController:RefreshTimeDisplay+195:  49 BB F0 28 F6 04 00 00 00 00  -  mov r11,System:String:Concat
+Cargo.Minigame:MinigameController:RefreshTimeDisplay+19f:  41 FF D3                       -  call r11d
+Cargo.Minigame:MinigameController:RefreshTimeDisplay+1a2:  48 83 C4 20                    -  add rsp,20
+Cargo.Minigame:MinigameController:RefreshTimeDisplay+1a6:  48 8B F8                       -  mov rdi,rax
+Cargo.Minigame:MinigameController:RefreshTimeDisplay+1a9:  48 63 86 04 02 00 00           -  movsxd  rax,dword ptr [rsi+00000204] // oldSeconds
+Cargo.Minigame:MinigameController:RefreshTimeDisplay+1b0:  48 63 8E FC 01 00 00           -  movsxd  rcx,dword ptr [rsi+000001FC] // displaySeconds
+Cargo.Minigame:MinigameController:RefreshTimeDisplay+1b7:  3B C1                          -  cmp eax,ecx
+Cargo.Minigame:MinigameController:RefreshTimeDisplay+1b9:  74 20                          -  je Cargo.Minigame:MinigameController:RefreshTimeDisplay+1db
+Cargo.Minigame:MinigameController:RefreshTimeDisplay+1bb:  48 8B CE                       -  mov rcx,rsi      // this
+// ---------- INJECTING HERE ----------
+Cargo.Minigame:MinigameController:RefreshTimeDisplay+1be:  BA DE 00 00 00                 -  mov edx,000000DE // MINIGAME_TIME_CHANGED
+Cargo.Minigame:MinigameController:RefreshTimeDisplay+1c3:  4C 8B C7                       -  mov r8,rdi       // eventData
+// ---------- DONE INJECTING ----------
+Cargo.Minigame:MinigameController:RefreshTimeDisplay+1c6:  48 83 EC 20                    -  sub rsp,20
+Cargo.Minigame:MinigameController:RefreshTimeDisplay+1ca:  49 BB 30 5B A1 3D 00 00 00 00  -  mov r11,Deck13HH.EventManagement:EventManager:SendEvent
+Cargo.Minigame:MinigameController:RefreshTimeDisplay+1d4:  41 FF D3                       -  call r11d
+Cargo.Minigame:MinigameController:RefreshTimeDisplay+1d7:  48 83 C4 20                    -  add rsp,20
+Cargo.Minigame:MinigameController:RefreshTimeDisplay+1db:  48 8D 65 E0                    -  lea rsp,[rbp-20]
+Cargo.Minigame:MinigameController:RefreshTimeDisplay+1df:  41 5F                          -  pop r15
+Cargo.Minigame:MinigameController:RefreshTimeDisplay+1e1:  41 5E                          -  pop r14
+Cargo.Minigame:MinigameController:RefreshTimeDisplay+1e3:  5F                             -  pop rdi
+Cargo.Minigame:MinigameController:RefreshTimeDisplay+1e4:  5E                             -  pop rsi
+Cargo.Minigame:MinigameController:RefreshTimeDisplay+1e5:  C9                             -  leave
+Cargo.Minigame:MinigameController:RefreshTimeDisplay+1e6:  C3                             -  ret
+}
+
+
+
+[DISABLE]
+
+////////////////////////////////////////////////////////////////////////////////
+INJ_instantCastInOut+0:
+  readmem(MEM_instantCastInOut, $10)
+unregistersymbol(INJ_instantCastInOut)
+dealloc(MEM_instantCastInOut)
+unregistersymbol(MEM_instantCastInOut)
+
+</AssemblerScript>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Activate</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>117</Key>
+              </Keys>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Deactivate</Action>
+              <Keys>
+                <Key>16</Key>
+                <Key>117</Key>
+              </Keys>
+              <ID>1</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Activate</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>45</Key>
+              </Keys>
+              <ID>2</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Deactivate</Action>
+              <Keys>
+                <Key>16</Key>
+                <Key>45</Key>
+              </Keys>
+              <ID>3</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>106892</ID>
+          <Description>"&lt;C-F7&gt;/&lt;S-F7&gt; = instant repair"</Description>
+          <LastState/>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>// Game   : TransOcean2.exe
+// Version: V1.0.2
+// Date   : 11.5.2016
+// Author : V3
+
+{$lua}
+if syntaxcheck==true then return '' end
+
+if (LaunchMonoDataCollector()==0) then
+  error("no mono")
+end
+{$asm}
+
+
+
+[ENABLE]
+
+////////////////////////////////////////////////////////////////////////////////
+aobscanregion(INJ_instantRepair, Cargo:ShipFactory:RepairPlayerShip, Cargo:ShipFactory:RepairPlayerShip+800, 8945xx 85xx 0F84)
+registersymbol(INJ_instantRepair)
+
+globalalloc(MEM_instantRepair, $100, INJ_instantRepair+0)
+MEM_instantRepair:
+  readmem(INJ_instantRepair+0, $10)
+
+
+
+_instantRepair_code:
+  push rax
+  mov eax, dword ptr [r14+00000094] // PlayerID
+  cmp eax, dword ptr [iPlayerID]
+  pop rax
+  jne _instantRepair_original_code
+
+  xor eax, eax // daysForRepair = 0
+
+_instantRepair_original_code:
+  readmem(INJ_instantRepair+0, 5)
+  jmp _instantRepair_return
+
+
+
+INJ_instantRepair+0:
+  jmp _instantRepair_code
+  //db 90
+_instantRepair_return:
+
+{
+Cargo:ShipFactory:RepairPlayerShip+27:  F3 0F 10 45 A0                 -  movss xmm0,[rbp-60]
+Cargo:ShipFactory:RepairPlayerShip+2c:  F3 0F 5A C0                    -  cvtss2sd xmm0,xmm0
+Cargo:ShipFactory:RepairPlayerShip+30:  4D 63 86 90 00 00 00           -  movsxd  r8,dword ptr [r14+00000090] // PlayerShipID
+Cargo:ShipFactory:RepairPlayerShip+37:  49 8B CD                       -  mov rcx,r13
+Cargo:ShipFactory:RepairPlayerShip+3a:  F2 0F 10 C8                    -  movsd xmm1,xmm0
+Cargo:ShipFactory:RepairPlayerShip+3e:  F2 0F 5A C9                    -  cvtsd2ss xmm1,xmm1
+Cargo:ShipFactory:RepairPlayerShip+42:  48 83 EC 20                    -  sub rsp,20
+Cargo:ShipFactory:RepairPlayerShip+46:  49 BB 55 C7 68 43 00 00 00 00  -  mov r11,Cargo:ShipFactory:GetDaysForRepair
+Cargo:ShipFactory:RepairPlayerShip+50:  41 FF D3                       -  call r11d
+Cargo:ShipFactory:RepairPlayerShip+53:  48 83 C4 20                    -  add rsp,20
+// ---------- INJECTING HERE ----------
+Cargo:ShipFactory:RepairPlayerShip+57:  89 45 BC                       -  mov [rbp-44],eax // daysForRepair
+Cargo:ShipFactory:RepairPlayerShip+5a:  85 FF                          -  test edi,edi
+// ---------- DONE INJECTING ----------
+Cargo:ShipFactory:RepairPlayerShip+5c:  0F 84 35 02 00 00              -  je Cargo:ShipFactory:RepairPlayerShip+297
+Cargo:ShipFactory:RepairPlayerShip+62:  49 8B 45 58                    -  mov rax,[r13+58]
+Cargo:ShipFactory:RepairPlayerShip+66:  48 8B C8                       -  mov rcx,rax
+Cargo:ShipFactory:RepairPlayerShip+69:  BA 03 00 00 00                 -  mov edx,00000003
+Cargo:ShipFactory:RepairPlayerShip+6e:  4C 8B C7                       -  mov r8,rdi
+Cargo:ShipFactory:RepairPlayerShip+71:  48 83 EC 20                    -  sub rsp,20
+Cargo:ShipFactory:RepairPlayerShip+75:  83 38 00                       -  cmp dword ptr [rax],00
+Cargo:ShipFactory:RepairPlayerShip+78:  49 BB A9 0D 65 43 00 00 00 00  -  mov r11,0000000043650DA9
+Cargo:ShipFactory:RepairPlayerShip+82:  41 FF D3                       -  call r11d
+Cargo:ShipFactory:RepairPlayerShip+85:  48 83 C4 20                    -  add rsp,20
+}
+
+
+
+[DISABLE]
+
+////////////////////////////////////////////////////////////////////////////////
+INJ_instantRepair+0:
+  readmem(MEM_instantRepair, $10)
+unregistersymbol(INJ_instantRepair)
+dealloc(MEM_instantRepair)
+unregistersymbol(MEM_instantRepair)
+
+</AssemblerScript>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Activate</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>118</Key>
+              </Keys>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Deactivate</Action>
+              <Keys>
+                <Key>16</Key>
+                <Key>118</Key>
+              </Keys>
+              <ID>1</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Activate</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>45</Key>
+              </Keys>
+              <ID>2</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Deactivate</Action>
+              <Keys>
+                <Key>16</Key>
+                <Key>45</Key>
+              </Keys>
+              <ID>3</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>106893</ID>
+          <Description>"&lt;C-F8&gt;/&lt;S-F8&gt; = instant upgrade"</Description>
+          <LastState/>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>// Game   : TransOcean2.exe
+// Version: V1.0.2
+// Date   : 11.5.2016
+// Author : V3
+
+{$lua}
+if syntaxcheck==true then return '' end
+
+if (LaunchMonoDataCollector()==0) then
+  error("no mono")
+end
+{$asm}
+
+
+
+[ENABLE]
+
+////////////////////////////////////////////////////////////////////////////////
+aobscanregion(INJ_instantUpgrade, Cargo:ShipFactory:UpgradePlayerShip, Cargo:ShipFactory:UpgradePlayerShip+800, 48xxxx44 89)
+registersymbol(INJ_instantUpgrade)
+
+globalalloc(MEM_instantUpgrade, $100, INJ_instantUpgrade+0)
+MEM_instantUpgrade:
+  readmem(INJ_instantUpgrade+0, $10)
+
+
+
+_instantUpgrade_code:
+  push rax
+  mov eax, dword ptr [rsi+00000094] // PlayerID
+  cmp eax, dword ptr [iPlayerID]
+  pop rax
+  jne _instantUpgrade_original_code
+
+  xor rcx, rcx // upgradeDurationInDays = 0
+  //mov [rbp-4C],ecx
+  readmem(INJ_instantUpgrade+4, 3)
+  jmp _instantUpgrade_return
+
+_instantUpgrade_original_code:
+  readmem(INJ_instantUpgrade+0, 7)
+  jmp _instantUpgrade_return
+
+
+
+INJ_instantUpgrade+0:
+  jmp _instantUpgrade_code
+  db 90 90
+_instantUpgrade_return:
+
+{
+Cargo:ShipFactory:UpgradePlayerShip+51:  48 8B C8                       -  mov rcx,rax
+Cargo:ShipFactory:UpgradePlayerShip+54:  49 8B D6                       -  mov rdx,r14
+Cargo:ShipFactory:UpgradePlayerShip+57:  48 83 EC 20                    -  sub rsp,20
+Cargo:ShipFactory:UpgradePlayerShip+5b:  83 38 00                       -  cmp dword ptr [rax],00
+Cargo:ShipFactory:UpgradePlayerShip+5e:  49 BB 5C C0 63 43 00 00 00 00  -  mov r11,000000004363C05C
+Cargo:ShipFactory:UpgradePlayerShip+68:  41 FF D3                       -  call r11d
+Cargo:ShipFactory:UpgradePlayerShip+6b:  48 83 C4 20                    -  add rsp,20
+Cargo:ShipFactory:UpgradePlayerShip+6f:  48 8B C8                       -  mov rcx,rax
+Cargo:ShipFactory:UpgradePlayerShip+72:  48 8B D1                       -  mov rdx,rcx
+Cargo:ShipFactory:UpgradePlayerShip+75:  83 3A 00                       -  cmp dword ptr [rdx],00
+// ---------- INJECTING HERE ----------
+Cargo:ShipFactory:UpgradePlayerShip+78:  48 63 49 44                    -  movsxd  rcx,dword ptr [rcx+44] // upgradeDurationInDays
+Cargo:ShipFactory:UpgradePlayerShip+7c:  89 4D B4                       -  mov [rbp-4C],ecx
+// ---------- DONE INJECTING ----------
+Cargo:ShipFactory:UpgradePlayerShip+7f:  83 38 00                       -  cmp dword ptr [rax],00
+Cargo:ShipFactory:UpgradePlayerShip+82:  48 8B 40 38                    -  mov rax,[rax+38] // upgradeBasePrice
+Cargo:ShipFactory:UpgradePlayerShip+86:  48 63 8E 28 01 00 00           -  movsxd  rcx,dword ptr [rsi+00000128] // Class
+Cargo:ShipFactory:UpgradePlayerShip+8d:  48 63 C9                       -  movsxd  rcx,ecx
+Cargo:ShipFactory:UpgradePlayerShip+90:  48 0F AF C1                    -  imul rax,rcx
+Cargo:ShipFactory:UpgradePlayerShip+94:  48 89 45 A8                    -  mov [rbp-58],rax
+Cargo:ShipFactory:UpgradePlayerShip+98:  85 FF                          -  test edi,edi
+Cargo:ShipFactory:UpgradePlayerShip+9a:  0F 84 4C 02 00 00              -  je Cargo:ShipFactory:UpgradePlayerShip+2ec
+Cargo:ShipFactory:UpgradePlayerShip+a0:  49 8B 44 24 58                 -  mov rax,[r12+58]
+Cargo:ShipFactory:UpgradePlayerShip+a5:  48 8B C8                       -  mov rcx,rax
+}
+
+
+
+[DISABLE]
+
+////////////////////////////////////////////////////////////////////////////////
+INJ_instantUpgrade+0:
+  readmem(MEM_instantUpgrade, $10)
+unregistersymbol(INJ_instantUpgrade)
+dealloc(MEM_instantUpgrade)
+unregistersymbol(MEM_instantUpgrade)
+
+</AssemblerScript>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Activate</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>119</Key>
+              </Keys>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Deactivate</Action>
+              <Keys>
+                <Key>16</Key>
+                <Key>119</Key>
+              </Keys>
+              <ID>1</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Activate</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>45</Key>
+              </Keys>
+              <ID>2</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Deactivate</Action>
+              <Keys>
+                <Key>16</Key>
+                <Key>45</Key>
+              </Keys>
+              <ID>3</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols/>
+</CheatTable>

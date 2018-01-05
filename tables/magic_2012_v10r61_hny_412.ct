@@ -1,0 +1,448 @@
+<?xml version="1.0"?>
+<CheatTable CheatEngineTableVersion="11">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>28</ID>
+      <Description>"[X] &lt;== Magic The Gathering 2012  v10r61 Script"</Description>
+      <Options moHideChildren="1"/>
+      <Color>80000008</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>{
+===========================================
+ Game Title    : Magic The Gathering DOTP 2012
+ Game Version  : 1.0r61
+ Process Name  : Magic_1012.exe
+ Script Version: 1.0
+ CE Version    : 6.1
+ Release date  : 29-Dec-2011 (adapted from previous version)
+ Author        : Recifense
+ Features:
+ - God Mode;
+ - Minimum Attack value;
+ - Minimum Defence Value;
+ - pointers to Zoomed Card and player;
+===========================================
+}
+
+[ENABLE]
+//=========================================
+// Check if script is compatible to this game version
+// If false the script will not be loaded
+
+assert("Magic_2012.exe"+00311273,89 9e 30 02 00 00)
+assert("Magic_2012.exe"+003939fd,89 46 74 89 5e 64)
+assert("Magic_2012.exe"+0036aa20,a1 b0 73 ab 00)
+assert("Magic_2012.exe"+00305a90,89 77 34 5f 5e)
+
+//=========================================
+alloc(MyCode,1024)
+//=========================================
+// Declaration section
+label(_GodMode)
+label(_BackGM)
+label(_ExitGM)
+label(_MonCard)
+label(_MonC0)
+label(_BackMC)
+label(_ExitMC)
+label(_MonPlayer)
+label(_BackMP)
+label(_ExitMP)
+label(_GodMode2x2)
+label(_BackGM2)
+label(_ExitGM2)
+label(pPlayer)
+label(pCommon)
+label(pCard)
+label(iEnableGM)
+label(iEnableMA)
+label(iEnableMD)
+label(iMinAttVal)
+label(iMinDefVal)
+
+//=========================================
+// Registering Symbols
+registersymbol(MyCode)
+registersymbol(pPlayer)
+registersymbol(pCard)
+registersymbol(iEnableGM)
+registersymbol(iEnableMA)
+registersymbol(iEnableMD)
+registersymbol(iMinAttVal)
+registersymbol(iMinDefVal)
+
+//=========================================
+MyCode:
+//=========================================
+_GodMode:
+ push eax
+
+ mov eax,[esi+38]
+ cmp eax,[pCommon]
+ jne _ExitGM                       // Jump if it is not a player's hero
+
+ cmp dword ptr [iEnableGM],0
+ je _ExitGM                        // Jump if feature is disabled
+
+ mov ebx,[esi+0000022c]            // Get max HP
+
+_ExitGM:
+ pop eax
+
+ mov [esi+00000230],ebx            // Original code (update HP)
+ jmp _BackGM                       // Back to main code
+
+//=========================================
+// Updated when the cursor is over card zoom out button
+_MonCard:
+ push ebx
+ push ecx
+
+ mov [pCard],eax                   // Save ptr for debugging
+ test eax,eax
+ jz _ExitMC
+
+ mov ebx,[eax+000000e0]            // Get Owner
+ mov ebx,[ebx+38]
+ cmp ebx,[pCommon]
+ jne _ExitMC                       // Jump if it is not a player's card
+
+ mov ebx,[eax+0000028c]            // Get card type info
+ test ebx,ebx
+ jz _ExitMC
+
+ cmp dword ptr [iEnableMD],0
+ je _MonC0                         // Jump if feature is disabled
+// Minimum Defence Value
+ cmp dword ptr [ebx+0000025c],0
+ je _MonC0                         // Jump if current defence is zero
+
+ mov ecx,[iMinDefVal]
+ cmp ecx,[ebx+0000025c]
+ jle _MonC0
+
+ mov [ebx+0000025c],ecx            // Make defence value = minimum
+
+_MonC0:
+ cmp dword ptr [iEnableMA],0
+ je _ExitMC                        // Jump if feature is disabled
+// Minimum Attack Value
+ cmp dword ptr [ebx+00000258],0
+ je _ExitMC                        // Jump if current defence is zero
+
+ mov ecx,[iMinAttVal]
+ cmp ecx,[ebx+00000258]
+ jle _ExitMC
+
+ mov [ebx+00000258],ecx            // Make attack value = minimum
+
+_ExitMC:
+ pop ecx
+ pop ebx
+
+ mov [esi+74],eax                  // Original code
+ mov [esi+64],ebx                  // Original code
+ jmp _BackMC                       // Back to main code
+
+//=========================================
+_MonPlayer:
+ mov eax,[Magic_2012.exe+6B73b0]   // Original code
+ test eax,eax
+ jz _ExitMP
+
+ mov [pPlayer],eax                 // Save ptr for debugging
+
+ mov eax,[eax+38]                  // Get Common pointer
+ mov [pCommon],eax                 // Save ptr for debugging
+
+_ExitMP:
+ mov eax,[Magic_2012.exe+6B73b0]   // Original code
+ jmp _BackMP                       // Back to main code
+
+//=========================================
+// When playing 2 x 2 (Two-Headed Giants)
+_GodMode2x2:
+ cmp dword ptr [edi+58],1
+ jne _ExitGM2                      // Jump if it is not the player
+
+ cmp dword ptr [iEnableGM],0
+ je _ExitGM2                       // Jump if feature is disabled
+
+ mov esi,[edi+10]                  // Get max HP
+
+_ExitGM2:
+ mov [edi+34],esi                  // Original code (update HP)
+ pop edi                           // Original code
+ pop esi                           // Original code
+ jmp _BackGM2                      // Back to main code
+
+//=========================================
+ db '==================&gt;'
+ db 'CE6.1 Script by Recifense 122911'
+//=========================================
+// Variables
+iEnableGM:
+ dd 1
+iEnableMA:
+ dd 0
+iEnableMD:
+ dd 0
+pPlayer:
+ dd 0
+pCommon:
+ dd 0
+pCard:
+ dd 0
+iMinAttVal:
+ dd #4
+iMinDefVal:
+ dd #10
+
+//=========================================
+// Hacking Points
+//"Magic_2012.exe"+0030e913:
+"Magic_2012.exe"+00311273:
+ jmp _GodMode
+ nop
+_BackGM:
+
+//"Magic_2012.exe"+00390d7c:
+"Magic_2012.exe"+003939fd:
+ jmp _MonCard
+ nop
+_BackMC:
+
+//"Magic_2012.exe"+00367cf0:
+"Magic_2012.exe"+0036aa20:
+ jmp _MonPlayer
+_BackMP:
+
+//"Magic_2012.exe"+00303130:
+"Magic_2012.exe"+00305a90:
+ jmp _GodMode2x2
+_BackGM2:
+
+//=========================================
+// Script for Restoring Original Codes
+[DISABLE]
+//"Magic_2012.exe"+0030e913:
+"Magic_2012.exe"+00311273:
+// mov [esi+00000230],ebx
+ db 89 9e 30 02 00 00
+
+//"Magic_2012.exe"+00390d7c:
+"Magic_2012.exe"+003939fd:
+// mov [esi+74],eax
+// mov [esi+64],ebx
+ db 89 46 74 89 5e 64
+
+//"Magic_2012.exe"+00367cf0:
+// mov eax,[00AB0230]
+"Magic_2012.exe"+0036aa20:
+// mov eax,[00AB73b0]
+ db a1 b0 73 ab 00
+
+//"Magic_2012.exe"+00303130:
+"Magic_2012.exe"+00305a90:
+// mov [edi+34],esi
+// pop edi
+// pop esi
+ db 89 77 34 5f 5e
+
+//=========================================
+// Unregistering Symbols
+unregistersymbol(MyCode)
+unregistersymbol(pPlayer)
+unregistersymbol(pCard)
+unregistersymbol(iEnableGM)
+unregistersymbol(iEnableMA)
+unregistersymbol(iEnableMD)
+unregistersymbol(iMinAttVal)
+unregistersymbol(iMinDefVal)
+
+//=========================================
+dealloc(MyCode)
+//============= Scripts End ===============
+
+// ****************************************
+// NOTES
+// ****************************************
+{
+struct HERO:
+0008 = pNextHero
+000c = pAlly (hero)
+0014 = iID (usually 1 for the player's hero)
+0030 = iHeroIndex (usually 0 for the player's hero during campaign)
+0038 = pCommon (among allies)
+0048 = puName (Hero's name in unicode format)
+00a0 = pCardList
+022c = imHP	 (maximum hero's HP)
+0230 = icHP	 (current hero's HP)
+
+struct COMMON:
+0010 = imHP	 (maximum hero's or party's HP)
+0030 = pHero (or first party's hero)
+0034 = icHP	 (current hero's or party's HP)
+
+struct CARD:
+00b0 = iPower
+00b4 = iToughness
+00dc = pOwner (hero)
+00e0 = pOwner (hero)
+0160 = iPower
+0164 = iToughness
+0286 = pCardTypeInfo
+
+struct CARDTYPEINFO:
+0048 = puName (Card's name in unicode format)
+0258 = iPower
+025c = iToughness
+
+[TIP] During a match, any change on the CARDTYPEINFO will affect all cards of this type;
+}
+
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>8</ID>
+          <Description>"Enable/Disable God Mode ==&gt; (1/0)"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableGM</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>20</ID>
+          <Description>"Enable/Disable Minimum Defence Value  ==&gt;  (1/0)"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMD</Address>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>22</ID>
+              <Description>"Minimum Defence Value ==&gt;  (changeable)"</Description>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>iMinDefVal</Address>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>21</ID>
+          <Description>"Enable/Disable Minimum Attack Value  ==&gt;  (1/0)"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMA</Address>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>23</ID>
+              <Description>"Minimum Attack Value ==&gt;  (changeable)"</Description>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>iMinAttVal</Address>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>13</ID>
+          <Description>"Part of selected Card Type Name (Info)"</Description>
+          <ShowAsHex>1</ShowAsHex>
+          <Color>80000008</Color>
+          <VariableType>String</VariableType>
+          <Length>16</Length>
+          <Unicode>1</Unicode>
+          <ZeroTerminate>1</ZeroTerminate>
+          <Address>pCard</Address>
+          <Offsets>
+            <Offset>0</Offset>
+            <Offset>D8</Offset>
+            <Offset>28C</Offset>
+          </Offsets>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>15</ID>
+              <Description>"Selected Card Type Toughness value ==&gt; (changeable)"</Description>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pCard</Address>
+              <Offsets>
+                <Offset>25C</Offset>
+                <Offset>28C</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>14</ID>
+              <Description>"Selected Card Type Power value ==&gt; (changeable)"</Description>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pCard</Address>
+              <Offsets>
+                <Offset>258</Offset>
+                <Offset>28C</Offset>
+              </Offsets>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols>
+    <SymbolEntry>
+      <Name>MyCode</Name>
+      <Address>01CC0000</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>pPlayer</Name>
+      <Address>01CC015C</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>pCard</Name>
+      <Address>01CC0164</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>iEnableGM</Name>
+      <Address>01CC0150</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>iEnableMA</Name>
+      <Address>01CC0154</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>iEnableMD</Name>
+      <Address>01CC0158</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>iMinAttVal</Name>
+      <Address>01CC0168</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>iMinDefVal</Name>
+      <Address>01CC016C</Address>
+    </SymbolEntry>
+  </UserdefinedSymbols>
+  <Comments>===========================================
+ Game Title    : Magic The Gathering DOTP 2012
+ Game Version  : 1.0r61
+ Process Name : Magic_1012.exe
+ Script Version: 1.0
+ CE Version    : 6.1
+ Release date  : 29-Dec-2011 (adapted from previous version)
+ Author        : Recifense
+ Features:
+ - God Mode;
+ - Minimum Attack value;
+ - Minimum Defence Value;
+ - pointers to Zoomed Card and player;
+===========================================
+GOD MODE: For player's heroes;
+MINIMUM DEFENCE (*): The toughness is set to a minimum value that can be defined by the user (default = 10);
+MINIMUM ATTACK  (*): The power is set to a minimum value that can be defined by the user (default = 4);
+==============
+(*) In order to make these cheats to work, you have to ZOOM IN the card and then pass the cursor over the ZOOM OUT button;
+(*) You have to do this just once for a type of card. Take care when playing against a foe with the same card type.
+(*) These options are disabled by default. To enable one of them, just change its value to 1;
+==============
+[note] You can define the values of the current card which ZOOM OUT is under the cursor.
+==============
+  
+</Comments>
+</CheatTable>

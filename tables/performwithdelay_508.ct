@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="24">
+  <Forms>
+    <UDF1 Class="TCEForm" Encoding="Ascii85">Ma?kQ!7v!W?vg%/6GtL)b#V_+=#d#uu+Af9FGXYeELGpYSM?z}woWhYlm6S@)n2T-^kap-jSuqCI/5UhD[_F8-;uG.?#^[D*Q,IA[g4GNGj,44mP6x0aS*wf-lI8ZLYdgBM$=iIp1h2megVf,GA5_LW*cx=264i2QtvhVMh2dgFdkGc77g1x?O%)zR?WadjHUjXLJpF2tDy]CLaw${FQq]Z:1@(PXt2:[8]s#b!Tt_O6ekCnF@Q30Uj</UDF1>
+  </Forms>
+  <CheatEntries/>
+  <UserdefinedSymbols/>
+  <LuaScript>--#############do not change this one #######################
+function performWithDelay(delay,onFinish,onTick,onTickInterval)
+
+  if type(delay)~='number' -- mandatory
+    then error('delay is not a number') end
+
+  if type(onFinish)~='function'  -- mandatory
+    then error('onFinish is not a function') end
+
+  if onTick and type(onTick)~='function' -- optional
+    then error('onTick is not a function') end
+
+  if onTickInterval and type(onTickInterval)~='number'  -- optional, default 1 second
+    then error('onTickInterval is not a number') end
+  onTickInterval = onTickInterval or 1000 -- default 1 second
+
+  local f = function (t) -- thread function start
+    local getTickCount = getTickCount
+    local startTick = getTickCount()
+    local endTick = startTick + delay
+    local nextOnTick = startTick + onTickInterval
+    local ticks
+
+    if onTick then
+      while true do
+        ticks=getTickCount()
+        if nextOnTick&lt;ticks then
+          nextOnTick=ticks+onTickInterval
+          synchronize(onTick,endTick-ticks)
+        end
+        if endTick&lt;ticks then break end
+        sleep(1)
+      end
+    else
+      while true do
+        ticks=getTickCount()
+        if endTick&lt;ticks then break end
+        sleep(1)
+      end
+    end
+
+    if onFinish then synchronize(onFinish) end
+  end -- thread function end
+
+  local t = createNativeThreadSuspended(f)
+  t.name = 'performWithDelay thread'
+  t.resume()
+end
+--###########################################################
+
+
+
+function showTimeLeft(millisecondsLeft)
+  local totalSeconds = millisecondsLeft // 1000
+  local deciseconds = (millisecondsLeft % 1000) // 100
+  UDF1.CELabel1.Caption = os.date("!%M:%S",totalSeconds)..'.'..deciseconds
+end
+
+function whenFinished()
+  UDF1.CELabel1.Caption = "00:00.0"
+  UDF1.CELabel1.Font.Color =  0x000000 -- black
+  speedhack_setSpeed(1)
+  UDF1.CEButton1.Enabled = true
+end
+
+function startSpeedHack()
+  UDF1.CELabel1.Font.Color =  0x005500 -- green
+  speedhack_setSpeed(0.5)
+--performWithDelay(delayInMilliseconds,onFinish,onTick,onTickIntervalInMilliseconds)
+  performWithDelay(12500,whenFinished,showTimeLeft,10)
+  UDF1.CEButton1.Enabled = false
+end
+
+UDF1.show()
+UDF1.CEButton1.OnClick = startSpeedHack
+
+
+
+
+
+
+
+
+</LuaScript>
+</CheatTable>

@@ -1,0 +1,197 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="16">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>4</ID>
+      <Description>"Infinite Health Only"</Description>
+      <Color>80000008</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>//Nuclear Throne
+//Infinite Health For Player
+//Steve Andrew
+[enable]
+alloc(InfiniteHealth,1024)
+label(DoNormal)
+label(DesiredHealthValue)
+assert(nuclearthrone.exe+4544,df 3a df 3c 11)
+
+InfiniteHealth:
+fistp qword [edx]
+cmp edx,00FFFFFF //skip stack and low addresses
+jna DoNormal
+cmp [esp+10],38
+jne DoNormal
+cmp [esp+80],0  //Its our health value! (I think 100% of the time now)
+jne DoNormal
+
+//Pop old value and Push desired health value!
+fstp st(0)
+fild qword [DesiredHealthValue]
+//you can debug this one seperately from the masses to attempt to filter
+//it down more so you can narrow it down enough to not crash! [i've done this now im fairly sure] :)
+fistp qword [ecx+edx]
+ret
+
+DoNormal:
+fistp qword [ecx+edx]
+ret
+
+DesiredHealthValue:
+dq (double)100.0
+
+nuclearthrone.exe+4544:
+jmp InfiniteHealth
+
+[disable]
+
+nuclearthrone.exe+4544:
+fistp qword [edx]
+fistp qword [ecx+edx]
+
+dealloc(InfiniteHealth)
+</AssemblerScript>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>2</ID>
+      <Description>"Infinite Health + Infinite Ammo"</Description>
+      <Color>80000008</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>//Nuclear Throne
+//Infinite Health + Infinite Ammo [All Guns] combined script!
+//Steve Andrew
+[enable]
+alloc(InfiniteHealthAmmoAllGuns,1024)
+label(DoNormal)
+label(ApplyHealth)
+label(AmmoCheck)
+label(DesiredHealthValue)
+label(DesiredAmmoValue)
+assert(nuclearthrone.exe+4544, df 3a df 3c 11) //just so both can't be enabled at once (they hook same address)
+
+InfiniteHealthAmmoAllGuns:
+fistp qword [edx] //original instruction
+cmp edx,00FFFFFF //skip stack and low addresses
+jna DoNormal
+cmp [esp+10],38 //If its 38 then its almost surely health
+je ApplyHealth
+cmp [esp+0c],1 //From Pistol Ammo (1 - 5)
+jb DoNormal
+cmp [esp+0c],5 //To Laser Rifle Ammo
+ja DoNormal
+jmp AmmoCheck
+
+ApplyHealth:
+cmp [esp+80],0 //double check its for sure the health value!
+jne DoNormal
+//Apply desired health
+fstp st(0)
+fild qword [DesiredHealthValue]
+fistp qword [ecx+edx]
+ret
+//Double Check Ammo And Apply Ammo
+AmmoCheck:
+cmp [esp+188],24 //This one took me a while to find, but seems to work pretty well and narrow it down nicely :)
+jne DoNormal
+fstp st(0)
+fild qword [DesiredAmmoValue]
+fistp qword [ecx+edx]
+ret
+
+DoNormal:
+fistp qword [ecx+edx]
+ret
+
+DesiredHealthValue: //100 health
+dq (double)100.0
+
+DesiredAmmoValue: //99 bullets ;)
+dq (double)99.0
+
+nuclearthrone.exe+4544:
+jmp InfiniteHealthAmmoAllGuns
+
+[disable]
+
+nuclearthrone.exe+4544:
+fistp qword [edx]
+fistp qword [ecx+edx]
+
+dealloc(InfiniteHealthAmmoAllGuns)
+</AssemblerScript>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>3</ID>
+      <Description>"Infinite Health + Infinite Ammo AOBSCAN"</Description>
+      <Color>80000008</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>//Nuclear Throne
+//Infinite Health + Infinite Ammo [All Guns] combined script!
+//Steve Andrew
+[enable]
+alloc(InfiniteHealthAmmoAllGuns,1024)
+aobscan(GameVariableModifierAddress,df 3c 11 c3 90)
+label(GameVariableModifierAddy)
+label(DoNormal)
+label(ApplyHealth)
+label(AmmoCheck)
+label(DesiredHealthValue)
+label(DesiredAmmoValue)
+registersymbol(GameVariableModifierAddy)
+
+InfiniteHealthAmmoAllGuns:
+fistp qword [edx]
+cmp edx,00FFFFFF //skip stack and low addresses
+jna DoNormal
+cmp [esp+10],38 //If its 38 then its almost surely health
+je ApplyHealth
+cmp [esp+0c],1 //From Pistol Ammo (1 - 5)
+jb DoNormal
+cmp [esp+0c],5 //To Laser Rifle Ammo
+ja DoNormal
+jmp AmmoCheck
+
+ApplyHealth:
+cmp [esp+80],0 //double check its for sure the health value!
+jne DoNormal
+//Apply desired health
+fstp st(0)
+fild qword [DesiredHealthValue]
+fistp qword [ecx+edx]
+ret
+//Double Check Ammo And Apply Ammo
+AmmoCheck:
+cmp [esp+188],24 //This one took me a while to find, but seems to work pretty well and narrow it down nicely :)
+jne DoNormal
+fstp st(0)
+fild qword [DesiredAmmoValue]
+fistp qword [ecx+edx]
+ret
+
+DoNormal:
+fistp qword [ecx+edx]
+ret
+
+DesiredHealthValue: //100 health
+dq (double)100.0
+
+DesiredAmmoValue: //99 bullets ;)
+dq (double)99.0
+
+GameVariableModifierAddress-2:
+GameVariableModifierAddy:
+jmp InfiniteHealthAmmoAllGuns
+
+[disable]
+
+GameVariableModifierAddy:
+db df 3a df 3c 11
+//fistp qword [edx]
+//fistp qword [ecx+edx]
+
+dealloc(InfiniteHealthAmmoAllGuns)
+unregistersymbol(GameVariableModifierAddy)
+</AssemblerScript>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols/>
+</CheatTable>

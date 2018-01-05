@@ -1,0 +1,382 @@
+<?xml version="1.0"?>
+<CheatTable CheatEngineTableVersion="11">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>30</ID>
+      <Description>"[X] &lt;== Men of War - Vietnam v1002 Script"</Description>
+      <Options moHideChildren="1"/>
+      <Color>80000008</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>{
+===========================================
+ Game Title    : Man of War - Vietnam
+ Game Version  : 1.0.0.2
+ Process Name  : mov_game.exe
+ Script Version: 1.0
+ CE Version    : 6.1
+ Release date  : 02-Jan-2012
+ Author        : Recifense
+ Features:
+ - God Mode;
+ - Unlimited Fuel;
+ - Unlimited Ammo;
+ - Unlimited Stamina;
+===========================================
+}
+
+[ENABLE]
+//=========================================
+// Check if script is compatible to this game version
+// If false the script will not be loaded
+
+assert(mov_game.exe+5a2b3b,d9 9e 98 00 00 00)
+assert(mov_game.exe+4a1a70,d8 ae 98 00 00 00)
+assert(mov_game.exe+3f17c0,8b 44 24 04 89 41 2c)
+assert(mov_game.exe+5a2545,d9 00 d9 55 00)
+
+//=========================================
+alloc(MyCode,1024)
+//=========================================
+// Declaration section
+label(_GodMode)
+label(_BackGM)
+label(_ExitGM)
+label(_MonFuel)
+label(_BackMF)
+label(_ExitMF)
+label(_MonAmmo)
+label(_MonA0)
+label(_MonA1)
+label(_BackMA)
+label(_ExitMA)
+label(_MonStamina)
+label(_BackMS)
+label(_ExitMS)
+label(pHero)
+label(iEnableGM)
+label(iEnableMF)
+label(iEnableMA)
+label(iEnableMS)
+label(fRubbish)
+label(iEDI)
+
+//=========================================
+// Registering Symbols
+registersymbol(MyCode)
+registersymbol(pHero)
+registersymbol(iEnableGM)
+registersymbol(iEnableMF)
+registersymbol(iEnableMA)
+registersymbol(iEnableMS)
+
+//=========================================
+MyCode:
+//========================================= ok
+// God Mode
+_GodMode:
+ pushfd                        // Save EFLAGS
+ mov [pHero],esi               // Save pointer for debugging
+
+ cmp dword ptr [iEnableGM],0
+ je _ExitGM                    // Jump if feature is disabled
+
+ push edi
+ push eax
+ mov edi,[esi+0c]              // Get ptr to Owner ID
+ mov ax,[mov_game.exe+00bf8f0c]   // Get player ID
+ cmp ax,[edi+00000312]         // Player?s unit? ...
+ pop eax
+ pop edi
+ jne _ExitGM                   // ... Jump if true
+
+ fstp st(0)                    // Discard value
+ mov dword ptr [esi+00000094],47f11d00 // 123450.0
+ fld dword ptr [esi+00000094]  // Get max HP
+
+_ExitGM:
+ fstp dword ptr [esi+00000098] // Original code
+ popfd                         // Restore EFLAGS
+ jmp _BackGM                   // Back to main code
+
+//=========================================
+_MonFuel:
+ cmp dword ptr [iEnableMF],0
+ je _ExitMF                    // Jump if feature is disabled
+
+ push edi
+ push eax
+ mov edi,[esi+08]              // Get ptr to Owner ID
+ mov ax,[mov_game.exe+00bf8f0c] // Get player ID
+ cmp ax,[edi+00000312]
+ pop eax
+ pop edi
+ jne _ExitMF                   // Jump if it is not a player?s unit
+
+ fstp st(0)                    // Discard value
+ fldz                          // Make value2decrease = 0
+
+ push eax
+ mov eax,[esi+00000094]        // Get maximum fuel
+ mov [esi+00000098],eax        // Make current fuel = maximum
+ pop eax
+
+_ExitMF:
+ fsubr dword ptr [esi+00000098]// Original code
+ jmp _BackMF                   // Back to main code
+
+//=========================================
+_MonAmmo:
+ mov [iEDI],edi
+
+ mov eax,[esp+04]              // Original code
+
+ cmp dword ptr [iEnableMA],0
+ je _ExitMA                    // Jump if feature is disabled
+
+ mov edi,[ecx+18]              // Human ?
+ or edi,edi
+ jz _MonA0                     // Jump if false
+
+ cmp dword ptr [edi+04],00010001 // Really human?
+ jne _ExitMA                   // Jump if false
+
+ mov edi,[edi+24]
+ or edi,edi
+ jz _ExitMA                    // Jump if it is a null pointer
+ jmp _MonA1
+
+_MonA0:                        // Check if ammo of a tank
+ jmp _ExitMA
+//==========
+ mov edi,[ecx+1c]
+ or edi,edi
+ jz _ExitMA                    // Jump if it is a null pointer
+
+ cmp dword ptr [edi+0c],0      // Tank or similar?
+ jne _ExitMA                   // Jump if false
+
+ mov edi,[edi+18]
+ or edi,edi
+ jz _ExitMA                    // Jump if it is a null pointer
+
+_MonA1:
+ mov di,[edi+00000312]         // Get Unit ID
+ cmp di,[mov_game.exe+00bf8f0c] // Player?s UNIT?
+ jne _ExitMA                   // Jump if it is not a player?s unit?s ammo
+
+ or eax,eax                    // Next value = 0?
+ jz _ExitMA                    // Jump if true
+
+ cmp eax,[ecx+2c]              // New value greater than current one?
+ jge _ExitMA                   // Jump if true
+
+ mov eax,[ecx+2c]              // Make new value = current value
+
+_ExitMA:
+ mov edi,[iEDI]
+
+ mov [ecx+2c],eax              // Original code
+ jmp _BackMA                   // Back to main code
+
+//========================================= ok
+_MonStamina:
+ cmp dword ptr [iEnableMS],0
+ je _ExitMS                    // Jump if feature is disabled
+
+ push esi
+ push edi
+ push eax
+ lea esi,[ebp-1c]              // Point to structure base
+ mov edi,[esi+0c]              // Get ptr to Owner ID
+ mov ax,[mov_game.exe+00bf8f0c] // Get player ID
+ cmp ax,[edi+00000312]         // Player?s unit? ....
+ pop eax
+ pop edi
+ pop esi
+ jne _ExitMS                   // .... Jump if false
+
+ mov dword ptr [eax],42c80000  // New stamina = 100.0
+
+_ExitMS:
+ fld dword ptr [eax]           // Original code
+ fst dword ptr [ebp+00]        // Original code
+ jmp _BackMS                   // Back to main code
+
+//=========================================
+ db '======================&gt;'
+ db 'CE6.1 Script by Recifense 010212'
+//=========================================
+// Variables
+pHero:
+ dd 0
+iEnableGM:
+ dd 1
+iEnableMA:
+ dd 1
+iEnableMF:
+ dd 1
+iEnableMS:
+ dd 1
+fRubbish:
+ dd 0
+iEDI:
+ dd 0
+
+//=========================================
+// Hacking Points
+mov_game.exe+5a2b3b:
+ jmp _GodMode
+ nop
+_BackGM:
+
+mov_game.exe+4a1a70:
+ jmp _MonFuel
+ nop
+_BackMF:
+
+mov_game.exe+3f17c0:
+ jmp _MonAmmo
+ nop
+ nop
+_BackMA:
+
+mov_game.exe+5a2545:
+ jmp _MonStamina
+_BackMS:
+
+//=========================================
+// Script for Restoring Original Codes
+[DISABLE]
+mov_game.exe+5a2b3b:
+// fstp dword ptr [esi+00000098]
+ db d9 9e 98 00 00 00
+
+mov_game.exe+4a1a70:
+// fsubr dword ptr [esi+00000098]
+ db d8 ae 98 00 00 00
+
+mov_game.exe+3f17c0:
+// mov eax,[esp+04]
+// mov [ecx+2C],eax
+ db 8b 44 24 04 89 41 2c
+
+mov_game.exe+5a2545:
+// fld dword ptr [eax]
+// fst dword ptr [ebp+00]
+ db d9 00 d9 55 00
+
+//=========================================
+// Unregistering Symbols
+unregistersymbol(MyCode)
+unregistersymbol(pHero)
+unregistersymbol(iEnableGM)
+unregistersymbol(iEnableMF)
+unregistersymbol(iEnableMA)
+unregistersymbol(iEnableMS)
+
+//=========================================
+dealloc(MyCode)
+//============= Scripts End ===============
+
+// ****************************************
+// NOTES
+// ****************************************
+{
+Men of War - Vietnam:
+
+struct UNIT:
+0000 = 00f8bcac
+0004 = 00f8bc70
+0008 = 00010001
+000c = pInfoOwnerG
+001c = fcStamina (100.0)
+0074 = f-15
+0078 = f-15
+007c = f-15
+0080 = f-15
+0094 = fmHP
+0098 = fcHP
+009c = f0.5
+00a0 = fmHP	100.0
+
+struct INFOOWNERG
+0000 = 00f8c0d4 00f82f34
+0004 = 00010001
+0008 = 00f8c0b8 00f82f1c
+000c = 00f8c0ac 00f82f10
+0068 = aType (human, fish_boat, etc)
+0078 = iTypeSize
+010c = ppUnit+10 (only human)
+0312 = wPlayerID (0101, 0202, 0303, etc)
+0330 = pFuel (only vehicle)
+
+struct FUEL:
+0000 = 00f86c7c
+0004 = 00010001
+0008 = pInfoOwnerG
+0094 = fmFuel
+0098 = fcFuel
+
+struct AMMO (gun)
+0000 = 00f815f0
+0018 = pInfoAmmoG
+002c = iAmmo
+
+struct INFOAMMOG:
+0000 = 00f82374
+0004 = 00010001
+000c = ppAmmo+00
+001c = f100
+0024 = pInfoOwnerG
+}
+
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>25</ID>
+          <Description>"Enable/Disable God Mode ==&gt; (1/0)"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableGM</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>28</ID>
+          <Description>"Enable/Disable Unlimited Ammo ==&gt; (1/0)"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMA</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>27</ID>
+          <Description>"Enable/Disable No Decreasing Stamina ==&gt; (1/0)"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMS</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>26</ID>
+          <Description>"Enable/Disable Unlimited Fuel ==&gt; (1/0)"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMF</Address>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols/>
+  <Comments>===========================================
+ Game Title    : Man of War - Vietnam
+ Game Version  : 1.0.0.2
+ Process Name  : mov_game.exe
+ Script Version: 1.0
+ CE Version    : 6.1
+ Release date  : 02-Jan-2012
+ Author        : Recifense
+ Features:
+ - God Mode;
+ - Unlimited Fuel;
+ - Unlimited Ammo;
+ - Unlimited Stamina;
+===========================================
+</Comments>
+</CheatTable>

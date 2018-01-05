@@ -1,0 +1,684 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="14">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>27</ID>
+      <Description>" [X] &lt;== The Incredible Adventures of Van Helsing v1.0.03 Script 2.0 AOB"</Description>
+      <Options moHideChildren="1"/>
+      <Color>FF0000</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>{
+===========================================
+ Game Title    : The Incredible Adventures of Van Helsing
+ Game Version  : 1.0.03
+ Game Sponsor  : RELOADED
+ Proces Name   : VanHelsing_x64.exe
+ Script Version: 2.0 (AOB)
+ CE Version    : 6.2
+ Release date  : 29-May-2013
+ Author        : Recifense
+ History:
+ 26-May-13: First Release
+ 29-May-13: Added a script to find Katarina (_MonKatarina)
+ Features:
+ - God Mode
+ - Unlimited Mana
+ - Minimum Gold
+   - Minimum Gold Value (6200)
+ - Minimum Portions:
+   - Healing
+   - Mana
+ - Full Rage
+ - Some pointers
+===========================================
+}
+
+//=========================================
+// Definitions
+define(LUDO,"VanHelsing_x64.exe")
+
+//=========================================
+[ENABLE]
+//=========================================
+alloc(MyCode,4096,LUDO)
+//=========================================
+//LuaCall(CheckVersion())
+//=========================================
+
+AOBScan(aobMHPR,8b 8e 08 08 00 00 2b cb 66 0f 6e f1 0f 5b f6 2b c3 66 0f 6e c0 0f 5b c0 f3 0f 5e f0 ?? ?? 41 ?? ?? ?? 41 8b 97)
+AOBScan(aobGDMD,f3 0f 11 86 6c 04 00 00 ?? ?? 48 8b 06 ba 11 00 00 00 48 8b ce ff)
+AOBScan(aobMMAN,f3 0f 11 b6 b4 08 00 00 b9 13 00 00 00 e8 ?? ?? ?? ?? 85 c0 ?? ??)
+AOBScan(aobMGLD,44 8b 80 f4 0a 00 00 48 8d 15 ?? ?? ?? ?? 48 8d 4d 38 e8 ?? ?? ??)
+AOBScan(aobMPPN,8b 4e 58 83 f9 01 ?? ?? 48 85 db ?? ?? 80 7b 79 00 ?? ?? 48 39 b3)
+AOBScan(aobMOKA,41 8b 84 24 08 08 00 00 89 45 10 49 8b 04 24 ff c2 49 8b cc ff 90)
+
+//=========================================
+alloc(MyCode,4096,LUDO)
+//=========================================
+// Declaration section
+label(_MonHumanPlayer)
+label(_BackMHP)
+label(_ExitMHP)
+label(_GodMode)
+label(_BackGMD)
+label(_ExitGMD)
+label(_MonPlayerMana)
+label(_BackMPM)
+label(_ExitMPM)
+label(_MonPlayerGold)
+label(_BackMPG)
+label(_ExitMPG)
+label(_MonPlayerPortions)
+label(_MonPP00)
+label(_BackMPP)
+label(_ExitMPP)
+label(_MonKatarina)
+label(_BackMKA)
+label(_ExitMKA)
+label(pHero)
+label(pKata)
+label(pPlayer)
+label(pGold)
+label(iMinGold)
+label(fMana)
+label(iEnableGMD)
+label(iEnableMPM)
+label(iEnableMPG)
+label(iEnableMPP)
+label(iEnableMPR)
+
+label(MHPR)
+label(GDMD)
+label(MMAN)
+label(MGLD)
+label(MPPN)
+label(MOKA)
+
+//=========================================
+// Registering Symbols
+registersymbol(MyCode)
+registersymbol(pHero)
+registersymbol(pKata)
+registersymbol(pPlayer)
+registersymbol(pGold)
+registersymbol(iMinGold)
+registersymbol(iEnableGMD)
+registersymbol(iEnableMPM)
+registersymbol(iEnableMPG)
+registersymbol(iEnableMPP)
+registersymbol(iEnableMPR)
+
+registersymbol(MHPR)
+registersymbol(GDMD)
+registersymbol(MMAN)
+registersymbol(MGLD)
+registersymbol(MPPN)
+registersymbol(MOKA)
+
+//=========================================
+MyCode:
+//========================================= 64
+// When in main Screen
+_MonHumanPlayer:
+ mov [pHero],rsi
+
+ mov rcx,[rsi+00000460]
+ mov [pPlayer],rcx
+
+ mov rcx,iEnableMPR
+ cmp dword ptr [rcx],0
+ je _ExitMHP                       // Jump if feature is disabled
+
+ mov ecx,[rsi+000007ec]
+ mov [rsi+000008b8],ecx
+
+_ExitMHP:
+ mov ecx,[rsi+00000808]            // Original code
+ jmp _BackMHP                      // Back to main code
+
+//========================================= 64
+_GodMode:
+ push rax
+ push rcx
+
+ mov rcx,iEnableGMD
+ cmp dword ptr [rcx],0
+ je _ExitGMD                       // Jump if feature is disabled
+
+ mov rax,[rsi+00000460]
+ mov rcx,pPlayer
+ cmp rax,[rcx]
+ jne _ExitGMD
+
+ cvtsi2ss xmm0,[rsi+00000478]
+
+_ExitGMD:
+ pop rcx
+ pop rax
+
+ comiss xmm0,xmm8                  // Original code (recover EFLAGS)
+ movss [rsi+0000046C],xmm0         // Original code
+ jmp _BackGMD                      // Back to main code
+
+//========================================= 64
+_MonPlayerMana:
+ push rax
+ push rcx
+
+ mov rcx,iEnableMPM
+ cmp dword ptr [rcx],0
+ je _ExitMPM                       // Jump if feature is disabled
+
+ mov rax,[rsi+00000460]
+ mov rcx,pPlayer
+ cmp rax,[rcx]
+ jne _ExitMPM
+
+ cvtsi2ss xmm6,[rsi+00000b50]
+
+_ExitMPM:
+ pop rcx
+ pop rax
+
+ movss [rsi+000008B4],xmm6         // Original code
+ jmp _BackMPM                      // Back to main code
+
+//========================================= 64
+// When in Inventory
+_MonPlayerGold:
+ push rcx
+
+ mov [pGold],rax
+
+ mov rcx,iEnableMPG
+ cmp dword ptr [rcx],0
+ je _ExitMPG                       // Jump if feature is disabled
+
+ mov ecx,[iMinGold]
+ cmp ecx,[rax+00000AF4]
+ jle _ExitMPG
+
+ mov [rax+00000AF4],ecx
+
+_ExitMPG:
+ pop rcx
+
+ mov r8d,[rax+00000AF4]            // Original code
+ jmp _BackMPG                      // Back to main code
+
+//========================================= 64
+// When in Inventory Screen (Portions)
+_MonPlayerPortions:
+ mov rcx,iEnableMPP
+ cmp dword ptr [rcx],0
+ je _ExitMPP                       // Jump if feature is disabled
+
+ mov rcx,[rsi+00000130]
+ test rcx,rcx
+ jz _ExitMPP
+
+ mov rcx,[rcx+08]
+ test rcx,rcx
+ jz _ExitMPP
+
+ mov ecx,[rcx]
+ cmp ecx,0061004d
+ je _MonPP00
+
+ cmp ecx,00650048
+ jne _ExitMPP
+
+_MonPP00:
+ mov ecx,#62
+ cmp ecx,[rsi+58]
+ jle _ExitMPP
+
+ mov [rsi+58],ecx
+
+_ExitMPP:
+ mov ecx,[rsi+58]                  // Original code
+ cmp ecx,01                        // Original code
+ jmp _BackMPP                      // Back to main code
+
+//========================================= 64
+// When in main Screen
+_MonKatarina:
+ mov [pKata],r12
+
+_ExitMKA:
+ mov eax,[r12+00000808]            // Original code
+ jmp _BackMKA                      // Back to main code
+
+//=========================================
+ db '================================================&gt;'
+ db 'CE6.2 Script by Recifense 052913'
+//=========================================
+// Variables
+iEnableGMD:
+ dd 0
+iEnableMPM:
+ dd 0
+iEnableMPG:
+ dd 0
+iEnableMPP:
+ dd 0
+iEnableMPR:
+ dd 0
+iMinGold:
+ dd #6200
+pHero:
+ dq 0
+pGold:
+ dq 0
+pKata:
+ dq 0
+pPlayer:
+ dq MyCode
+fMana:
+ dd 0
+
+//=========================================
+// Hacking Points
+aobMHPR:
+MHPR:
+ jmp _MonHumanPlayer
+ nop
+_BackMHP:
+
+aobGDMD:
+GDMD:
+ jmp _GodMode
+ nop
+ nop
+ nop
+_BackGMD:
+
+aobMMAN:
+MMAN:
+ jmp _MonPlayerMana
+ nop
+ nop
+ nop
+_BackMPM:
+
+aobMGLD:
+MGLD:
+ jmp _MonPlayerGold
+ nop
+ nop
+_BackMPG:
+
+aobMPPN:
+MPPN:
+ jmp _MonPlayerPortions
+ nop
+_BackMPP:
+
+aobMOKA:
+MOKA:
+ jmp _MonKatarina
+ nop
+ nop
+ nop
+_BackMKA:
+
+//=========================================
+// Script for Restoring Original Codes
+[DISABLE]
+MHPR:
+// mov ecx,[rsi+00000808]
+ db 8b 8e 08 08 00 00
+
+GDMD:
+// movss [rsi+0000046C],xmm0
+ db f3 0f 11 86 6c 04 00 00
+
+MMAN:
+// movss [rsi+000008B4],xmm6
+ db f3 0f 11 b6 b4 08 00 00
+
+MGLD:
+// mov r8d,[rax+00000AF4]
+ db 44 8b 80 f4 0a 00 00
+
+MPPN:
+// mov ecx,[rsi+58]
+// cmp ecx,01
+ db 8b 4e 58 83 f9 01
+
+MOKA:
+// mov eax,[r12+00000808]
+ db 41 8b 84 24 08 08 00 00
+
+//=========================================
+// Unregistering Symbols
+unregistersymbol(MyCode)
+unregistersymbol(pHero)
+unregistersymbol(pKata)
+unregistersymbol(pPlayer)
+unregistersymbol(pGold)
+unregistersymbol(iMinGold)
+unregistersymbol(iEnableGMD)
+unregistersymbol(iEnableMPM)
+unregistersymbol(iEnableMPG)
+unregistersymbol(iEnableMPP)
+unregistersymbol(iEnableMPR)
+
+unregistersymbol(MHPR)
+unregistersymbol(GDMD)
+unregistersymbol(MMAN)
+unregistersymbol(MGLD)
+unregistersymbol(MPPN)
+unregistersymbol(MOKA)
+
+//=========================================
+dealloc(MyCode)
+//============= Scripts End ===============
+
+// ****************************************
+// NOTES
+// ****************************************
+{
+1.0.03
+define(MHPR,VanHelsing_x64.exe+005b9aa4)
+define(GDMD,VanHelsing_x64.exe+000eb202)
+define(MMAN,VanHelsing_x64.exe+000cab6c)
+define(MGLD,VanHelsing_x64.exe+005b46b1)
+define(MPPN,VanHelsing_x64.exe+001d9acd)
+define(MOKA,VanHelsing_x64.exe+0055f5d3)
+}
+
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>15</ID>
+          <Description>"Enable/Disable God Mode =&gt; (1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableGMD</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>16</ID>
+          <Description>"Enable/Disable Full Mana =&gt; (1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMPM</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>17</ID>
+          <Description>"Enable/Disable Minimum Gold =&gt; (1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMPG</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>20</ID>
+              <Description>"Minimum Gold Value ==&gt;"</Description>
+              <Color>0080FF</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>iMinGold</Address>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>18</ID>
+          <Description>"Enable/Disable Minimum Portions =&gt; (1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMPP</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>19</ID>
+          <Description>"Enable/Disable Full Rage =&gt; (1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMPR</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>21</ID>
+          <Description>"============= Hero Info =============="</Description>
+          <ShowAsHex>1</ShowAsHex>
+          <Color>000080</Color>
+          <VariableType>String</VariableType>
+          <Length>16</Length>
+          <Unicode>1</Unicode>
+          <ZeroTerminate>1</ZeroTerminate>
+          <Address>pHero</Address>
+          <Offsets>
+            <Offset>0</Offset>
+            <Offset>6E8</Offset>
+          </Offsets>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>22</ID>
+              <Description>"Available Skill Points ==&gt;"</Description>
+              <Color>0000FF</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pHero</Address>
+              <Offsets>
+                <Offset>800</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>23</ID>
+              <Description>"Available Attribute Points ==&gt;"</Description>
+              <Color>0000FF</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pHero</Address>
+              <Offsets>
+                <Offset>804</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>24</ID>
+              <Description>"Current XP ==&gt;"</Description>
+              <Color>0000FF</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pHero</Address>
+              <Offsets>
+                <Offset>808</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>25</ID>
+              <Description>"Current Gold ==&gt;"</Description>
+              <Color>0000FF</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pGold</Address>
+              <Offsets>
+                <Offset>AF4</Offset>
+              </Offsets>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>28</ID>
+          <Description>"=========== Katarina Info ============"</Description>
+          <ShowAsHex>1</ShowAsHex>
+          <Color>000080</Color>
+          <VariableType>String</VariableType>
+          <Length>16</Length>
+          <Unicode>1</Unicode>
+          <ZeroTerminate>1</ZeroTerminate>
+          <Address>pKata</Address>
+          <Offsets>
+            <Offset>0</Offset>
+            <Offset>BD8</Offset>
+          </Offsets>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>29</ID>
+              <Description>"Available Skill Points ==&gt;"</Description>
+              <Color>0000FF</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pKata</Address>
+              <Offsets>
+                <Offset>800</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>30</ID>
+              <Description>"Available Attribute Points ==&gt;"</Description>
+              <Color>0000FF</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pKata</Address>
+              <Offsets>
+                <Offset>804</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>31</ID>
+              <Description>"Current XP ==&gt;"</Description>
+              <Color>0000FF</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pKata</Address>
+              <Offsets>
+                <Offset>808</Offset>
+              </Offsets>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols/>
+  <Comments>===========================================
+ Game Title    : The Incredible Adventures of Van Helsing
+ Game Version  : 1.0.03
+ Game Sponsor  : RELOADED
+ Proces Name   : VanHelsing_x64.exe
+ Script Version: 2.0 (AOB)
+ CE Version    : 6.2
+ Release date  : 29-May-2013
+ Author        : Recifense
+ History:
+ 26-May-13: First Release
+ 29-May-13: Added a script to find Katarina (_MonKatarina)
+ Features:
+ - God Mode                    [1]
+ - Unlimited Mana              [2]
+ - Minimum Gold                [3]
+   - Minimum Gold Value (6200) [4]
+ - Minimum Portions:           [5]
+   - Healing
+   - Mana
+ - Full Rage                   [6]
+ - Some pointers               [7]
+===========================================
+[1] It works for main character and companion;
+[2] It works for main character and companion;
+[3] You have to open inventory in order to make it work;
+[4] It can be changed by the user;
+[5] You have to open inventory second tab in order to make it work;
+[6] That's it;
+[7] Used on the table;
+===========================================
+HOTKEYS:
+CTRL+Home = Enable  all cheats;
+CTRL+End  = Disable all cheats;
+===========================================
+[NOTE] The script uses AOB CE feature. So it may work with other versions of the game. And it can take a while to load.
+===========================================
+Cheers!
+</Comments>
+</CheatTable>

@@ -1,0 +1,839 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="19">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>159</ID>
+      <Description>"[X] &lt;== Polaris Sector Script"</Description>
+      <Options moHideChildren="1" moDeactivateChildrenAsWell="1"/>
+      <LastState Activated="1"/>
+      <Color>FF0000</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>[enable]
+define(LUDO,"PolarisSector.exe")
+
+
+alloc(MyCode, 4096, $process)
+
+label(pPlanet)
+label(pPlayer)
+label(pShip)
+label(iResearchRate)
+label(iProductionRate)
+
+registersymbol(MyCode)
+registersymbol(pPlayer)
+registersymbol(pPlanet)
+registersymbol(pShip)
+registersymbol(iResearchRate)
+registersymbol(iProductionRate)
+
+MyCode:
+ db 00 00
+
+pPlanet:
+ dd 00
+
+pPlayer:
+ dd 00
+
+pShip:
+ dd 00
+
+iResearchRate:
+ dd (float)4.0
+
+iProductionRate:
+ dd (float)4.0
+
+[disable]
+unregistersymbol(MyCode)
+unregistersymbol(pPlayer)
+unregistersymbol(pPlanet)
+unregistersymbol(pShip)
+unregistersymbol(iResearchRate)
+unregistersymbol(iProductionRate)
+
+dealloc(MyCode)
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>141</ID>
+          <Description>"[X] &lt;== Racial Bonus Points"</Description>
+          <Options moHideChildren="1" moDeactivateChildrenAsWell="1"/>
+          <LastState/>
+          <Color>FF0000</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[enable]
+define(LUDO,"PolarisSector.exe")
+
+define(RacePointsInjection,PolarisSector.alGetListeneriv+277B7F)
+
+registersymbol(RacePointsInjection)
+
+RacePointsInjection:
+ mov eax,00000050 // Set value to 80
+ nop
+ nop
+[disable]
+RacePointsInjection:
+  db 2B 04 8D C0 73 3A 03
+
+unregistersymbol(RacePointsInjection)
+
+//PolarisSector.alGetListeneriv+277B76 - 8B 0A                 - mov ecx,[edx]
+//PolarisSector.alGetListeneriv+277B78 - 83 F9 FF              - cmp ecx,-01 { 255 }
+//PolarisSector.alGetListeneriv+277B7B - 74 09                 - je PolarisSector.alGetListeneriv+277B86
+//PolarisSector.alGetListeneriv+277B7D - 03 CE                 - add ecx,esi
+
+//PolarisSector.alGetListeneriv+277B7F - 2B 04 8D C0733A03     - sub eax,[ecx*4+PolarisSector.exe+21B73C0]
+
+//PolarisSector.alGetListeneriv+277B86 - 8B 4A 08              - mov ecx,[edx+08]
+//PolarisSector.alGetListeneriv+277B89 - 85 C9                 - test ecx,ecx
+
+</AssemblerScript>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>139</ID>
+          <Description>"[X] &lt;== Weapons give a lot of power in ship designer"</Description>
+          <Options moHideChildren="1" moDeactivateChildrenAsWell="1"/>
+          <LastState/>
+          <Color>FF0000</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[enable]
+define(LUDO,"PolarisSector.exe")
+
+define(PowerInjection,PolarisSector.alGetListeneriv+62B1B)
+
+label(_PowerHack)
+label(_PowerBack)
+
+registersymbol(PowerInjection)
+
+MyCode+100:
+
+_PowerHack:
+ mov [esi+000000FC],186a0000 // Set value to 409,600,000
+ jmp _PowerBack
+
+PowerInjection:
+ jmp _PowerHack
+ nop
+_PowerBack:
+
+
+[disable]
+
+PowerInjection:
+ db 89 86 FC 00 00 00
+
+unregistersymbol(PowerInjection)
+
+//PolarisSector.exe+86E60 - DA 86 FC000000        - fiadd [esi+000000FC]
+//PolarisSector.exe+86E66 - E8 65713400           - call PolarisSector.exe+3CDFD0
+
+//PolarisSector.exe+86E6B - 89 86 FC000000        - mov [esi+000000FC],eax
+
+//PolarisSector.exe+86E71 - DB 43 08              - fild dword ptr [ebx+08]
+//PolarisSector.exe+86E74 - DC 4F 50              - fmul qword ptr [edi+50]
+
+</AssemblerScript>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>127</ID>
+          <Description>"[X] &lt;== x Research"</Description>
+          <Options moHideChildren="1" moDeactivateChildrenAsWell="1"/>
+          <LastState/>
+          <Color>FF0000</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[enable]
+
+define(LUDO,"PolarisSector.exe")
+
+define(ResearchInjection,PolarisSector.alGetListeneriv+1B6508)
+
+label(_ResearchHack)
+label(_BackResearch)
+label(_PlayerResearch)
+label(_ResearchHack2)
+
+registersymbol(ResearchInjection)
+
+MyCode+200:
+
+_ResearchHack:
+ cmp dword ptr [PolarisSector.exe+2145B5C], ebx // Compare player id being played to the current player researching
+ je _PlayerResearch                             // If it's the human player jump to _PlayerResearch
+ jmp _ResearchHack2                             // Otherwise jump to _ResearchHack2
+
+_PlayerResearch:
+ fxch st(2)                                     // Switch the FPU stack of st(2) and st(0) // st(2) is amount to raise, st(0) is total amount
+ fld [iResearchRate]                            // Load iResearchRate onto st(0)
+ fmulp st(1),st                                 // Multiply st(0) onto st(1) and pop the stack
+ fxch st(2)                                     // Switch the FPU stack of st(2) and st(0)
+ jmp _ResearchHack2                             // jump to _ResearchHack2
+
+_ResearchHack2:
+ faddp st(2),st(0)                              // Added cumulative research with amount to raise by
+ fxch st(1)                                     // Switch the FPU stack of st(1) and st(0)
+ fstp dword ptr [ebp+0C]                        // Store top of FPU stack to [ebp+0C]
+ jmp _BackResearch
+
+ResearchInjection:
+ jmp _ResearchHack
+ nop
+ nop
+_BackResearch:
+
+[disable]
+ResearchInjection:
+ db DE C2 D9 C9 D9 5D 0C
+
+unregistersymbol(ResearchInjection)
+
+//PolarisSector.exe+1D918D - D9C0                  - fld st(0)
+//PolarisSector.exe+1D918F - DEF2                  - fdivrp st(2),st(0)
+//PolarisSector.exe+1D9191 - D9 84 99 24010000     - fld dword ptr [ecx+ebx*4+00000124]
+
+//PolarisSector.exe+1D9198 - DEC2                  - faddp st(2),st(0)
+//PolarisSector.exe+1D919A - D9C9                  - fxch st(1)
+//PolarisSector.exe+1D919C - D9 5D 0C              - fstp dword ptr [ebp+0C]
+
+//PolarisSector.exe+1D919F - D9 45 0C              - fld dword ptr [ebp+0C]
+//PolarisSector.exe+1D91A2 - D9 94 99 24010000     - fst dword ptr [ecx+ebx*4+00000124]
+</AssemblerScript>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>214</ID>
+              <Description>"Research Rate (xN)"</Description>
+              <LastState Value="4" RealAddress="05A0000E"/>
+              <VariableType>Float</VariableType>
+              <Address>iResearchRate</Address>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>178</ID>
+          <Description>"[X] &lt;== x Production"</Description>
+          <Options moHideChildren="1" moDeactivateChildrenAsWell="1"/>
+          <LastState/>
+          <Color>FF0000</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[enable]
+
+define(LUDO,"PolarisSector.exe")
+
+define(ProductionInjection,PolarisSector.alGetListeneriv+25B68F)
+
+label(_ProductionHack)
+label(_BackProduction)
+label(_PlayerProduction)
+label(_ProductionHack2)
+
+registersymbol(ProductionInjection)
+
+MyCode+300:
+
+_ProductionHack:
+ lea eax,[eax+esi*4]
+ push ebx
+ mov ebx,[edi+34]
+ cmp dword ptr [PolarisSector.exe+2145B5C], ebx
+ je _PlayerProduction
+ jmp _ProductionHack2
+
+_PlayerProduction:
+ fld [iProductionRate]
+ fmulp st(1), st
+ jmp _ProductionHack2
+
+_ProductionHack2:
+ pop ebx
+ fsub dword ptr [ebx+04]
+ jmp _BackProduction
+
+ProductionInjection:
+ jmp _ProductionHack
+ nop
+_BackProduction:
+
+[disable]
+ProductionInjection:
+ db 8D 04 B0 D8 63 04
+
+unregistersymbol(ProductionInjection)
+
+// PolarisSector.exe+27C6AF - 8D 04 B0              - lea eax,[eax+esi*4]
+// PolarisSector.exe+27C6B2 - D8 63 04              - fsub dword ptr [ebx+04]
+// PolarisSector.exe+27C6B5 - D9 18                 - fstp dword ptr [eax]
+
+</AssemblerScript>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>215</ID>
+              <Description>"Production Rate (xN)"</Description>
+              <LastState Value="4" RealAddress="05A00012"/>
+              <VariableType>Float</VariableType>
+              <Address>iProductionRate</Address>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>169</ID>
+          <Description>"[X] &lt;== Race Pointers"</Description>
+          <Options moHideChildren="1" moDeactivateChildrenAsWell="1"/>
+          <LastState/>
+          <Color>FF0000</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[enable]
+define(test, LUDO)
+
+{$lua}
+writeInteger(getAddress("pPlayer"), (readInteger(getAddress("PolarisSector.exe+2145B5C")) * 0x16D0) + getAddress("PolarisSector.exe+21B7D38"))
+{$asm}
+[disable]
+</AssemblerScript>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>170</ID>
+              <Description>"pPlayer"</Description>
+              <LastState Value="00000000" RealAddress="05A00006"/>
+              <ShowAsHex>1</ShowAsHex>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pPlayer</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>180</ID>
+              <Description>"Gravitonium"</Description>
+              <VariableType>Float</VariableType>
+              <Address>pPlayer</Address>
+              <Offsets>
+                <Offset>2AC</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>175</ID>
+              <Description>"Reidium"</Description>
+              <VariableType>Float</VariableType>
+              <Address>pPlayer</Address>
+              <Offsets>
+                <Offset>2B0</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>174</ID>
+              <Description>"Metal"</Description>
+              <VariableType>Float</VariableType>
+              <Address>pPlayer</Address>
+              <Offsets>
+                <Offset>2B4</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>173</ID>
+              <Description>"Organics"</Description>
+              <VariableType>Float</VariableType>
+              <Address>pPlayer</Address>
+              <Offsets>
+                <Offset>2B8</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>172</ID>
+              <Description>"Plutonium"</Description>
+              <VariableType>Float</VariableType>
+              <Address>pPlayer</Address>
+              <Offsets>
+                <Offset>2BC</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>171</ID>
+              <Description>"Food"</Description>
+              <VariableType>Float</VariableType>
+              <Address>pPlayer</Address>
+              <Offsets>
+                <Offset>2C0</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>181</ID>
+              <Description>"Growth Rate"</Description>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pPlayer</Address>
+              <Offsets>
+                <Offset>1368</Offset>
+              </Offsets>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>142</ID>
+          <Description>"[X] &lt;== Selected Planet Pointer List"</Description>
+          <Options moHideChildren="1" moDeactivateChildrenAsWell="1"/>
+          <LastState/>
+          <Color>FF0000</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[enable]
+define(LUDO,"PolarisSector.exe")
+
+define(PlanetViewInjection,PolarisSector.alGetListeneriv+CCE43)
+define(PlanetViewInjection2,PolarisSector.alGetListeneriv+CCDB1)
+define(PlanetViewInjection3,PolarisSector.alGetListeneriv+D5E8A)
+
+label(_PlanetViewHack)
+label(_BackView)
+label(_PlanetViewHack2)
+label(_BackView2)
+label(_PlanetViewHack3)
+label(_BackView3)
+
+registersymbol(PlanetViewInjection)
+registersymbol(PlanetViewInjection2)
+registersymbol(PlanetViewInjection3)
+
+MyCode+400:
+
+_PlanetViewHack:
+ mov [pPlanet], eax
+ mov [ebx+00000388],eax
+ jmp _BackView
+
+_PlanetViewHack2:
+ mov [pPlanet], eax
+ mov [ebx+00000388],eax
+ jmp _BackView2
+
+_PlanetViewHack3:
+ mov [pPlanet], edi
+ mov [eax+00000388],edi
+ jmp _BackView3
+
+PlanetViewInjection:
+ jmp _PlanetViewHack
+ nop
+_BackView:
+
+PlanetViewInjection2:
+ jmp _PlanetViewHack2
+ nop
+_BackView2:
+
+PlanetViewInjection3:
+ jmp _PlanetViewHack3
+ nop
+_BackView3:
+
+[disable]
+PlanetViewInjection:
+ db 89 83 88 03 00 00
+
+PlanetViewInjection2:
+ db 89 83 88 03 00 00
+
+PlanetViewInjection3:
+ db 89 B8 88 03 00 00
+
+unregistersymbol(PlanetViewInjection)
+unregistersymbol(PlanetViewInjection2)
+unregistersymbol(PlanetViewInjection3)
+</AssemblerScript>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>179</ID>
+              <Description>"Population"</Description>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pPlanet</Address>
+              <Offsets>
+                <Offset>40</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>145</ID>
+              <Description>"Name"</Description>
+              <VariableType>String</VariableType>
+              <Length>15</Length>
+              <Unicode>0</Unicode>
+              <ZeroTerminate>1</ZeroTerminate>
+              <Address>pPlanet</Address>
+              <Offsets>
+                <Offset>0</Offset>
+                <Offset>18</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>146</ID>
+              <Description>"pPlanet"</Description>
+              <ShowAsHex>1</ShowAsHex>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pPlanet</Address>
+              <Offsets>
+                <Offset>0</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>177</ID>
+              <Description>"iOwner"</Description>
+              <ShowAsHex>1</ShowAsHex>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pPlanet</Address>
+              <Offsets>
+                <Offset>34</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>200</ID>
+              <Description>"Mineral Desposit Count"</Description>
+              <LastState Value="" RealAddress="00000000"/>
+              <GroupHeader>1</GroupHeader>
+              <CheatEntries>
+                <CheatEntry>
+                  <ID>201</ID>
+                  <Description>"x Gravitonium"</Description>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pPlanet</Address>
+                  <Offsets>
+                    <Offset>0</Offset>
+                    <Offset>98</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>202</ID>
+                  <Description>"x Reidium"</Description>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pPlanet</Address>
+                  <Offsets>
+                    <Offset>4</Offset>
+                    <Offset>98</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>203</ID>
+                  <Description>"x Metal"</Description>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pPlanet</Address>
+                  <Offsets>
+                    <Offset>8</Offset>
+                    <Offset>98</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>204</ID>
+                  <Description>"x Organics"</Description>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pPlanet</Address>
+                  <Offsets>
+                    <Offset>C</Offset>
+                    <Offset>98</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>205</ID>
+                  <Description>"x Plutonium"</Description>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pPlanet</Address>
+                  <Offsets>
+                    <Offset>10</Offset>
+                    <Offset>98</Offset>
+                  </Offsets>
+                </CheatEntry>
+              </CheatEntries>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>164</ID>
+              <Description>"Planet Bonuses (Multipliers)"</Description>
+              <LastState Value="" RealAddress="00000000"/>
+              <GroupHeader>1</GroupHeader>
+              <CheatEntries>
+                <CheatEntry>
+                  <ID>212</ID>
+                  <Description>"Food Bonus"</Description>
+                  <VariableType>Float</VariableType>
+                  <Address>pPlanet</Address>
+                  <Offsets>
+                    <Offset>14</Offset>
+                    <Offset>9C</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>160</ID>
+                  <Description>"Science Bonus"</Description>
+                  <VariableType>Float</VariableType>
+                  <Address>pPlanet</Address>
+                  <Offsets>
+                    <Offset>1C</Offset>
+                    <Offset>9C</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>161</ID>
+                  <Description>"Production Bonus"</Description>
+                  <VariableType>Float</VariableType>
+                  <Address>pPlanet</Address>
+                  <Offsets>
+                    <Offset>20</Offset>
+                    <Offset>9C</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>162</ID>
+                  <Description>"Orbital Prod. Bonus"</Description>
+                  <VariableType>Float</VariableType>
+                  <Address>pPlanet</Address>
+                  <Offsets>
+                    <Offset>24</Offset>
+                    <Offset>9C</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>163</ID>
+                  <Description>"Research Points Bonus"</Description>
+                  <VariableType>Float</VariableType>
+                  <Address>pPlanet</Address>
+                  <Offsets>
+                    <Offset>2C</Offset>
+                    <Offset>9C</Offset>
+                  </Offsets>
+                </CheatEntry>
+              </CheatEntries>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>158</ID>
+              <Description>"Explored mineral desposits"</Description>
+              <LastState Value="" RealAddress="00000000"/>
+              <GroupHeader>1</GroupHeader>
+              <CheatEntries>
+                <CheatEntry>
+                  <ID>152</ID>
+                  <Description>"Gravitonium"</Description>
+                  <VariableType>Float</VariableType>
+                  <Address>pPlanet</Address>
+                  <Offsets>
+                    <Offset>0</Offset>
+                    <Offset>9C</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>153</ID>
+                  <Description>"Reidium"</Description>
+                  <VariableType>Float</VariableType>
+                  <Address>pPlanet</Address>
+                  <Offsets>
+                    <Offset>4</Offset>
+                    <Offset>9C</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>157</ID>
+                  <Description>"Metal"</Description>
+                  <VariableType>Float</VariableType>
+                  <Address>pPlanet</Address>
+                  <Offsets>
+                    <Offset>8</Offset>
+                    <Offset>9C</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>156</ID>
+                  <Description>"Organics"</Description>
+                  <VariableType>Float</VariableType>
+                  <Address>pPlanet</Address>
+                  <Offsets>
+                    <Offset>C</Offset>
+                    <Offset>9C</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>155</ID>
+                  <Description>"Plutonium"</Description>
+                  <VariableType>Float</VariableType>
+                  <Address>pPlanet</Address>
+                  <Offsets>
+                    <Offset>10</Offset>
+                    <Offset>9C</Offset>
+                  </Offsets>
+                </CheatEntry>
+              </CheatEntries>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>217</ID>
+          <Description>"[X] &lt;== Max Fuel on ships"</Description>
+          <Options moHideChildren="1" moDeactivateChildrenAsWell="1"/>
+          <LastState/>
+          <Color>FF0000</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[enable]
+define(LUDO,"PolarisSector.exe")
+
+define(FuelInjection,PolarisSector.alGetListeneriv+1FDE00)
+
+label(_FuelHack)
+label(_FuelHack2)
+label(_FuelHack3)
+
+label(_BackFuel)
+
+registersymbol(FuelInjection)
+MyCode+600:
+
+_FuelHack:
+ push ebx
+ fstp dword ptr [eax+34]
+ mov ebx,[eax+38]
+ cmp dword ptr [PolarisSector.exe+2145B5C], ebx
+ je _FuelHack2
+ jmp _FuelHack3
+
+_FuelHack2:
+ mov ebx,[eax+20]
+ fild dword ptr [ebx+70]
+ fstp dword ptr [eax+34]
+ jmp _FuelHack3
+
+_FuelHack3:
+ mov eax,[eax+1c]
+ pop ebx
+ jmp _BackFuel
+
+
+FuelInjection:
+ jmp _FuelHack
+ nop
+_BackFuel:
+
+[disable]
+FuelInjection:
+ db D9 58 34 8B 40 1C
+
+unregistersymbol(FuelInjection)
+
+// PolarisSector.alGetListeneriv+1FDE00 - D9 58 34              - fstp dword ptr [eax+34]
+// PolarisSector.alGetListeneriv+1FDE03 - 8B 40 1C              - mov eax,[eax+1C]
+// PolarisSector.alGetListeneriv+1FDE06 - 85 C0                 - test eax,eax
+// PolarisSector.alGetListeneriv+1FDE08 - 75 F1                 - jne PolarisSector.alGetListeneriv+1FDDFB
+// PolarisSector.alGetListeneriv+1FDE0A - DDD8                  - fstp st(0)
+// PolarisSector.alGetListeneriv+1FDE0C - C6 86 1C010000 01     - mov byte ptr [esi+0000011C],01 { 1 }
+
+</AssemblerScript>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+  </CheatEntries>
+  <CheatCodes>
+    <CodeEntry>
+      <Description>Code :mov [ebx+00000388],eax</Description>
+      <Address>012E12D3</Address>
+      <ModuleName>PolarisSector.exe</ModuleName>
+      <ModuleNameOffset>F12D3</ModuleNameOffset>
+      <Before>
+        <Byte>E8</Byte>
+        <Byte>BD</Byte>
+        <Byte>F2</Byte>
+        <Byte>FD</Byte>
+        <Byte>FF</Byte>
+      </Before>
+      <Actual>
+        <Byte>89</Byte>
+        <Byte>83</Byte>
+        <Byte>88</Byte>
+        <Byte>03</Byte>
+        <Byte>00</Byte>
+        <Byte>00</Byte>
+      </Actual>
+      <After>
+        <Byte>B0</Byte>
+        <Byte>01</Byte>
+        <Byte>5F</Byte>
+        <Byte>5E</Byte>
+        <Byte>5B</Byte>
+      </After>
+    </CodeEntry>
+    <CodeEntry>
+      <Description>Code :mov [ebx+00000388],eax</Description>
+      <Address>012E1241</Address>
+      <ModuleName>PolarisSector.exe</ModuleName>
+      <ModuleNameOffset>F1241</ModuleNameOffset>
+      <Before>
+        <Byte>E8</Byte>
+        <Byte>4F</Byte>
+        <Byte>F2</Byte>
+        <Byte>FD</Byte>
+        <Byte>FF</Byte>
+      </Before>
+      <Actual>
+        <Byte>89</Byte>
+        <Byte>83</Byte>
+        <Byte>88</Byte>
+        <Byte>03</Byte>
+        <Byte>00</Byte>
+        <Byte>00</Byte>
+      </Actual>
+      <After>
+        <Byte>B0</Byte>
+        <Byte>01</Byte>
+        <Byte>5F</Byte>
+        <Byte>5E</Byte>
+        <Byte>5B</Byte>
+      </After>
+    </CodeEntry>
+    <CodeEntry>
+      <Description>Code :mov [eax+00000388],edi</Description>
+      <Address>012EA31A</Address>
+      <ModuleName>PolarisSector.exe</ModuleName>
+      <ModuleNameOffset>FA31A</ModuleNameOffset>
+      <Before>
+        <Byte>98</Byte>
+        <Byte>6C</Byte>
+        <Byte>03</Byte>
+        <Byte>00</Byte>
+        <Byte>00</Byte>
+      </Before>
+      <Actual>
+        <Byte>89</Byte>
+        <Byte>B8</Byte>
+        <Byte>88</Byte>
+        <Byte>03</Byte>
+        <Byte>00</Byte>
+        <Byte>00</Byte>
+      </Actual>
+      <After>
+        <Byte>89</Byte>
+        <Byte>90</Byte>
+        <Byte>8C</Byte>
+        <Byte>03</Byte>
+        <Byte>00</Byte>
+      </After>
+    </CodeEntry>
+  </CheatCodes>
+  <UserdefinedSymbols>
+    <SymbolEntry>
+      <Name>_PowerBack</Name>
+      <Address>00C56E70</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>_iMul</Name>
+      <Address>04E50200</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>pPlayer</Name>
+      <Address>05A00006</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>pPlanet</Name>
+      <Address>05A00002</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>pShip</Name>
+      <Address>05A0000A</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>iResearchRate</Name>
+      <Address>05A0000E</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>iProductionRate</Name>
+      <Address>05A00012</Address>
+    </SymbolEntry>
+  </UserdefinedSymbols>
+</CheatTable>

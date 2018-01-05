@@ -1,0 +1,417 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="19">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>7</ID>
+      <Description>"[X] &lt;== R.U.S.E. v1.0.0.1 Steam Script v1.2"</Description>
+      <Options moHideChildren="1"/>
+      <LastState/>
+      <Color>FF0000</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>{
+===========================================
+ Game Title    : R.U.S.E
+ Game Version  : 1.0.0.1
+ Game Sponsor  : moneycheat
+ Process Name  : RUSE.exe
+ Script Version: 1.2
+ CE Version    : 6.4
+ Release date  : 21-Jan-2015
+ Author        : Recifense
+ History:
+ 24-Aug-14: First Release
+ 26-Aug-14: Fix on Minimum Resource (s1.1)
+ 21-Jan-15: Fix on God Mode during campaign (s1.2)
+ Features:
+ - God Mode
+ - Minimum Resource
+ - Some Pointers
+===========================================
+}
+
+//=========================================
+// Definitions
+define(LUDO,"RUSE.exe")
+define(MHPR,RUSE.exe+007f4844)
+define(GDMD,RUSE.exe+00797902)
+define(MOPR,RUSE.exe+007b9488)
+define(MOPM,RUSE.exe+007b94a7)
+define(MOSU,RUSE.exe+00489532)
+
+//=========================================
+// Constants used in the script (that can be changed)
+define(ctCE64,(float)6.4)
+define(ctMMON,#537600)   // Minimum Money (640 x 840)
+
+//=========================================
+[ENABLE]
+//=========================================
+//LuaCall(CheckVersion())
+//=========================================
+// Check if script is compatible to this game version
+// If false the script will not be loaded
+
+assert(MHPR,8b 50 3c 8b 41 64 8b 89 b0 01 00 00 8d 04 d0 8b 54 24 08 d9 02)
+assert(GDMD,f3 0f 11 46 1c e8 ?? ?? ?? ?? d9 45 08 5f 5e 5b 8b e5 5d c2 08)
+assert(MOPR,8b 46 04 03 03 57 8b 7e 08 89 44 24 10 89 46 04 8d 44 24 10 6a)
+assert(MOPM,8b 03 03 46 08 8d 4c 24 18 6a 04 51 89 44 24 20 89 46 08 e8 ??)
+assert(MOSU,8b 44 24 0c 89 01 85 c0 ?? ?? 8d 48 08 57 e8 ?? ?? ?? ?? 5f 5e)
+
+//=========================================
+alloc(MyCode,4096,LUDO)
+//=========================================
+// Declaration section
+label(_MonHumanPlayer)
+label(_BackMHP)
+label(_ExitMHP)
+label(_GodMode)
+label(_BackGMD)
+label(_ExitGMD)
+label(_MonPlayerResource)
+label(_BackMPR)
+label(_ExitMPR)
+label(_MonPlayerMoney)
+label(_BackMPM)
+label(_ExitMPM)
+label(_MonSelUnit)
+label(_BackMSU)
+label(_ExitMSU)
+label(iEnableGMD)
+label(iEnableMMM)
+label(pPlayer)
+label(pRes)
+label(pSel)
+
+//=========================================
+// Registering Symbols
+registersymbol(MyCode)
+registersymbol(iEnableGMD)
+registersymbol(iEnableMMM)
+registersymbol(pPlayer)
+registersymbol(pRes)
+registersymbol(pSel)
+
+//=========================================
+MyCode:
+//=========================================
+// Main game screen
+_MonHumanPlayer:
+ mov edx,[eax+3C]                  // Original code
+ test edx,edx
+ jnz _ExitMHP
+
+ mov [pPlayer],eax
+ lea edx,[eax+00000218]
+ mov [pRes],edx
+
+_ExitMHP:
+ mov edx,[eax+3C]                  // Original code
+ mov eax,[ecx+64]                  // Original code
+ jmp _BackMHP                      // Back to main code
+
+//=========================================
+// Main game screen
+_GodMode:
+ push eax
+
+ cmp dword ptr [iEnableGMD],0
+ je _ExitGMD                       // Jump if feature is disabled
+
+ mov eax,[esi+18]
+ test eax,eax
+ jz _ExitGMD
+
+ mov eax,[eax+00000150]
+ cmp eax,[pPlayer]
+ jne _ExitGMD
+
+ xorps xmm0,xmm0                   // Damage = 0
+ movss [esi+24],xmm0
+
+_ExitGMD:
+ pop eax
+
+ movss [esi+1C],xmm0               // Original code
+ jmp _BackGMD                      // Back to main code
+
+//=========================================
+// When decreasing resource
+_MonPlayerResource:
+ push ecx
+
+ cmp esi,[pRes]
+ jne _ExitMPR
+
+ cmp dword ptr [iEnableMMM],0
+ je _ExitMPR                       // Jump if feature is disabled
+
+ mov ecx,[esi+04]
+ add ecx,[ebx]
+
+ mov eax,ctMMON
+ cmp eax,ecx
+ js _ExitMPR
+
+ sub eax,ecx
+ add [esi+04],eax
+
+_ExitMPR:
+ pop ecx
+
+ mov eax,[esi+04]                  // Original code
+ add eax,[ebx]                     // Original code
+ jmp _BackMPR                      // Back to main code
+
+//=========================================
+// When increasing resource
+_MonPlayerMoney:
+ push ecx
+
+ cmp esi,[pRes]
+ jne _ExitMPM
+
+ cmp dword ptr [iEnableMMM],0
+ je _ExitMPM                       // Jump if feature is disabled
+
+ mov ecx,[esi+08]
+ add ecx,[ebx]
+
+ mov eax,ctMMON
+ cmp eax,ecx
+ js _ExitMPM
+
+ sub eax,ecx
+ add [esi+08],eax
+
+_ExitMPM:
+ pop ecx
+
+ mov eax,[ebx]                     // Original code
+ add eax,[esi+08]                  // Original code
+ jmp _BackMPM                      // Back to main code
+
+//=========================================
+// Unit Selected or under Cursor
+_MonSelUnit:
+ mov eax,[esp+0C]                  // Original code
+
+ mov [pSel],eax
+
+_ExitMSU:
+ mov [ecx],eax                     // Original code
+ jmp _BackMSU                      // Back to main code
+
+//=========================================
+ db '================================================&gt;'
+ db 'CE6.4 Script by Recifense 012115'
+//=========================================
+// Variables
+iEnableGMD:
+ dd 0
+iEnableMMM:
+ dd 0
+pPlayer:
+ dd MyCode
+pRes:
+ dd MyCode
+pSel:
+ dd 0
+
+//=========================================
+// Hacking Points
+MHPR:
+ jmp _MonHumanPlayer
+ nop
+_BackMHP:
+
+GDMD:
+ jmp _GodMode
+_BackGMD:
+
+MOPR:
+ jmp _MonPlayerResource
+_BackMPR:
+
+MOPM:
+ jmp _MonPlayerMoney
+_BackMPM:
+
+MOSU:
+ jmp _MonSelUnit
+ nop
+_BackMSU:
+
+//=========================================
+// Script for Restoring Original Codes
+[DISABLE]
+MHPR:
+// mov edx,[eax+3C]
+// mov eax,[ecx+64]
+ db 8b 50 3c 8b 41 64
+
+GDMD:
+// movss [esi+1C],xmm0
+ db f3 0f 11 46 1c
+
+MOPR:
+// mov eax,[esi+04]
+// add eax,[ebx]
+ db 8b 46 04 03 03
+
+MOPM:
+// mov eax,[ebx]
+// add eax,[esi+08]
+ db 8b 03 03 46 08
+
+MOSU:
+// mov eax,[esp+0C]
+// mov [ecx],eax
+ db 8b 44 24 0c 89 01
+
+//=========================================
+// Unregistering Symbols
+unregistersymbol(MyCode)
+unregistersymbol(iEnableGMD)
+unregistersymbol(iEnableMMM)
+unregistersymbol(pPlayer)
+unregistersymbol(pRes)
+unregistersymbol(pSel)
+
+//=========================================
+dealloc(MyCode)
+//============= Scripts End ===============
+
+// ****************************************
+// NOTES
+// ****************************************
+{
+}
+
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>4</ID>
+          <Description>"Enable/Disable God Mode  ===============&gt;"</Description>
+          <DropDownList DescriptionOnly="1" DisplayValueAsItem="1">0:Disabled
+1:Enabled
+</DropDownList>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableGMD</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>1</Value>
+              <Description>Enable</Description>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>0</Value>
+              <Description>Disable</Description>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>1</ID>
+          <Description>"Enable/Disable Minimum Money ===========&gt;"</Description>
+          <DropDownList DescriptionOnly="1" DisplayValueAsItem="1">0:Disabled
+1:Enabled
+</DropDownList>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMMM</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>1</Value>
+              <Description>Enable</Description>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>0</Value>
+              <Description>Disable</Description>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>8</ID>
+          <Description>"Victory Points =========&gt;"</Description>
+          <Color>0000FF</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>pPlayer</Address>
+          <Offsets>
+            <Offset>8</Offset>
+            <Offset>40</Offset>
+          </Offsets>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols>
+    <SymbolEntry>
+      <Name>Recifense</Name>
+      <Address>20160316</Address>
+    </SymbolEntry>
+  </UserdefinedSymbols>
+  <Comments>===========================================
+ Game Title    : R.U.S.E
+ Game Version  : 1.0.0.1
+ Game Sponsor  : moneycheat
+ Process Name  : RUSE.exe
+ Script Version: 1.2
+ CE Version    : 6.4
+ Release date  : 21-Jan-2015
+ Author        : Recifense
+ History:
+ 24-Aug-14: First Release
+ 26-Aug-14: Fix on Minimum Resource (s1.1)
+ 21-Jan-15: Fix on God Mode during campaign (s1.2)
+ Features:
+ - God Mode         [1]
+ - Minimum Resource [2]
+ - Some Pointers 
+===========================================
+[1] For player's units and buildings;
+[2] For player only; (640)
+===========================================
+[USAGE]
+1) Run CE64;
+2) Run Game;
+3) Load the game process "Ruse.exe" in CE;
+4) Load this table and activate it;
+5) Change the value to "Enabled" of each cheat you want to use;
+6) Game On;
+===========================================
+[HOTKEYS]
+CTRL+Home      = Enable  GM/MR cheats;
+CTRL+End       = Disable GM/MR cheats;
+===========================================
+[ADVICE]
+When you can,save the game before starting using table/cheat. So you can always come back in case you don't like the result.
+===========================================
+[INFO]
+Tested on Win 7 64bits
+===========================================
+Cheers!
+</Comments>
+</CheatTable>

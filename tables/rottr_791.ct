@@ -1,0 +1,202 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="19">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>51</ID>
+      <Description>"Enable Script - Rise of the Tomb Raider"</Description>
+      <Options moHideChildren="1"/>
+      <LastState Activated="1"/>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>{
+  Game   : ROTTR.exe
+  Date   : 2016-02-14
+  Author : Daijobu
+}
+
+[ENABLE]
+aobscanmodule(rottr_fetchPlayerCheck,ROTTR.exe,48 8B 8F * * 00 00 8B 15 * * * * 4C 89 BC)
+alloc(rottr_fetchPlayerCheckAlloc,$1000,rottr_fetchPlayerCheck)
+registersymbol(rottr_fetchPlayerCheck)
+label(rottr_fetchPlayerCheckAllocExit)
+globalalloc(rottr_PlayerCheck,8)
+
+registersymbol(rottr_StoreBytes1)
+label(rottr_StoreBytes1)
+rottr_fetchPlayerCheckAlloc+128:
+rottr_StoreBytes1:
+  readmem(rottr_fetchPlayerCheck,7)
+
+rottr_fetchPlayerCheckAlloc:
+  readmem(rottr_fetchPlayerCheck,7)
+  mov [rottr_PlayerCheck],rbx
+  jmp rottr_fetchPlayerCheckAllocExit
+
+rottr_fetchPlayerCheck:
+  jmp rottr_fetchPlayerCheckAlloc
+  db 90 90
+rottr_fetchPlayerCheckAllocExit:
+
+
+[DISABLE]
+rottr_fetchPlayerCheck:
+  readmem(rottr_StoreBytes1,7)
+unregistersymbol(rottr_StoreBytes1)
+unregistersymbol(rottr_fetchPlayerCheck)
+dealloc(rottr_PlayerCheck)
+dealloc(rottr_fetchPlayerCheckAlloc)
+
+{
+// ORIGINAL CODE - INJECTION POINT: "ROTTR.exe"+33A662D
+
+"ROTTR.exe"+33A65FE: E8 AD 23 DC FF                       -  call ROTTR.exe+31689B0
+"ROTTR.exe"+33A6603: 48 8B 0D FE 15 44 FF                 -  mov rcx,[ROTTR.exe+27E7C08]
+"ROTTR.exe"+33A660A: 48 89 C6                             -  mov rsi,rax
+"ROTTR.exe"+33A660D: E8 4E 5B 12 00                       -  call ROTTR.exe+34CC160
+"ROTTR.exe"+33A6612: 48 85 FF                             -  test rdi,rdi
+"ROTTR.exe"+33A6615: 0F 84 0E 01 00 00                    -  je ROTTR.exe+33A6729
+"ROTTR.exe"+33A661B: 8B 8F C8 00 00 00                    -  mov ecx,[rdi+000000C8]
+"ROTTR.exe"+33A6621: C1 E9 05                             -  shr ecx,05
+"ROTTR.exe"+33A6624: F6 C1 01                             -  test cl,01
+"ROTTR.exe"+33A6627: 0F 84 FC 00 00 00                    -  je ROTTR.exe+33A6729
+// ---------- INJECTING HERE ----------
+"ROTTR.exe"+33A662D: 48 8B 8F D8 00 00 00                 -  mov rcx,[rdi+000000D8]
+// ---------- DONE INJECTING  ----------
+"ROTTR.exe"+33A6634: 8B 15 7A 44 C4 FD                    -  mov edx,[ROTTR.exe+FEAAB4]
+"ROTTR.exe"+33A663A: 4C 89 BC 24 80 00 00 00              -  mov [rsp+00000080],r15
+"ROTTR.exe"+33A6642: 48 8B 14 D1                          -  mov rdx,[rcx+rdx*8]
+"ROTTR.exe"+33A6646: 48 8D 8C 24 88 00 00 00              -  lea rcx,[rsp+00000088]
+"ROTTR.exe"+33A664E: 48 C7 84 24 88 00 00 00 00 00 00 00  -  mov [rsp+00000088],00000000
+"ROTTR.exe"+33A665A: 4C 8B BA A8 02 00 00                 -  mov r15,[rdx+000002A8]
+"ROTTR.exe"+33A6661: 48 8D 15 F0 99 8E FD                 -  lea rdx,[ROTTR.exe+C90058]
+"ROTTR.exe"+33A6668: E8 B3 5D FD FF                       -  call ROTTR.exe+337C420
+"ROTTR.exe"+33A666D: 84 C0                                -  test al,al
+"ROTTR.exe"+33A666F: 0F 84 91 00 00 00                    -  je ROTTR.exe+33A6706
+}
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>52</ID>
+          <Description>"God Mode / Freeze Player Health"</Description>
+          <LastState Activated="1"/>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>{
+  Game   : ROTTR.exe
+  Date   : 2016-02-14
+  Author : Daijobu
+}
+
+[ENABLE]
+aobscanmodule(rottr_HealthCheck,ROTTR.exe,0F 2E F0 74 20 F3 0F 11 70) // should be unique
+aobscanmodule(rottr_HealthCheckSkip,ROTTR.exe,48 8B 8B * * 00 00 E8 * * * * 0F 28 74 24 20 48 83 C4 30 5B C3 * *) //+C
+registersymbol(rottr_HealthCheck)
+alloc(rottr_HealthCheckAlloc,$1000,rottr_HealthCheck)
+label(rottr_HealthCheckAllocExit)
+label(rottr_HealthCheckPlayer)
+
+registersymbol(rottr_StoreBytes2)
+label(rottr_StoreBytes2)
+rottr_HealthCheckAlloc+128:
+rottr_StoreBytes2:
+  readmem(rottr_HealthCheck,5)
+
+rottr_HealthCheckAlloc:
+  sub [rottr_PlayerCheck],2D0 {check against rbx at health (global) onDamage trigger}
+  cmp [rottr_PlayerCheck],rbx
+  je rottr_HealthCheckPlayer
+  jmp rottr_HealthCheckAllocExit
+
+rottr_HealthCheckPlayer:
+  movd xmm0,[rbx+2b4] {dword}
+  movd [rax+28],xmm0 {dword}
+  cvtdq2ps xmm0,xmm0 {dword to float}
+  movss [rax+2c],xmm0 {float}
+  movss [rsp+20],xmm0 {float}
+  jmp rottr_HealthCheckSkip+c {aob}
+
+rottr_HealthCheck:
+  jmp rottr_HealthCheckAlloc
+rottr_HealthCheckAllocExit:
+
+[DISABLE]
+rottr_HealthCheck:
+  readmem(rottr_StoreBytes2,5)
+unregistersymbol(rottr_StoreBytes2)
+unregistersymbol(rottr_HealthCheck)
+dealloc(rottr_HealthCheckAlloc)
+
+{
+// ORIGINAL CODE - INJECTION POINT: "ROTTR.exe"+3181BA3
+
+"ROTTR.exe"+3181B78: 48 8B 0D 89 60 66 FF        -  mov rcx,[ROTTR.exe+27E7C08]
+"ROTTR.exe"+3181B7F: 0F 29 74 24 20              -  movaps [rsp+20],xmm6
+"ROTTR.exe"+3181B84: 48 8B 01                    -  mov rax,[rcx]
+"ROTTR.exe"+3181B87: 0F 28 F1                    -  movaps xmm6,xmm1
+"ROTTR.exe"+3181B8A: FF 90 08 01 00 00           -  call qword ptr [rax+00000108]
+"ROTTR.exe"+3181B90: 84 C0                       -  test al,al
+"ROTTR.exe"+3181B92: 75 34                       -  jne ROTTR.exe+3181BC8
+"ROTTR.exe"+3181B94: 48 8B 83 A8 02 00 00        -  mov rax,[rbx+000002A8]
+"ROTTR.exe"+3181B9B: 66 0F 6E 40 28              -  movd xmm0,[rax+28]
+"ROTTR.exe"+3181BA0: 0F 5B C0                    -  cvtdq2ps xmm0,xmm0
+// ---------- INJECTING HERE ----------
+"ROTTR.exe"+3181BA3: 0F 2E F0                    -  ucomiss xmm6,xmm0
+"ROTTR.exe"+3181BA6: 74 20                       -  je ROTTR.exe+3181BC8
+// ---------- DONE INJECTING  ----------
+"ROTTR.exe"+3181BA8: F3 0F 11 70 2C              -  movss [rax+2C],xmm6
+"ROTTR.exe"+3181BAD: 48 8B 8B A8 02 00 00        -  mov rcx,[rbx+000002A8]
+"ROTTR.exe"+3181BB4: F3 0F 2C 41 2C              -  cvttss2si eax,[rcx+2C]
+"ROTTR.exe"+3181BB9: 89 41 28                    -  mov [rcx+28],eax
+"ROTTR.exe"+3181BBC: 48 8B 8B A8 02 00 00        -  mov rcx,[rbx+000002A8]
+"ROTTR.exe"+3181BC3: E8 38 8E FC FF              -  call ROTTR.exe+314AA00
+"ROTTR.exe"+3181BC8: 0F 28 74 24 20              -  movaps xmm6,[rsp+20]
+"ROTTR.exe"+3181BCD: 48 83 C4 30                 -  add rsp,30
+"ROTTR.exe"+3181BD1: 5B                          -  pop rbx
+"ROTTR.exe"+3181BD2: C3                          -  ret 
+}
+</AssemblerScript>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols>
+    <SymbolEntry>
+      <Name>hc_ptr1</Name>
+      <Address>2B070010</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>hc_ptr2</Name>
+      <Address>2B070020</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>playerCheck</Name>
+      <Address>006E0000</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>rottr_healthCalc</Name>
+      <Address>1431698FA</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>rottr_getPlayer</Name>
+      <Address>1433A662D</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>rottr_PlayerCheck</Name>
+      <Address>00870000</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>rottr_fetchPlayerCheck</Name>
+      <Address> 1434DB08D</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>rottr_StoreBytes1</Name>
+      <Address>13FFF0128</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>rottr_HealthCheck</Name>
+      <Address> 1432B4DC3</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>rottr_StoreBytes2</Name>
+      <Address>13FFE0128</Address>
+    </SymbolEntry>
+  </UserdefinedSymbols>
+</CheatTable>

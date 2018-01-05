@@ -1,0 +1,336 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="20">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>11</ID>
+      <Description>"Uplink 1.55 Steam"</Description>
+      <LastState Value="" RealAddress="00000000"/>
+      <Color>0000FF</Color>
+      <GroupHeader>1</GroupHeader>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>1</ID>
+      <Description>"Find player data (enable this and open the finance [$] tab)"</Description>
+      <LastState Activated="1"/>
+      <Color>FF0000</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>[ENABLE]
+aobscanmodule(getplayerbase,Uplink.exe,8B B0 CC 00 00 00) // should be unique
+alloc(newmem,$1000)
+label(return)
+globalalloc(_playerbase,4)
+registersymbol(getplayerbase)
+
+newmem:
+mov [_playerbase],eax
+mov esi,[eax+000000CC]
+jmp return
+
+getplayerbase:
+jmp newmem
+nop
+return:
+
+
+[DISABLE]
+getplayerbase:
+db 8B B0 CC 00 00 00
+
+unregistersymbol(getplayerbase)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: "Uplink.exe"+35429
+
+"Uplink.exe"+35407: 8B C8                    -  mov ecx,eax
+"Uplink.exe"+35409: 81 C1 EC 00 00 00        -  add ecx,000000EC
+"Uplink.exe"+3540F: E8 4C 49 01 00           -  call Uplink.exe+49D60
+"Uplink.exe"+35414: 50                       -  push eax
+"Uplink.exe"+35415: E8 50 3E 10 00           -  call Uplink.exe+13926A
+"Uplink.exe"+3541A: 8D 4C 24 48              -  lea ecx,[esp+48]
+"Uplink.exe"+3541E: 51                       -  push ecx
+"Uplink.exe"+3541F: 8D 54 24 5C              -  lea edx,[esp+5C]
+"Uplink.exe"+35423: 52                       -  push edx
+"Uplink.exe"+35424: E8 47 7B FD FF           -  call Uplink.exe+CF70
+// ---------- INJECTING HERE ----------
+"Uplink.exe"+35429: 8B B0 CC 00 00 00        -  mov esi,[eax+000000CC]
+// ---------- DONE INJECTING  ----------
+"Uplink.exe"+3542F: 8B 44 24 28              -  mov eax,[esp+28]
+"Uplink.exe"+35433: 83 C4 18                 -  add esp,18
+"Uplink.exe"+35436: 83 F8 FF                 -  cmp eax,-01
+"Uplink.exe"+35439: 75 06                    -  jne Uplink.exe+35441
+"Uplink.exe"+3543B: 8B C6                    -  mov eax,esi
+"Uplink.exe"+3543D: 89 44 24 10              -  mov [esp+10],eax
+"Uplink.exe"+35441: 01 74 24 14              -  add [esp+14],esi
+"Uplink.exe"+35445: 3B F0                    -  cmp esi,eax
+"Uplink.exe"+35447: 7E 70                    -  jle Uplink.exe+354B9
+"Uplink.exe"+35449: 8B CE                    -  mov ecx,esi
+}
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>2</ID>
+          <Description>"Balance/credits"</Description>
+          <VariableType>4 Bytes</VariableType>
+          <Address>[_playerbase]+CC</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>3</ID>
+          <Description>"AccNo"</Description>
+          <VariableType>4 Bytes</VariableType>
+          <Address>[_playerbase]+C8</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>4</ID>
+          <Description>"Name"</Description>
+          <VariableType>String</VariableType>
+          <Length>32</Length>
+          <Unicode>0</Unicode>
+          <ZeroTerminate>1</ZeroTerminate>
+          <Address>[_playerbase]+4</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>5</ID>
+          <Description>"Password"</Description>
+          <VariableType>String</VariableType>
+          <Length>32</Length>
+          <Unicode>0</Unicode>
+          <ZeroTerminate>1</ZeroTerminate>
+          <Address>[_playerbase]+84</Address>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>10</ID>
+      <Description>"Buying upgrades"</Description>
+      <LastState Value="" RealAddress="00000000"/>
+      <Color>FF0000</Color>
+      <GroupHeader>1</GroupHeader>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>6</ID>
+          <Description>"Disable credits deduction"</Description>
+          <LastState/>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[ENABLE]
+alloc(newmem,2048)
+label(returnhere)
+
+// This was adding the negative (subtracting) item price to your balance.
+// Replaced the cost deduction with zero
+newmem:
+add [edi+000000CC],0
+jmp returnhere
+
+"Uplink.exe"+CC18:
+jmp newmem
+nop
+returnhere:
+
+
+[DISABLE]
+dealloc(newmem)
+"Uplink.exe"+CC18:
+add [edi+000000CC],eax
+//Alt: db 01 87 CC 00 00 00
+</AssemblerScript>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>9</ID>
+          <Description>"Disable sufficient credits check"</Description>
+          <LastState/>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[ENABLE]
+alloc(newmem,2048)
+label(returnhere)
+
+// The upgrade shops poll your balance and compares it against each item
+// to determine if you have enough funds to purchase.
+// This replaces the balance read with a constant (max credits) so that each
+// item is always unlocked (white text).
+newmem:
+add ebx,7FFFFFFF
+jmp returnhere
+
+"Uplink.exe"+94529:
+jmp newmem
+nop
+returnhere:
+
+
+[DISABLE]
+dealloc(newmem)
+"Uplink.exe"+94529:
+add ebx,[edi+000000CC]
+//Alt: db 03 9F CC 00 00 00
+</AssemblerScript>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>24</ID>
+      <Description>"Hacking"</Description>
+      <LastState Value="" RealAddress="00000000"/>
+      <Color>FF0000</Color>
+      <GroupHeader>1</GroupHeader>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>22</ID>
+          <Description>"Disable trace detection"</Description>
+          <LastState Activated="1"/>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[ENABLE]
+alloc(newmem,2048)
+label(returnhere)
+
+newmem:
+mov byte ptr [edi+58],00
+mov [edi+5C],00000000
+jmp returnhere
+
+"Uplink.exe"+19CD5:
+jmp newmem
+nop
+nop
+nop
+nop
+nop
+nop
+returnhere:
+
+
+[DISABLE]
+dealloc(newmem)
+"Uplink.exe"+19CD5:
+mov byte ptr [edi+58],01
+mov [edi+5C],00000000
+//Alt: db C6 47 58 01 C7 47 5C 00 00 00 00
+</AssemblerScript>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>25</ID>
+      <Description>"Music"</Description>
+      <LastState Value="" RealAddress="00000000"/>
+      <Color>FF0000</Color>
+      <GroupHeader>1</GroupHeader>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>0</ID>
+          <Description>"Play track (toggle this to change track)"</Description>
+          <LastState/>
+          <Color>008000</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[ENABLE]
+alloc(playtrack,1024)
+CreateThread(playtrack)
+
+playtrack:
+call Uplink.exe+EAFA0
+ret
+
+[DISABLE]
+dealloc(playtrack)
+</AssemblerScript>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>31</ID>
+          <Description>"Track selection: (enable this and change the value of Track ID)"</Description>
+          <Options moHideChildren="1"/>
+          <LastState/>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[ENABLE]
+alloc(newmem,2048)
+label(returnhere)
+label(trackID)
+registersymbol(trackID)
+globalalloc(_trackID,4)
+
+_trackID:
+trackID:
+
+newmem:
+mov ecx,[_trackID]
+cmp ecx,[eax+50]
+mov [Uplink.exe+1E8990],ecx
+jmp returnhere
+
+"Uplink.exe"+EB47A:
+jmp newmem
+nop
+nop
+nop
+nop
+returnhere:
+
+
+[DISABLE]
+dealloc(newmem)
+"Uplink.exe"+EB47A:
+cmp ecx,[eax+50]
+mov [Uplink.exe+1E8990],ecx
+//Alt: db 3B 48 50 89 0D 90 89 5E 00
+</AssemblerScript>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>32</ID>
+              <Description>"Track ID (0-5)"</Description>
+              <VariableType>4 Bytes</VariableType>
+              <Address>trackID</Address>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>33</ID>
+          <Description>"Debug/status:"</Description>
+          <LastState Value="" RealAddress="00000000"/>
+          <GroupHeader>1</GroupHeader>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>26</ID>
+              <Description>"Current track file"</Description>
+              <VariableType>String</VariableType>
+              <Length>32</Length>
+              <Unicode>0</Unicode>
+              <ZeroTerminate>1</ZeroTerminate>
+              <Address>Uplink.exe+1E8998</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>27</ID>
+              <Description>"Current track index"</Description>
+              <VariableType>4 Bytes</VariableType>
+              <Address>Uplink.exe+1E8990</Address>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols>
+    <SymbolEntry>
+      <Name>_playerbase</Name>
+      <Address>02830010</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>_loginstate</Name>
+      <Address>00700000</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>_traceData</Name>
+      <Address>02140020</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>_trackID</Name>
+      <Address>02830000</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>trackID</Name>
+      <Address>02830000</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>getplayerbase</Name>
+      <Address> 00435429</Address>
+    </SymbolEntry>
+  </UserdefinedSymbols>
+</CheatTable>

@@ -1,0 +1,487 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="18">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>58</ID>
+      <Description>"[X] &lt;== Star Wars: Empire at War v1.05 Steam Script v1.0"</Description>
+      <Options moHideChildren="1"/>
+      <LastState Activated="0"/>
+      <Color>FF0000</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>{
+===========================================
+ Game Title    : Star Wars - Empire at War
+ Game Version  : 1.05.48825 (Steam)
+ Game Sponsor  : Myself
+ Process Name  : sweaw.exe
+ Script Version: 1.0
+ CE Version    : 6.3
+ Release date  : 07-May-2014
+ Author        : Recifense
+ History:
+ 07-May-14: First Release
+ Features:
+ - Minimum Resource
+ - God Mode
+ - Full Shield
+ - Unlimited Units
+ - Some Pointers
+===========================================
+}
+
+//=========================================
+// Definitions
+define(LUDO,"sweaw.exe")
+define(FHPR,sweaw.exe+0000687f)
+define(GDMD,sweaw.exe+001f993d)
+define(GDM1,sweaw.exe+0023fdf4)
+define(MUSD,sweaw.exe+00386ea0)
+define(MOAR,sweaw.exe+0019f0ce)
+
+//=========================================
+// Constants used in the script (that can be changed)
+//define(ctMMON,#63000)  // Minimum Money
+//define(ctMATT,#10)     // Minimum Attributes
+
+//=========================================
+[ENABLE]
+//=========================================
+//LuaCall(CheckVersion())
+//=========================================
+// Check if script is compatible to this game version
+// If false the script will not be loaded
+
+assert(FHPR,d9 40 54 d9 7c 24 06 b9 ?? ?? ?? ?? 0f b7 44 24 06 80 cc 0c 89 44)
+assert(GDMD,8b 46 38 d9 5e 38 8b 8e 70 01 00 00 56 89 44 24 08 e8 ?? ?? ?? ??)
+assert(GDM1,d9 46 14 8b 44 24 1c d8 64 24 20 6a 00 50 8b ce d9 5e 14 e8 ?? ??)
+assert(MUSD,89 95 c0 00 00 00 89 7b 28 8b 4e 2c 0f 95 c0 3b 0d ?? ?? ?? ?? ??)
+assert(MOAR,33 db 39 5e 08 ?? ?? 57 8b 44 24 18 53 50 8b cd e8 ?? ?? ?? ?? d8)
+
+//=========================================
+alloc(MyCode,4096,LUDO)
+//=========================================
+// Declaration section
+label(_FindHumanPlayer)
+label(_BackFHP)
+label(_ExitFHP)
+label(_GodMode)
+label(_BackGMD)
+label(_ExitGMD)
+label(_GodMode1)
+label(_BackGM1)
+label(_ExitGM1)
+label(_MonUnitShield)
+label(_BackMUS)
+label(_ExitMUS)
+label(_MonArmyReinf)
+label(_BackMAR)
+label(_ExitMAR)
+label(iEnableMPR)
+label(iEnableGMD)
+label(iEnableMUS)
+label(iEnableMAR)
+label(iPlayerID)
+label(fMinRes)
+label(pRes)
+label(pArmy)
+
+//=========================================
+// Registering Symbols
+registersymbol(MyCode)
+registersymbol(iEnableMPR)
+registersymbol(iEnableGMD)
+registersymbol(iEnableMUS)
+registersymbol(iEnableMAR)
+registersymbol(iPlayerID)
+registersymbol(fMinRes)
+registersymbol(pRes)
+registersymbol(pArmy)
+
+//=========================================
+MyCode:
+//=========================================
+// Main game screen
+_FindHumanPlayer:
+ push ecx
+
+ mov [pRes],eax
+
+ mov ecx,[eax+34]
+ mov [iPlayerID],ecx
+
+ cmp dword ptr [iEnableMPR],0
+ je _ExitFHP                       // Jump if feature is disabled
+
+ mov ecx,[fMinRes]                 // Get minimum value
+ cmp ecx,[eax+54]
+ js _ExitFHP
+
+ mov [eax+54],ecx
+
+_ExitFHP:
+ pop ecx
+
+ fld dword ptr [eax+54]            // Original code (rd Gold)
+ fnstcw [esp+06]                   // Original code
+ jmp _BackFHP                      // Back to main code
+
+//=========================================
+// During Combat (ground)
+_GodMode:
+ cmp dword ptr [iEnableGMD],0
+ je _ExitGMD                       // Jump if feature is disabled
+
+ mov eax,[iPlayerID]
+ cmp eax,[esi+34]
+ jne _ExitGMD
+
+ fstp st(0)                        // Discard value
+ fld dword ptr [esi+38]            // Get current HP value
+
+_ExitGMD:
+ mov eax,[esi+38]                  // Original code (rd HP)
+ fstp dword ptr [esi+38]           // Original code (upd HP)
+ jmp _BackGMD                      // Back to main code
+
+//=========================================
+// During Combat (space)
+_GodMode1:
+ cmp dword ptr [iEnableGMD],0
+ je _ExitGM1                       // Jump if feature is disabled
+
+ mov eax,[esi+08]                  // Get part owner (ship)
+ mov eax,[eax+34]                  // Get Owner ID
+ cmp eax,[iPlayerID]               // Is it a player´s unit?
+ jne _ExitGM1                      // Jump if false
+
+ mov dword ptr [esp+20],0          // Make value2decrease = 0
+
+_ExitGM1:
+ fld dword ptr [esi+14]            // Original code (get part HP)
+ mov eax,[esp+1c]                  // Original code
+ jmp _BackGM1                      // Back to main code
+
+//=========================================
+// During combat
+_MonUnitShield:
+ pushfd
+ push ecx
+
+ cmp dword ptr [iEnableMUS],0
+ je _ExitMUS                       // Jump if feature is disabled
+
+ test esi,esi
+ jz _ExitMUS
+
+ mov ecx,[iPlayerID]               // Get player ID
+ cmp ecx,[esi+34]                  // Is it a player´s unit?
+ jne _ExitMUS                      // Jump if false
+
+ cmp edx,[ebp+000000c0]
+ jge _ExitMUS
+
+ mov edx,[ebp+000000c0]            // Get current Shield
+
+_ExitMUS:
+ pop ecx
+ popfd
+
+ mov [ebp+000000c0],edx            // Original code
+ jmp _BackMUS                      // Back to main code
+
+//=========================================
+// During Combat
+_MonArmyReinf:
+ cmp dword ptr [iEnableMAR],0
+ je _ExitMAR                       // Jump if feature is disabled
+
+ cmp edi,[iPlayerID]
+ jne _ExitMAR
+
+ mov [pArmy],esi
+
+ mov dword ptr [esi+08],0
+
+_ExitMAR:
+ xor ebx,ebx                       // Original code
+ cmp [esi+08],ebx                  // Original code
+ jmp _BackMAR                      // Back to main code
+
+//=========================================
+ db '================================&gt;'
+ db 'CE6.3 Script by Recifense 050714'
+//=========================================
+// Variables
+iEnableMPR:
+ dd 0
+iEnableGMD:
+ dd 0
+iEnableMUS:
+ dd 0
+iEnableMAR:
+ dd 0
+iPlayerID:
+ dd 0
+fMinRes:
+ dd (float)63000.0
+pRes:
+ dd 0
+pArmy:
+ dd 0
+
+//=========================================
+// Hacking Points
+FHPR:
+ jmp _FindHumanPlayer
+ nop
+ nop
+_BackFHP:
+
+GDMD:
+ jmp _GodMode
+ nop
+_BackGMD:
+
+GDM1:
+ jmp _GodMode1
+ nop
+ nop
+_BackGM1:
+
+MUSD:
+ jmp _MonUnitShield
+ nop
+_BackMUS:
+
+MOAR:
+ jmp _MonArmyReinf
+_BackMAR:
+
+//=========================================
+// Script for Restoring Original Codes
+[DISABLE]
+FHPR:
+// fld dword ptr [eax+54]
+// fnstcw [esp+06]
+ db d9 40 54 d9 7c 24 06
+
+GDMD:
+// mov eax,[esi+38]
+// fstp dword ptr [esi+38]
+ db 8b 46 38 d9 5e 38
+
+GDM1:
+// fld dword ptr [esi+14]
+// mov eax,[esp+1C]
+ db d9 46 14 8b 44 24 1c
+
+MUSD:
+// mov [ebp+000000C0],edx
+ db 89 95 c0 00 00 00
+
+MOAR:
+// xor ebx,ebx
+// cmp [esi+08],ebx
+ db 33 db 39 5e 08
+
+//=========================================
+// Unregistering Symbols
+unregistersymbol(MyCode)
+unregistersymbol(iEnableMPR)
+unregistersymbol(iEnableGMD)
+unregistersymbol(iEnableMUS)
+unregistersymbol(iEnableMAR)
+unregistersymbol(iPlayerID)
+unregistersymbol(fMinRes)
+unregistersymbol(pRes)
+unregistersymbol(pArmy)
+
+//=========================================
+dealloc(MyCode)
+//============= Scripts End ===============
+
+// ****************************************
+// NOTES
+// ****************************************
+{
+}
+
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>60</ID>
+          <Description>"Enable/Disable Minimum Resource =&gt;(1/0)"</Description>
+          <LastState Value="??" Activated="0" RealAddress="00000000"/>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMPR</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>45</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>46</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>64</ID>
+              <Description>"Minimum Resource Value ==&gt;"</Description>
+              <LastState Value="??" Activated="0" RealAddress="003D0164"/>
+              <Color>0080FF</Color>
+              <VariableType>Float</VariableType>
+              <Address>fMinRes</Address>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>59</ID>
+          <Description>"Enable/Disable God Mode =&gt; (1/0)"</Description>
+          <LastState Value="??" Activated="0" RealAddress="003D0154"/>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableGMD</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>61</ID>
+          <Description>"Enable/Disable Full Shield =&gt; (1/0)"</Description>
+          <LastState Value="??" Activated="0" RealAddress="003D0158"/>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMUS</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>62</ID>
+          <Description>"Enable/Disable Unlimited Army Size (Ground) =&gt; (1/0)"</Description>
+          <LastState Value="??" Activated="0" RealAddress="003D015C"/>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMAR</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>33</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>34</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols/>
+  <Comments>===========================================
+ Game Title    : Star Wars - Empire at War
+ Game Version  : 1.05.48825 (Steam)
+ Game Sponsor  : Myself
+ Process Name  : sweaw.exe
+ Script Version: 1.0
+ CE Version    : 6.3
+ Release date  : 07-May-2014
+ Author        : Recifense
+ History:
+ 07-May-14: First Release
+ Features:
+ - Minimum Resource [1]
+ - God Mode         [2]
+ - Full Shield      [3]
+ - Unlimited Units  [4]
+ - Some Pointers
+===========================================
+[1] For Human Player Only (default = 63000);
+[2] Player's units/buildings Only;
+[3] Player's units Only;
+[4] For Human Player Only;
+===========================================
+[USAGE]
+1) Run CE63;
+2) Run Game;
+3) Load the game process "sweaw.exe" in CE;
+4) Load the table;
+5) Activate the script (in Blue)
+4) Change the value to 1 of each cheat you want to use (in Green);
+5) Game On;
+===========================================
+[HOTKEYS]
+CTRL+Home   = Enable  GM/FS cheats;
+CTRL+End    = Disable GM/FS cheats;
+-----------
+CTRL+PageUp   = Enable  UAS cheat;
+CTRL+PageDown = Disable UAS cheat;
+-----------
+CTRL+Insert = Enable  MR cheat;
+CTRL+Delete = Disable MR cheat;
+===========================================
+[ADVICE]
+When you can,save the game before starting using table/cheat. So you can always come back in case you don't like the result.
+===========================================
+[INFO]
+Tested on Win 7 64bits
+===========================================
+Cheers!
+</Comments>
+</CheatTable>

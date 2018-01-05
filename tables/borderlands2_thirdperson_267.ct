@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="14">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>0</ID>
+      <Description>"Third Person (F5 in game to toggle)"</Description>
+      <Color>80000008</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>[ENABLE]
+alloc(newmem,2048) //2kb should be enough
+aobscan(aobPatch,81 ec 7c 01 00 00 56 8b f1)
+aobscan(aobThirdPerson,55 8b ec 83 ec 14 53 56 8b f1 8b 9e 94)
+
+label(aobPatch_r)
+registersymbol(aobPatch_r)
+
+label(aobThirdPerson_r)
+registersymbol(aobThirdPerson_r)
+
+label(Toggle)
+registersymbol(Toggle)
+
+label(ToggleOff)
+label(DoToggle)
+
+label(returnhere)
+label(originalcode)
+label(exit)
+
+
+newmem: //this is allocated memory, you have read,write,execute access
+
+originalcode:
+sub esp,0000017C
+
+//place your code here
+pushad
+pushfd
+
+push 0x74  // VK_F5 (http://msdn.microsoft.com/en-us/library/windows/desktop/dd375731%28v=vs.85%29.aspx)
+call GetAsyncKeyState
+and ax,1
+cmp ax,1  // key was pressed?
+jne exit
+
+popfd
+popad
+
+pushad
+pushfd
+
+mov esi,ecx
+
+//third person toggle code here
+mov eax,[Toggle]
+xor eax,1
+mov [Toggle],eax
+
+mov eax,dword ptr [esi+0x190]  // data (must not be zero)
+test eax,eax
+je exit
+
+mov eax,[Toggle]
+test eax,eax
+jne ToggleOff
+or dword ptr [esi+0xAAC],4  // on
+jmp DoToggle
+
+ToggleOff:
+and dword ptr [esi+0xAAC],fffffffb  // off
+
+DoToggle:
+mov dword ptr [esi+0x694],0  // unknown
+mov ecx,esi
+mov eax,dword ptr [esi+0x190]  // data
+push eax
+call aobThirdPerson_r  // toggle third person
+
+exit:
+popfd
+popad
+jmp returnhere
+
+
+Toggle:
+dd 0
+
+
+//"Borderlands2.exe"+????????:
+aobPatch:
+aobPatch_r:
+jmp newmem
+nop
+returnhere:
+
+//"Borderlands2.exe"+????????:
+aobThirdPerson:
+aobThirdPerson_r:
+
+[DISABLE]
+//"Borderlands2.exe"+????????:
+aobPatch_r:
+sub esp,0000017C
+
+//"Borderlands2.exe"+????????:
+aobThirdPerson_r:
+
+unregistersymbol(aobPatch_r)
+unregistersymbol(aobThirdPerson_r)
+unregistersymbol(Toggle)
+
+</AssemblerScript>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols/>
+</CheatTable>

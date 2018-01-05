@@ -1,0 +1,2277 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="16">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>122</ID>
+      <Description>"Bugfix: Remove windows and directx version checks"</Description>
+      <Color>80000008</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>[ENABLE]
+aobscan(WindowsVersionCheck,33 C0 55 68 01 13 40 00)
+aobscan(DXVersionCheck,FF FF FF 33 C0 33 D2 33 C9)
+registersymbol(WindowsVersionCheck)
+registersymbol(DXVersionCheck)
+
+WindowsVersionCheck-6:
+mov eax,15
+retn
+
+DXVersionCheck-6:
+mov eax,700
+retn
+
+[DISABLE]
+unregistersymbol(WindowsVersionCheck)
+unregistersymbol(DXVersionCheck)
+
+WindowsVersionCheck-6:
+push ebp
+mov ebp,esp
+push 0
+push ebx
+
+DXVersionCheck-6:
+push ebp
+mov ebp,esp
+add esp,FFFFFF74
+</AssemblerScript>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>186</ID>
+      <Description>"Bugfix: Can get Kisuka's end after dueling her"</Description>
+      <Color>80000008</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>[ENABLE]
+aobscan(KiskaEndPatch,8B F2 89 45 FC 40)
+registersymbol(KiskaEndPatch)
+
+KiskaEndPatch+9:
+db 7e           //jlE SHORT TBRID.exe+333C8
+
+
+[DISABLE]
+unregistersymbol(KiskaEndPatch)
+KiskaEndPatch+9:
+db 7C           //jl SHORT TBRID.exe+333C8
+</AssemblerScript>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>56</ID>
+      <Description>"Alternate leveling system"</Description>
+      <Color>80000008</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>[ENABLE]
+define(SPEED_DIVISOR,#1000)         //you get +1 movement point every SPEED_DIVISOR xp
+define(WEAPON_SKILL_DIVISOR,#50)    //you get +1 damage point every WEAPON_SKILL_DIVISOR xp
+define(HP_DIVISOR,#100)          //you get +1 hitpoint every HP_DIVISOR xp
+
+alloc(CodeBuffer,2048)
+label(GetDrivingSkill)
+label(GetDrivingSkill_NotLookingForPM1)
+label(GetDrivingSkill_NotLookingForPM2)
+label(GetDrivingSkill_Error)
+label(GetDrivingSkill_Exit)
+label(GetSpeedBonus)
+label(GetShortRangeSkill)
+label(GetMedRangeSkill)
+label(GetLongRangeSkill)
+label(GainXP)
+label(GainXP_NotInAPM1)
+label(GainXP_NotInAPM2)
+label(GainXP_UpdateWeaponXp)
+label(GainXP_GotAGrenade)
+label(GainXP_NoShortRangeWeapon)
+label(GainXP_NoMedRangeWeapon)
+label(GainXP_Exit)
+label(GetTotalXp)
+label(GetTotalXp_BadGuys)
+label(GetTotalXpEcxForm)
+label(GetTotalXpEdxForm)
+label(GetTotalXpEaxForm)
+
+
+TBRID.MainformFinalize+5A8:
+jmp GetDrivingSkill
+
+////////////////////////////////////////
+TBRID.MainformFinalize+580:
+jmp GetSpeedBonus
+
+////////////////////////////////////////
+TBRID.MainformFinalize+5E0:
+jmp GetShortRangeSkill
+
+////////////////////////////////////////
+TBRID.MainformFinalize+608:
+jmp GetMedRangeSkill
+
+////////////////////////////////////////
+TBRID.MainformFinalize+630:
+jmp GetLongRangeSkill
+
+////////////////////////////////////////
+TBRID.MainformFinalize+514:
+jmp GainXP
+
+//////////////////////////////////////// medals
+TBRID.ChkosversionFinalize+FAD:
+mov al,byte [ecx+TBRID.frbBattleField+E73C]  //read medal count
+
+TBRID.ChkosversionFinalize+C15:
+mov dl,byte [ecx+TBRID.frbBattleField+E73C]
+
+TBRID.ChkosversionFinalize+C41:
+mov byte [ecx+TBRID.frbBattleField+E73C],dl  //write medal count
+
+TBRID.exe+24DB8:
+MOV dl,byte [ECX+TBRID.exe+E3CB4]
+
+TBRID.exe+333DE:
+MOV dl,byte [EBX+TBRID.exe+E3CB4]               //hohoho, the part that determines which end you get (using the medals)
+
+////////////////////////////////////////
+TBRID.MainformFinalize+2814:
+lea eax,[eax+TBRID.exe+E3CB4]           //give a pointer to the PlayerData to GetTotalXp
+jmp GetTotalXp
+
+TBRID.exe+32F8A:
+call GetTotalXpEcxForm
+nop
+
+TBRID.exe+333FC:
+call GetTotalXpEdxForm
+nop
+
+TBRID.exe+24E05 :
+call GetTotalXpEaxForm
+nop
+
+////////////////////////////////////////
+
+
+CodeBuffer:
+//when entering this function eax=&amp;PlayerData and edx=1 PM1,2 for PM2, 3 for PM3
+GetDrivingSkill:
+//vanilla PlayerData format
+//mov ebx, dword [eax]      //ebx= medal count
+//mov ecx, dword [eax+04]    //ecx= xp
+//mov esi, dword [eax+0C]    //edx= current level
+
+//new PlayerData format:
+//ebx 0:7              medal count
+//ebx 8:21             short range xp
+//ebx 22:31 + ecx 0:3  med range xp
+//ecx 4:17             long range xp
+//ecx 18:31            PM01 xp
+//esi 0:13             PM02 xp
+//esi 14:27            PM03 xp
+cmp edx, 1
+jne short GetDrivingSkill_NotLookingForPM1
+  mov ax, word [eax+4]
+  shr eax,#18
+  and eax,3FFF         //only take 14 bits
+  jmp short GetDrivingSkill_Exit
+GetDrivingSkill_NotLookingForPM1:
+cmp edx, 2
+jne short GetDrivingSkill_NotLookingForPM2
+  mov ax, word [eax+C]   //medal count
+  and eax,3FFF           //only take 14 bits
+  jmp short GetDrivingSkill_Exit
+GetDrivingSkill_NotLookingForPM2:
+cmp edx, 3
+jne short GetDrivingSkill_Error
+  mov eax, dword [eax+C]   //xp
+  shr eax,#14              //thash part of the PM2 xp
+  and eax,3FFF             //only take 14 bits
+  jmp short GetDrivingSkill_Exit
+GetDrivingSkill_Error:
+xor eax,eax
+GetDrivingSkill_Exit:
+xor edx,edx
+push ecx
+mov ecx,HP_DIVISOR         //mech hp bonus = chassis xp/100
+div ecx
+pop ecx
+retn
+
+///////////////////////////////////////////////
+//when entering this function eax=&amp;PlayerData
+GetShortRangeSkill://damage bonus is now weapon xp/50
+push ecx         //save ecx, may not be needed
+
+mov eax,dword [eax+1]
+and eax,3FFF              //now eax=short range xp
+//now lets' do eax=eax/50
+xor edx,edx
+mov ecx,WEAPON_SKILL_DIVISOR
+div ecx
+
+pop ecx
+retn
+
+
+///////////////////////////////////////////////
+//when entering this function eax=&amp;PlayerData
+GetMedRangeSkill://damage bonus is now weapon xp/50 =
+push ecx         //save ecx, may not be needed
+
+mov eax,dword [eax+2]
+shr eax,6
+and eax, 3FFF        //now eax=med range xp
+xor edx,edx
+mov ecx,WEAPON_SKILL_DIVISOR
+div ecx
+
+pop ecx
+retn
+
+///////////////////////////////////////////////
+//when entering this function eax=&amp;PlayerData
+GetLongRangeSkill://mech skill bonus is now mech xp/100 =
+push ecx         //save ecx, may not be needed
+
+mov eax,dword [eax+4]
+shr eax,4
+and eax, 3FFF            //now eax=long range xp
+xor edx,edx
+mov ecx,WEAPON_SKILL_DIVISOR
+div ecx
+
+pop ecx
+retn
+
+///////////////////////////////////////////////
+GetTotalXp:
+cmp eax,TBRID.exe+e3cc4
+jb GetTotalXp_BadGuys
+cmp eax,TBRID.exe+E3D44
+ja GetTotalXp_BadGuys
+  push edx
+  push ecx         //save ecx, may not be needed
+  mov edx,dword [eax+4]
+  shr edx,#18               //now edx=pm01 xp
+  mov ecx,dword [eax+C]
+  and ecx, 3FFF            //now ecx=pm02 xp
+  add edx,ecx              //now edx=pm01+pm02 xp
+  mov ecx,dword [eax+C]
+  shr ecx,E
+  and ecx, 3FFF            //now ecx=pm03 xp
+  add edx,ecx              //now edx=pm01+pm02+pm03 xp
+  mov eax,edx
+  pop ecx
+  pop edx
+retn
+GetTotalXp_BadGuys:
+xor eax,eax
+retn
+
+GetTotalXpEcxForm:
+lea eax, [ecx+TBRID.exe+e3cb4]
+call GetTotalXp
+ret
+
+GetTotalXpEdxForm:
+push eax
+lea eax, [edx+TBRID.exe+e3cb4]
+call GetTotalXp
+mov ecx, eax
+pop eax
+ret
+
+GetTotalXpEaxForm:
+push eax
+lea eax, [edx+TBRID.exe+e3cb4]
+call GetTotalXp
+mov edx, eax
+pop eax
+ret
+///////////////////////////////////////////////
+//when entering this function eax=&amp;PlayerData
+GetSpeedBonus:   //speed bonus is now total xp/1000 = (PM01 + PM02 + PM03) xp/1000
+push ecx         //save ecx, may not be needed
+call GetTotalXp
+//now lets' do eax=TotalXp/1000
+xor edx,edx
+mov ecx,SPEED_DIVISOR
+div ecx
+pop ecx
+retn
+
+///////////////////////////////////////////////
+GainXP:    //updates your xp and level and returns 1 if you gained a level
+//when entering this function eax=&amp;PlayerData, edx = new xp, ecx=xp increment (with mod)
+//First find which character we're handling
+push ecx
+push edi
+push ebx
+
+mov edi,ecx                  //edi=xp income
+mov ecx,eax
+sub ecx,TBRID.exe+E3CC4      //medal count for player 0 (Ryounosuke)
+shr ecx,4                    //divide edx by the size of the Playerdata structure so now edx=player index (0 based)
+cmp ecx,8                    //player index&gt;8 means it's an enemy
+ja GainXP_Exit
+imul ecx,ecx,74              //0x74=size in byte of a PlayerMech structure
+mov ebx,dword [TBRID.exe+E0AF4+ecx] //reads what mech you're on
+cmp ebx,1
+jne short GainXP_NotInAPM1
+  mov ebx, dword [eax+4]
+  shr ebx,#18                //got pm1 xp
+  add ebx,edi                //increase pm1 xp
+  shl ebx,#18
+  and dword [eax+4],3FFFF    //clear stored pm1 xp
+  or dword [eax+4],ebx
+  jmp GainXP_UpdateWeaponXp
+GainXP_NotInAPM1:
+cmp ebx,2
+jne short GainXP_NotInAPM2
+  mov ebx, dword [eax+C]
+  and ebx, 3FFF              //got pm2 xp
+  add ebx,edi                //increase pm2 xp
+  and dword [eax+C],FFFFC000 //clear stored pm2 xp
+  or dword [eax+C],ebx
+  jmp GainXP_UpdateWeaponXp
+GainXP_NotInAPM2:
+cmp ebx,3
+jne short GainXP_UpdateWeaponXp    //a bug
+  mov ebx, dword [eax+C]
+  shr ebx,#14
+  and ebx, 3FFF              //got pm3 xp
+  add ebx,edi                //increase pm3 xp
+  shl ebx,#14
+  and dword [eax+C],FFFC000 //clear stored pm3 xp
+  or dword [eax+C],ebx
+GainXP_UpdateWeaponXp:
+mov bl,byte [ecx+TBRID.exe+E0AF8] //bl=primary weapon
+mov bh,byte [ecx+TBRID.exe+E0AFC] //bh=secondary weapon
+sub bl,1
+sub bh,1                             //if your weapon was 0 (no weapon) bl and bh are now = FF
+//search for grenades (item id: 1)
+push ecx
+push edi
+push eax
+lea edi,[TBRID.exe+E0b08+ecx]
+mov eax,1
+mov ecx,4
+db F2 AF //REPNE SCAS DWORD PTR ES:[EDI]
+pop eax
+pop edi
+pop ecx
+  je short GainXP_GotAGrenade //jump if the repne found a grenade
+cmp bl,2              //otherwise check if prim/sec weapons are weapon id 1 or 2
+setb dl               //unsigned comparison, so no weapon=-1=FF is bigger than 3, so dl=0
+cmp bh,2
+setb dh
+test dx,dx                          //here dx is non zero if weapon-3&lt;3
+je short GainXP_NoShortRangeWeapon  //weapon IDs: 1=submachine gun, 2=shotgun
+  GainXP_GotAGrenade:
+  mov dx, word [eax+1]
+  and edx, 3FFF              //got short range xp
+  add edx,edi                //increase pm3 xp
+  and word [eax+1],C000      //clear stored pm3 xp
+  or word [eax+1],dx
+GainXP_NoShortRangeWeapon:
+sub bl,2
+sub bh,2
+cmp bl,2
+setb dl
+cmp bh,2
+setb dh                   //here dx is non zero if 0&lt;=weapon-3&lt;2
+test dx,dx                //which means we carry a medium range weapon
+je short GainXP_NoMedRangeWeapon  //weapon IDs: 3=rockets 4=missile, 5=sniper
+  mov edx, dword [eax+2]
+  shr edx,6
+  and edx, 3FFF              //got med range xp
+  add edx,edi                //increase med range xp
+  shl edx,6
+  and dword [eax+2],FFF0003F //clear stored med range xp
+  or dword [eax+2],edx
+GainXP_NoMedRangeWeapon:     //weapon IDs: 6=144mm gun, 7=200mm gun, 8=long range missile, 9=long range rockets
+sub bl,3
+sub bh,3
+cmp bl,4
+setb dl
+cmp bh,4
+setb dh                   //here dx is non zero if 0&lt;=weapon-4-2&lt;5
+test dx,dx                //which means we carry a long range weapon
+je short GainXP_Exit
+  mov edx, dword [eax+4]
+  shr edx,4
+  and edx, 3FFF              //got long range xp
+  add edx,edi                //increase long range xp
+  shl edx,4
+  and dword [eax+4],FFFC000F //clear stored long range xp
+  or dword [eax+4],edx
+GainXP_Exit:
+pop ebx
+pop edi
+pop ecx
+retn
+
+
+[DISABLE]
+dealloc(CodeBuffer)
+
+TBRID.MainformFinalize+5A8:
+push esi
+mov ecx,[eax+0C]
+mov esi,edx
+
+TBRID.MainformFinalize+580:
+mov edx,[eax+0C]
+test edx,edx
+
+TBRID.MainformFinalize+5E0:
+mov edx,[eax+0C]
+test edx,edx
+
+TBRID.MainformFinalize+608:
+mov edx,[eax+0C]
+test edx,edx
+
+TBRID.MainformFinalize+630:
+mov edx,[eax+0C]
+test edx,edx
+
+TBRID.MainformFinalize+514:
+push ebx
+test edx,edx
+mov ecx,[eax+0C]
+
+TBRID.ChkosversionFinalize+FAD:
+mov eax,[ecx+TBRID.frbBattleField+E73C]
+
+TBRID.ChkosversionFinalize+C15:
+mov edx,[ecx+TBRID.frbBattleField+E73C]
+
+TBRID.ChkosversionFinalize+C41:
+mov [ecx+TBRID.frbBattleField+E73C],edx
+
+TBRID.MainformFinalize+2814:
+mov edx,[eax+TBRID.frbBattleField+E740]
+mov eax,edx
+ret
+nop
+nop
+
+TBRID.exe+32F8A:
+mov eax,[ecx+TBRID.frbBattleField+E740]
+
+TBRID.exe+333DE:
+MOV EDX,DWORD [EBX+4E3CB4]
+
+TBRID.exe+333FC:
+MOV ECX,DWORD PTR DS:[EDX+4E3CB8]
+
+TBRID.exe+24E05 :
+MOV EDX,DWORD [EAX+TBRID.exe+E3CB8]
+
+TBRID.exe+24DB8:
+MOV EDX,DWORD [ECX+TBRID.exe+E3CB4]
+</AssemblerScript>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>36</ID>
+      <Description>"Ryunosuke"</Description>
+      <Options moHideChildren="1"/>
+      <Color>0080FF</Color>
+      <GroupHeader>1</GroupHeader>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>189</ID>
+          <Description>"Equipment"</Description>
+          <Options moHideChildren="1"/>
+          <Color>4080FF</Color>
+          <GroupHeader>1</GroupHeader>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>57</ID>
+              <Description>"Mech"</Description>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>TBRID.exe+E0AF4</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>58</ID>
+              <Description>"Primary weapon"</Description>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>TBRID.exe+E0AF8</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>59</ID>
+              <Description>"Secondary weapon"</Description>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>TBRID.exe+E0AFc</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>60</ID>
+              <Description>"Item 1"</Description>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>TBRID.frbBattleField+B590</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>61</ID>
+              <Description>"Item 2"</Description>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>TBRID.frbBattleField+B594</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>62</ID>
+              <Description>"Item 3"</Description>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>TBRID.frbBattleField+B598</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>63</ID>
+              <Description>"Item 4"</Description>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>TBRID.frbBattleField+B59C</Address>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>37</ID>
+          <Description>"Move points"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>TBRID.frbBattleField+BA70</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>34</ID>
+          <Description>"Position X"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>TBRID.frbBattleField+BB18</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>35</ID>
+          <Description>"Position Y"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>TBRID.frbBattleField+BB1C</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>44</ID>
+          <Description>"Medals"</Description>
+          <Color>80000008</Color>
+          <VariableType>Byte</VariableType>
+          <Address>TBRID.exe+E3CC4</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>54</ID>
+          <Description>"Xp"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>TBRID.exe+E3CC8</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>46</ID>
+          <Description>"Xp gained in this level"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>TBRID.exe+E3CCc</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>53</ID>
+          <Description>"Level"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>TBRID.exe+E3Cd0</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>137</ID>
+          <Description>"Mod stats"</Description>
+          <Options moHideChildren="1"/>
+          <Color>0080FF</Color>
+          <GroupHeader>1</GroupHeader>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>138</ID>
+              <Description>"Short range XP"</Description>
+              <Color>80000008</Color>
+              <VariableType>Binary</VariableType>
+              <BitStart>0</BitStart>
+              <BitLength>14</BitLength>
+              <ShowAsBinary>0</ShowAsBinary>
+              <Address>TBRID.frbBattleField+E6E9</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>139</ID>
+              <Description>"Medium range XP"</Description>
+              <Color>80000008</Color>
+              <VariableType>Binary</VariableType>
+              <BitStart>6</BitStart>
+              <BitLength>14</BitLength>
+              <ShowAsBinary>0</ShowAsBinary>
+              <Address>TBRID.frbBattleField+E6EA</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>140</ID>
+              <Description>"Long range XP"</Description>
+              <Color>80000008</Color>
+              <VariableType>Binary</VariableType>
+              <BitStart>4</BitStart>
+              <BitLength>14</BitLength>
+              <ShowAsBinary>0</ShowAsBinary>
+              <Address>TBRID.frbBattleField+E6EC</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>141</ID>
+              <Description>"PM1 XP"</Description>
+              <Color>80000008</Color>
+              <VariableType>Binary</VariableType>
+              <BitStart>2</BitStart>
+              <BitLength>14</BitLength>
+              <ShowAsBinary>0</ShowAsBinary>
+              <Address>TBRID.frbBattleField+E6EE</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>142</ID>
+              <Description>"PM2 XP"</Description>
+              <Color>80000008</Color>
+              <VariableType>Binary</VariableType>
+              <BitStart>0</BitStart>
+              <BitLength>14</BitLength>
+              <ShowAsBinary>0</ShowAsBinary>
+              <Address>TBRID.frbBattleField+E6F4</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>143</ID>
+              <Description>"PM3 XP"</Description>
+              <Color>80000008</Color>
+              <VariableType>Binary</VariableType>
+              <BitStart>6</BitStart>
+              <BitLength>14</BitLength>
+              <ShowAsBinary>0</ShowAsBinary>
+              <Address>TBRID.frbBattleField+E6F5</Address>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>32</ID>
+      <Description>"Nonoka"</Description>
+      <Options moHideChildren="1"/>
+      <Color>0080FF</Color>
+      <GroupHeader>1</GroupHeader>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>190</ID>
+          <Description>"Equipment"</Description>
+          <Options moHideChildren="1"/>
+          <Color>4080FF</Color>
+          <GroupHeader>1</GroupHeader>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>191</ID>
+              <Description>"Mech"</Description>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>TBRID.frbBattleField+B5F0</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>192</ID>
+              <Description>"Primary weapon"</Description>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>TBRID.frbBattleField+B5F4</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>193</ID>
+              <Description>"Secondary weapon"</Description>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>TBRID.frbBattleField+B5F8</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>194</ID>
+              <Description>"Item 1"</Description>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>TBRID.frbBattleField+B604</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>195</ID>
+              <Description>"Item 2"</Description>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>TBRID.frbBattleField+B608</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>196</ID>
+              <Description>"Item 3"</Description>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>TBRID.frbBattleField+B60C</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>197</ID>
+              <Description>"Item 4"</Description>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>TBRID.frbBattleField+B610</Address>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>33</ID>
+          <Description>"Move points"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>TBRID.frbBattleField+BAE4</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>38</ID>
+          <Description>"Position X"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>TBRID.frbBattleField+BAA4</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>39</ID>
+          <Description>"Position Y"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>TBRID.frbBattleField+BAA8</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>50</ID>
+          <Description>"Medals"</Description>
+          <Color>80000008</Color>
+          <VariableType>Byte</VariableType>
+          <Address>TBRID.exe+E3CD4</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>45</ID>
+          <Description>"Xp"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>TBRID.exe+E3CD8</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>51</ID>
+          <Description>"Xp gained in this level"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>TBRID.exe+E3CDc</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>52</ID>
+          <Description>"Level"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>TBRID.exe+E3CDc+4</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>129</ID>
+          <Description>"Mod stats"</Description>
+          <Options moHideChildren="1"/>
+          <Color>0080FF</Color>
+          <GroupHeader>1</GroupHeader>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>64</ID>
+              <Description>"Short range XP"</Description>
+              <Color>80000008</Color>
+              <VariableType>Binary</VariableType>
+              <BitStart>0</BitStart>
+              <BitLength>14</BitLength>
+              <ShowAsBinary>0</ShowAsBinary>
+              <Address>TBRID.exe+E3CD5</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>65</ID>
+              <Description>"Medium range XP"</Description>
+              <Color>80000008</Color>
+              <VariableType>Binary</VariableType>
+              <BitStart>6</BitStart>
+              <BitLength>14</BitLength>
+              <ShowAsBinary>0</ShowAsBinary>
+              <Address>TBRID.exe+E3CD6</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>66</ID>
+              <Description>"Long range XP"</Description>
+              <Color>80000008</Color>
+              <VariableType>Binary</VariableType>
+              <BitStart>4</BitStart>
+              <BitLength>14</BitLength>
+              <ShowAsBinary>0</ShowAsBinary>
+              <Address>TBRID.exe+E3CD8</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>67</ID>
+              <Description>"PM1 XP"</Description>
+              <Color>80000008</Color>
+              <VariableType>Binary</VariableType>
+              <BitStart>2</BitStart>
+              <BitLength>14</BitLength>
+              <ShowAsBinary>0</ShowAsBinary>
+              <Address>TBRID.exe+E3CDa</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>68</ID>
+              <Description>"PM2 XP"</Description>
+              <Color>80000008</Color>
+              <VariableType>Binary</VariableType>
+              <BitStart>0</BitStart>
+              <BitLength>14</BitLength>
+              <ShowAsBinary>0</ShowAsBinary>
+              <Address>TBRID.exe+E3Ce0</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>69</ID>
+              <Description>"PM3 XP"</Description>
+              <Color>80000008</Color>
+              <VariableType>Binary</VariableType>
+              <BitStart>6</BitStart>
+              <BitLength>14</BitLength>
+              <ShowAsBinary>0</ShowAsBinary>
+              <Address>TBRID.exe+E3Ce1</Address>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>28</ID>
+      <Description>"Alpine"</Description>
+      <Options moHideChildren="1"/>
+      <Color>0080FF</Color>
+      <GroupHeader>1</GroupHeader>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>198</ID>
+          <Description>"Equipment"</Description>
+          <Options moHideChildren="1"/>
+          <Color>4080FF</Color>
+          <GroupHeader>1</GroupHeader>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>199</ID>
+              <Description>"Mech"</Description>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>TBRID.frbBattleField+B664</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>200</ID>
+              <Description>"Primary weapon"</Description>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>TBRID.frbBattleField+B668</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>201</ID>
+              <Description>"Secondary weapon"</Description>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>TBRID.frbBattleField+B66C</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>202</ID>
+              <Description>"Item 1"</Description>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>TBRID.frbBattleField+B678</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>203</ID>
+              <Description>"Item 2"</Description>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>TBRID.frbBattleField+B67C</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>204</ID>
+              <Description>"Item 3"</Description>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>TBRID.frbBattleField+B680</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>205</ID>
+              <Description>"Item 4"</Description>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>TBRID.frbBattleField+B684</Address>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>94</ID>
+          <Description>"Medals"</Description>
+          <Color>80000008</Color>
+          <VariableType>Byte</VariableType>
+          <Address>TBRID.frbBattleField+E76C</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>105</ID>
+          <Description>"Xp"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>TBRID.frbBattleField+E770</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>106</ID>
+          <Description>"Xp gained in this level"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>TBRID.frbBattleField+E774</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>107</ID>
+          <Description>"Level"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>TBRID.frbBattleField+E778</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>29</ID>
+          <Description>"Move points"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>TBRID.frbBattleField+BB58</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>30</ID>
+          <Description>"Position X"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>TBRID.frbBattleField+BB8C</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>31</ID>
+          <Description>"Position Y"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>TBRID.frbBattleField+BB90</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>130</ID>
+          <Description>"Mod stats"</Description>
+          <Options moHideChildren="1"/>
+          <Color>0080FF</Color>
+          <GroupHeader>1</GroupHeader>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>131</ID>
+              <Description>"Short range XP"</Description>
+              <Color>80000008</Color>
+              <VariableType>Binary</VariableType>
+              <BitStart>0</BitStart>
+              <BitLength>14</BitLength>
+              <ShowAsBinary>0</ShowAsBinary>
+              <Address>TBRID.frbBattleField+E75D</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>132</ID>
+              <Description>"Medium range XP"</Description>
+              <Color>80000008</Color>
+              <VariableType>Binary</VariableType>
+              <BitStart>6</BitStart>
+              <BitLength>14</BitLength>
+              <ShowAsBinary>0</ShowAsBinary>
+              <Address>TBRID.frbBattleField+E75E</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>133</ID>
+              <Description>"Long range XP"</Description>
+              <Color>80000008</Color>
+              <VariableType>Binary</VariableType>
+              <BitStart>4</BitStart>
+              <BitLength>14</BitLength>
+              <ShowAsBinary>0</ShowAsBinary>
+              <Address>TBRID.frbBattleField+E760</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>134</ID>
+              <Description>"PM1 XP"</Description>
+              <Color>80000008</Color>
+              <VariableType>Binary</VariableType>
+              <BitStart>2</BitStart>
+              <BitLength>14</BitLength>
+              <ShowAsBinary>0</ShowAsBinary>
+              <Address>TBRID.frbBattleField+E762</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>135</ID>
+              <Description>"PM2 XP"</Description>
+              <Color>80000008</Color>
+              <VariableType>Binary</VariableType>
+              <BitStart>0</BitStart>
+              <BitLength>14</BitLength>
+              <ShowAsBinary>0</ShowAsBinary>
+              <Address>TBRID.frbBattleField+E768</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>136</ID>
+              <Description>"PM3 XP"</Description>
+              <Color>80000008</Color>
+              <VariableType>Binary</VariableType>
+              <BitStart>6</BitStart>
+              <BitLength>14</BitLength>
+              <ShowAsBinary>0</ShowAsBinary>
+              <Address>TBRID.frbBattleField+E769</Address>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>24</ID>
+      <Description>"Mi yon"</Description>
+      <Options moHideChildren="1"/>
+      <Color>0080FF</Color>
+      <GroupHeader>1</GroupHeader>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>206</ID>
+          <Description>"Equipment"</Description>
+          <Options moHideChildren="1"/>
+          <Color>4080FF</Color>
+          <GroupHeader>1</GroupHeader>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>207</ID>
+              <Description>"Mech"</Description>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>TBRID.frbBattleField+B6D8</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>208</ID>
+              <Description>"Primary weapon"</Description>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>TBRID.frbBattleField+B6DC</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>209</ID>
+              <Description>"Secondary weapon"</Description>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>TBRID.frbBattleField+B6E0</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>210</ID>
+              <Description>"Item 1"</Description>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>TBRID.frbBattleField+B6EC</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>211</ID>
+              <Description>"Item 2"</Description>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>TBRID.frbBattleField+B6F0</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>212</ID>
+              <Description>"Item 3"</Description>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>TBRID.frbBattleField+B6F4</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>213</ID>
+              <Description>"Item 4"</Description>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>TBRID.frbBattleField+B6F8</Address>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>95</ID>
+          <Description>"Medals"</Description>
+          <Color>80000008</Color>
+          <VariableType>Byte</VariableType>
+          <Address>TBRID.frbBattleField+E77C</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>110</ID>
+          <Description>"Level"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>TBRID.frbBattleField+E788</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>109</ID>
+          <Description>"Xp gained in this level"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>TBRID.frbBattleField+E784</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>108</ID>
+          <Description>"Xp"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>TBRID.frbBattleField+E780</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>25</ID>
+          <Description>"Move points"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>TBRID.frbBattleField+BBCC</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>26</ID>
+          <Description>"Position X"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>TBRID.frbBattleField+BC00</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>27</ID>
+          <Description>"Position Y"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>TBRID.frbBattleField+BC04</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>144</ID>
+          <Description>"Mod stats"</Description>
+          <Options moHideChildren="1"/>
+          <Color>0080FF</Color>
+          <GroupHeader>1</GroupHeader>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>145</ID>
+              <Description>"Short range XP"</Description>
+              <Color>80000008</Color>
+              <VariableType>Binary</VariableType>
+              <BitStart>0</BitStart>
+              <BitLength>14</BitLength>
+              <ShowAsBinary>0</ShowAsBinary>
+              <Address>TBRID.frbBattleField+E7D1</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>146</ID>
+              <Description>"Medium range XP"</Description>
+              <Color>80000008</Color>
+              <VariableType>Binary</VariableType>
+              <BitStart>6</BitStart>
+              <BitLength>14</BitLength>
+              <ShowAsBinary>0</ShowAsBinary>
+              <Address>TBRID.frbBattleField+E7D2</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>147</ID>
+              <Description>"Long range XP"</Description>
+              <Color>80000008</Color>
+              <VariableType>Binary</VariableType>
+              <BitStart>4</BitStart>
+              <BitLength>14</BitLength>
+              <ShowAsBinary>0</ShowAsBinary>
+              <Address>TBRID.frbBattleField+E7D4</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>148</ID>
+              <Description>"PM1 XP"</Description>
+              <Color>80000008</Color>
+              <VariableType>Binary</VariableType>
+              <BitStart>2</BitStart>
+              <BitLength>14</BitLength>
+              <ShowAsBinary>0</ShowAsBinary>
+              <Address>TBRID.frbBattleField+E7D6</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>149</ID>
+              <Description>"PM2 XP"</Description>
+              <Color>80000008</Color>
+              <VariableType>Binary</VariableType>
+              <BitStart>0</BitStart>
+              <BitLength>14</BitLength>
+              <ShowAsBinary>0</ShowAsBinary>
+              <Address>TBRID.frbBattleField+E7DC</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>150</ID>
+              <Description>"PM3 XP"</Description>
+              <Color>80000008</Color>
+              <VariableType>Binary</VariableType>
+              <BitStart>6</BitStart>
+              <BitLength>14</BitLength>
+              <ShowAsBinary>0</ShowAsBinary>
+              <Address>TBRID.frbBattleField+E7DD</Address>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>15</ID>
+      <Description>"Lala"</Description>
+      <Options moHideChildren="1"/>
+      <Color>0080FF</Color>
+      <GroupHeader>1</GroupHeader>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>214</ID>
+          <Description>"Equipment"</Description>
+          <Options moHideChildren="1"/>
+          <Color>4080FF</Color>
+          <GroupHeader>1</GroupHeader>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>215</ID>
+              <Description>"Mech"</Description>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>TBRID.frbBattleField+B74C</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>216</ID>
+              <Description>"Primary weapon"</Description>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>TBRID.frbBattleField+B750</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>217</ID>
+              <Description>"Secondary weapon"</Description>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>TBRID.frbBattleField+B754</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>218</ID>
+              <Description>"Item 1"</Description>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>TBRID.frbBattleField+B760</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>219</ID>
+              <Description>"Item 2"</Description>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>TBRID.frbBattleField+B764</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>220</ID>
+              <Description>"Item 3"</Description>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>TBRID.frbBattleField+B768</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>221</ID>
+              <Description>"Item 4"</Description>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>TBRID.frbBattleField+B76C</Address>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>96</ID>
+          <Description>"Medals"</Description>
+          <Color>80000008</Color>
+          <VariableType>Byte</VariableType>
+          <Address>TBRID.frbBattleField+E78C</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>113</ID>
+          <Description>"Xp"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>TBRID.frbBattleField+E790</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>112</ID>
+          <Description>"Xp gained in this level"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>TBRID.frbBattleField+E794</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>111</ID>
+          <Description>"Level"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>TBRID.frbBattleField+E798</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>6</ID>
+          <Description>"Move points"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>TBRID.frbBattleField+BC40</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>12</ID>
+          <Description>"Position X"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>TBRID.frbBattleField+BC74</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>13</ID>
+          <Description>"Position Y"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>TBRID.frbBattleField+BC78</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>151</ID>
+          <Description>"Mod stats"</Description>
+          <Options moHideChildren="1"/>
+          <Color>0080FF</Color>
+          <GroupHeader>1</GroupHeader>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>152</ID>
+              <Description>"Short range XP"</Description>
+              <Color>80000008</Color>
+              <VariableType>Binary</VariableType>
+              <BitStart>0</BitStart>
+              <BitLength>14</BitLength>
+              <ShowAsBinary>0</ShowAsBinary>
+              <Address>TBRID.frbBattleField+E845</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>153</ID>
+              <Description>"Medium range XP"</Description>
+              <Color>80000008</Color>
+              <VariableType>Binary</VariableType>
+              <BitStart>6</BitStart>
+              <BitLength>14</BitLength>
+              <ShowAsBinary>0</ShowAsBinary>
+              <Address>TBRID.frbBattleField+E846</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>154</ID>
+              <Description>"Long range XP"</Description>
+              <Color>80000008</Color>
+              <VariableType>Binary</VariableType>
+              <BitStart>4</BitStart>
+              <BitLength>14</BitLength>
+              <ShowAsBinary>0</ShowAsBinary>
+              <Address>TBRID.frbBattleField+E848</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>155</ID>
+              <Description>"PM1 XP"</Description>
+              <Color>80000008</Color>
+              <VariableType>Binary</VariableType>
+              <BitStart>2</BitStart>
+              <BitLength>14</BitLength>
+              <ShowAsBinary>0</ShowAsBinary>
+              <Address>TBRID.frbBattleField+E84A</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>156</ID>
+              <Description>"PM2 XP"</Description>
+              <Color>80000008</Color>
+              <VariableType>Binary</VariableType>
+              <BitStart>0</BitStart>
+              <BitLength>14</BitLength>
+              <ShowAsBinary>0</ShowAsBinary>
+              <Address>TBRID.frbBattleField+E850</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>157</ID>
+              <Description>"PM3 XP"</Description>
+              <Color>80000008</Color>
+              <VariableType>Binary</VariableType>
+              <BitStart>6</BitStart>
+              <BitLength>14</BitLength>
+              <ShowAsBinary>0</ShowAsBinary>
+              <Address>TBRID.frbBattleField+E851</Address>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>16</ID>
+      <Description>"Ayesha"</Description>
+      <Options moHideChildren="1"/>
+      <Color>0080FF</Color>
+      <GroupHeader>1</GroupHeader>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>222</ID>
+          <Description>"Equipment"</Description>
+          <Options moHideChildren="1"/>
+          <Color>4080FF</Color>
+          <GroupHeader>1</GroupHeader>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>223</ID>
+              <Description>"Mech"</Description>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>TBRID.frbBattleField+B7C0</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>224</ID>
+              <Description>"Primary weapon"</Description>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>TBRID.frbBattleField+B7C4</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>225</ID>
+              <Description>"Secondary weapon"</Description>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>TBRID.frbBattleField+B7C8</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>226</ID>
+              <Description>"Item 1"</Description>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>TBRID.frbBattleField+B7D4</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>227</ID>
+              <Description>"Item 2"</Description>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>TBRID.frbBattleField+B7D8</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>228</ID>
+              <Description>"Item 3"</Description>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>TBRID.frbBattleField+B7DC</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>229</ID>
+              <Description>"Item 4"</Description>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>TBRID.frbBattleField+B7E0</Address>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>97</ID>
+          <Description>"Medals"</Description>
+          <Color>80000008</Color>
+          <VariableType>Byte</VariableType>
+          <Address>TBRID.frbBattleField+E79C</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>114</ID>
+          <Description>"Xp"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>TBRID.frbBattleField+E7A0</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>115</ID>
+          <Description>"Xp gained in this level"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>TBRID.frbBattleField+E7A4</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>116</ID>
+          <Description>"Level"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>TBRID.frbBattleField+E7A8</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>17</ID>
+          <Description>"Move points"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>TBRID.frbBattleField+BCB4</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>18</ID>
+          <Description>"Position X"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>TBRID.frbBattleField+BCE8</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>19</ID>
+          <Description>"Position Y"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>TBRID.frbBattleField+BCEC</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>158</ID>
+          <Description>"Mod stats"</Description>
+          <Options moHideChildren="1"/>
+          <Color>0080FF</Color>
+          <GroupHeader>1</GroupHeader>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>159</ID>
+              <Description>"Short range XP"</Description>
+              <Color>80000008</Color>
+              <VariableType>Binary</VariableType>
+              <BitStart>0</BitStart>
+              <BitLength>14</BitLength>
+              <ShowAsBinary>0</ShowAsBinary>
+              <Address>TBRID.frbBattleField+E8B9</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>160</ID>
+              <Description>"Medium range XP"</Description>
+              <Color>80000008</Color>
+              <VariableType>Binary</VariableType>
+              <BitStart>6</BitStart>
+              <BitLength>14</BitLength>
+              <ShowAsBinary>0</ShowAsBinary>
+              <Address>TBRID.frbBattleField+E8BA</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>161</ID>
+              <Description>"Long range XP"</Description>
+              <Color>80000008</Color>
+              <VariableType>Binary</VariableType>
+              <BitStart>4</BitStart>
+              <BitLength>14</BitLength>
+              <ShowAsBinary>0</ShowAsBinary>
+              <Address>TBRID.frbBattleField+E8BC</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>162</ID>
+              <Description>"PM1 XP"</Description>
+              <Color>80000008</Color>
+              <VariableType>Binary</VariableType>
+              <BitStart>2</BitStart>
+              <BitLength>14</BitLength>
+              <ShowAsBinary>0</ShowAsBinary>
+              <Address>TBRID.frbBattleField+E8BE</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>163</ID>
+              <Description>"PM2 XP"</Description>
+              <Color>80000008</Color>
+              <VariableType>Binary</VariableType>
+              <BitStart>0</BitStart>
+              <BitLength>14</BitLength>
+              <ShowAsBinary>0</ShowAsBinary>
+              <Address>TBRID.frbBattleField+E8C4</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>164</ID>
+              <Description>"PM3 XP"</Description>
+              <Color>80000008</Color>
+              <VariableType>Binary</VariableType>
+              <BitStart>6</BitStart>
+              <BitLength>14</BitLength>
+              <ShowAsBinary>0</ShowAsBinary>
+              <Address>TBRID.frbBattleField+E8C5</Address>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>20</ID>
+      <Description>"Mrya"</Description>
+      <Options moHideChildren="1"/>
+      <Color>0080FF</Color>
+      <GroupHeader>1</GroupHeader>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>230</ID>
+          <Description>"Equipment"</Description>
+          <Options moHideChildren="1"/>
+          <Color>4080FF</Color>
+          <GroupHeader>1</GroupHeader>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>231</ID>
+              <Description>"Mech"</Description>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>TBRID.frbBattleField+B834</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>232</ID>
+              <Description>"Primary weapon"</Description>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>TBRID.frbBattleField+B838</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>233</ID>
+              <Description>"Secondary weapon"</Description>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>TBRID.frbBattleField+B83C</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>234</ID>
+              <Description>"Item 1"</Description>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>TBRID.frbBattleField+B848</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>235</ID>
+              <Description>"Item 2"</Description>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>TBRID.frbBattleField+B84C</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>236</ID>
+              <Description>"Item 3"</Description>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>TBRID.frbBattleField+B850</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>237</ID>
+              <Description>"Item 4"</Description>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>TBRID.frbBattleField+B854</Address>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>99</ID>
+          <Description>"Medals"</Description>
+          <Color>80000008</Color>
+          <VariableType>Byte</VariableType>
+          <Address>TBRID.frbBattleField+E7AC</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>117</ID>
+          <Description>"Xp"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>TBRID.frbBattleField+E7b0</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>118</ID>
+          <Description>"Xp gained in this level"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>TBRID.frbBattleField+E7b4</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>119</ID>
+          <Description>"Level"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>TBRID.frbBattleField+E7b8</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>21</ID>
+          <Description>"Move points"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>TBRID.frbBattleField+BD28</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>22</ID>
+          <Description>"Position X"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>TBRID.frbBattleField+BD5C</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>23</ID>
+          <Description>"Position Y"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>TBRID.frbBattleField+BD60</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>165</ID>
+          <Description>"Mod stats"</Description>
+          <Options moHideChildren="1"/>
+          <Color>0080FF</Color>
+          <GroupHeader>1</GroupHeader>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>166</ID>
+              <Description>"Short range XP"</Description>
+              <Color>80000008</Color>
+              <VariableType>Binary</VariableType>
+              <BitStart>0</BitStart>
+              <BitLength>14</BitLength>
+              <ShowAsBinary>0</ShowAsBinary>
+              <Address>TBRID.frbBattleField+E92D</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>167</ID>
+              <Description>"Medium range XP"</Description>
+              <Color>80000008</Color>
+              <VariableType>Binary</VariableType>
+              <BitStart>6</BitStart>
+              <BitLength>14</BitLength>
+              <ShowAsBinary>0</ShowAsBinary>
+              <Address>TBRID.frbBattleField+E92E</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>168</ID>
+              <Description>"Long range XP"</Description>
+              <Color>80000008</Color>
+              <VariableType>Binary</VariableType>
+              <BitStart>4</BitStart>
+              <BitLength>14</BitLength>
+              <ShowAsBinary>0</ShowAsBinary>
+              <Address>TBRID.frbBattleField+E930</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>169</ID>
+              <Description>"PM1 XP"</Description>
+              <Color>80000008</Color>
+              <VariableType>Binary</VariableType>
+              <BitStart>2</BitStart>
+              <BitLength>14</BitLength>
+              <ShowAsBinary>0</ShowAsBinary>
+              <Address>TBRID.frbBattleField+E932</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>170</ID>
+              <Description>"PM2 XP"</Description>
+              <Color>80000008</Color>
+              <VariableType>Binary</VariableType>
+              <BitStart>0</BitStart>
+              <BitLength>14</BitLength>
+              <ShowAsBinary>0</ShowAsBinary>
+              <Address>TBRID.frbBattleField+E938</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>171</ID>
+              <Description>"PM3 XP"</Description>
+              <Color>80000008</Color>
+              <VariableType>Binary</VariableType>
+              <BitStart>6</BitStart>
+              <BitLength>14</BitLength>
+              <ShowAsBinary>0</ShowAsBinary>
+              <Address>TBRID.frbBattleField+E939</Address>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>40</ID>
+      <Description>"Kisuka (if you DID NOT duel her)"</Description>
+      <Options moHideChildren="1"/>
+      <Color>0080FF</Color>
+      <GroupHeader>1</GroupHeader>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>238</ID>
+          <Description>"Equipment"</Description>
+          <Options moHideChildren="1"/>
+          <Color>4080FF</Color>
+          <GroupHeader>1</GroupHeader>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>239</ID>
+              <Description>"Mech"</Description>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>TBRID.frbBattleField+B8A8</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>240</ID>
+              <Description>"Primary weapon"</Description>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>TBRID.frbBattleField+B8AC</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>241</ID>
+              <Description>"Secondary weapon"</Description>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>TBRID.frbBattleField+B8B0</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>242</ID>
+              <Description>"Item 1"</Description>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>TBRID.frbBattleField+B8BC</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>243</ID>
+              <Description>"Item 2"</Description>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>TBRID.frbBattleField+B8C0</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>244</ID>
+              <Description>"Item 3"</Description>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>TBRID.frbBattleField+B8C4</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>245</ID>
+              <Description>"Item 4"</Description>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>TBRID.frbBattleField+B8C8</Address>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>98</ID>
+          <Description>"Medals"</Description>
+          <Color>80000008</Color>
+          <VariableType>Byte</VariableType>
+          <Address>TBRID.frbBattleField+E7bC</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>101</ID>
+          <Description>"Xp"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>TBRID.frbBattleField+E7b0</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>42</ID>
+          <Description>"Position X"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>TBRID.frbBattleField+BDD0</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>43</ID>
+          <Description>"Position Y"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>TBRID.frbBattleField+BDD4</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>41</ID>
+          <Description>"Move points"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>TBRID.frbBattleField+BD9C</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>172</ID>
+          <Description>"Mod stats"</Description>
+          <Options moHideChildren="1"/>
+          <Color>0080FF</Color>
+          <GroupHeader>1</GroupHeader>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>173</ID>
+              <Description>"Short range XP"</Description>
+              <Color>80000008</Color>
+              <VariableType>Binary</VariableType>
+              <BitStart>0</BitStart>
+              <BitLength>14</BitLength>
+              <ShowAsBinary>0</ShowAsBinary>
+              <Address>TBRID.frbBattleField+E9A1</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>174</ID>
+              <Description>"Medium range XP"</Description>
+              <Color>80000008</Color>
+              <VariableType>Binary</VariableType>
+              <BitStart>6</BitStart>
+              <BitLength>14</BitLength>
+              <ShowAsBinary>0</ShowAsBinary>
+              <Address>TBRID.frbBattleField+E9A2</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>175</ID>
+              <Description>"Long range XP"</Description>
+              <Color>80000008</Color>
+              <VariableType>Binary</VariableType>
+              <BitStart>4</BitStart>
+              <BitLength>14</BitLength>
+              <ShowAsBinary>0</ShowAsBinary>
+              <Address>TBRID.frbBattleField+E9A4</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>176</ID>
+              <Description>"PM1 XP"</Description>
+              <Color>80000008</Color>
+              <VariableType>Binary</VariableType>
+              <BitStart>2</BitStart>
+              <BitLength>14</BitLength>
+              <ShowAsBinary>0</ShowAsBinary>
+              <Address>TBRID.frbBattleField+E9A6</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>177</ID>
+              <Description>"PM2 XP"</Description>
+              <Color>80000008</Color>
+              <VariableType>Binary</VariableType>
+              <BitStart>0</BitStart>
+              <BitLength>14</BitLength>
+              <ShowAsBinary>0</ShowAsBinary>
+              <Address>TBRID.frbBattleField+E9AC</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>178</ID>
+              <Description>"PM3 XP"</Description>
+              <Color>80000008</Color>
+              <VariableType>Binary</VariableType>
+              <BitStart>6</BitStart>
+              <BitLength>14</BitLength>
+              <ShowAsBinary>0</ShowAsBinary>
+              <Address>TBRID.frbBattleField+E9AD</Address>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>123</ID>
+      <Description>"Kisuka (if you dueled her)"</Description>
+      <Options moHideChildren="1"/>
+      <Color>0080FF</Color>
+      <GroupHeader>1</GroupHeader>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>246</ID>
+          <Description>"Equipment"</Description>
+          <Options moHideChildren="1"/>
+          <Color>4080FF</Color>
+          <GroupHeader>1</GroupHeader>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>247</ID>
+              <Description>"Mech"</Description>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>TBRID.frbBattleField+B91C</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>248</ID>
+              <Description>"Primary weapon"</Description>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>TBRID.frbBattleField+B920</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>249</ID>
+              <Description>"Secondary weapon"</Description>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>TBRID.frbBattleField+B924</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>250</ID>
+              <Description>"Item 1"</Description>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>TBRID.frbBattleField+B930</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>251</ID>
+              <Description>"Item 2"</Description>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>TBRID.frbBattleField+B934</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>252</ID>
+              <Description>"Item 3"</Description>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>TBRID.frbBattleField+B938</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>253</ID>
+              <Description>"Item 4"</Description>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>TBRID.frbBattleField+B93C</Address>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>124</ID>
+          <Description>"Medals"</Description>
+          <Color>80000008</Color>
+          <VariableType>Byte</VariableType>
+          <Address>TBRID.frbBattleField+E7cC</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>125</ID>
+          <Description>"Xp"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>TBRID.frbBattleField+E7d0</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>127</ID>
+          <Description>"Position X"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>TBRID.frbBattleField+BDD0+74</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>126</ID>
+          <Description>"Position Y"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>TBRID.frbBattleField+BDD4+74</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>128</ID>
+          <Description>"Move points"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>TBRID.frbBattleField+BD9C+74</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>179</ID>
+          <Description>"Mod stats"</Description>
+          <Options moHideChildren="1"/>
+          <Color>0080FF</Color>
+          <GroupHeader>1</GroupHeader>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>180</ID>
+              <Description>"Short range XP"</Description>
+              <Color>80000008</Color>
+              <VariableType>Binary</VariableType>
+              <BitStart>0</BitStart>
+              <BitLength>14</BitLength>
+              <ShowAsBinary>0</ShowAsBinary>
+              <Address>TBRID.frbBattleField+EA15</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>181</ID>
+              <Description>"Medium range XP"</Description>
+              <Color>80000008</Color>
+              <VariableType>Binary</VariableType>
+              <BitStart>6</BitStart>
+              <BitLength>14</BitLength>
+              <ShowAsBinary>0</ShowAsBinary>
+              <Address>TBRID.frbBattleField+EA16</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>182</ID>
+              <Description>"Long range XP"</Description>
+              <Color>80000008</Color>
+              <VariableType>Binary</VariableType>
+              <BitStart>4</BitStart>
+              <BitLength>14</BitLength>
+              <ShowAsBinary>0</ShowAsBinary>
+              <Address>TBRID.frbBattleField+EA18</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>183</ID>
+              <Description>"PM1 XP"</Description>
+              <Color>80000008</Color>
+              <VariableType>Binary</VariableType>
+              <BitStart>2</BitStart>
+              <BitLength>14</BitLength>
+              <ShowAsBinary>0</ShowAsBinary>
+              <Address>TBRID.frbBattleField+EA1A</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>184</ID>
+              <Description>"PM2 XP"</Description>
+              <Color>80000008</Color>
+              <VariableType>Binary</VariableType>
+              <BitStart>0</BitStart>
+              <BitLength>14</BitLength>
+              <ShowAsBinary>0</ShowAsBinary>
+              <Address>TBRID.frbBattleField+EA20</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>185</ID>
+              <Description>"PM3 XP"</Description>
+              <Color>80000008</Color>
+              <VariableType>Binary</VariableType>
+              <BitStart>6</BitStart>
+              <BitLength>14</BitLength>
+              <ShowAsBinary>0</ShowAsBinary>
+              <Address>TBRID.frbBattleField+EA21</Address>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>102</ID>
+      <Description>"Flags"</Description>
+      <Options moHideChildren="1"/>
+      <Color>0080FF</Color>
+      <GroupHeader>1</GroupHeader>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>103</ID>
+          <Description>"Flag K (said Kiska you have a GF)"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>TBRID.exe+e3e28</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>104</ID>
+          <Description>"Flag A (Took diner with Alpine)"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>TBRID.exe+E0A4C+4*2+33c8</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>121</ID>
+          <Description>"Duelled Kiska"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>TBRID.exe+E0A4C+4*1+33c8</Address>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>188</ID>
+      <Description>"Unlock all CGs"</Description>
+      <Color>80000008</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>[enable]
+TBRID.exe+E4162:
+//"01" 300 times
+db 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01
+
+[disable]
+</AssemblerScript>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>2</ID>
+      <Description>"Hotkeys for save/load menu (useless)"</Description>
+      <Options moHideChildren="1"/>
+      <Color>0080FF</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>[ENABLE]
+alloc(NewMem,1024)
+//company went bankrupt there won't be patches anymore
+label(OpenSaveLoadMenu)
+label(OpenSaveLoadMenu_TestSaveMenu)
+label(OpenSaveLoadMenu_Exit)
+label(OpenSaveLoadMenu_Return)
+
+label(OpenLoadMenu)
+label(OpenSaveMenu)
+registersymbol(OpenSaveMenu)
+registersymbol(OpenLoadMenu)
+
+TBRID.exe+980B:
+jmp OpenSaveLoadMenu
+nop
+OpenSaveLoadMenu_Return:
+
+
+
+
+NewMem:
+OpenSaveLoadMenu:
+  cmp byte [OpenLoadMenu],1
+  jne short OpenSaveLoadMenu_TestSaveMenu
+    mov byte [OpenLoadMenu],0
+    pushad
+    MOV EAX,DWORD PTR DS:[TBRID.exe+D5154]
+    MOV EAX,DWORD PTR DS:[EAX]
+    CALL TBRID.exe+35D04
+    popad
+    jmp short OpenSaveLoadMenu_Exit
+  OpenSaveLoadMenu_TestSaveMenu:
+  cmp byte [OpenSaveMenu],1
+  jne short OpenSaveLoadMenu_Exit
+    mov byte [OpenSaveMenu],0
+    pushad
+    MOV EAX,DWORD PTR DS:[TBRID.exe+D5154]
+    MOV EAX,DWORD PTR DS:[EAX]
+    CALL TBRID.exe+358FC
+    popad
+  OpenSaveLoadMenu_Exit:
+  push 00
+  push 00
+  push 33
+jmp OpenSaveLoadMenu_Return
+
+OpenLoadMenu:
+db 0
+OpenSaveMenu:
+db 0
+
+
+
+
+ 
+ 
+[DISABLE]
+dealloc(NewMem)
+unregistersymbol(OpenLoadMenu)
+unregistersymbol(OpenSaveMenu)
+TBRID.exe+980B:
+push 00
+push 00
+push 33
+
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>3</ID>
+          <Description>"Open load menu (hotkey F5)"</Description>
+          <Color>80000008</Color>
+          <VariableType>Byte</VariableType>
+          <Address>OpenLoadMenu</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>116</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>4</ID>
+          <Description>"Open save menu (hotkey F6)"</Description>
+          <Color>80000008</Color>
+          <VariableType>Byte</VariableType>
+          <Address>OpenSaveMenu</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>117</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols/>
+  <DisassemblerComments>
+    <DisassemblerComment>
+      <Address>"TBRID.exe"+B6FD</Address>
+      <Comment>write XP
+</Comment>
+    </DisassemblerComment>
+    <DisassemblerComment>
+      <Address>"TBRID.exe"+B710</Address>
+      <Comment>write + cap level
+</Comment>
+    </DisassemblerComment>
+  </DisassemblerComments>
+</CheatTable>

@@ -1,0 +1,421 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="14">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>41</ID>
+      <Description>"SpeedHack"</Description>
+      <Options moHideChildren="1"/>
+      <Color>80000008</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>[ENABLE]
+aobscan(aobSpeedHack,D9 46 30 8B C8 8B D1 D9 54 24 10 2B 56 04 89 54 24 18 DB 44 24 18 85 D2)
+alloc(newmem,2048)
+label(aobSpeedHack_r)
+label(lblSpeedHackReturn)
+label(fSpeed)
+registersymbol(aobSpeedHack_r)
+registersymbol(fSpeed)
+
+newmem:
+push eax
+mov eax,[fSpeed]
+mov dword ptr [esi+30],eax
+pop eax
+fld dword ptr [esi+30] // Original code
+mov ecx,eax            // Original code
+jmp lblSpeedHackReturn
+
+// Vars
+fSpeed:
+dd (float)1.0
+
+aobSpeedHack:
+aobSpeedHack_r:
+jmp newmem
+lblSpeedHackReturn:
+
+[DISABLE]
+aobSpeedHack_r:
+db D9 46 30 8B C8
+//Alt: fld dword ptr [esi+30]
+//Alt: mov ecx,eax
+unregistersymbol(aobSpeedHack_r)
+unregistersymbol(fSpeed)
+dealloc(newmem)
+
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>42</ID>
+          <Description>"fSpeed"</Description>
+          <Color>008000</Color>
+          <VariableType>Float</VariableType>
+          <Address>fSpeed</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>112</Key>
+              </Keys>
+              <Value>0.5</Value>
+              <Description>SloMo</Description>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>113</Key>
+              </Keys>
+              <Value>1</Value>
+              <Description>Normal</Description>
+              <ID>1</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>114</Key>
+              </Keys>
+              <Value>1.5</Value>
+              <Description>Fast</Description>
+              <ID>2</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>115</Key>
+              </Keys>
+              <Value>2</Value>
+              <Description>Super-fast</Description>
+              <ID>3</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>84</ID>
+      <Description>"Personal Teleporter"</Description>
+      <Options moHideChildren="1"/>
+      <Color>80000008</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>[ENABLE]
+aobscan(aobTeleportHook,89 83 B0 01 00 00 3B C7 74 46 8B 10 8B C8 8B 42 70 6A 06 FF D0 89 83 B4 01 00 00)
+alloc(newmem,2048)
+label(aobTeleportHook_r)
+label(lblTeleport)
+label(lblTeleportSkip)
+label(lblTeleportReturn)
+label(lblSwapFunction)
+label(bTeleportEnabled)
+label(iCoordSetAction)
+label(bCoordSetStored)
+label(dCoordSet)
+registersymbol(aobTeleportHook_r)
+registersymbol(bTeleportEnabled)
+registersymbol(iCoordSetAction)
+registersymbol(bCoordSetStored)
+registersymbol(dCoordSet)
+label(lblCoordSet0NoRestoreAction)
+label(lblCoordSet1NoStoreAction)
+label(lblCoordSet1NoRestoreAction)
+label(lblCoordSet2NoStoreAction)
+label(lblCoordSet2NoRestoreAction)
+label(lblCoordSet3NoStoreAction)
+label(lblCoordSet3NoRestoreAction)
+
+newmem:
+lblTeleport:
+mov [ebx+000001B0],eax // Original code
+// Check if we are allowed to run in the first place.
+cmp dword ptr [bTeleportEnabled],1
+jne lblTeleportReturn
+pushad // Store state
+mov ebx,[eax+20]
+mov eax,[ebx+2c]
+mov ebx,[eax+148]
+mov eax,[ebx+4]
+add eax,118
+
+// Handle set 0 (last used coordinates for undo); only restore is applicable.
+cmp dword ptr [iCoordSetAction],2
+jne short lblCoordSet0NoRestoreAction
+cmp dword ptr [bCoordSetStored],1
+jne short lblCoordSet0NoRestoreAction
+lea ebx,[dCoordSet]
+call lblSwapFunction
+lblCoordSet0NoRestoreAction:
+mov [iCoordSetAction],0
+
+// Handle set 1.
+cmp dword ptr [iCoordSetAction+4],1
+jne short lblCoordSet1NoStoreAction
+mov ebx,eax
+lea eax,[dCoordSet+18]
+call lblSwapFunction
+mov dword ptr [bCoordSetStored+4],1
+lblCoordSet1NoStoreAction:
+
+cmp dword ptr [iCoordSetAction+4],2
+jne short lblCoordSet1NoRestoreAction
+cmp dword ptr [bCoordSetStored+4],1
+jne short lblCoordSet1NoRestoreAction
+mov ebx,eax
+lea eax,[dCoordSet]
+call lblSwapFunction
+mov dword ptr [bCoordSetStored],1
+mov eax,ebx
+lea ebx,[dCoordSet+18]
+call lblSwapFunction
+lblCoordSet1NoRestoreAction:
+mov [iCoordSetAction+4],0
+
+// Handle set 2.
+cmp dword ptr [iCoordSetAction+8],1
+jne short lblCoordSet2NoStoreAction
+mov ebx,eax
+lea eax,[dCoordSet+30]
+call lblSwapFunction
+mov dword ptr [bCoordSetStored+8],1
+lblCoordSet2NoStoreAction:
+
+cmp dword ptr [iCoordSetAction+8],2
+jne short lblCoordSet2NoRestoreAction
+cmp dword ptr [bCoordSetStored+8],1
+jne short lblCoordSet2NoRestoreAction
+mov ebx,eax
+lea eax,[dCoordSet]
+call lblSwapFunction
+mov dword ptr [bCoordSetStored],1
+mov eax,ebx
+lea ebx,[dCoordSet+30]
+call lblSwapFunction
+lblCoordSet2NoRestoreAction:
+mov [iCoordSetAction+8],0
+
+// Handle set 3.
+cmp dword ptr [iCoordSetAction+c],1
+jne short lblCoordSet3NoStoreAction
+mov ebx,eax
+lea eax,[dCoordSet+48]
+call lblSwapFunction
+mov dword ptr [bCoordSetStored+c],1
+lblCoordSet3NoStoreAction:
+
+cmp dword ptr [iCoordSetAction+c],2
+jne short lblCoordSet3NoRestoreAction
+cmp dword ptr [bCoordSetStored+c],1
+jne short lblCoordSet3NoRestoreAction
+mov ebx,eax
+lea eax,[dCoordSet]
+call lblSwapFunction
+mov dword ptr [bCoordSetStored],1
+mov eax,ebx
+lea ebx,[dCoordSet+48]
+call lblSwapFunction
+lblCoordSet3NoRestoreAction:
+mov [iCoordSetAction+c],0
+
+lblTeleportSkip:
+popad // Restore state
+jmp lblTeleportReturn
+
+lblSwapFunction:
+mov ecx,[ebx]
+mov edx,[ebx+4]
+mov [eax],ecx
+mov [eax+4],edx
+mov ecx,[ebx+8]
+mov edx,[ebx+c]
+mov [eax+8],ecx
+mov [eax+c],edx
+mov ecx,[ebx+10]
+mov edx,[ebx+14]
+mov [eax+10],ecx
+mov [eax+14],edx
+ret
+
+// Vars
+bTeleportEnabled:
+dd 1
+iCoordSetAction:
+// 1: Store
+// 2: Restore
+// Anything else: Do nothing
+dd 0
+dd 0
+dd 0
+dd 0
+bCoordSetStored:
+dd 0
+dd 0
+dd 0
+dd 0
+dCoordSet:
+dq 0 // Last used coordinates (before the last 'store' operation).
+dq 0
+dq 0
+dq 0 // Set 1
+dq 0
+dq 0
+dq 0 // Set 2
+dq 0
+dq 0
+dq 0 // Set 3
+dq 0
+dq 0
+
+aobTeleportHook:
+aobTeleportHook_r:
+jmp lblTeleport
+nop
+lblTeleportReturn:
+
+[DISABLE]
+aobTeleportHook_r:
+db 89 83 B0 01 00 00
+//Alt: mov [ebx+000001B0],eax
+unregistersymbol(aobTeleportHook_r)
+unregistersymbol(bTeleportEnabled)
+unregistersymbol(iCoordSetAction)
+unregistersymbol(bCoordSetStored)
+unregistersymbol(dCoordSet)
+dealloc(newmem)
+
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>85</ID>
+          <Description>"bTeleportEnabled"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>bTeleportEnabled</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>86</ID>
+          <Description>"iCoordSet0Action"</Description>
+          <Color>FFFFFF</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iCoordSetAction</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>96</Key>
+              </Keys>
+              <Value>2</Value>
+              <Description>Undo last teleport</Description>
+              <ID>0</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>87</ID>
+          <Description>"iCoordSet1Action"</Description>
+          <Color>FFFFFF</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iCoordSetAction+4</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>99</Key>
+              </Keys>
+              <Value>1</Value>
+              <Description>Store position 1</Description>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>97</Key>
+              </Keys>
+              <Value>2</Value>
+              <Description>Restore position 1</Description>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>88</ID>
+          <Description>"iCoordSet2Action"</Description>
+          <Color>FFFFFF</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iCoordSetAction+8</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>102</Key>
+              </Keys>
+              <Value>1</Value>
+              <Description>Store position 2</Description>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>100</Key>
+              </Keys>
+              <Value>2</Value>
+              <Description>Restore position 2</Description>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>89</ID>
+          <Description>"iCoordSet3Action"</Description>
+          <Color>FFFFFF</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iCoordSetAction+C</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>105</Key>
+              </Keys>
+              <Value>1</Value>
+              <Description>Store position 3</Description>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>103</Key>
+              </Keys>
+              <Value>2</Value>
+              <Description>Restore position 3</Description>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols>
+    <SymbolEntry>
+      <Name>iActiveCoordSet</Name>
+      <Address>11960157</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>aobTeleportHook_r</Name>
+      <Address>00570EE3</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>bTeleportEnabled</Name>
+      <Address>07410198</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>iCoordSetAction</Name>
+      <Address>0741019C</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>bCoordSetStored</Name>
+      <Address>074101AC</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>dCoordSet</Name>
+      <Address>074101BC</Address>
+    </SymbolEntry>
+  </UserdefinedSymbols>
+</CheatTable>

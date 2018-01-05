@@ -1,0 +1,291 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="18">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>0</ID>
+      <Description>"AdvFreeCam (F2)"</Description>
+      <LastState Activated="0"/>
+      <Color>80000008</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>{ Game   : witcher3.exe
+  Version: 1.04 Steam
+  Date   : 2015-05-26
+  Author : mgr.inz.Player
+}
+
+define(CameraSpeed,0.05)  //sane range: 0.01 - 0.50
+
+{
+NUM 5 - forward
+NUM 2 - backward
+NUM 1 - strafe left
+NUM 3 - strafe right
+NUM 7 - Elev up
+NUM 9 - Elev down
+
+press right mouse button to speed up freecam
+}
+
+
+[ENABLE]
+alloc(newmem,$1000,witcher3.exe)
+
+
+aobscanmodule(AdvancedFreeCam,witcher3.exe,E8 8B 42 3C 89 41 EC 8B 42 40 89 41 F0) // should be unique
+registersymbol(AdvancedFreeCam)
+
+aobscanmodule(CamPos,witcher3.exe,30 5F C3 CC CC CC CC CC CC CC CC CC CC CC CC CC 8B 02 89 01 8B 42 04) // should be unique
+registersymbol(CamPos)
+
+label(return)
+label(return2)
+
+
+label(normVector)
+label(FreeCam)
+label(epilog)
+label(subGetAsyncKeyState)
+label(factor)
+
+
+
+
+
+newmem:
+  lea rax,[rdx+40]
+  mov [normVector],rax
+
+  mov eax,[rdx+40]
+  mov [rcx-10],eax
+  jmp return
+
+
+
+
+FreeCam:
+cmp [rcx+5c],4
+je @f
+
+mov eax,[rdx]     //orig
+mov [rcx],eax     //orig
+mov eax,[rdx+04]  //orig
+jmp return2
+
+@@:
+push r10
+push r11
+push r12
+push r13
+push r14
+push r15
+push r8
+push r9
+push rax
+push rbp
+push rbx
+push rcx
+push rdi
+push rdx
+push rsi
+
+//pushed again, because it has needed address
+push rcx
+
+  xor r10,r10
+  xorps xmm15,xmm15
+
+  mov ecx,#101 //FORWARD
+  mov r11,1
+  call subGetAsyncKeyState
+  mov ecx,#98 //BACKWARD
+  mov r11,2
+  call subGetAsyncKeyState
+  mov ecx,#97 //LEFT
+  mov r11,4
+  call subGetAsyncKeyState
+  mov ecx,#99 //RIGHT
+  mov r11,8
+  call subGetAsyncKeyState
+
+  mov ecx,#103 //UP
+  mov r11,10
+  call subGetAsyncKeyState
+  mov ecx,#105 //DOWN
+  mov r11,20
+  call subGetAsyncKeyState
+
+  mov ecx,#2 //Faster (right mouse button)
+  mov r11,40
+  call subGetAsyncKeyState
+
+  pop rcx // rcx has cam pos address
+
+  test r10,r10
+  jz epilog
+
+
+  mov rax,[normVector]
+  test rax,rax
+  jz epilog
+
+  movups xmm0,[rax]
+
+  test r10,01  // forward
+  jz +4
+  addps xmm15,xmm0
+
+  test r10,02  // backward
+  jz +4
+  subps xmm15,xmm0
+
+
+  shufps xmm0,xmm0,21 //swap x and y
+  movq xmm1,xmm0      // only x and y
+  subss xmm1,xmm0
+  subss xmm1,xmm0
+
+  test r10,04  // left
+  jz +4
+  addps xmm15,xmm1
+
+  test r10,08  // right
+  jz +4
+  subps xmm15,xmm1
+
+  // move in Z axis
+  mov eax,(float)1
+  movd xmm0,eax
+  shufps xmm0,xmm0,45
+
+  test r10,10  // up
+  jz +4
+  addps xmm15,xmm0
+
+  test r10,20  // down
+  jz +4
+  subps xmm15,xmm0
+
+  // xmm15 is a sum of vectors
+
+  movaps xmm0,xmm15
+  xorps xmm1,xmm1
+  mulps xmm15,xmm15
+  movss xmm1,xmm15
+  shufps xmm15,xmm15,21
+  addss xmm1,xmm15
+  movhlps xmm15,xmm15
+  addss xmm1,xmm15
+  sqrtss xmm1,xmm1 // xmm1 contains vector length
+
+
+  xorps xmm15,xmm15
+  comiss xmm1,xmm15 // deal with "division by zero"
+  je epilog
+
+  shufps xmm1,xmm1,00
+  divps xmm0,xmm1   // vector is now normalized
+
+
+  movss xmm1,[factor]
+  shufps xmm1,xmm1,00
+  mulps xmm0,xmm1
+
+
+  test r10,40  // faster (3times faster)
+  jz @f
+  movaps xmm1,xmm0
+  addps xmm0,xmm1
+  addps xmm0,xmm1
+@@:
+
+
+  // move camera
+  movups xmm1,[rcx]
+  addps xmm1,xmm0
+  movq [rcx],xmm1
+  movhlps xmm1,xmm1
+  movss [rcx+8],xmm1
+
+
+epilog:
+pop rsi
+pop rdx
+pop rdi
+pop rcx
+pop rbx
+pop rbp
+pop rax
+pop r9
+pop r8
+pop r15
+pop r14
+pop r13
+pop r12
+pop r11
+pop r10
+mov rax,rcx
+ret
+
+
+
+
+subGetAsyncKeyState:
+  push r10
+  push r11
+
+  sub rsp,08
+  call GetAsyncKeyState
+  add rsp,08
+
+  pop r11
+  pop r10
+  test ax,8000
+
+  jz short @f
+    or r10,r11
+  @@:
+  ret
+
+normVector:
+dq 0
+factor:
+dd (float)CameraSpeed
+
+AdvancedFreeCam+07:
+  jmp newmem
+  nop
+return:
+
+
+CamPos+10:
+  jmp FreeCam
+  nop
+  nop
+return2:
+
+[DISABLE]
+
+AdvancedFreeCam+07:
+  db 8B 42 40 89 41 F0
+
+CamPos+10:
+  db 8B 02 89 01 8B 42 04
+
+unregistersymbol(AdvancedFreeCam)
+unregistersymbol(CamPos)
+dealloc(newmem)
+
+</AssemblerScript>
+      <Hotkeys>
+        <Hotkey>
+          <Action>Toggle Activation</Action>
+          <Keys>
+            <Key>113</Key>
+          </Keys>
+          <ID>0</ID>
+        </Hotkey>
+      </Hotkeys>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols/>
+</CheatTable>

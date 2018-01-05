@@ -1,0 +1,746 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="18">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>122</ID>
+      <Description>"Pleased Giraffe - Update 4"</Description>
+      <LastState Value="" Activated="0" RealAddress="00000000"/>
+      <Color>80000008</Color>
+      <GroupHeader>1</GroupHeader>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>78</ID>
+      <Description>"----------"</Description>
+      <LastState Value="" Activated="0" RealAddress="00000000"/>
+      <Color>80000008</Color>
+      <GroupHeader>1</GroupHeader>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>165</ID>
+      <Description>"9,999,999 Pixels"</Description>
+      <LastState Activated="0"/>
+      <Color>80000008</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>//Hook into a function that reads pixels.
+//Inject a write into it.
+[ENABLE]
+aobscan(readpixels,FF 73 50 8B 43 54)
+alloc(newmem,$1000)
+
+label(code)
+label(return)
+
+newmem:
+
+code:
+  mov [ebx+50],98967F //Write 9,999,999 pixels.
+  push [ebx+50]
+  mov eax,[ebx+54]
+  jmp return
+
+readpixels:
+  jmp code
+  nop
+return:
+registersymbol(readpixels)
+
+[DISABLE]
+readpixels:
+  db FF 73 50 8B 43 54
+unregistersymbol(readpixels)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: "starbound.exe"+1F9B34
+
+"starbound.exe"+1F9B14: 89 65 F0           -  mov [ebp-10],esp
+"starbound.exe"+1F9B17: C6 40 04 00        -  mov byte ptr [eax+04],00
+"starbound.exe"+1F9B1B: 83 EC 38           -  sub esp,38
+"starbound.exe"+1F9B1E: C6 45 FC 04        -  mov byte ptr [ebp-04],04
+"starbound.exe"+1F9B22: 8B F4              -  mov esi,esp
+"starbound.exe"+1F9B24: 89 65 E8           -  mov [ebp-18],esp
+"starbound.exe"+1F9B27: 83 EC 10           -  sub esp,10
+"starbound.exe"+1F9B2A: 8B CC              -  mov ecx,esp
+"starbound.exe"+1F9B2C: 89 65 E4           -  mov [ebp-1C],esp
+"starbound.exe"+1F9B2F: E8 BC 55 38 00     -  call starbound.exe+57F0F0
+// ---------- INJECTING HERE ----------
+"starbound.exe"+1F9B34: FF 73 50           -  push [ebx+50]
+"starbound.exe"+1F9B37: 8B 43 54           -  mov eax,[ebx+54]
+// ---------- DONE INJECTING  ----------
+"starbound.exe"+1F9B3A: 83 EC 18           -  sub esp,18
+"starbound.exe"+1F9B3D: C6 45 FC 05        -  mov byte ptr [ebp-04],05
+"starbound.exe"+1F9B41: 8B CC              -  mov ecx,esp
+"starbound.exe"+1F9B43: 89 45 E0           -  mov [ebp-20],eax
+"starbound.exe"+1F9B46: 68 F0 0A AA 01     -  push starbound.exe+6C0AF0
+"starbound.exe"+1F9B4B: E8 60 C8 37 00     -  call starbound.exe+5763B0
+"starbound.exe"+1F9B50: 8B CE              -  mov ecx,esi
+"starbound.exe"+1F9B52: C6 45 FC 04        -  mov byte ptr [ebp-04],04
+"starbound.exe"+1F9B56: E8 75 90 FC FF     -  call starbound.exe+1C2BD0
+"starbound.exe"+1F9B5B: 8D 45 C8           -  lea eax,[ebp-38]
+}
+</AssemblerScript>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>11</ID>
+      <Description>"Infinite Building Materials"</Description>
+      <LastState Activated="0"/>
+      <Color>000000</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>//Find the line of code that subtracts from a stack when you place a block/object.
+[ENABLE]
+aobscan(infuse, 72 0B 2B C2 89 41 48 B0 01 5D)
+label(_infuse)
+registersymbol(_infuse)
+
+//Remove the subtraction so it doesn't get used.
+infuse+2:
+_infuse:
+db 90 90
+
+[DISABLE]
+_infuse:
+db 2B C2
+
+unregistersymbol(_infuse)
+</AssemblerScript>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>8</ID>
+      <Description>"Right-Click To Dupe Stacks"</Description>
+      <LastState Activated="0"/>
+      <Color>000000</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>//Find the code that subtracts from an item stack when you split it.
+//Turns out that when you trash an item, it tries to subtract the
+//amount in the current stack from itself, so you can dupe like that
+//if you're fast enough to grab it back out.
+
+[ENABLE]
+aobscan(stacksplit, 29 3B 8D 42 60 39 38 8D 4D 0C)
+label(_stacksplit)
+registersymbol(_stacksplit)
+
+//Make the code add to the stack instead of removing from the stack.
+stacksplit:
+_stacksplit:
+db 01
+
+[DISABLE]
+_stacksplit:
+db 29
+
+unregistersymbol(_stacksplit)
+</AssemblerScript>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>168</ID>
+      <Description>"Fast Attacks / Digging"</Description>
+      <LastState Activated="0"/>
+      <Color>80000008</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>//Hook into the write for attack delay after firing.
+//Edit the delay so it's always 0.
+[ENABLE]
+aobscan(writeattackdelay,CC CC CC CC 55 8B EC F3 0F 10 45 08 F3 0F 11 41 10)
+alloc(newmem,$1000)
+
+label(code)
+label(return)
+
+newmem:
+
+code:
+  movss [ecx+10],xmm0
+  mov [ecx+10], (float)0 //Overwrite the change with 0 so it times out.
+  jmp return
+
+writeattackdelay+0C:
+  jmp code
+return:
+registersymbol(writeattackdelay)
+
+[DISABLE]
+writeattackdelay+0C:
+  db F3 0F 11 41 10
+unregistersymbol(writeattackdelay)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: "starbound.exe"+204FB8
+
+"starbound.exe"+204FA9: CC                    -  int 3 
+"starbound.exe"+204FAA: CC                    -  int 3 
+"starbound.exe"+204FAB: CC                    -  int 3 
+"starbound.exe"+204FAC: CC                    -  int 3 
+"starbound.exe"+204FAD: CC                    -  int 3 
+"starbound.exe"+204FAE: CC                    -  int 3 
+"starbound.exe"+204FAF: CC                    -  int 3 
+"starbound.exe"+204FB0: 55                    -  push ebp
+"starbound.exe"+204FB1: 8B EC                 -  mov ebp,esp
+"starbound.exe"+204FB3: F3 0F 10 45 08        -  movss xmm0,[ebp+08]
+// ---------- INJECTING HERE ----------
+"starbound.exe"+204FB8: F3 0F 11 41 10        -  movss [ecx+10],xmm0
+// ---------- DONE INJECTING  ----------
+"starbound.exe"+204FBD: 5D                    -  pop ebp
+"starbound.exe"+204FBE: C2 04 00              -  ret 0004
+"starbound.exe"+204FC1: CC                    -  int 3 
+"starbound.exe"+204FC2: CC                    -  int 3 
+"starbound.exe"+204FC3: CC                    -  int 3 
+"starbound.exe"+204FC4: CC                    -  int 3 
+"starbound.exe"+204FC5: CC                    -  int 3 
+"starbound.exe"+204FC6: CC                    -  int 3 
+"starbound.exe"+204FC7: CC                    -  int 3 
+"starbound.exe"+204FC8: CC                    -  int 3 
+}
+</AssemblerScript>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>149</ID>
+      <Description>"(Admin) Fullbright"</Description>
+      <LastState Activated="0"/>
+      <Color>000000</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>//Fullbright is a 1-byte value, 0 for off and 1 for on.
+//Commands /admin and then /fullbright will turn it on normally for testing.
+//It tends to be in higher addresses and can be changed in RAM for easy testing.
+//Find something like this comparison statement checking if it's on or off.
+//&gt;&gt;starbound.exe+196332 - 80 BE 30010000 00     - cmp byte ptr [esi+00000130],00
+//  starbound.exe+196339 - 74 1B                 - je starbound.exe+196356
+//  starbound.exe+19633B - 8D 45 0D              - lea eax,[ebp+0D]
+//  starbound.exe+19633E - 66 C7 45 0D FFFF      - mov word ptr [ebp+0D],FFFF
+
+[ENABLE]
+aobscan(fullbright, 80 BE 08 01 00 00 00 74 1B 8B 4D EC)
+label(_fullbright)
+registersymbol(_fullbright)
+
+//Reverse the logic of the check by checking for on instead of off.
+fullbright+6:
+_fullbright:
+db 01
+
+[DISABLE]
+_fullbright:
+db 00
+
+unregistersymbol(_fullbright)
+</AssemblerScript>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>158</ID>
+      <Description>"(Admin) Ignore Monster Attacks"</Description>
+      <LastState Activated="0"/>
+      <Color>000000</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>//Find the admin flag(s).  There's two of them, one for if you're
+//actually in admin mode or not (editable), and one that determines
+//if you have the admin regen and invincibility stuff.
+//The second one of the pair is what you want.
+//
+//For monster attacks it's read when you should get hit.
+//It's a comparison against 0, like...
+//80 BB 61F9FFFF 00     - cmp byte ptr [ebx-0000069F],00
+//0F85 FE000000         - jne starbound.exe+16278D
+[ENABLE]
+aobscan(ignoremonsters, 80 BB 91 F9 FF FF 00 0F 85 FE 00 00 00)
+label(_ignoremonsters)
+registersymbol(_ignoremonsters)
+
+//Reverse the logic of the check by checking for on instead of off.
+ignoremonsters+6:
+_ignoremonsters:
+db 01
+
+[DISABLE]
+_ignoremonsters:
+db 00
+unregistersymbol(_ignoremonsters)
+</AssemblerScript>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>159</ID>
+      <Description>"(Admin) Health + Energy Regen"</Description>
+      <LastState Activated="0"/>
+      <Color>000000</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>//Find the admin flag(s).  There's two of them, one for if you're
+//actually in admin mode or not (editable), and one that determines
+//if you have the admin regen and invincibility stuff.
+//The second one of the pair is what you want.
+//
+//For healing it's read once per game tick, like...
+//80 BB 61F9FFFF 00     - cmp byte ptr [ebx-0000069F],00
+//74 0B                 - je starbound.exe+164FD8
+
+
+[ENABLE]
+aobscan(instaheal, 80 BB 91 F9 FF FF 00 74 0B)
+label(_instaheal)
+registersymbol(_instaheal)
+
+//Reverse the logic of the check by checking for on instead of off.
+instaheal+6:
+_instaheal:
+db 01
+
+[DISABLE]
+_instaheal:
+db 00
+
+unregistersymbol(_instaheal)
+</AssemblerScript>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>170</ID>
+      <Description>"(Test) 999 Item Stacks"</Description>
+      <LastState Activated="0"/>
+      <Color>80000008</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>//Find a push that reads the stack of an item repeatedly.
+//Edit this to insert a write to make the stack 999.
+[ENABLE]
+aobscan(readitemstack,FF 76 48 8D 46 30)
+alloc(newmem,$1000)
+
+label(code)
+label(return)
+
+newmem:
+
+code:
+  push [esi+48]
+  lea eax,[esi+30]
+  cmp dword [esi+60],1 //Compare the max stack size to 1.
+  je return //If it's 1, just end now to avoid increasing it.
+  mov [esi+48],3E7 //Otherwise make the stack 999.
+  jmp return
+
+readitemstack:
+  jmp code
+  nop
+return:
+registersymbol(readitemstack)
+
+[DISABLE]
+readitemstack:
+  db FF 76 48 8D 46 30
+unregistersymbol(readitemstack)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: "starbound.exe"+203941
+
+"starbound.exe"+203924: 80 78 08 00           -  cmp byte ptr [eax+08],00
+"starbound.exe"+203928: 74 12                 -  je starbound.exe+20393C
+"starbound.exe"+20392A: 89 4D F0              -  mov [ebp-10],ecx
+"starbound.exe"+20392D: 8D 4D F0              -  lea ecx,[ebp-10]
+"starbound.exe"+203930: 51                    -  push ecx
+"starbound.exe"+203931: 50                    -  push eax
+"starbound.exe"+203932: E8 F9 BC E0 FF        -  call starbound.exe+F630
+"starbound.exe"+203937: 83 C4 08              -  add esp,08
+"starbound.exe"+20393A: EB 05                 -  jmp starbound.exe+203941
+"starbound.exe"+20393C: E8 2F 2E E1 FF        -  call starbound.exe+16770
+// ---------- INJECTING HERE ----------
+"starbound.exe"+203941: FF 76 48              -  push [esi+48]
+"starbound.exe"+203944: 8D 46 30              -  lea eax,[esi+30]
+// ---------- DONE INJECTING  ----------
+"starbound.exe"+203947: C7 45 FC 00 00 00 00  -  mov [ebp-04],00000000
+"starbound.exe"+20394E: 83 EC 18              -  sub esp,18
+"starbound.exe"+203951: 8B CC                 -  mov ecx,esp
+"starbound.exe"+203953: 50                    -  push eax
+"starbound.exe"+203954: E8 F7 29 37 00        -  call starbound.exe+576350
+"starbound.exe"+203959: 8B 4D 08              -  mov ecx,[ebp+08]
+"starbound.exe"+20395C: C7 45 FC FF FF FF FF  -  mov [ebp-04],FFFFFFFF
+"starbound.exe"+203963: E8 68 F2 FB FF        -  call starbound.exe+1C2BD0
+"starbound.exe"+203968: 8B 4D F4              -  mov ecx,[ebp-0C]
+"starbound.exe"+20396B: 8B 45 08              -  mov eax,[ebp+08]
+}
+</AssemblerScript>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>153</ID>
+      <Description>"----------"</Description>
+      <LastState Value="" Activated="0" RealAddress="00000000"/>
+      <Color>80000008</Color>
+      <GroupHeader>1</GroupHeader>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols>
+    <SymbolEntry>
+      <Name>what3</Name>
+      <Address>096418CF</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>_upfree</Name>
+      <Address>09936070</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>x</Name>
+      <Address>02970000</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>y</Name>
+      <Address>02970010</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>pills</Name>
+      <Address>0CE46EB5</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>keys</Name>
+      <Address>08119EB6</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>None</Name>
+      <Address>0B272098</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>life</Name>
+      <Address>0BECAF22</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>hit</Name>
+      <Address>0BECAE6B</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>armor</Name>
+      <Address>0BECAE90</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>itempower</Name>
+      <Address>0BF1C531</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>itemp9v</Name>
+      <Address>0BF1C51A</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>itemlist1</Name>
+      <Address>0BEC2624</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>itemlist2</Name>
+      <Address>0BEC278E</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>itemlist3</Name>
+      <Address>0BEC2893</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>itemlist4</Name>
+      <Address>0BEC2943</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>itemlist5</Name>
+      <Address>0BEC29EF</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>itemlist6</Name>
+      <Address>0BEC2ABC</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>itemlist7</Name>
+      <Address>0BEC2B3A</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>itemlist8</Name>
+      <Address>0BEC2BC8</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>itemlist9</Name>
+      <Address>0BEC2FAB</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>maxitems</Name>
+      <Address>0BEBED99</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>coins1</Name>
+      <Address>0BED66F0</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>coins2</Name>
+      <Address>0BED6CBC</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>bombs</Name>
+      <Address>0BEE0837</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>keys1</Name>
+      <Address>0BED62D4</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>keys2</Name>
+      <Address>0BF1696A</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>keys3</Name>
+      <Address>0BF2681B</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>keys4</Name>
+      <Address>0BF26895</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>dspeed</Name>
+      <Address>0BF1EF36</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>rate</Name>
+      <Address>0BEE1FD5</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>damage</Name>
+      <Address>0BEBCB64</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>slotf</Name>
+      <Address>0BEE888F</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>bbank</Name>
+      <Address>0BEEEE76</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>Alt</Name>
+      <Address>0BF2A5C2</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>Alt2</Name>
+      <Address>0BF2A5D1</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>XL</Name>
+      <Address>0BF29E8F</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>roomAdd</Name>
+      <Address>0BECC10B</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>startItem</Name>
+      <Address>0BECC11A</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>item0</Name>
+      <Address>004CC4EC</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>item1</Name>
+      <Address>004C5D61</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>item2</Name>
+      <Address>004C6090</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>zoom</Name>
+      <Address>04750420</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>flag1</Name>
+      <Address>047600A7</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>flag2</Name>
+      <Address>047600A8</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>flag3</Name>
+      <Address>047600A9</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>s1_enable</Name>
+      <Address>031100C6</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>l1_enable</Name>
+      <Address>031100CA</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>s_enable</Name>
+      <Address>06CB00BB</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>l_enable</Name>
+      <Address>06CB00BF</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>u_enable</Name>
+      <Address>06CB00C3</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>one</Name>
+      <Address>06CB00C7</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>two</Name>
+      <Address>06CB00CB</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>_nodd</Name>
+      <Address>0B8204FA</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>_infmp</Name>
+      <Address>16371B59</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>_infammo</Name>
+      <Address>163793A6</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>_onehit</Name>
+      <Address>2014C3A1</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>_onehitw</Name>
+      <Address>2014C34E</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>_instboom</Name>
+      <Address>2440E75F</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>_instboom2</Name>
+      <Address>2440E741</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>_infrocket</Name>
+      <Address>18FD16D2</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>_infwings</Name>
+      <Address>18FD074E</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>_noburn</Name>
+      <Address>18FC607A</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>stack_hack</Name>
+      <Address>00561870</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>player_hack</Name>
+      <Address>0059F1DB</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>money_hack</Name>
+      <Address>00557521</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>health_hack</Name>
+      <Address>0059F05B</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>hunger_hack</Name>
+      <Address>0059F17B</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>recipe1</Name>
+      <Address>1222F75D</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>recipe2</Name>
+      <Address>1222F76C</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>recipe3</Name>
+      <Address>1222F77D</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>_fastuse</Name>
+      <Address>1207733D</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>_fastuse2</Name>
+      <Address>12072016</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>timer_aob</Name>
+      <Address>0B6D93FD</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>players</Name>
+      <Address>03AB455C</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>_nohunger</Name>
+      <Address>0059E0AB</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>_nohunger2</Name>
+      <Address>0059E0B9</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>_nocolder</Name>
+      <Address>0059E493</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>_findstatsb</Name>
+      <Address>60B20C6E</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>_lavaheals</Name>
+      <Address>005A1373</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>_maxhp</Name>
+      <Address>0059FEAD</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>_player2</Name>
+      <Address>176A3B38</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>_setfuel</Name>
+      <Address>004E0A86</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>_alwayswarm</Name>
+      <Address>005C4850</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>_infair</Name>
+      <Address>0062487A</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>_alwaysfull</Name>
+      <Address>00622180</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>_player</Name>
+      <Address>170278C4</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>_infeat</Name>
+      <Address>0084EE05</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>_moneyadd2</Name>
+      <Address>005C69EB</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>_fastattacks</Name>
+      <Address>005E4E37</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>_playerbase</Name>
+      <Address>08A40000</Address>
+    </SymbolEntry>
+  </UserdefinedSymbols>
+  <LuaScript>
+</LuaScript>
+  <DisassemblerComments>
+    <DisassemblerComment>
+      <Address>"pmain.dll"+7297F</Address>
+      <Comment>------------------1</Comment>
+    </DisassemblerComment>
+    <DisassemblerComment>
+      <Address>"pmain.dll"+72991</Address>
+      <Comment>------------------2</Comment>
+    </DisassemblerComment>
+  </DisassemblerComments>
+</CheatTable>
