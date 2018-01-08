@@ -17,6 +17,11 @@ since it makes searching for end users easier.
     deus ex (1997)
     deus ex (2013)
     ```
+5.  If every table the game directory has been processed and verified, add a
+    empty file to indicate as such:
+    ```
+    .verified-YYYY-MM-DD
+    ```
 
 Table Naming Format:
 --------------------
