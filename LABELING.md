@@ -24,9 +24,8 @@ Tables are named to convey game, game version, table version, attribution, and
 platform the cheat table is for. Generally this follows the same naming
 convention as [Game Directory Format](#game-directory-format):
 
+> [game](#game)[_game-version](#game-version)[_os-platform](#os-platform)[_drm-platform](#drm-platform)[_table-version](#table-version)[_author](#author).ct
 ```
-[game][_game-version][_os-platform][_drm-platform][_table-version][_author].ct
-
 deus-ex-1997_1.005_steam_1_biskuts.ct
 deus-ex-1997_1.005_steam_2_biskuts.ct
 deus-ex-1997_2.03_steam_2_biskuts.ct
