@@ -24,11 +24,11 @@ Tables are named to convey game, game version, table version, attribution, and
 platform the cheat table is for. Generally this follows the same naming
 convention as [Game Directory Format](#game-directory-format):
 
-> [game](#game)[_game-version](#game-version)[_os-platform](#os-platform)[_drm-platform](#drm-platform)[_table-version](#table-version)[_author](#author).ct
+> [game](#game)[_game-version](#game-version)[_os-platform](#os-platform)(_os-architecture](#os-architecture)[_drm-platform](#drm-platform)[_table-version](#table-version)[_author](#author).ct
 ```
-deus-ex-1997_1.005_steam_1_biskuts.ct
-deus-ex-1997_1.005_steam_2_biskuts.ct
-deus-ex-1997_2.03_steam_2_biskuts.ct
+deus-ex-1997_1.005_pc_x86_steam_1_biskuts.ct
+deus-ex-1997_1.005_pc_x86_steam_2_biskuts.ct
+deus-ex-1997_2.03_linux_x86_steam_2_biskuts.ct
 deus-ex-1997_2.03_gog_1_frenchfries.ct
 ```
 
@@ -48,19 +48,26 @@ The version of the game this table is for.
 os-platform:
 ============
 What OS this table is for.
-
 1. If the game is only on one platform, leave this section out.
-
 ```
 pc
 osx
 linux
 ```
 
+os-architecture:
+================
+What architecture this ct is for.
+1. If the game is only released in one architecture, leave this section out.
+```
+x86
+x64
+arm
+```
+
 drm-platform:
 ==============
 The platform that this specific table is for.
-
 1. If it works on any platform, leave this section out.
 2. Use the common name for the DRM platform the game is installed from, search
    before creating a new one. (e.g. A uplay game that is bought on Steam uses 
@@ -84,7 +91,6 @@ The version of the table.
 author:
 =======
 The author of the table.
-
 1. Lowercase all letters
 2. Links and additional attribution in the README.md for the game.
 
