@@ -29,7 +29,7 @@ Tables are named to convey game, game version, table version, attribution, and
 platform the cheat table is for. Generally this follows the same naming
 convention as [Game Directory Format](#game-directory-format):
 
-> [game](#game)[_game-version](#game-version)[_os-platform](#os-platform)(_os-architecture](#os-architecture)[_drm-platform](#drm-platform)[_table-version](#table-version)[_author](#author).ct
+> [game](#game)[_game-version](#game-version)[_os-platform](#os-platform)[_os-architecture](#os-architecture)[_graphics-api](#graphics-api)[_drm-platform](#drm-platform)[_table-version](#table-version)[_author](#author).ct
 ```
 deus-ex-1997_1.005_pc_x86_steam_1_biskuts.ct
 deus-ex-1997_1.005_pc_x86_steam_2_biskuts.ct
@@ -70,6 +70,24 @@ x64
 arm
 ```
 
+graphics-api:
+=============
+The graphics API used for this ct.
+1. If the game does not depends on a specific graphics API, leave this section
+   out.
+2. If directX, use [the version listed on the wiki][8]
+3. If only the major version of directX is known, just use that.
+
+```
+dx9
+...
+dx10
+dx10.1
+...
+dx12
+opengl
+```
+
 drm-platform:
 ==============
 The platform that this specific table is for.
@@ -106,3 +124,4 @@ The author of the table.
 [5]: http://www.origin.com
 [6]: http://www.greenmangaming.com
 [7]: http://www.itch.io
+[8]: https://en.wikipedia.org/wiki/DirectX#Release_history
