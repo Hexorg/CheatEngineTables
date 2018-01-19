@@ -54,11 +54,14 @@ os-platform:
 ============
 What OS this table is for.
 1. If the game is only on one platform, leave this section out.
-```
-pc
-osx
-linux
-```
+
+    |os-platform|Description                          |
+    |-----------|-------------------------------------|
+    |win        |Windows                              |
+    |osx        |Mac OSX                              |
+    |linux      |Linux                                |
+    |psx        |Playstation (or playstation emulator)|
+    |n64        |Nintendo 64 (or emulator)            |
 
 os-architecture:
 ================
@@ -96,14 +99,16 @@ The platform that this specific table is for.
    before creating a new one. (e.g. A uplay game that is bought on Steam uses 
    Steam DRM, not Uplay's, and should be labeled as ```_steam```)
 
-    |Common Name|Platform             |
-    |-----------|---------------------|
-    |steam      |[Steam][1]           |
-    |gog        |[GOG][2]             |
-    |uplay      |[U-play][3]          |
-    |origin     |[Origin][4]          |
-    |gmg        |[Green Man Gaming][5]|
-    |itch       |[itch.io][6]         |
+    |Common Name|Platform                |
+    |-----------|------------------------|
+    |steam      |[Steam][1]              |
+    |gog        |[GOG][2]                |
+    |uplay      |[U-play][3]             |
+    |origin     |[Origin][4]             |
+    |gmg        |[Green Man Gaming][5]   |
+    |itch       |[itch.io][6]            |
+    |flash      |Shockwave Flash         |
+    |browser    |Browser based, non-flash|
 
 table-version:
 =============
