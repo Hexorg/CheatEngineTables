@@ -1,0 +1,569 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="16">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>56</ID>
+      <Description>"[X] &lt;== Game of Thrones v1500  Steam Script v11"</Description>
+      <Options moHideChildren="1"/>
+      <Color>FF0000</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>{
+===========================================
+ Game Title    : Game of Thrones (RPG)
+ Game Version  : 1.5.0.0 (steam)
+ Game Sponsor  : Myself
+ Process Name  : ShippingPC-AGOTGame.exe
+ Script Version: 1.0
+ CE Version    : 6.3
+ Release date  : 17-Oct-2013
+ Author        : Recifense
+ History:
+ 21-May-12: First Release
+ 23-May-12: Release for Reloaded Version
+ 24-May-12: v1.1 New approach on _MonPlayer
+ 14-Jun-12: Adapted to version 1.1.0.0
+ 18-Nov-12: Adapted to version 1.4.0.0
+ 17-Oct-13: Release for Version 1.5.0.0 (steam)
+ Features:
+ - God Mode
+ - Full Energy
+ - Quick Level Up
+ - Minimum Gold
+ - Some pointers
+===========================================
+}
+
+//=========================================
+// Definition section
+define(LUDO,"ShippingPC-AGOTGame.exe")
+
+define(MHPR,"ShippingPC-AGOTGame.exe"+004c51dc)
+define(GDMD,"ShippingPC-AGOTGame.exe"+000bb41e)
+
+define(BAPM,"ShippingPC-AGOTGame.exe"+00f9ca70)
+define(BAMI,"ShippingPC-AGOTGame.exe"+00f9a108)
+define(BAGD,"ShippingPC-AGOTGame.exe"+00f92f68)
+define(BAXP,"ShippingPC-AGOTGame.exe"+00c0fad0)
+define(BAHP,"ShippingPC-AGOTGame.exe"+00c0fad0)
+
+//=========================================
+[ENABLE]
+//=========================================
+//LuaCall(CheckVersion())
+//=========================================
+// Check if script is compatible to this game version
+// If false the script will not be loaded
+
+assert(MHPR,8b 8a d8 01 00 00 8b 01 8b 90 24 01 00 00 51 55 57 ff d2 85 c0)
+assert(GDMD,8b 4c 24 04 d9 19 c2 14 00 8b 51 48 8b 4c 24 04 0f af d0 8b 44)
+
+//=========================================
+alloc(MyCode,4096,LUDO)
+//=========================================
+// Declaration section
+label(_MonHumanPlayer)
+label(_MonHP00)
+label(_BackMHP)
+label(_ExitMHP)
+label(_GodMode)
+label(_GodMD00)
+label(_GodMD01)
+label(_GodMDZZ)
+label(_BackGMD)
+label(_ExitGMD)
+label(iEnableMGD)
+label(iEnableMXP)
+label(iEnableGMD)
+label(iEnableMEY)
+label(pXP)
+label(pHero)
+label(pGold)
+label(pHP)
+label(pEnergy)
+label(pHP1)
+label(pEnergy1)
+label(dSave)
+label(iECX0)
+label(iECX1)
+
+//=========================================
+// Registering Symbols
+registersymbol(MyCode)
+registersymbol(iEnableMGD)
+registersymbol(iEnableMXP)
+registersymbol(iEnableGMD)
+registersymbol(iEnableMEY)
+registersymbol(pXP)
+registersymbol(pHero)
+registersymbol(pGold)
+registersymbol(pHP)
+registersymbol(pEnergy)
+registersymbol(iECX0)
+registersymbol(iECX1)
+
+//=========================================
+MyCode:
+//=========================================
+// When right-clicking
+_MonHumanPlayer:
+ push ebx
+ push edi
+ push esi
+
+ mov ebx,[edx]
+ cmp ebx,BAPM
+ jne _ExitMHP
+
+ mov ecx,[edx+000001D8]
+
+ mov ebx,[ecx]
+ cmp ebx,BAMI
+ jne _ExitMHP
+
+ mov edi,[ecx+0000055c]
+ test edi,edi
+ jz _ExitMHP
+
+ mov ebx,[edi]
+ cmp ebx,BAGD
+ jne _ExitMHP
+
+ mov [pGold],edi
+
+ cmp dword ptr [iEnableMGD],0
+ je _MonHP00                       // Jump if feature is disabled
+
+ mov ebx,#21168000                 // 6300 gold * 3360
+ cmp ebx,[edi+00000240]
+ jle _MonHP00
+
+ mov [edi+00000240],ebx
+
+_MonHP00:
+ mov esi,[ecx+0000067c]
+ test esi,esi
+ jz _ExitMHP
+
+ mov ebx,[esi]
+ cmp ebx,BAXP
+ jne _ExitMHP
+
+ mov edi,[esi+40]
+ mov ebx,[edi]
+ cmp ebx,BAHP
+ jne _ExitMHP
+
+ mov [pXP],esi
+ mov [pHero],edi
+ lea ebx,[edi+60]
+ mov [pEnergy],ebx
+ lea ebx,[edi+00000088]
+ mov [pHP],ebx
+
+ cmp dword ptr [iEnableMXP],0
+ je _ExitMHP                       // Jump if feature is disabled
+
+ mov edi,[pXP]
+ mov ebx,[edi+4c]
+ cmp ebx,[edi+50]
+ je _ExitMHP
+
+ movsd [dSave],xmm0
+ movss xmm0,[edi+4c]
+ cvtss2si ebx,xmm0
+ lea ebx,[ebx-1]
+ cvtsi2ss xmm0,ebx
+ movss [edi+50],xmm0
+ movsd xmm0,[dSave]
+
+_ExitMHP:
+ pop esi
+ pop edi
+ pop ebx
+
+ mov ecx,[edx+000001D8]            // Original code
+ jmp _BackMHP                      // Back to main code
+
+//=========================================
+_GodMode:
+ mov [iECX0],eax
+
+ mov eax,55555555
+ mov [pHP1],eax
+ mov [pEnergy1],eax
+
+ mov ecx,[esp+04]
+ mov eax,[esp+28]
+
+ and ecx,fffff000
+ and eax,fffff000
+ cmp eax,ecx
+ jne _GodMDZZ
+
+ mov ecx,[esp+28]
+ mov eax,[ecx]
+ cmp eax,BAHP
+ jne _GodMDZZ
+
+ mov eax,(float)100
+ cmp eax,[ecx+68]
+ jne _GodMDZZ
+
+ cmp eax,[ecx+7c]
+ jne _GodMDZZ
+
+ mov ecx,[ecx+3c]
+ mov [iECX1],ecx
+ mov eax,[ecx]
+ cmp eax,BAMI
+ jne _GodMDZZ
+
+ mov eax,[ecx+0000055c]
+ cmp eax,[pGold]
+ jne _GodMDZZ
+
+ mov eax,[esp+28]
+ lea ecx,[eax+00000088]
+ mov [pHP1],ecx
+ lea ecx,[eax+60]
+ mov [pEnergy1],ecx
+
+_GodMDZZ:
+ mov ecx,[esp+04]
+
+ cmp dword ptr [iEnableGMD],0
+ je _GodMD00                       // Jump if feature is disabled
+
+ cmp ecx,[pHP]
+ je _GodMD01
+
+ cmp ecx,[pHP1]
+ je _GodMD01
+
+_GodMD00:
+ cmp dword ptr [iEnableMEY],0
+ je _ExitGMD                       // Jump if feature is disabled
+
+ cmp ecx,[pEnergy]
+ je _GodMD01
+
+ cmp ecx,[pEnergy1]
+ jne _ExitGMD
+
+_GodMD01:
+ fstp st(0)
+ fld dword ptr [ecx+08]
+
+_ExitGMD:
+ mov eax,[iECX0]
+
+ mov ecx,[esp+04]                  // Original code
+ fstp dword ptr [ecx]              // Original code
+ jmp _BackGMD                      // Back to main code
+
+//=========================================
+ db '======================================&gt;'
+ db 'CE6.3 Script by Recifense 101713'
+//=========================================
+// Variables
+iEnableMGD:
+ dd 0
+iEnableMXP:
+ dd 0
+iEnableGMD:
+ dd 0
+iEnableMEY:
+ dd 0
+pXP:
+ dd 0
+pHero:
+ dd 0
+pGold:
+ dd 0
+pHP:
+ dd MyCode
+pEnergy:
+ dd MyCode
+pHP1:
+ dd 0
+pEnergy1:
+ dd 0
+dSave:
+ dq 0
+iECX0:
+ dd 0
+iECX1:
+ dd 0
+
+//=========================================
+// Hacking Points
+MHPR:
+ jmp _MonHumanPlayer
+ nop
+_BackMHP:
+
+GDMD:
+ jmp _GodMode
+ nop
+_BackGMD:
+
+//=========================================
+// Script for Restoring Original Codes
+[DISABLE]
+MHPR:
+// mov ecx,[edx+000001D8]
+ db 8b 8a d8 01 00 00
+
+GDMD:
+// mov ecx,[esp+04]
+// fstp dword ptr [ecx]
+ db 8b 4c 24 04 d9 19
+
+//=========================================
+// Unregistering Symbols
+unregistersymbol(MyCode)
+unregistersymbol(iEnableMGD)
+unregistersymbol(iEnableMXP)
+unregistersymbol(iEnableGMD)
+unregistersymbol(iEnableMEY)
+unregistersymbol(pXP)
+unregistersymbol(pHero)
+unregistersymbol(pGold)
+unregistersymbol(pHP)
+unregistersymbol(pEnergy)
+unregistersymbol(iECX0)
+unregistersymbol(iECX1)
+
+//=========================================
+dealloc(MyCode)
+//============= Scripts End ===============
+
+// ****************************************
+// NOTES
+// ****************************************
+{
+}
+
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>33</ID>
+          <Description>"Enable/Disable Minimum Gold =&gt; (1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMGD</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>1</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>0</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>34</ID>
+          <Description>"Enable/Disable Quick Level Up =&gt; (1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMXP</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>33</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>34</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>48</ID>
+          <Description>"Enable/Disable God Mode =&gt; (1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableGMD</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>49</ID>
+          <Description>"Enable/Disable Full Energy =&gt; (1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMEY</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>35</ID>
+          <Description>"========= Main Character Info ========="</Description>
+          <ShowAsHex>1</ShowAsHex>
+          <Color>000080</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>pXP</Address>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>57</ID>
+              <Description>"Current XP ======&gt;"</Description>
+              <Color>0000FF</Color>
+              <VariableType>Float</VariableType>
+              <Address>pXP</Address>
+              <Offsets>
+                <Offset>50</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>58</ID>
+              <Description>"Defense Points ===&gt;"</Description>
+              <Color>0000FF</Color>
+              <VariableType>Float</VariableType>
+              <Address>pXP</Address>
+              <Offsets>
+                <Offset>5C</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>59</ID>
+              <Description>"Attribute Points ===&gt;"</Description>
+              <Color>0000FF</Color>
+              <VariableType>Float</VariableType>
+              <Address>pXP</Address>
+              <Offsets>
+                <Offset>60</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>60</ID>
+              <Description>"Skill Points ======&gt;"</Description>
+              <Color>0000FF</Color>
+              <VariableType>Float</VariableType>
+              <Address>pXP</Address>
+              <Offsets>
+                <Offset>68</Offset>
+              </Offsets>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols>
+    <SymbolEntry>
+      <Name>iEnableMG</Name>
+      <Address>032B0274</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>iEnableMX</Name>
+      <Address>032B0278</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>iEnableGM</Name>
+      <Address>032B027C</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>iEnableME</Name>
+      <Address>032B0280</Address>
+    </SymbolEntry>
+  </UserdefinedSymbols>
+  <Comments>===========================================
+ Game Title    : Game of Thrones (RPG)
+ Game Version  : 1.5.0.0 (steam)
+ Game Sponsor  : Myself
+ Process Name  : ShippingPC-AGOTGame.exe
+ Script Version: 1.0
+ CE Version    : 6.3
+ Release date  : 17-Oct-2013
+ Author        : Recifense
+ History:
+ 21-May-12: First Release
+ 23-May-12: Release for Reloaded Version
+ 24-May-12: v1.1 New approach on _MonPlayer
+ 14-Jun-12: Adapted to version 1.1.0.0
+ 18-Nov-12: Adapted to version 1.4.0.0
+ 17-Oct-13: Release for Version 1.5.0.0 (steam)
+ Features:
+ - God Mode       [1]
+ - Full Energy    [1]
+ - Quick Level Up [2] (*)
+ - Minimum Gold,  [3] (*)
+ - Some pointers  [4]
+===========================================
+[1] It works for main character and companion. The pet is not protected.
+[2] It works only for main character. The current XP will be set to "Needed_value - 1"
+[3] 6300 gold;
+[4] Used in the table
+(*) During the game, it will take effect immediately. No coming back.  
+===========================================
+HOTKEYS:
+[CTRL+Home] = Enable  all cheats (but Level Up);
+[CTRL+End]  = Disable all cheats (but Level Up);
+-------------
+[CTRL+PageUp]   = Enable  Quick Level Up cheat;
+[CTRL+PageDown] = Disable Quick Level Up cheat;
+===========================================
+[Note] You can set/modify the hot keys.
+===========================================
+Cheers!
+ 
+</Comments>
+</CheatTable>

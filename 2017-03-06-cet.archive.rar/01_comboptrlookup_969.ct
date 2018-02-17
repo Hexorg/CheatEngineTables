@@ -1,0 +1,186 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="19">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>12</ID>
+      <Description>"define comboPtrLookup"</Description>
+      <LastState Activated="1"/>
+      <Color>80000008</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>{$lua}
+if syntaxcheck ~= true then
+
+function parseComboPtr(s)
+  local function safeGetAddress(s)
+    if type(s)=='number' then return s end
+    if type(s)~='string' then return nil end
+    local hexform = tonumber(s,16)
+    if hexform ~= nil then return hexform end
+    local e = errorOnLookupFailure(false)
+    local addy = getAddress(s)
+    errorOnLookupFailure(e)
+    return addy&gt;0 and addy or nil
+  end
+  local function sep(self,SEP)
+    SEP = type(SEP)=='string' and SEP or ','
+    local r,s,i,a,b = {},{},1,1,-1
+    a,b = self:find(SEP,i)
+    while a~=nil do
+      r[1+#r]= self:sub(i,a-1)
+      s[1+#s]= self:sub(a,b)
+      i = b + 1
+      a,b = self:find(SEP,i)
+    end
+    r[1+#r] = self:sub(i)
+    return r,s
+  end
+
+--  if s:match('^:[^"]+:$') then s = s:sub(2,-2) else return nil end
+  if s:sub(1,1)==':' and s:sub(-1,-1)==':' and s:len()&gt;2 then s = s:sub(2,-2) else return nil end
+  local bit64 = targetIs64Bit()
+  local parts,ptype = sep(s,"[|/]")
+  if #parts&gt;0 and parts[1]:len()&gt;0 then
+    local addy,offset = safeGetAddress(parts[1])
+    if addy~= nil then
+      if #parts&lt;2 then return addy end
+      for i=2,#parts-1 do
+        offset = safeGetAddress(parts[i])
+        if offset~=nil then
+          if bit64 and ptype[i-1]=='|' then
+            addy = readQword(addy+offset)
+          else
+            addy = readInteger(addy+offset)
+          end
+        else
+          addy = nil
+        end
+        if addy==nil then break end
+      end
+      if addy ~= nil then
+        if parts[#parts]:len()==0 then return addy end  --
+        offset = safeGetAddress(parts[#parts])
+        if offset~=nil then
+          return addy+offset
+        end
+      end
+    end
+  end
+end
+if ComboPtrID~=nil then unregisterSymbolLookupCallback(ComboPtrID) end
+ComboPtrID=registerSymbolLookupCallback(parseComboPtr,slFailure)
+
+end
+
+[ENABLE]
+[DISABLE]
+
+</AssemblerScript>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>1</ID>
+      <Description>"test comboPtrLookup , setup"</Description>
+      <LastState Activated="1"/>
+      <Color>80000008</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>[ENABLE]
+globalalloc(__,$4000)
+__:
+dq __
+__+10:
+dq __+20
+__+28:
+dq __+30
+__+38:
+dq __+40
+__+48:
+dq __+50
+__+50:
+dq #999999
+[DISABLE]
+// http://forum.cheatengine.org/viewtopic.php?t=530003
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>3</ID>
+          <Description>"normal ptr offset"</Description>
+          <LastState Value="??" Activated="0" RealAddress="00000000"/>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>__</Address>
+          <Offsets>
+            <Offset>0</Offset>
+            <Offset>8</Offset>
+            <Offset>8</Offset>
+            <Offset>8</Offset>
+            <Offset>10</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>9</ID>
+          <Description>"use comboPtrLookup, all qword ptr"</Description>
+          <LastState Value="??" Activated="0" RealAddress="00000000"/>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>":__|10|8|8|8:"</Address>
+          <Offsets>
+            <Offset>0</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>11</ID>
+          <Description>"use comboPtrLookup, some dword ptr"</Description>
+          <LastState Value="999999" Activated="0" RealAddress="0B7D0050"/>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>":__|10|8/8|8:"</Address>
+          <Offsets>
+            <Offset>0</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>5</ID>
+          <Description>"toggle broken dword ptr at __+38"</Description>
+          <LastState Activated="1"/>
+          <Color>80000008</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>__+80:
+dq ":__|10|8/8|8|0|0:"
+
+[ENABLE]
+__+3c:
+dd 1
+[DISABLE]
+__+3c:
+dd 0
+
+</AssemblerScript>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>13</ID>
+      <Description>"open cheatengine-x86_64.exe"</Description>
+      <LastState Activated="1"/>
+      <Color>80000008</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>{$lua}
+if syntaxcheck~=true then openProcess('cheatengine-x86_64.exe') end
+[ENABLE]
+[DISABLE]
+
+</AssemblerScript>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols>
+    <SymbolEntry>
+      <Name>__</Name>
+      <Address>0B7D0000</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>__luacave</Name>
+      <Address>06070000</Address>
+    </SymbolEntry>
+  </UserdefinedSymbols>
+  <LuaScript>
+</LuaScript>
+</CheatTable>

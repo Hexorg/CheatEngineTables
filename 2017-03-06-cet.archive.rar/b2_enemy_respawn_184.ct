@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="14">
+  <Forms>
+    <UDF1>5D91BD4EC33014851DA724A569610124B63B32A1B2313734025454A406980D711BABAE1D3937A41D7808DE8027E019717E07365FE99EF39D73FDED10123F47533F0EE79136BBC1CB5D743358F035BA67D4BBE76293A2FBE5B8B1CEDC5F72F426124CDD5BC70F5986422BEFE49599AD486055B22CE3661C4AC115F6BAA0993B1939B6985981A8D5B012464225358C3EB62C7A55A1E8454BFA213D29A896A1C1F94B658D3FB6FEA473A9C761CCDE9726E18612424616B51039CEF4DE9BABEAD5902EBB5650B7A24F2D6AEC4C1E90EFF2EB151AA136B9E34DE354E4500A298149A94B38E80250436EBB02A61C58524884CFE6026B6DBC73A60E985A35086537AC5A5A2E1955C66DBFD33E7BD0A4FA97DCFE07F903</UDF1>
+  </Forms>
+  <CheatEntries/>
+  <UserdefinedSymbols/>
+  <LuaScript>ObjScan = createMemScan()
+BaseAddress = getAddress('"Borderlands2.exe"+013A7D48')
+Count = 0
+ObjResult = {}
+CurrentObj = 0
+AdultVarkidAddress = 0
+DenBase = getAddress('"Borderlands2.exe"+13D3B00')
+EnBase = getAddress('"Borderlands2.exe"+13AC460')
+DenScan = createMemScan()
+EnScan = createMemScan()
+EnResult = {}
+STable = '"Borderlands2.exe"+1589A24'
+AVark = ""
+
+
+function DenFind()
+   memscan_firstScan(ObjScan,soExactValue,vtDword,"",BaseAddress,"0","0x00000000","0x70000000","",fsmAligned,"4",false,false,true,false)
+   memscan_waitTillDone(ObjScan)
+   ObjResult = createFoundList(ObjScan)
+   foundlist_initialize(ObjResult)
+   Count = foundlist_getCount(ObjResult) - 1
+   CurrentObj = 1
+   showMessage("Found " .. Count .. " Enemy Spawns")
+end
+
+createHotkey("DenFind",45)
+
+
+function KillReset()
+  for i=1,Count do
+   local offset = foundlist_getAddress(ObjResult,i)
+   local address = getAddress(offset .. "+268")
+   writeInteger(address,0)
+  end
+end
+
+function MaxUp()
+  for i=1,Count do
+   local offset = foundlist_getAddress(ObjResult,i)
+   local address = getAddress(offset .. "+244")
+   local CurVal = readInteger(address)
+   writeInteger(address,CurVal + 1)
+  end
+end
+
+function MaxDown()
+  for i=1,Count do
+   local offset = foundlist_getAddress(ObjResult,i)
+   local address = getAddress(offset .. "+244")
+   local CurVal = readInteger(address)
+   if CurVal &gt; 1 then
+     writeInteger(address,CurVal - 1)
+   end
+  end
+end
+
+
+createHotkey("KillReset",36)
+createHotkey("MaxUp",33)
+createHotkey("MaxDown",34)
+
+function VarkidSwap()
+	for i=3,Count-2 do
+		local offset = foundlist_getAddress(ObjResult,i)
+		if readInteger(getAddress("[" .. offset .. "+208]+44")) == 2 then
+			if readInteger(getAddress("[[" .. offset .. "+208]+40]+2c")) == 990057071 then
+				AdultVarkidAddress = "[[" .. offset .. "+208]+40]+0"
+				--showMessage("AdultVarkidFound = " .. AdultVarkidAddress)
+			end
+		end
+	end
+	local VarScan = createMemScan()
+	local Varkid = readInteger('[' .. AdultVarkidAddress .. ']+0')
+	memscan_firstScan(VarScan,soExactValue,vtDword,"",Varkid,"0","0x00000000","0x70000000","",fsmAligned,"4",false,false,true,false)
+   memscan_waitTillDone(VarScan)
+   local VarResult = createFoundList(VarScan)
+   foundlist_initialize(VarResult)
+   local VarCount = foundlist_getCount(VarResult) - 1
+   --showMessage("Found " .. VarCount .. " Enemy Spawns")
+   for i=1,VarCount do
+       local offset = foundlist_getAddress(VarResult,i)
+		if readString(getAddress("[[[" .. offset .. "+AC]+44]+4]+0"),10,true) == "Vermi" then
+           showMessage("Adult Varkids Replaced with Vermi")
+           writeInteger(getAddress(AdultVarkidAddress),getAddress(offset))
+		end
+   end
+end
+--createHotkey("VarkidSwap",35)
+
+function GetString(Address)
+   local string = readInteger((readInteger(Address + 44) * 4) + readInteger(getAddress(STable)))+16
+   return readString(string,30)
+end
+
+function VarkFindClick(sender)
+   local items = listbox_getItems(UDF1_EnList)
+   strings_clear(items)
+   memscan_firstScan(DenScan,soExactValue,vtDword,"",DenBase,"0","0x00000000","0x70000000","",fsmAligned,"4",false,false,true,false)
+   memscan_waitTillDone(DenScan)
+   local DenResult = createFoundList(DenScan)
+   foundlist_initialize(DenResult)
+   local count = foundlist_getCount(DenResult) - 1
+   for i=1,count do
+      local offset = foundlist_getAddress(DenResult,i)
+      local string = GetString(getAddress(offset))
+      if string == "PopDef_BugMorphAdult" then
+         AVark = offset
+      end
+   end
+   memscan_firstScan(EnScan,soExactValue,vtDword,"",EnBase,"0","0x00000000","0x70000000","",fsmAligned,"4",false,false,true,false)
+   memscan_waitTillDone(EnScan)
+   EnResult = createFoundList(EnScan)
+   foundlist_initialize(EnResult)
+   local Encount = foundlist_getCount(EnResult) - 1
+   for i=1,Encount do
+       local offset = foundlist_getAddress(EnResult,i)
+       local addr = getAddress(offset .. "+AC")
+       local Enstring = GetString(readInteger(addr))
+       strings_add(items,Enstring)
+   end
+end
+
+function EnListClick(sender)
+   local current = listbox_getItemIndex(sender)
+   EnIndex = getAddress(foundlist_getAddress(EnResult,current + 1))
+   Swapper = readInteger(getAddress(AVark .. "+40"))
+   writeInteger(Swapper,EnIndex)
+end
+
+</LuaScript>
+</CheatTable>

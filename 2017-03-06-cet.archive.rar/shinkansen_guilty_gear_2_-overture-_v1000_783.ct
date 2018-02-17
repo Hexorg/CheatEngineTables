@@ -1,0 +1,577 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="18">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>113514</ID>
+      <Description>"Player Stats Base Address Scan Initialization (Activate This First)"</Description>
+      <Options moHideChildren="1"/>
+      <LastState Activated="0"/>
+      <Color>800000</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>[ENABLE]
+registersymbol(playerstats_player1_basepointer)
+registersymbol(playerstats_player2_basepointer)
+registersymbol(playerstats_update_enable)
+registersymbol(playerstats_set_enable)
+registersymbol(playerstats_player1_lifeset_enable)
+registersymbol(playerstats_player1_tensionset_enable)
+registersymbol(playerstats_player1_statsset_enable)
+registersymbol(playerstats_player2_lifeset_enable)
+registersymbol(playerstats_player2_tensionset_enable)
+registersymbol(playerstats_player2_statsset_enable)
+
+alloc(playerstats_player1_basepointer, 4)
+alloc(playerstats_player2_basepointer, 4)
+alloc(playerstats_update_enable, 4)
+alloc(playerstats_set_enable, 4)
+alloc(playerstats_player1_lifeset_enable, 4)
+alloc(playerstats_player1_tensionset_enable, 4)
+alloc(playerstats_player1_statsset_enable, 4)
+alloc(playerstats_player2_lifeset_enable, 4)
+alloc(playerstats_player2_tensionset_enable, 4)
+alloc(playerstats_player2_statsset_enable, 4)
+
+
+[DISABLE]
+unregistersymbol(playerstats_player1_basepointer)
+unregistersymbol(playerstats_player2_basepointer)
+unregistersymbol(playerstats_update_enable)
+unregistersymbol(playerstats_set_enable)
+unregistersymbol(playerstats_player1_lifeset_enable)
+unregistersymbol(playerstats_player1_tensionset_enable)
+unregistersymbol(playerstats_player1_statsset_enable)
+unregistersymbol(playerstats_player2_lifeset_enable)
+unregistersymbol(playerstats_player2_tensionset_enable)
+unregistersymbol(playerstats_player2_statsset_enable)
+
+dealloc(playerstats_player1_basepointer)
+dealloc(playerstats_player2_basepointer)
+dealloc(playerstats_update_enable)
+dealloc(playerstats_set_enable)
+dealloc(playerstats_player1_lifeset_enable)
+dealloc(playerstats_player1_tensionset_enable)
+dealloc(playerstats_player1_statsset_enable)
+dealloc(playerstats_player2_lifeset_enable)
+dealloc(playerstats_player2_tensionset_enable)
+dealloc(playerstats_player2_statsset_enable)
+
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>113515</ID>
+          <Description>"Player Stats Base Address Scan (To Update: Play Level)"</Description>
+          <LastState Activated="0"/>
+          <Color>804000</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[ENABLE]
+label(playerstats_savedAOB)
+label(playerstats_returnhere)
+label(playerstats_originalcode)
+label(playerstats_exit)
+
+label(playerstats_player1_entry)
+label(playerstats_player1_update_exit)
+label(playerstats_player1_lifeset_exit)
+label(playerstats_player1_tensionset_exit)
+label(playerstats_player1_statsset_exit)
+label(playerstats_player2_entry)
+label(playerstats_player2_update_exit)
+label(playerstats_player2_lifeset_exit)
+label(playerstats_player2_tensionset_exit)
+label(playerstats_player2_statsset_exit)
+
+registersymbol(playerstats_savedAOB)
+
+//ggsx.exe+205581 - F3 0F10 0D 140B8700   - movss xmm1,[ggsx.exe+470B14]
+//ggsx.exe+205589 - 8B 44 24 10           - mov eax,[esp+10]
+//ggsx.exe+20558D - F3 0F10 42 74         - movss xmm0,[edx+74]
+//ggsx.exe+205592 - F3 0F5E 42 78         - divss xmm0,[edx+78]
+//ggsx.exe+205597 - 0F2F C8               - comiss xmm1,xmm0
+//ggsx.exe+20559A - 72 07                 - jb ggsx.exe+2055A3
+//ggsx.exe+20559C - 83 C8 01              - or eax,01
+aobscan(playerstats_searchedAOB, F3 0F 10 42 74 F3 0F 5E 42 78)
+
+alloc(playerstats_newmem, 2048, playerstats_searchedAOB)
+alloc(playerstats_temp1, 4, playerstats_searchedAOB)
+
+
+playerstats_newmem:
+cmp byte ptr [edx+71], #1
+jne playerstats_player2_entry
+
+playerstats_player1_entry:
+cmp dword ptr [playerstats_update_enable], #0
+je playerstats_player1_update_exit
+mov [playerstats_player1_basepointer], edx
+playerstats_player1_update_exit:
+
+cmp dword ptr [playerstats_player1_lifeset_enable], #0
+je playerstats_player1_lifeset_exit
+fld [edx+78]
+fstp [edx+74]
+playerstats_player1_lifeset_exit:
+
+cmp dword ptr [playerstats_player1_tensionset_enable], #0
+je playerstats_player1_tensionset_exit
+mov [edx+7c], (float)100
+playerstats_player1_tensionset_exit:
+
+cmp dword ptr [playerstats_player1_statsset_enable], #0
+je playerstats_player1_statsset_exit
+mov [edx+ec], (float)5
+mov [edx+f4], (float)99
+mov [edx+f8], (float)99
+mov [edx+fc], (float)0
+mov [edx+104], (float)0
+playerstats_player1_statsset_exit:
+
+jmp playerstats_player2_statsset_exit
+
+
+playerstats_player2_entry:
+cmp dword ptr [playerstats_update_enable], #0
+je playerstats_player2_update_exit
+mov [playerstats_player2_basepointer], edx
+playerstats_player2_update_exit:
+
+cmp dword ptr [playerstats_player2_lifeset_enable], #0
+je playerstats_player2_lifeset_exit
+mov [playerstats_temp1], (float)5
+fld [playerstats_temp1]
+fld [edx+74]
+fcomi ST(0), ST(1)
+fstp ST(0)
+fstp ST(0)
+jb playerstats_player2_lifeset_exit
+mov [edx+74], (float)1
+playerstats_player2_lifeset_exit:
+
+cmp dword ptr [playerstats_player2_tensionset_enable], #0
+je playerstats_player2_tensionset_exit
+mov [edx+7c], (float)0
+playerstats_player2_tensionset_exit:
+
+cmp dword ptr [playerstats_player2_statsset_enable], #0
+je playerstats_player2_statsset_exit
+mov [edx+ec], (float)0
+mov [edx+f4], (float)0
+mov [edx+f8], (float)0
+mov [edx+fc], (float)99
+mov [edx+104], (float)99
+playerstats_player2_statsset_exit:
+
+
+playerstats_originalcode:
+db F3 0F 10 42 74
+//movss xmm0,[edx+74]
+
+
+playerstats_exit:
+jmp playerstats_returnhere
+
+
+playerstats_searchedAOB:
+playerstats_savedAOB:
+jmp playerstats_newmem
+playerstats_returnhere:
+
+
+[DISABLE]
+playerstats_savedAOB:
+db F3 0F 10 42 74
+//movss xmm0,[edx+74]
+
+unregistersymbol(playerstats_savedAOB)
+
+dealloc(playerstats_newmem)
+dealloc(playerstats_temp1)
+
+</AssemblerScript>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>113516</ID>
+          <Description>"Player 1 Life Gauge Set to Max?"</Description>
+          <DropDownList DisplayValueAsItem="1">0:No
+1:Yes
+</DropDownList>
+          <LastState Value="??" Activated="0" RealAddress="00000000"/>
+          <Color>FF8000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>playerstats_player1_lifeset_enable</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>113517</ID>
+          <Description>"Player 1 Tension Gauge Set to Max?"</Description>
+          <DropDownList DisplayValueAsItem="1">0:No
+1:Yes
+</DropDownList>
+          <LastState Value="??" Activated="0" RealAddress="00000000"/>
+          <Color>FF8000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>playerstats_player1_tensionset_enable</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>113535</ID>
+          <Description>"Player 1 Stats Set to Max?"</Description>
+          <DropDownList DisplayValueAsItem="1">0:No
+1:Yes
+</DropDownList>
+          <LastState Value="??" Activated="0" RealAddress="00000000"/>
+          <Color>FF8000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>playerstats_player1_statsset_enable</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>113518</ID>
+          <Description>"Player 2 Life Gauge Set to 1?"</Description>
+          <DropDownList DisplayValueAsItem="1">0:No
+1:Yes
+</DropDownList>
+          <LastState Value="??" Activated="0" RealAddress="00000000"/>
+          <Color>FF8000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>playerstats_player2_lifeset_enable</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>113519</ID>
+          <Description>"Player 2 Tension Gauge Set to 0?"</Description>
+          <DropDownList DisplayValueAsItem="1">0:No
+1:Yes
+</DropDownList>
+          <LastState Value="??" Activated="0" RealAddress="00000000"/>
+          <Color>FF8000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>playerstats_player2_tensionset_enable</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>113536</ID>
+          <Description>"Player 2 Stats Set to Min?"</Description>
+          <DropDownList DisplayValueAsItem="1">0:No
+1:Yes
+</DropDownList>
+          <LastState Value="??" Activated="0" RealAddress="00000000"/>
+          <Color>FF8000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>playerstats_player2_statsset_enable</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>113520</ID>
+          <Description>"Player Stats Update Base Address?"</Description>
+          <DropDownList DisplayValueAsItem="1">0:No
+1:Yes
+</DropDownList>
+          <LastState Value="??" Activated="0" RealAddress="00000000"/>
+          <Color>FF8000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>playerstats_update_enable</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>113521</ID>
+          <Description>"Player 1 Stats"</Description>
+          <Options moHideChildren="1"/>
+          <LastState Value="" Activated="0" RealAddress="00000000"/>
+          <Color>80000008</Color>
+          <GroupHeader>1</GroupHeader>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>113522</ID>
+              <Description>"Base Address"</Description>
+              <LastState Value="??" Activated="0" RealAddress="00000000"/>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>playerstats_player1_basepointer</Address>
+              <Offsets>
+                <Offset>0</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>113523</ID>
+              <Description>"Player"</Description>
+              <LastState Value="??" Activated="0" RealAddress="00000000"/>
+              <Color>80000008</Color>
+              <VariableType>Byte</VariableType>
+              <Address>playerstats_player1_basepointer</Address>
+              <Offsets>
+                <Offset>70</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>113526</ID>
+              <Description>"Life Gauge"</Description>
+              <LastState Value="??" Activated="0" RealAddress="00000000"/>
+              <Color>80000008</Color>
+              <VariableType>Float</VariableType>
+              <Address>playerstats_player1_basepointer</Address>
+              <Offsets>
+                <Offset>74</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>113527</ID>
+              <Description>"Max Life Gauge"</Description>
+              <LastState Value="??" Activated="0" RealAddress="00000000"/>
+              <Color>80000008</Color>
+              <VariableType>Float</VariableType>
+              <Address>playerstats_player1_basepointer</Address>
+              <Offsets>
+                <Offset>78</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>113569</ID>
+              <Description>"Tension Gauge"</Description>
+              <LastState Value="??" Activated="0" RealAddress="00000000"/>
+              <Color>80000008</Color>
+              <VariableType>Float</VariableType>
+              <Address>playerstats_player1_basepointer</Address>
+              <Offsets>
+                <Offset>7C</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>113571</ID>
+              <Description>"?"</Description>
+              <LastState Value="??" Activated="0" RealAddress="00000000"/>
+              <Color>80000008</Color>
+              <VariableType>Float</VariableType>
+              <Address>playerstats_player1_basepointer</Address>
+              <Offsets>
+                <Offset>E4</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>113570</ID>
+              <Description>"Movement Speed"</Description>
+              <LastState Value="??" Activated="0" RealAddress="00000000"/>
+              <Color>80000008</Color>
+              <VariableType>Float</VariableType>
+              <Address>playerstats_player1_basepointer</Address>
+              <Offsets>
+                <Offset>EC</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>113578</ID>
+              <Description>"?"</Description>
+              <LastState Value="??" Activated="0" RealAddress="00000000"/>
+              <Color>80000008</Color>
+              <VariableType>Float</VariableType>
+              <Address>playerstats_player1_basepointer</Address>
+              <Offsets>
+                <Offset>F0</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>113572</ID>
+              <Description>"Attack Power"</Description>
+              <LastState Value="??" Activated="0" RealAddress="00000000"/>
+              <Color>80000008</Color>
+              <VariableType>Float</VariableType>
+              <Address>playerstats_player1_basepointer</Address>
+              <Offsets>
+                <Offset>F4</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>113573</ID>
+              <Description>"Stun Damage?"</Description>
+              <LastState Value="??" Activated="0" RealAddress="00000000"/>
+              <Color>80000008</Color>
+              <VariableType>Float</VariableType>
+              <Address>playerstats_player1_basepointer</Address>
+              <Offsets>
+                <Offset>F8</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>113574</ID>
+              <Description>"Defense"</Description>
+              <LastState Value="??" Activated="0" RealAddress="00000000"/>
+              <Color>80000008</Color>
+              <VariableType>Float</VariableType>
+              <Address>playerstats_player1_basepointer</Address>
+              <Offsets>
+                <Offset>FC</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>113575</ID>
+              <Description>"?"</Description>
+              <LastState Value="??" Activated="0" RealAddress="00000000"/>
+              <Color>80000008</Color>
+              <VariableType>Float</VariableType>
+              <Address>playerstats_player1_basepointer</Address>
+              <Offsets>
+                <Offset>100</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>113576</ID>
+              <Description>"Knockback Resistance"</Description>
+              <LastState Value="??" Activated="0" RealAddress="00000000"/>
+              <Color>80000008</Color>
+              <VariableType>Float</VariableType>
+              <Address>playerstats_player1_basepointer</Address>
+              <Offsets>
+                <Offset>104</Offset>
+              </Offsets>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>113579</ID>
+          <Description>"Player 2 Stats"</Description>
+          <Options moHideChildren="1"/>
+          <LastState Value="" Activated="0" RealAddress="00000000"/>
+          <Color>80000008</Color>
+          <GroupHeader>1</GroupHeader>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>113580</ID>
+              <Description>"Base Address"</Description>
+              <LastState Value="??" Activated="0" RealAddress="00000000"/>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>playerstats_player2_basepointer</Address>
+              <Offsets>
+                <Offset>0</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>113581</ID>
+              <Description>"Player"</Description>
+              <LastState Value="??" Activated="0" RealAddress="00000000"/>
+              <Color>80000008</Color>
+              <VariableType>Byte</VariableType>
+              <Address>playerstats_player2_basepointer</Address>
+              <Offsets>
+                <Offset>70</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>113582</ID>
+              <Description>"Life Gauge"</Description>
+              <LastState Value="??" Activated="0" RealAddress="00000000"/>
+              <Color>80000008</Color>
+              <VariableType>Float</VariableType>
+              <Address>playerstats_player2_basepointer</Address>
+              <Offsets>
+                <Offset>74</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>113583</ID>
+              <Description>"Max Life Gauge"</Description>
+              <LastState Value="??" Activated="0" RealAddress="00000000"/>
+              <Color>80000008</Color>
+              <VariableType>Float</VariableType>
+              <Address>playerstats_player2_basepointer</Address>
+              <Offsets>
+                <Offset>78</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>113584</ID>
+              <Description>"Tension Gauge"</Description>
+              <LastState Value="??" Activated="0" RealAddress="00000000"/>
+              <Color>80000008</Color>
+              <VariableType>Float</VariableType>
+              <Address>playerstats_player2_basepointer</Address>
+              <Offsets>
+                <Offset>7C</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>113585</ID>
+              <Description>"?"</Description>
+              <LastState Value="??" Activated="0" RealAddress="00000000"/>
+              <Color>80000008</Color>
+              <VariableType>Float</VariableType>
+              <Address>playerstats_player2_basepointer</Address>
+              <Offsets>
+                <Offset>E4</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>113586</ID>
+              <Description>"Movement Speed"</Description>
+              <LastState Value="??" Activated="0" RealAddress="00000000"/>
+              <Color>80000008</Color>
+              <VariableType>Float</VariableType>
+              <Address>playerstats_player2_basepointer</Address>
+              <Offsets>
+                <Offset>EC</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>113587</ID>
+              <Description>"?"</Description>
+              <LastState Value="??" Activated="0" RealAddress="00000000"/>
+              <Color>80000008</Color>
+              <VariableType>Float</VariableType>
+              <Address>playerstats_player2_basepointer</Address>
+              <Offsets>
+                <Offset>F0</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>113588</ID>
+              <Description>"Attack Power"</Description>
+              <LastState Value="??" Activated="0" RealAddress="00000000"/>
+              <Color>80000008</Color>
+              <VariableType>Float</VariableType>
+              <Address>playerstats_player2_basepointer</Address>
+              <Offsets>
+                <Offset>F4</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>113589</ID>
+              <Description>"Stun Damage?"</Description>
+              <LastState Value="??" Activated="0" RealAddress="00000000"/>
+              <Color>80000008</Color>
+              <VariableType>Float</VariableType>
+              <Address>playerstats_player2_basepointer</Address>
+              <Offsets>
+                <Offset>F8</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>113590</ID>
+              <Description>"Defense"</Description>
+              <LastState Value="??" Activated="0" RealAddress="00000000"/>
+              <Color>80000008</Color>
+              <VariableType>Float</VariableType>
+              <Address>playerstats_player2_basepointer</Address>
+              <Offsets>
+                <Offset>FC</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>113591</ID>
+              <Description>"?"</Description>
+              <LastState Value="??" Activated="0" RealAddress="00000000"/>
+              <Color>80000008</Color>
+              <VariableType>Float</VariableType>
+              <Address>playerstats_player2_basepointer</Address>
+              <Offsets>
+                <Offset>100</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>113592</ID>
+              <Description>"Knockback Resistance"</Description>
+              <LastState Value="??" Activated="0" RealAddress="00000000"/>
+              <Color>80000008</Color>
+              <VariableType>Float</VariableType>
+              <Address>playerstats_player2_basepointer</Address>
+              <Offsets>
+                <Offset>104</Offset>
+              </Offsets>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+  </CheatEntries>
+</CheatTable>

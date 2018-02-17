@@ -1,0 +1,857 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="18">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>112413</ID>
+      <Description>"Activate Mono (To Activate: Load Game)"</Description>
+      <Options moHideChildren="1"/>
+      <LastState Activated="0"/>
+      <Color>804000</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>{$lua}
+if (LaunchMonoDataCollector()==0) then
+  error('Unsuccessful')
+end
+{$asm}
+
+[ENABLE]
+
+
+[DISABLE]
+
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>113978</ID>
+          <Description>"UnitData Base Address Scan Initialization (Activate This First)"</Description>
+          <Options moHideChildren="1"/>
+          <LastState Activated="0"/>
+          <Color>800000</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[ENABLE]
+registersymbol(UnitData_basepointer)
+registersymbol(UnitData_update_enable)
+registersymbol(UnitData_set_enable)
+registersymbol(UnitData_healthset_enable)
+registersymbol(UnitData_enemyset_enable)
+
+alloc(UnitData_basepointer, 4)
+alloc(UnitData_update_enable, 4)
+alloc(UnitData_set_enable, 4)
+alloc(UnitData_healthset_enable, 4)
+alloc(UnitData_enemyset_enable, 4)
+
+
+[DISABLE]
+unregistersymbol(UnitData_basepointer)
+unregistersymbol(UnitData_update_enable)
+unregistersymbol(UnitData_set_enable)
+unregistersymbol(UnitData_healthset_enable)
+unregistersymbol(UnitData_enemyset_enable)
+
+dealloc(UnitData_basepointer)
+dealloc(UnitData_update_enable)
+dealloc(UnitData_set_enable)
+dealloc(UnitData_healthset_enable)
+dealloc(UnitData_enemyset_enable)
+
+</AssemblerScript>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>113979</ID>
+              <Description>"UnitData Base Address Scan (To Activate: Mouseover Unselected Unit, To Update: Mouseover Unselected Unit)"</Description>
+              <LastState Activated="0"/>
+              <Color>804000</Color>
+              <VariableType>Auto Assembler Script</VariableType>
+              <AssemblerScript>[ENABLE]
+label(UnitData_savedAOB)
+label(UnitData_returnhere)
+label(UnitData_originalcode)
+label(UnitData_exit)
+
+label(UnitData_update_exit)
+label(UnitData_set_exit)
+label(UnitData_healthset_exit)
+label(UnitData_enemyset_entry)
+label(UnitData_enemyset_exit)
+
+registersymbol(UnitData_savedAOB)
+
+// SDETactics.Units:UnitData:get_CurrentHealth
+//1F8078D0 - 55                    - push ebp
+//1F8078D1 - 8B EC                 - mov ebp,esp
+//1F8078D3 - 83 EC 08              - sub esp,08
+//1F8078D6 - 8B 45 08              - mov eax,[ebp+08]
+//1F8078D9 - 8B 40 3C              - mov eax,[eax+3C]
+//1F8078DC - C9                    - leave
+//1F8078DD - C3                    - ret
+//aobscan(UnitData_searchedAOB, 55 8B EC 83 EC 08 8B 45 08 8B 40 3C C9 C3)
+
+alloc(UnitData_newmem, 2048, SDETactics.Units:UnitData:get_CurrentHealth)
+alloc(UnitData_temp1, 4, SDETactics.Units:UnitData:get_CurrentHealth)
+alloc(UnitData_temp2, 4, SDETactics.Units:UnitData:get_CurrentHealth)
+alloc(UnitData_temp3, 4, SDETactics.Units:UnitData:get_CurrentHealth)
+alloc(UnitData_temp4, 4, SDETactics.Units:UnitData:get_CurrentHealth)
+
+
+UnitData_newmem:
+mov [UnitData_temp1], eax
+mov [UnitData_temp2], ebx
+mov [UnitData_temp3], ecx
+mov [UnitData_temp4], edx
+
+mov eax, [ebp+8]
+
+cmp dword ptr [UnitData_update_enable], #0
+je UnitData_update_exit
+mov [UnitData_basepointer], eax
+UnitData_update_exit:
+
+cmp dword ptr [eax+10], #1
+jne UnitData_enemyset_entry
+
+cmp dword ptr [UnitData_set_enable], #0
+je UnitData_set_exit
+UnitData_set_exit:
+
+cmp dword ptr [UnitData_healthset_enable], #0
+je UnitData_healthset_exit
+mov [eax+3c], #999
+UnitData_healthset_exit:
+
+jmp UnitData_enemyset_exit
+
+UnitData_enemyset_entry:
+cmp dword ptr [UnitData_enemyset_enable], #0
+je UnitData_enemyset_exit
+cmp dword ptr [eax+3c], #1
+jl UnitData_enemyset_exit
+mov [eax+3c], #1
+UnitData_enemyset_exit:
+
+mov eax, [UnitData_temp1]
+mov ebx, [UnitData_temp2]
+mov ecx, [UnitData_temp3]
+mov edx, [UnitData_temp4]
+
+
+UnitData_originalcode:
+db 8B 45 08 8B 40 3C
+//mov eax,[ebp+08]
+//mov eax,[eax+3C]
+
+
+UnitData_exit:
+jmp UnitData_returnhere
+
+
+assert(SDETactics.Units:UnitData:get_CurrentHealth + 6, 8B 45 08 8B 40 3C)
+SDETactics.Units:UnitData:get_CurrentHealth + 6:
+//UnitData_searchedAOB:
+UnitData_savedAOB:
+jmp UnitData_newmem
+nop
+UnitData_returnhere:
+
+
+[DISABLE]
+UnitData_savedAOB:
+db 8B 45 08 8B 40 3C
+//mov eax,[ebp+08]
+//mov eax,[eax+3C]
+
+unregistersymbol(UnitData_savedAOB)
+
+dealloc(UnitData_newmem)
+dealloc(UnitData_temp1)
+dealloc(UnitData_temp2)
+dealloc(UnitData_temp3)
+dealloc(UnitData_temp4)
+
+</AssemblerScript>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>113980</ID>
+              <Description>"Health Set to Massive?"</Description>
+              <DropDownList DisplayValueAsItem="1">0:No
+1:Yes
+</DropDownList>
+              <LastState Value="??" Activated="0" RealAddress="00000000"/>
+              <Color>FF8000</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>UnitData_healthset_enable</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>113981</ID>
+              <Description>"Enemy Set to Weak?"</Description>
+              <DropDownList DisplayValueAsItem="1">0:No
+1:Yes
+</DropDownList>
+              <LastState Value="??" Activated="0" RealAddress="00000000"/>
+              <Color>FF8000</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>UnitData_enemyset_enable</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>113982</ID>
+              <Description>"UnitData Update Base Address?"</Description>
+              <DropDownList DisplayValueAsItem="1">0:No
+1:Yes
+</DropDownList>
+              <LastState Value="??" Activated="0" RealAddress="00000000"/>
+              <Color>FF8000</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>UnitData_update_enable</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>114006</ID>
+              <Description>"CombatObjectData Stats"</Description>
+              <Options moHideChildren="1"/>
+              <LastState Value="" Activated="0" RealAddress="00000000"/>
+              <Color>80000008</Color>
+              <GroupHeader>1</GroupHeader>
+              <CheatEntries>
+                <CheatEntry>
+                  <ID>114007</ID>
+                  <Description>"Base Address"</Description>
+                  <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                  <Color>80000008</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>UnitData_basepointer</Address>
+                  <Offsets>
+                    <Offset>0</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>114008</ID>
+                  <Description>"name"</Description>
+                  <LastState Activated="0" RealAddress="00000000"/>
+                  <Color>80000008</Color>
+                  <VariableType>String</VariableType>
+                  <Length>32</Length>
+                  <Unicode>1</Unicode>
+                  <ZeroTerminate>1</ZeroTerminate>
+                  <Address>UnitData_basepointer</Address>
+                  <Offsets>
+                    <Offset>C</Offset>
+                    <Offset>8</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>114010</ID>
+                  <Description>"allegiance"</Description>
+                  <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                  <Color>80000008</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>UnitData_basepointer</Address>
+                  <Offsets>
+                    <Offset>10</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>114011</ID>
+                  <Description>"rank"</Description>
+                  <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                  <Color>80000008</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>UnitData_basepointer</Address>
+                  <Offsets>
+                    <Offset>14</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>114012</ID>
+                  <Description>"faction"</Description>
+                  <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                  <Color>80000008</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>UnitData_basepointer</Address>
+                  <Offsets>
+                    <Offset>18</Offset>
+                  </Offsets>
+                </CheatEntry>
+              </CheatEntries>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>113983</ID>
+              <Description>"UnitData Stats"</Description>
+              <Options moHideChildren="1"/>
+              <LastState Value="" Activated="0" RealAddress="00000000"/>
+              <Color>80000008</Color>
+              <GroupHeader>1</GroupHeader>
+              <CheatEntries>
+                <CheatEntry>
+                  <ID>113984</ID>
+                  <Description>"Base Address"</Description>
+                  <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                  <Color>80000008</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>UnitData_basepointer</Address>
+                  <Offsets>
+                    <Offset>0</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>113985</ID>
+                  <Description>"unitTitle"</Description>
+                  <LastState Activated="0" RealAddress="00000000"/>
+                  <Color>80000008</Color>
+                  <VariableType>String</VariableType>
+                  <Length>32</Length>
+                  <Unicode>1</Unicode>
+                  <ZeroTerminate>1</ZeroTerminate>
+                  <Address>UnitData_basepointer</Address>
+                  <Offsets>
+                    <Offset>C</Offset>
+                    <Offset>1C</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>113996</ID>
+                  <Description>"currentHealth"</Description>
+                  <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                  <Color>80000008</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>UnitData_basepointer</Address>
+                  <Offsets>
+                    <Offset>3C</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>113997</ID>
+                  <Description>"offensiveThreshold"</Description>
+                  <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                  <Color>80000008</Color>
+                  <VariableType>Float</VariableType>
+                  <Address>UnitData_basepointer</Address>
+                  <Offsets>
+                    <Offset>40</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>113998</ID>
+                  <Description>"defensiveThreshold"</Description>
+                  <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                  <Color>80000008</Color>
+                  <VariableType>Float</VariableType>
+                  <Address>UnitData_basepointer</Address>
+                  <Offsets>
+                    <Offset>44</Offset>
+                  </Offsets>
+                </CheatEntry>
+              </CheatEntries>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>114018</ID>
+          <Description>"QuestSelectionInformation Base Address Scan Initialization (Activate This First)"</Description>
+          <Options moHideChildren="1"/>
+          <LastState Activated="0"/>
+          <Color>800000</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[ENABLE]
+registersymbol(QuestSelectionInformation_basepointer)
+registersymbol(QuestSelectionInformation_update_enable)
+registersymbol(QuestSelectionInformation_set_enable)
+
+alloc(QuestSelectionInformation_basepointer, 4)
+alloc(QuestSelectionInformation_update_enable, 4)
+alloc(QuestSelectionInformation_set_enable, 4)
+
+
+[DISABLE]
+unregistersymbol(QuestSelectionInformation_basepointer)
+unregistersymbol(QuestSelectionInformation_update_enable)
+unregistersymbol(QuestSelectionInformation_set_enable)
+
+dealloc(QuestSelectionInformation_basepointer)
+dealloc(QuestSelectionInformation_update_enable)
+dealloc(QuestSelectionInformation_set_enable)
+
+</AssemblerScript>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>114019</ID>
+              <Description>"QuestSelectionInformation Base Address Scan (To Activate: Select Quest Difficulty, To Update: Select Quest Difficulty)"</Description>
+              <LastState Activated="0"/>
+              <Color>804000</Color>
+              <VariableType>Auto Assembler Script</VariableType>
+              <AssemblerScript>[ENABLE]
+label(QuestSelectionInformation_savedAOB)
+label(QuestSelectionInformation_returnhere)
+label(QuestSelectionInformation_originalcode)
+label(QuestSelectionInformation_exit)
+
+label(QuestSelectionInformation_update_exit)
+label(QuestSelectionInformation_set_exit)
+
+registersymbol(QuestSelectionInformation_savedAOB)
+
+// GuildHall.QuestSelectionData:QuestSelectionInformation:set_SelectedDifficulty
+//11F8C8B60 - 55                    - push ebp
+//1F8C8B61 - 8B EC                 - mov ebp,esp
+//1F8C8B63 - 83 EC 08              - sub esp,08
+//1F8C8B66 - 8B 4D 0C              - mov ecx,[ebp+0C]
+//1F8C8B69 - 8B 45 08              - mov eax,[ebp+08]
+//1F8C8B6C - 89 48 1C              - mov [eax+1C],ecx
+//aobscan(QuestSelectionInformation_searchedAOB, 55 8B EC 83 EC 08 8B 4D 0C 8B 45 08 89 48 1C)
+
+alloc(QuestSelectionInformation_newmem, 2048, GuildHall.QuestSelectionData:QuestSelectionInformation:set_SelectedDifficulty)
+alloc(QuestSelectionInformation_temp1, 4, GuildHall.QuestSelectionData:QuestSelectionInformation:set_SelectedDifficulty)
+alloc(QuestSelectionInformation_temp2, 4, GuildHall.QuestSelectionData:QuestSelectionInformation:set_SelectedDifficulty)
+alloc(QuestSelectionInformation_temp3, 4, GuildHall.QuestSelectionData:QuestSelectionInformation:set_SelectedDifficulty)
+alloc(QuestSelectionInformation_temp4, 4, GuildHall.QuestSelectionData:QuestSelectionInformation:set_SelectedDifficulty)
+
+
+QuestSelectionInformation_newmem:
+mov [QuestSelectionInformation_temp1], eax
+mov [QuestSelectionInformation_temp2], ebx
+mov [QuestSelectionInformation_temp3], ecx
+mov [QuestSelectionInformation_temp4], edx
+
+mov eax, [ebp+8]
+
+cmp dword ptr [QuestSelectionInformation_update_enable], #0
+je QuestSelectionInformation_update_exit
+mov [QuestSelectionInformation_basepointer], eax
+QuestSelectionInformation_update_exit:
+
+cmp dword ptr [QuestSelectionInformation_set_enable], #0
+je QuestSelectionInformation_set_exit
+QuestSelectionInformation_set_exit:
+
+mov eax, [QuestSelectionInformation_temp1]
+mov ebx, [QuestSelectionInformation_temp2]
+mov ecx, [QuestSelectionInformation_temp3]
+mov edx, [QuestSelectionInformation_temp4]
+
+
+QuestSelectionInformation_originalcode:
+db 8B 45 08 89 48 1C
+//mov eax,[ebp+08]
+//mov [eax+1C],ecx
+
+
+QuestSelectionInformation_exit:
+jmp QuestSelectionInformation_returnhere
+
+
+assert(GuildHall.QuestSelectionData:QuestSelectionInformation:set_SelectedDifficulty + 9, 8B 45 08 89 48 1C)
+GuildHall.QuestSelectionData:QuestSelectionInformation:set_SelectedDifficulty + 9:
+//QuestSelectionInformation_searchedAOB:
+QuestSelectionInformation_savedAOB:
+jmp QuestSelectionInformation_newmem
+nop
+QuestSelectionInformation_returnhere:
+
+
+[DISABLE]
+QuestSelectionInformation_savedAOB:
+db 8B 45 08 89 48 1C
+//mov eax,[ebp+08]
+//mov [eax+1C],ecx
+
+unregistersymbol(QuestSelectionInformation_savedAOB)
+
+dealloc(QuestSelectionInformation_newmem)
+dealloc(QuestSelectionInformation_temp1)
+dealloc(QuestSelectionInformation_temp2)
+dealloc(QuestSelectionInformation_temp3)
+dealloc(QuestSelectionInformation_temp4)
+
+</AssemblerScript>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>114022</ID>
+              <Description>"QuestSelectionInformation Update Base Address?"</Description>
+              <DropDownList DisplayValueAsItem="1">0:No
+1:Yes
+</DropDownList>
+              <LastState Value="??" Activated="0" RealAddress="00000000"/>
+              <Color>FF8000</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>QuestSelectionInformation_update_enable</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>114029</ID>
+              <Description>"QuestSelectionInformation Stats"</Description>
+              <Options moHideChildren="1"/>
+              <LastState Value="" Activated="0" RealAddress="00000000"/>
+              <Color>80000008</Color>
+              <GroupHeader>1</GroupHeader>
+              <CheatEntries>
+                <CheatEntry>
+                  <ID>114030</ID>
+                  <Description>"Base Address"</Description>
+                  <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                  <Color>80000008</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>QuestSelectionInformation_basepointer</Address>
+                  <Offsets>
+                    <Offset>0</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>0</ID>
+                  <Description>"_selectedDifficulty"</Description>
+                  <Options moHideChildren="1"/>
+                  <LastState Value="" Activated="0" RealAddress="00000000"/>
+                  <Color>80000008</Color>
+                  <GroupHeader>1</GroupHeader>
+                  <CheatEntries>
+                    <CheatEntry>
+                      <ID>114036</ID>
+                      <Description>"Base Address"</Description>
+                      <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                      <Color>80000008</Color>
+                      <VariableType>4 Bytes</VariableType>
+                      <Address>QuestSelectionInformation_basepointer</Address>
+                      <Offsets>
+                        <Offset>0</Offset>
+                        <Offset>1C</Offset>
+                      </Offsets>
+                    </CheatEntry>
+                    <CheatEntry>
+                      <ID>114037</ID>
+                      <Description>"_displayName"</Description>
+                      <LastState Activated="0" RealAddress="00000000"/>
+                      <Color>80000008</Color>
+                      <VariableType>String</VariableType>
+                      <Length>32</Length>
+                      <Unicode>1</Unicode>
+                      <ZeroTerminate>1</ZeroTerminate>
+                      <Address>QuestSelectionInformation_basepointer</Address>
+                      <Offsets>
+                        <Offset>C</Offset>
+                        <Offset>10</Offset>
+                        <Offset>1C</Offset>
+                      </Offsets>
+                    </CheatEntry>
+                    <CheatEntry>
+                      <ID>114054</ID>
+                      <Description>"_dropRateMultipliers"</Description>
+                      <Options moHideChildren="1"/>
+                      <LastState Value="" Activated="0" RealAddress="00000000"/>
+                      <Color>80000008</Color>
+                      <GroupHeader>1</GroupHeader>
+                      <CheatEntries>
+                        <CheatEntry>
+                          <ID>114048</ID>
+                          <Description>"Base Address"</Description>
+                          <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                          <Color>80000008</Color>
+                          <VariableType>4 Bytes</VariableType>
+                          <Address>QuestSelectionInformation_basepointer</Address>
+                          <Offsets>
+                            <Offset>0</Offset>
+                            <Offset>14</Offset>
+                            <Offset>1C</Offset>
+                          </Offsets>
+                        </CheatEntry>
+                        <CheatEntry>
+                          <ID>114049</ID>
+                          <Description>"Base Address"</Description>
+                          <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                          <Color>80000008</Color>
+                          <VariableType>4 Bytes</VariableType>
+                          <Address>QuestSelectionInformation_basepointer</Address>
+                          <Offsets>
+                            <Offset>0</Offset>
+                            <Offset>8</Offset>
+                            <Offset>14</Offset>
+                            <Offset>1C</Offset>
+                          </Offsets>
+                        </CheatEntry>
+                        <CheatEntry>
+                          <ID>114053</ID>
+                          <Description>"Slot 1"</Description>
+                          <Options moHideChildren="1"/>
+                          <LastState Value="" Activated="0" RealAddress="00000000"/>
+                          <Color>80000008</Color>
+                          <GroupHeader>1</GroupHeader>
+                          <CheatEntries>
+                            <CheatEntry>
+                              <ID>114050</ID>
+                              <Description>"Base Address"</Description>
+                              <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                              <Color>80000008</Color>
+                              <VariableType>4 Bytes</VariableType>
+                              <Address>QuestSelectionInformation_basepointer</Address>
+                              <Offsets>
+                                <Offset>0</Offset>
+                                <Offset>10</Offset>
+                                <Offset>8</Offset>
+                                <Offset>14</Offset>
+                                <Offset>1C</Offset>
+                              </Offsets>
+                            </CheatEntry>
+                            <CheatEntry>
+                              <ID>114051</ID>
+                              <Description>"_multiplier"</Description>
+                              <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                              <Color>80000008</Color>
+                              <VariableType>Float</VariableType>
+                              <Address>QuestSelectionInformation_basepointer</Address>
+                              <Offsets>
+                                <Offset>8</Offset>
+                                <Offset>10</Offset>
+                                <Offset>8</Offset>
+                                <Offset>14</Offset>
+                                <Offset>1C</Offset>
+                              </Offsets>
+                            </CheatEntry>
+                            <CheatEntry>
+                              <ID>114052</ID>
+                              <Description>"_rarity"</Description>
+                              <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                              <Color>80000008</Color>
+                              <VariableType>4 Bytes</VariableType>
+                              <Address>QuestSelectionInformation_basepointer</Address>
+                              <Offsets>
+                                <Offset>C</Offset>
+                                <Offset>10</Offset>
+                                <Offset>8</Offset>
+                                <Offset>14</Offset>
+                                <Offset>1C</Offset>
+                              </Offsets>
+                            </CheatEntry>
+                          </CheatEntries>
+                        </CheatEntry>
+                        <CheatEntry>
+                          <ID>114055</ID>
+                          <Description>"Slot 2"</Description>
+                          <Options moHideChildren="1"/>
+                          <LastState Value="" Activated="0" RealAddress="00000000"/>
+                          <Color>80000008</Color>
+                          <GroupHeader>1</GroupHeader>
+                          <CheatEntries>
+                            <CheatEntry>
+                              <ID>114056</ID>
+                              <Description>"Base Address"</Description>
+                              <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                              <Color>80000008</Color>
+                              <VariableType>4 Bytes</VariableType>
+                              <Address>QuestSelectionInformation_basepointer</Address>
+                              <Offsets>
+                                <Offset>0</Offset>
+                                <Offset>14</Offset>
+                                <Offset>8</Offset>
+                                <Offset>14</Offset>
+                                <Offset>1C</Offset>
+                              </Offsets>
+                            </CheatEntry>
+                            <CheatEntry>
+                              <ID>114057</ID>
+                              <Description>"_multiplier"</Description>
+                              <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                              <Color>80000008</Color>
+                              <VariableType>Float</VariableType>
+                              <Address>QuestSelectionInformation_basepointer</Address>
+                              <Offsets>
+                                <Offset>8</Offset>
+                                <Offset>14</Offset>
+                                <Offset>8</Offset>
+                                <Offset>14</Offset>
+                                <Offset>1C</Offset>
+                              </Offsets>
+                            </CheatEntry>
+                            <CheatEntry>
+                              <ID>114058</ID>
+                              <Description>"_rarity"</Description>
+                              <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                              <Color>80000008</Color>
+                              <VariableType>4 Bytes</VariableType>
+                              <Address>QuestSelectionInformation_basepointer</Address>
+                              <Offsets>
+                                <Offset>C</Offset>
+                                <Offset>14</Offset>
+                                <Offset>8</Offset>
+                                <Offset>14</Offset>
+                                <Offset>1C</Offset>
+                              </Offsets>
+                            </CheatEntry>
+                          </CheatEntries>
+                        </CheatEntry>
+                        <CheatEntry>
+                          <ID>114059</ID>
+                          <Description>"Slot 3"</Description>
+                          <Options moHideChildren="1"/>
+                          <LastState Value="" Activated="0" RealAddress="00000000"/>
+                          <Color>80000008</Color>
+                          <GroupHeader>1</GroupHeader>
+                          <CheatEntries>
+                            <CheatEntry>
+                              <ID>114060</ID>
+                              <Description>"Base Address"</Description>
+                              <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                              <Color>80000008</Color>
+                              <VariableType>4 Bytes</VariableType>
+                              <Address>QuestSelectionInformation_basepointer</Address>
+                              <Offsets>
+                                <Offset>0</Offset>
+                                <Offset>18</Offset>
+                                <Offset>8</Offset>
+                                <Offset>14</Offset>
+                                <Offset>1C</Offset>
+                              </Offsets>
+                            </CheatEntry>
+                            <CheatEntry>
+                              <ID>114061</ID>
+                              <Description>"_multiplier"</Description>
+                              <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                              <Color>80000008</Color>
+                              <VariableType>Float</VariableType>
+                              <Address>QuestSelectionInformation_basepointer</Address>
+                              <Offsets>
+                                <Offset>8</Offset>
+                                <Offset>18</Offset>
+                                <Offset>8</Offset>
+                                <Offset>14</Offset>
+                                <Offset>1C</Offset>
+                              </Offsets>
+                            </CheatEntry>
+                            <CheatEntry>
+                              <ID>114062</ID>
+                              <Description>"_rarity"</Description>
+                              <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                              <Color>80000008</Color>
+                              <VariableType>4 Bytes</VariableType>
+                              <Address>QuestSelectionInformation_basepointer</Address>
+                              <Offsets>
+                                <Offset>C</Offset>
+                                <Offset>18</Offset>
+                                <Offset>8</Offset>
+                                <Offset>14</Offset>
+                                <Offset>1C</Offset>
+                              </Offsets>
+                            </CheatEntry>
+                          </CheatEntries>
+                        </CheatEntry>
+                      </CheatEntries>
+                    </CheatEntry>
+                    <CheatEntry>
+                      <ID>114039</ID>
+                      <Description>"_name"</Description>
+                      <LastState Activated="0" RealAddress="00000000"/>
+                      <Color>80000008</Color>
+                      <VariableType>String</VariableType>
+                      <Length>32</Length>
+                      <Unicode>1</Unicode>
+                      <ZeroTerminate>1</ZeroTerminate>
+                      <Address>QuestSelectionInformation_basepointer</Address>
+                      <Offsets>
+                        <Offset>C</Offset>
+                        <Offset>18</Offset>
+                        <Offset>1C</Offset>
+                      </Offsets>
+                    </CheatEntry>
+                    <CheatEntry>
+                      <ID>114040</ID>
+                      <Description>"_deathRecoveryAmount"</Description>
+                      <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                      <Color>80000008</Color>
+                      <VariableType>Float</VariableType>
+                      <Address>QuestSelectionInformation_basepointer</Address>
+                      <Offsets>
+                        <Offset>1C</Offset>
+                        <Offset>1C</Offset>
+                      </Offsets>
+                    </CheatEntry>
+                    <CheatEntry>
+                      <ID>114041</ID>
+                      <Description>"_enemyArmorStatModifier"</Description>
+                      <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                      <Color>80000008</Color>
+                      <VariableType>Float</VariableType>
+                      <Address>QuestSelectionInformation_basepointer</Address>
+                      <Offsets>
+                        <Offset>20</Offset>
+                        <Offset>1C</Offset>
+                      </Offsets>
+                    </CheatEntry>
+                    <CheatEntry>
+                      <ID>114042</ID>
+                      <Description>"_enemyHealthStatModifier"</Description>
+                      <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                      <Color>80000008</Color>
+                      <VariableType>Float</VariableType>
+                      <Address>QuestSelectionInformation_basepointer</Address>
+                      <Offsets>
+                        <Offset>24</Offset>
+                        <Offset>1C</Offset>
+                      </Offsets>
+                    </CheatEntry>
+                    <CheatEntry>
+                      <ID>114043</ID>
+                      <Description>"_enemyMovementStatModifier"</Description>
+                      <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                      <Color>80000008</Color>
+                      <VariableType>Float</VariableType>
+                      <Address>QuestSelectionInformation_basepointer</Address>
+                      <Offsets>
+                        <Offset>28</Offset>
+                        <Offset>1C</Offset>
+                      </Offsets>
+                    </CheatEntry>
+                    <CheatEntry>
+                      <ID>114044</ID>
+                      <Description>"_playerArmorStatModifier"</Description>
+                      <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                      <Color>80000008</Color>
+                      <VariableType>Float</VariableType>
+                      <Address>QuestSelectionInformation_basepointer</Address>
+                      <Offsets>
+                        <Offset>2C</Offset>
+                        <Offset>1C</Offset>
+                      </Offsets>
+                    </CheatEntry>
+                    <CheatEntry>
+                      <ID>114045</ID>
+                      <Description>"_playerHealthStatModifier"</Description>
+                      <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                      <Color>80000008</Color>
+                      <VariableType>Float</VariableType>
+                      <Address>QuestSelectionInformation_basepointer</Address>
+                      <Offsets>
+                        <Offset>30</Offset>
+                        <Offset>1C</Offset>
+                      </Offsets>
+                    </CheatEntry>
+                    <CheatEntry>
+                      <ID>114046</ID>
+                      <Description>"_playerMovementStatModifier"</Description>
+                      <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                      <Color>80000008</Color>
+                      <VariableType>Float</VariableType>
+                      <Address>QuestSelectionInformation_basepointer</Address>
+                      <Offsets>
+                        <Offset>34</Offset>
+                        <Offset>1C</Offset>
+                      </Offsets>
+                    </CheatEntry>
+                    <CheatEntry>
+                      <ID>114047</ID>
+                      <Description>"_seeEnemyDiceAssignment"</Description>
+                      <DropDownList DisplayValueAsItem="1">0:No
+1:Yes
+</DropDownList>
+                      <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                      <Color>80000008</Color>
+                      <VariableType>Byte</VariableType>
+                      <Address>QuestSelectionInformation_basepointer</Address>
+                      <Offsets>
+                        <Offset>38</Offset>
+                        <Offset>1C</Offset>
+                      </Offsets>
+                    </CheatEntry>
+                  </CheatEntries>
+                </CheatEntry>
+              </CheatEntries>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+  </CheatEntries>
+</CheatTable>

@@ -1,0 +1,169 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="16">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>414</ID>
+      <Description>"Free cam"</Description>
+      <Options moHideChildren="1"/>
+      <Color>80000008</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>[ENABLE]
+//code from here to '[DISABLE]' will be used to enable the cheat
+aobscan(MoveAOB,66 0F D6 46 10 F3 0F 11 5C 24 0C)
+aobscan(CamAOB,66 0F D6 83 90 00 00 00 F3 0F 7E 84 24 60 01 00 00)
+aobscan(VelAOB,D9 9F C0 00 00 00 8D 4C 24 40)
+
+alloc(CamMem,256)
+
+label(MoveX)
+label(MoveY)
+label(CamX)
+label(CamY)
+label(VelStart)
+label(VelReturn)
+label(CamReturn)
+label(VelCalc)
+label(CamDat)
+registersymbol(MoveX)
+registersymbol(MoveY)
+registersymbol(CamX)
+registersymbol(CamY)
+registersymbol(VelStart)
+registersymbol(CamDat)
+
+MoveAOB:
+MoveX:
+db 90 90 90 90 90
+
+MoveAOB+11:
+MoveY:
+db 90 90 90 90 90
+
+CamAOB:
+CamX:
+jmp CamMem
+nop
+nop
+nop
+CamReturn:
+
+CamAOB+11:
+CamY:
+db 90 90 90 90 90 90 90 90
+
+VelAOB:
+VelStart:
+jmp VelCalc
+nop
+VelReturn:
+
+//------------------------------ Start of calc
+CamMem:
+mov [CamDat],ebx
+cmp [CamDat+24],#1
+je CamReturn
+mov [CamDat+20],(float)0.2
+mov [CamDat+24],#1
+jmp CamReturn
+
+label(IsMoving)
+VelCalc:
+fstp dword ptr [edi+000000C0]
+cmp [edi+000000C0],0
+jne IsMoving
+jmp VelReturn
+
+IsMoving:
+push edx
+//gets the camera direction vector
+mov edx,[CamDat]
+fld [edx+a0]
+fld [edx+e0]
+fsubp
+fstp [CamDat+4]
+fld [edx+a4]
+fld [edx+e4]
+fsubp
+fstp [CamDat+8]
+fld [edx+a8]
+fld [edx+e8]
+fsubp
+//makes the vector a 0-1 value
+fstp [CamDat+c]
+fld [CamDat+4]
+fld [edx+180]
+fdivp
+fstp [CamDat+10]
+fld [CamDat+8]
+fld [edx+180]
+fdivp
+fstp [CamDat+14]
+fld [CamDat+c]
+fld [edx+180]
+fdivp
+fstp [CamDat+18]
+//Add the difference after using speed multiplier
+fld [CamDat+20]
+fld [CamDat+10]
+fmulp
+fld [edx+90]
+faddp
+fstp [edx+90]
+
+fld [CamDat+20]
+fld [CamDat+14]
+fmulp
+fld [edx+94]
+faddp
+fstp [edx+94]
+
+fld [CamDat+20]
+fld [CamDat+18]
+fmulp
+fld [edx+98]
+faddp
+fstp [edx+98]
+
+pop edx
+jmp VelReturn
+
+CamDat:
+ 
+[DISABLE]
+//code from here till the end of the code will be used to disable the cheat
+MoveX:
+db 66 0F D6 46 10
+
+MoveY:
+db 66 0F D6 46 18
+
+CamX:
+db 66 0F D6 83 90 00 00 00
+
+CamY:
+db 66 0F D6 83 98 00 00 00
+
+VelStart:
+db D9 9F C0 00 00 00
+
+dealloc(CamMem)
+unregistersymbol(MoveX)
+unregistersymbol(MoveY)
+unregistersymbol(CamX)
+unregistersymbol(CamY)
+unregistersymbol(VelStart)
+unregistersymbol(CamDat)
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>415</ID>
+          <Description>"Speed"</Description>
+          <Color>80000008</Color>
+          <VariableType>Float</VariableType>
+          <Address>CamDat+20</Address>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols/>
+</CheatTable>

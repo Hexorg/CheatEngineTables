@@ -1,0 +1,1100 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="18">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>34</ID>
+      <Description>"[X] &lt;== Empire Total War v1.5.0-1332 Steam Script 5.0"</Description>
+      <Options moHideChildren="1"/>
+      <LastState Activated="0"/>
+      <Color>FF0000</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>{
+===========================================
+ Game Title    : Empire Total War
+ Game Version  : 1.5.0 (Build 1332.21992) (steam)
+ Game Sponsor  : Myself
+ Process Name  : Empire.exe
+ Script Version: 5.0
+ CE Version    : 6.4
+ Release date  : 16-Jun-2015
+ Author        : Recifense
+ History:
+ 22-Jan-12: First Release
+ 07-Sep-14: Release for Steam (CE64)
+ 16-Jun-15: Fixed Minimum Gold for USA Campaign (5.0)
+ Features:
+ - Minimum Gold
+ - Research in 1 day
+ - Reinforcement in 1 Day
+ - Construction/Improvement in 1 Day
+ - Unlimited Movement Points for:
+   - army
+   - ship
+   - agent
+ - Recover troop size (when moving)
+ - God Mode
+ - Unlimited Ammo (Range Troop in combat)
+===========================================
+}
+
+//=========================================
+// Definitions
+define(LUDO,"Empire.exe")
+define(MOPG,Empire.exe+0058e556)
+define(MPG1,Empire.exe+0058e4b9)
+define(MORP,Empire.exe+004b0d76)
+define(MOPP,Empire.exe+007539c0)
+define(MCP0,Empire.exe+0073ab04)
+define(MCP1,Empire.exe+0073af44)
+define(MOSA,Empire.exe+0059c72b)
+define(MTMP,Empire.exe+004dab54)
+define(MAMP,Empire.exe+00529736)
+
+define(GMDT,Empire.exe+0038868e)
+define(GMDC,Empire.exe+00388746)
+define(GMDS,Empire.exe+003c81e0)
+define(MOSD,Empire.exe+0028d7ea)
+define(MOSH,Empire.exe+00291bd2)
+define(MOTA,Empire.exe+001ca2c2)
+
+//=========================================
+// Constants used in the script (that can be changed)
+define(ctCE64,(float)6.4)
+define(ctMMON,#64000)  // Minimum Money
+define(ctMATT,#10)     // Minimum Attributes
+
+//=========================================
+[ENABLE]
+//=========================================
+//LuaCall(CheckVersion())
+//=========================================
+// Check if script is compatible to this game version
+// If false the script will not be loaded
+
+assert(MOPG,8b 9b a0 04 00 00 51 ba ?? ?? ?? ?? 52 50 bf ?? ?? ?? ?? 57 53)
+assert(MPG1,8b 9b a0 04 00 00 83 c1 01 51 ba ?? ?? ?? ?? 52 50 bf ?? ?? ??)
+assert(MORP,f3 0f 11 4f 08 f3 0f 2a 42 0c 0f 2f c8 ?? ?? 80 7d 0c 00 ?? ??)
+assert(MOPP,8b 41 1c 85 c0 ?? ?? 83 c0 ff 89 41 1c c3 cc cc 6a ff 68 ?? ??)
+assert(MCP0,83 45 0c 01 8b 45 0c 3b 45 10 0f 82 ?? ?? ?? ?? 8b 35 ?? ?? ??)
+assert(MCP1,83 45 0c 01 8b 45 0c 3b 45 10 0f 82 ?? ?? ?? ?? 8b 35 ?? ?? ??)
+assert(MOSA,8b 86 88 02 00 00 3b c7 0f 84 ?? ?? ?? ?? 39 38 0f 84 ?? ?? ??)
+assert(MTMP,8b 41 64 3b c7 ?? ?? 2b c7 89 41 64 ?? ?? c7 41 64 00 00 00 00)
+assert(MAMP,8b 46 1c 3b f8 ?? ?? 2b c7 5f 89 46 1c 5e 59 c2 04 00 c7 46 1c)
+
+assert(GMDT,8b 11 8b 82 00 01 00 00 55 ff d0 03 fb 3b 7e 14 ?? ?? 33 ff 39)
+assert(GMDC,8b 11 8b 82 00 01 00 00 55 ff d0 8b 4e 04 8b 11 8b 82 ec 00 00)
+assert(GMDS,51 8b 8f 78 03 00 00 85 c9 56 8b f0 ?? ?? c7 87 74 03 00 00 00)
+assert(MOSD,01 88 28 1d 00 00 db 80 28 1d 00 00 8b 90 28 1d 00 00 01 88 68)
+assert(MOSH,8b 4f 3c db 47 3c 85 c9 ?? ?? d8 05 ?? ?? ?? ?? 8b 17 d9 5c 24)
+assert(MOTA,89 88 34 0d 00 00 ?? ?? 0f 57 c0 c6 80 cc 0c 00 00 01 f3 0f 11)
+
+//=========================================
+alloc(MyCode,4096,LUDO)
+//=========================================
+// Declaration section
+label(_MonPlayerGold)
+label(_BackMPG)
+label(_ExitMPG)
+label(_MonPlayerGold1)
+label(_BackPG1)
+label(_ExitPG1)
+label(_MonResearchProg)
+label(_BackMRP)
+label(_ExitMRP)
+label(_MonProdProg)
+label(_BackMPP)
+label(_ExitMPP)
+label(_MonConstProg0)
+label(_BackCP0)
+label(_ExitCP0)
+label(_MonConstProg1)
+label(_BackCP1)
+label(_ExitCP1)
+label(_MonSelArmy)
+label(_BackMSA)
+label(_ExitMSA)
+label(_MonTroopMP)
+label(_MonTM00)
+label(_BackMTM)
+label(_ExitMTM)
+label(_MonArmyMP)
+label(_BackMAM)
+label(_ExitMAM)
+label(_GodModeT)
+label(_GodMDT0)
+label(_GodMDT1)
+label(_BackGMT)
+label(_ExitGMT)
+label(_GodModeC)
+label(_GodMDC0)
+label(_GodMDC1)
+label(_BackGMC)
+label(_ExitGMC)
+label(_GodModeS)
+label(_BackGMS)
+label(_ExitGMS)
+label(_MonShipDamage)
+label(_BackMSD)
+label(_ExitMSD)
+label(_MonShipHull)
+label(_BackMSH)
+label(_ExitMSH)
+label(_MonTroopAmmo)
+label(_BackMTA)
+label(_ExitMTA)
+
+label(iEnableMPG)
+label(iEnableMRP)
+label(iEnableMPP)
+label(iEnableMCP)
+label(iEnableMTS)
+label(iEnableMMP)
+label(iEnableGMD)
+label(iEnableMTA)
+label(iMinGold)
+label(iMinPart)
+label(pGold)
+label(pTown)
+label(pSelArmy)
+
+label(aLast)
+
+//=========================================
+// Registering Symbols
+registersymbol(MyCode)
+registersymbol(iEnableMPG)
+registersymbol(iEnableMRP)
+registersymbol(iEnableMPP)
+registersymbol(iEnableMCP)
+registersymbol(iEnableMTS)
+registersymbol(iEnableMMP)
+registersymbol(iEnableGMD)
+registersymbol(iEnableMTA)
+registersymbol(iMinGold)
+registersymbol(pGold)
+registersymbol(pTown)
+registersymbol(pSelArmy)
+
+registersymbol(aLast)
+
+//=========================================
+MyCode:
+//=========================================
+// TBS - Main game screen
+_MonPlayerGold:
+ mov dword ptr [aLast],'_MPG'
+
+ mov [pGold],ebx
+
+ cmp dword ptr [iEnableMPG],0
+ je _ExitMPG                       // Jump if feature is disabled
+
+ mov edx,[iMinGold]
+ cmp edx,[ebx+000004A0]
+ js _ExitMPG
+
+ mov [ebx+000004A0],edx
+
+_ExitMPG:
+ mov ebx,[ebx+000004A0]            // Original code (rd Gold)
+ jmp _BackMPG                      // Back to main code
+
+//=========================================
+// TBS - Main game screen (USA Campaign)
+_MonPlayerGold1:
+ mov dword ptr [aLast],'_PG1'
+
+ mov [pGold],ebx
+
+ cmp dword ptr [iEnableMPG],0
+ je _ExitPG1                       // Jump if feature is disabled
+
+ mov edx,[iMinGold]
+ cmp edx,[ebx+000004A0]
+ js _ExitPG1
+
+ mov [ebx+000004A0],edx
+
+_ExitPG1:
+ mov ebx,[ebx+000004A0]            // Original code (rd Gold)
+ jmp _BackPG1                      // Back to main code
+
+//=========================================
+// TBS - During Turn
+_MonResearchProg:
+ mov dword ptr [aLast],'_MRP'
+
+ push eax
+
+ cmp dword ptr [iEnableMRP],0
+ je _ExitMRP                       // Jump if feature is disabled
+
+ test esi,esi
+ jz _ExitMRP
+
+ mov eax,[esi+00000088]
+ cmp eax,[pGold]
+ jne _ExitMRP
+
+ cvtsi2ss xmm1,[edx+0C]
+
+_ExitMRP:
+ pop eax
+
+ movss [edi+08],xmm1               // Original code (upd RP)
+ jmp _BackMRP                      // Back to main code
+
+//=========================================
+// TBS - When setting production
+_MonProdProg:
+ mov dword ptr [aLast],'_MPP'
+
+ mov eax,[ecx+14]                  // Get pointer to Province
+ test eax,eax
+ jz _ExitMPP
+
+ mov [pTown],eax
+
+ mov eax,[eax+40]                  // Get Owner
+ test eax,eax
+ jz _ExitMPP
+
+ cmp eax,[pGold]
+ jne _ExitMPP
+
+ cmp dword ptr [iEnableMPP],0
+ je _ExitMPP                       // Jump if feature is disabled
+
+ mov eax,1
+ cmp eax,[ecx+1C]
+ jns _ExitMPP
+
+ mov [ecx+1c],eax
+
+_ExitMPP:
+ mov eax,[ecx+1C]                  // Original code (rd PP)
+ test eax,eax                      // Original code
+ jmp _BackMPP                      // Back to main code
+
+//=========================================
+// TBS - During Turn (Buiding Construction or Improvement)
+_MonConstProg0:
+ mov dword ptr [aLast],'_CP0'
+
+ cmp ebx,[pGold]
+ jne _ExitCP0
+
+ cmp dword ptr [iEnableMCP],0
+ je _ExitCP0                       // Jump if feature is disabled
+
+ mov eax,[ebp+10]                  // Get # needed turns
+ dec eax
+ mov [ebp+0c],eax
+
+_ExitCP0:
+ add dword ptr [ebp+0C],01         // Original code (upd CP)
+ mov eax,[ebp+0C]                  // Original code
+ jmp _BackCP0                      // Back to main code
+
+//=========================================
+// TBS - During Turn (Buiding Construction or Improvement)
+_MonConstProg1:
+ mov dword ptr [aLast],'_CP1'
+
+ cmp ebx,[pGold]
+ jne _ExitCP1
+
+ cmp dword ptr [iEnableMCP],0
+ je _ExitCP1                       // Jump if feature is disabled
+
+ mov eax,[ebp+10]                  // Get # needed turns
+ dec eax
+ mov [ebp+0c],eax
+
+_ExitCP1:
+ add dword ptr [ebp+0C],01         // Original code (upd CP)
+ mov eax,[ebp+0C]                  // Original code
+ jmp _BackCP1                      // Back to main code
+
+//=========================================
+// TBS - Current selected Army/Fleet
+_MonSelArmy:
+ mov dword ptr [aLast],'_MSA'
+
+ mov [pSelArmy],esi                // Save ptr for further use
+
+_ExitMSA:
+ mov eax,[esi+00000288]            // Original code
+ jmp _BackMSA                      // Back to main code
+
+//=========================================
+// TBS - Troop Move point (when moving)
+// EBX = pArmy
+_MonTroopMP:
+ mov dword ptr [aLast],'_MTM'
+
+ test ebx,ebx
+ jz _ExitMTM
+
+ mov eax,[ecx+44]
+ cmp eax,[pGold]
+ jne _ExitMTM
+
+ cmp dword ptr [iEnableMTS],0
+ je _MonTM00                       // Jump if feature is disabled
+
+ mov eax,[ecx+50]
+ mov [ecx+4c],eax
+
+_MonTM00:
+ cmp dword ptr [iEnableMMP],0
+ je _ExitMTM                       // Jump if feature is disabled
+
+ mov eax,[ebx+18]                  // Get Army maximum MP
+ mov [ebx+1c],eax                  // Update Army current MP
+ mov [ecx+64],eax                  // Update Troop MP
+
+ xor edi,edi                       // Make Decreasing MP = 0
+
+_ExitMTM:
+ mov eax,[ecx+64]                  // Original code
+ cmp eax,edi                       // Original code
+ jmp _BackMTM                      // Back to main code
+
+//=========================================
+// TBS - Army Move point (when moving)
+_MonArmyMP:
+ mov dword ptr [aLast],'_MAM'
+
+ cmp dword ptr [iEnableMMP],0
+ je _ExitMAM                       // Jump if feature is disabled
+
+ mov eax,[esi+00000280]
+ test eax,eax
+ jz _ExitMAM
+
+ mov eax,[eax+10]
+ test eax,eax
+ jz _ExitMAM
+
+ mov eax,[eax]
+ cmp eax,[pGold]
+ jne _ExitMAM
+
+ mov edi,[esi+18]
+ mov [esi+1c],edi
+
+ xor edi,edi                       // value2decrease = 0
+
+_ExitMAM:
+ mov eax,[esi+1c]                  // Original code
+ cmp edi,eax                       // Original code
+ jmp _BackMAM                      // Back to main code
+//-----------------------------------------------------------------------------
+//=========================================
+// RTS - Troops/Crew  (ECX = pUnit)
+_GodModeT:
+ mov dword ptr [aLast],'_GMT'
+
+ cmp dword ptr [iEnableGMD],0
+ je _GodMDT1                       // Jump if feature is disabled
+
+ mov eax,[ecx+000001ec]            // Get pTroopInfo
+ test eax,eax
+ jz _GodMDT0
+
+ mov eax,[eax+00000160]            // Get pOwnerInfo
+ cmp dword ptr [eax+0000021c],0    // Player's unit?
+ je _ExitGMT
+
+_GodMDT0:                          // Ship Crew  &lt;----
+ mov eax,[ecx+000001f4]
+ test eax,eax
+ jz _GodMDT1
+
+ cmp byte ptr [eax+00001bc4],0     // Player's troop?
+ je _ExitGMT
+
+_GodMDT1:
+ mov edx,[ecx]                     // Original code
+ mov eax,[edx+00000100]            // Original code
+ push ebp                          // Original code
+ call eax                          // Original code
+
+_ExitGMT:
+ jmp _BackGMT                      // Back to main code
+
+//=========================================
+// RTS - Cannons (ECX = pUnit)
+_GodModeC:
+ mov dword ptr [aLast],'_GMC'
+
+ cmp dword ptr [iEnableGMD],0
+ je _GodMDC1                       // Jump if feature is disabled
+
+ mov eax,[ecx+000001ec]            // Get pTroopInfo
+ test eax,eax
+ jz _GodMDC0
+
+ mov eax,[eax+00000160]            // Get pOwnerInfo
+ cmp dword ptr [eax+0000021c],0    // Player's unit?
+ je _ExitGMC
+
+_GodMDC0:
+ mov eax,[ecx+000001f4]
+ test eax,eax
+ jz _GodMDC1
+
+ cmp byte ptr [eax+00001bc4],0     // Player's troop?
+ je _ExitGMC
+
+_GodMDC1:
+ mov edx,[ecx]                     // Original code
+ mov eax,[edx+00000100]            // Original code
+ push ebp                          // Original code
+ call eax                          // Original code
+
+_ExitGMC:
+ jmp _BackGMC                      // Back to main code
+
+//=========================================
+// RTS - Ship
+_GodModeS:
+ mov dword ptr [aLast],'_GMS'
+
+ cmp dword ptr [iEnableGMD],0
+ je _ExitGMS                       // Jump if feature is disabled
+
+ test eax,eax
+ jz _ExitGMS
+
+ cmp byte ptr [eax+00001bc4],0     // Player's unit?
+ jne _ExitGMS
+
+ ret                               // Avoid this function
+//-----
+_ExitGMS:
+ push ecx                          // Original code
+ mov ecx,[edi+00000378]            // Original code
+ jmp _BackGMS                      // Back to main code
+
+//=========================================
+// RTS - Ship
+_MonShipDamage:
+ mov dword ptr [aLast],'_MSD'
+
+ cmp dword ptr [iEnableGMD],0
+ je _ExitMSD                       // Jump if feature is disabled
+
+ cmp byte ptr [eax+00001bc4],0     // Player's ship?
+ jne _ExitMSD
+
+ xor ecx,ecx                       // Damage = 0
+
+_ExitMSD:
+ add [eax+00001d28],ecx            // Original code
+ jmp _BackMSD                      // Back to main code
+
+//=========================================
+// RTS - Ship (making ship stronger)
+_MonShipHull:
+ mov dword ptr [aLast],'_MSH'
+
+ cmp dword ptr [iEnableGMD],0
+ je _ExitMSH                       // Jump if feature is disabled
+
+ mov ecx,[edi+14]                  // Get pShipInfo
+ cmp byte ptr [ecx+00001bc4],0     // Player's ship?
+ jne _ExitMSH
+
+ push eax
+ push edx
+
+ mov edx,[iMinPart]                // Get part minimum value
+ mov eax,[ecx+00001c0c]            // Get number of parts
+ mul edx
+ mov [ecx+00001cd0],eax            // Update total hull value
+
+ mov eax,[iMinPart]                // Get part minimum value
+ mov [edi+1c],eax                  // Update part value
+ mov [edi+3c],eax                  // Update part value
+
+ pop edx
+ pop eax
+
+_ExitMSH:
+ mov ecx,[edi+3c]                  // Original code
+ fild dword ptr [edi+3c]           // Original code
+ jmp _BackMSH                      // Back to main code
+
+//=========================================
+// RTS - Full Ammo  (EAX = pTroop)
+_MonTroopAmmo:
+ mov dword ptr [aLast],'_MTA'
+
+ pushfd
+ push ebx
+
+ mov [eax+00000D34],ecx            // Original code
+
+ cmp dword ptr [iEnableMTA],0
+ je _ExitMTA                       // Jump if feature is disabled
+
+ mov ebx,[eax+00000160]            // Get pOwnerInfo
+ cmp dword ptr [ebx+0000021c],0    // Player's troop?
+ jne _ExitMTA
+
+ mov ecx,[eax+00000d38]
+ mov [eax+00000d34],ecx
+
+_ExitMTA:
+ pop ebx
+ popfd
+ jmp _BackMTA                      // Back to main code
+
+//=========================================
+ db '============================================&gt;'
+ db 'CE6.4 Script by Recifense 061615'
+//=========================================
+// Variables
+iEnableMPG:
+ dd 0
+iEnableMRP:
+ dd 0
+iEnableMPP:
+ dd 0
+iEnableMCP:
+ dd 0
+iEnableMTS:
+ dd 0
+iEnableMMP:
+ dd 0
+iEnableGMD:
+ dd 0
+iEnableMTA:
+ dd 0
+iMinGold:
+ dd ctMMON
+iMinPart:
+ dd #10000
+pGold:
+ dd MyCode
+pTown:
+ dd 0
+pSelArmy:
+ dd MyCode
+aLast:
+ db 'CE64'
+
+//=========================================
+// Hacking Points
+MOPG:
+ jmp _MonPlayerGold
+ nop
+_BackMPG:
+
+MPG1:
+ jmp _MonPlayerGold1
+ nop
+_BackPG1:
+
+MORP:
+ jmp _MonResearchProg
+_BackMRP:
+
+MOPP:
+ jmp _MonProdProg
+_BackMPP:
+
+MCP0:
+ jmp _MonConstProg0
+ nop
+ nop
+_BackCP0:
+
+MCP1:
+ jmp _MonConstProg1
+ nop
+ nop
+_BackCP1:
+
+MOSA:
+ jmp _MonSelArmy
+ nop
+_BackMSA:
+
+MTMP:
+ jmp _MonTroopMP
+_BackMTM:
+
+MAMP:
+ jmp _MonArmyMP
+_BackMAM:
+//------------------------------------------------------------------------------
+GMDT:
+ jmp _GodModeT
+ db 90 90 90 90 90 90
+_BackGMT:
+
+GMDC:
+ jmp _GodModeC
+ db 90 90 90 90 90 90
+_BackGMC:
+
+GMDS:
+ jmp _GodModeS
+ nop
+ nop
+_BackGMS:
+
+MOSD:
+ jmp _MonShipDamage
+ nop
+_BackMSD:
+
+MOSH:
+ jmp _MonShipHull
+ nop
+_BackMSH:
+
+MOTA:
+ jmp _MonTroopAmmo
+ nop
+_BackMTA:
+
+//=========================================
+// Script for Restoring Original Codes
+[DISABLE]
+MOPG:
+// mov ebx,[ebx+000004A0]
+ db 8b 9b a0 04 00 00
+
+MPG1:
+// mov ebx,[ebx+000004A0]
+ db 8b 9b a0 04 00 00
+
+MORP:
+// movss [edi+08],xmm1
+ db f3 0f 11 4f 08
+
+MOPP:
+// mov eax,[ecx+1C]
+// test eax,eax
+ db 8b 41 1c 85 c0
+
+MCP0:
+// add dword ptr [ebp+0C],01
+// mov eax,[ebp+0C]
+ db 83 45 0c 01 8b 45 0c
+
+MCP1:
+// add dword ptr [ebp+0C],01
+// mov eax,[ebp+0C]
+ db 83 45 0c 01 8b 45 0c
+
+MOSA:
+// mov eax,[esi+00000288]
+ db 8b 86 88 02 00 00
+
+MTMP:
+// mov eax,[ecx+64]
+// cmp eax,edi
+ db 8b 41 64 3b c7
+
+MAMP:
+// mov eax,[esi+1C]
+// cmp edi,eax
+ db 8b 46 1c 3b f8
+//------------------------------------------------------------------------------
+GMDT:
+// mov edx,[ecx]
+// mov eax,[edx+00000100]
+// push ebp
+// call eax
+ db 8b 11 8b 82 00 01 00 00 55 ff d0
+
+GMDC:
+// mov edx,[ecx]
+// mov eax,[edx+00000100]
+// push ebp
+// call eax
+ db 8b 11 8b 82 00 01 00 00 55 ff d0
+
+GMDS:
+// push ecx
+// mov ecx,[edi+00000378]
+ db 51 8b 8f 78 03 00 00
+
+MOSD:
+// add [eax+00001D28],ecx
+ db 01 88 28 1d 00 00
+
+MOSH:
+// mov ecx,[edi+3C]
+// fild dword ptr [edi+3C]
+ db 8b 4f 3c db 47 3c
+
+MOTA:
+// mov [eax+00000D34],ecx
+ db 89 88 34 0d 00 00
+
+//=========================================
+// Unregistering Symbols
+unregistersymbol(MyCode)
+unregistersymbol(iEnableMPG)
+unregistersymbol(iEnableMRP)
+unregistersymbol(iEnableMPP)
+unregistersymbol(iEnableMCP)
+unregistersymbol(iEnableMTS)
+unregistersymbol(iEnableMMP)
+unregistersymbol(iEnableGMD)
+unregistersymbol(iEnableMTA)
+unregistersymbol(iMinGold)
+unregistersymbol(pGold)
+unregistersymbol(pTown)
+unregistersymbol(pSelArmy)
+
+unregistersymbol(aLast)
+
+//=========================================
+dealloc(MyCode)
+//============= Scripts End ===============
+
+// ****************************************
+// NOTES
+// ****************************************
+{
+}
+
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>3</ID>
+          <Description>"Enable/Disable Minimum Gold ==============&gt;"</Description>
+          <DropDownList DescriptionOnly="1" DisplayValueAsItem="1">0:Disabled
+1:Enabled
+</DropDownList>
+          <LastState Value="??" Activated="0" RealAddress="00000000"/>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMPG</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>4</ID>
+              <Description>"Minimum Gold Value ===================&gt;"</Description>
+              <LastState Value="??" Activated="0" RealAddress="00000000"/>
+              <Color>0080FF</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>iMinGold</Address>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>39</ID>
+          <Description>"Enable/Disable Research in 1 Day  ==========&gt;"</Description>
+          <DropDownList DescriptionOnly="1" DisplayValueAsItem="1">0:Disabled
+1:Enabled
+</DropDownList>
+          <LastState Value="??" Activated="0" RealAddress="00000000"/>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMRP</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>40</ID>
+          <Description>"Enable/Disable Recruitment in 1 Day (Capital) ==&gt;"</Description>
+          <DropDownList DescriptionOnly="1" DisplayValueAsItem="1">0:Disabled
+1:Enabled
+</DropDownList>
+          <LastState Value="??" Activated="0" RealAddress="00000000"/>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMPP</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>41</ID>
+          <Description>"Enable/Disable Construction in 1 Day  ========&gt;"</Description>
+          <DropDownList DescriptionOnly="1" DisplayValueAsItem="1">0:Disabled
+1:Enabled
+</DropDownList>
+          <LastState Value="??" Activated="0" RealAddress="00000000"/>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMCP</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>42</ID>
+          <Description>"Enable/Disable Recover Troop Size  =========&gt;"</Description>
+          <DropDownList DescriptionOnly="1" DisplayValueAsItem="1">0:Disabled
+1:Enabled
+</DropDownList>
+          <LastState Value="??" Activated="0" RealAddress="00000000"/>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMTS</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>33</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>34</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>43</ID>
+          <Description>"Enable/Disable Unlimited Movement Points ====&gt;"</Description>
+          <DropDownList DescriptionOnly="1" DisplayValueAsItem="1">0:Disabled
+1:Enabled
+</DropDownList>
+          <LastState Value="??" Activated="0" RealAddress="00000000"/>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMMP</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>33</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>34</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>44</ID>
+          <Description>"Enable/Disable God Mode =================&gt;"</Description>
+          <DropDownList DescriptionOnly="1" DisplayValueAsItem="1">0:Disabled
+1:Enabled
+</DropDownList>
+          <LastState Value="??" Activated="0" RealAddress="00000000"/>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableGMD</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>45</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>46</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>45</ID>
+          <Description>"Enable/Disable Unlimited Ammo =============&gt;"</Description>
+          <DropDownList DescriptionOnly="1" DisplayValueAsItem="1">0:Disabled
+1:Enabled
+</DropDownList>
+          <LastState Value="??" Activated="0" RealAddress="00000000"/>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMTA</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>45</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>46</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols>
+    <SymbolEntry>
+      <Name>Recifense</Name>
+      <Address>20150616</Address>
+    </SymbolEntry>
+  </UserdefinedSymbols>
+  <Comments>===========================================
+ Game Title    : Empire Total War
+ Game Version  : 1.5.0 (Build 1332.21992) (steam)
+ Game Sponsor  : Myself
+ Process Name  : Empire.exe
+ Script Version: 5.0
+ CE Version    : 6.4
+ Release date  : 16-Jun-2015
+ Author        : Recifense
+ History:
+ 22-Jan-12: First Release
+ 07-Sep-14: Release for Steam (CE64)
+ 16-Jun-15: Fixed Minimum Gold for USA Campaign (5.0)
+ Features:
+ - Minimum Gold                      [1]
+ - Research in 1 day                 [2]
+ - Reinforcement in 1 Day            [3](*)
+ - Construction/Improvement in 1 Day [4]
+ - Unlimited Movement Points for:    [5]
+   - army
+   - ship
+   - agent
+ - Recover troop size (when moving)  [6]
+ - God Mode                          [7]
+ - Unlimited Ammo (Range Troop)      [8]
+===========================================
+[1] For human player only;
+[2] For human player only;
+[3] For human player only; (*)
+[4] For human player only;
+[5] For human player's Army/Fleet/Agent;
+[6] For human player's Troop;
+[7] For human player's Army/Fleet; (RTS Battle)
+[8] For human player's Troops; (RTS Battle)
+(*) [IMPORTANT]  Do not recruit from your army, always from the capital. OR the game will eventually crash.
+===========================================
+[USAGE]
+1) Run CE64;
+2) Run Game;
+3) Load the game process "Empire.exe" in CE;
+4) Load this table and activate it;
+5) Change the value to "Enabled" of each cheat you want to use;
+6) Game On;
+===========================================
+[HOTKEYS]
+CTRL+Home      = Enable  MG/R1D/Rt1D/CI1D cheats;
+CTRL+End       = Disable MG/R1D/Rt1D/CI1D cheats;
+-----------
+CTRL+PageUp    = Enable  TS/MP cheats;
+CTRL+PageDown  = Disable TS/MP cheats;
+-----------
+CTRL+Insert    = Enable  GM/UA cheats;
+CTRL+Delete    = Disable GM/UA cheats;
+===========================================
+[ADVICE]
+When you can,save the game before starting using table/cheat. So you can always come back in case you don't like the result.
+===========================================
+[INFO]
+Tested on Win 7 64bits
+===========================================
+Cheers!
+</Comments>
+</CheatTable>

@@ -1,0 +1,2455 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="19">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>49</ID>
+      <Description>"[X] &lt;== Stellaris v1.1.0 (ed47) Steam Script v5.0"</Description>
+      <Options moHideChildren="1" moDeactivateChildrenAsWell="1"/>
+      <LastState/>
+      <Color>FF0000</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>{
+===========================================
+ Game Title    : Stellaris
+ Game Version  : 1.1.0 (ed47)
+ Game Sponsor  : Ubykh
+ Process Name  : stellaris.exe
+ Relevant Info : 32bits/RTS with Pause
+ Script Version: 5.0
+ CE Version    : 6.5
+ Release date  : 04-Jun-2016
+ Author        : Recifense
+ History:
+ 14-Mar-16: First Release
+ 15-Mar-16: Add one more feature and Fixed GM (s2.0)
+ 18-Mar-16: Release for version 1.0.3.
+ 20-Mar-16: Added more features (Warp Wind-down/Troop Morale/GM/Research).
+ 23-Mar-16: Added more features (Planet Tile Info/Produced Resource Changing).
+ 02-Jun-16: Release for version 1.1.0. (+improvement) (s4.1)
+ 04-Jun-16: Added a new feature (max leaders) (s5.0)
+ Features:
+ - Minimum Resources:
+   - Energy
+   - Minerals
+   - Influence
+ - Minimum Research Points:
+   - Physics
+   - Society
+   - Engineering
+ - Quick Research
+   - Pretty Quick (new)
+ - Quick Task (for some ships):
+   - Survey
+   - Investigation
+ - Quick Production (Ship Construction)
+ - Quick Colonization and Population
+ - Quick Buiding
+   - By Planet
+   - By Constructor Ship
+ - God Mode:
+   - ships
+   - Stations
+   - Planets  (new)
+   - Troops   (new)
+ - Minimum Production per tile
+ - Instant Warp Wind-down (new)
+ - Troop Morale (new)
+ - Planet Tile Info
+ - Minimum Maximum # Leaders
+ - Some Pointers
+===========================================
+}
+
+//=========================================
+// Checking CE version
+{$lua}
+  if(getCEVersion() &lt; 6.5) then
+    ShowMessage('Sorry. CE version should be 6.5 or above')
+  end
+{$asm}
+
+//=========================================
+// Checking Selected Process
+{$lua}
+  if(process == nil) then
+    ShowMessage('No process was selected')
+  elseif (process ~= "stellaris.exe") then
+    ShowMessage('Error. Expected Process = stellaris.exe')
+  end
+{$asm}
+
+//=========================================
+// Definitions
+define(LUDO,"stellaris.exe")
+define(MOHP,stellaris.exe+00166933) //##
+define(MOSC,stellaris.exe+0021ecd2) //==
+define(MORP,stellaris.exe+0023a62c) //=#
+define(MRP2,stellaris.exe+0023a5ce) //=#
+define(MOTP,stellaris.exe+000b21ed) //==
+define(MOIP,stellaris.exe+000b3933) //==
+define(MOPP,stellaris.exe+00279ae8) //==
+define(MPP2,stellaris.exe+001e8723) //==
+define(MPP3,stellaris.exe+000cbb78) //-N
+define(MOCP,stellaris.exe+0009b2e6) //==
+define(MOBP,stellaris.exe+001e8658) //==
+define(MBP2,stellaris.exe+000adff7) //==
+define(MOPT,stellaris.exe+001f0c44) //==
+define(MOSH,stellaris.exe+001f84e3) //==
+define(MOPR,stellaris.exe+00537844) //==
+define(MOSP,stellaris.exe+000c40db) //==
+define(MOSS,stellaris.exe+0020e33a) //==
+define(MOSF,stellaris.exe+00290246) //==
+define(MSIN,stellaris.exe+001eeb6e) //==
+define(MOFW,stellaris.exe+00390db5) //N=
+define(MOPF,stellaris.exe+000cce61) //N#
+define(MOTH,stellaris.exe+0023ff71) //N=
+define(MOTM,stellaris.exe+0024504a) //N=
+define(MTM2,stellaris.exe+0024050f) //N=
+define(MSTE,stellaris.exe+004a15b6) //N=
+define(MRIO,stellaris.exe+002810ac) //N#
+define(MOTC,stellaris.exe+000cb91d) //-N
+define(MOML,stellaris.exe+00176d81) //-N
+
+define(MAXINDEX,#1133)
+
+//=========================================
+// Constants used in the script (that can be changed)
+define(ctCE65,(float)6.5)
+
+//=========================================
+[ENABLE]
+//=========================================
+//LuaCall(CheckVersion())
+//=========================================
+// Check if script is compatible to this game version
+// If false the script will not be loaded
+
+assert(MOHP,8b 8e 4c 08 00 00 8b 01 8b 50 3c ff d2 8b 0d ?? ?? ?? ?? 84 c0)
+assert(MOSC,8b 98 98 00 00 00 85 db ?? ?? 8b c3 5b c3 56 57 8b b9 ac 00 00)
+assert(MORP,01 47 04 89 45 ec 8b 0d ?? ?? ?? ?? 89 4c b5 c4 8b 4f 0c 8b 01)
+assert(MRP2,01 77 04 89 75 ec e9 ?? ?? ?? ?? a1 ?? ?? ?? ?? 05 8c 00 00 00)
+assert(MOTP,01 46 1c 5f 5e 5b 8b e5 5d c2 04 00 a1 ?? ?? ?? ?? 80 b8 21 1a)
+assert(MOIP,01 41 1c 5f 5e 5b 8b e5 5d c2 04 00 a1 ?? ?? ?? ?? 80 b8 41 19)
+assert(MOPP,8b 4f 2c 33 c0 3b 4d fc 5e 0f 9d c0 8b e5 5d c3 cc cc cc cc cc)
+assert(MPP2,01 47 2c 8b 46 40 2b 46 3c 33 db c1 f8 02 c6 45 f3 00 89 45 ec)
+assert(MPP3,8b 4d 0c 01 48 2c 8b 83 cc 01 00 00 8b 38 c6 45 0f 00 e8 ?? ??)
+assert(MOCP,8b 7e 18 03 3b 3b 3d ?? ?? ?? ?? ?? ?? 8b 45 08 c7 46 18 18 fc)
+assert(MOBP,8b 46 08 83 ec 64 53 57 85 c0 0f 88 ?? ?? ?? ?? ff 46 08 8b 0d)
+assert(MBP2,01 47 24 5f 5e 5b 8b e5 5d c2 04 00 8b 15 ?? ?? ?? ?? 6b db 70)
+assert(MOPT,8b 4e 64 8b 01 8b 50 04 ff d2 84 c0 ?? ?? 8b 46 64 8b 88 a4 00)
+assert(MOSH,29 b7 88 00 00 00 a1 ?? ?? ?? ?? 8b 88 8c 00 00 00 89 8f a4 01)
+assert(MOPR,8b 43 78 83 f8 05 ?? ?? 81 c3 0c 02 00 00 ?? ?? 6b c0 64 8d 9c)
+assert(MOSP,8b 97 0c 02 00 00 8b c2 25 ff ff ff 00 3b 41 10 ?? ?? 8b 49 0c)
+assert(MOSS,8b 89 a0 00 00 00 01 08 46 3b f7 ?? ?? 5b 5f 5e 5d c2 08 00 ??)
+assert(MOSF,8b 46 08 53 8b 5d 08 c7 45 f4 ?? ?? ?? ?? 89 45 f8 83 f8 06 ??)
+assert(MSIN,80 7c 02 51 00 8b 4c cb 04 0f 84 ?? ?? ?? ?? a1 ?? ?? ?? ?? 3b)
+assert(MOFW,ff 8e 94 00 00 00 83 be 94 00 00 00 00 0f 8f ?? ?? ?? ?? c7 86)
+assert(MOPF,89 86 bc 02 00 00 8b 15 ?? ?? ?? ?? 3b ca 0f 8e ?? ?? ?? ?? 3b)
+assert(MOTH,29 4e 2c 8b 46 28 8d 55 0c 52 50 8d 86 b4 00 00 00 e8 ?? ?? ??)
+assert(MOTM,8b 45 ec 29 5e 64 40 89 45 ec 3b 45 c8 0f 8c ?? ?? ?? ?? e9 ??)
+assert(MTM2,29 46 64 8b 56 64 89 13 8b c3 5b 5d c2 08 00 cc cc 55 8b ec 83)
+assert(MSTE,8b 4a 64 8b 01 8b 50 04 ff d2 6a 05 89 7d e4 c6 45 d4 00 8d 4d)
+assert(MRIO,8b 48 04 2b 08 c7 45 ec 00 00 00 00 c1 f9 02 89 4d f0 85 c9 0f)
+assert(MOTC,8b 83 e0 01 00 00 8b 8b e4 01 00 00 8d bb e0 01 00 00 2b c8 f7)
+assert(MOML,80 ba 61 26 00 00 00 8b 4c cb 04 ?? ?? a1 ?? ?? ?? ?? 3b c8 ??)
+
+//=========================================
+alloc(MyCode,4096,$process)
+//=========================================
+// Declaration section
+label(_MonHumanPlayer)
+label(_MonHPZZ)
+label(_MonHP00)
+label(_MonHP01)
+label(_BackMHP)
+label(_ExitMHP)
+label(_MonSelChar)
+label(_BackMSC)
+label(_ExitMSC)
+label(_MonResearchProg)
+label(_MonRPZZ)
+label(_MonRP00)
+label(_BackMRP)
+label(_ExitMRP)
+label(_MonResearchProg2)
+label(_MonRPTZ)
+label(_MonRP20)
+label(_BackRP2)
+label(_ExitRP2)
+label(_MonTaskProg)
+label(_BackMTP)
+label(_ExitMTP)
+label(_MonInvestigationProg)
+label(_BackMIP)
+label(_ExitMIP)
+label(_MonProdProg)
+label(_BackMPP)
+label(_ExitMPP)
+label(_MonProdProg2)
+label(_BackPP2)
+label(_ExitPP2)
+label(_MonProdProg3)
+label(_BackPP3)
+label(_ExitPP3)
+label(_MonColProg)
+label(_MonCP00)
+label(_MonCP01)
+label(_BackMCP)
+label(_ExitMCP)
+label(_MonBuildProg)
+label(_BackMBP)
+label(_ExitMBP)
+label(_MonBuildProg2)
+label(_BackBP2)
+label(_ExitBP2)
+label(_MonPlanetTiles)
+label(_BackMPT)
+label(_ExitMPT)
+label(_MonShipHull)
+label(_BackMSH)
+label(_ExitMSH)
+label(_MonPlayerRuler)
+label(_BackMPR)
+label(_ExitMPR)
+label(_MonSelPlanet)
+label(_BackMSP)
+label(_ExitMSP)
+label(_MonSelShip)
+label(_BackMSS)
+label(_ExitMSS)
+label(_MonSelFleet)
+label(_BackMSF)
+label(_ExitMSF)
+label(_MonStatusInfo)
+label(_BackMSI)
+label(_ExitMSI)
+label(_MonFleetWarpWD)
+label(_BackMFW)
+label(_ExitMFW)
+label(_MonPlanetFortification)
+label(_BackMPF)
+label(_ExitMPF)
+label(_MonTroopHealth)
+label(_BackMTH)
+label(_ExitMTH)
+label(_MonTroopMorale)
+label(_BackMTM)
+label(_ExitMTM)
+label(_MonTroopMorale2)
+label(_BackTM2)
+label(_ExitTM2)
+label(_MonSelTile)
+label(_BackSTE)
+label(_ExitSTE)
+label(_MonResourceInfo)
+label(_BackRIO)
+label(_ExitRIO)
+label(_MonTileConst)
+label(_BackMTC)
+label(_ExitMTC)
+label(_MonMaxLeaders)
+label(_BackMML)
+label(_ExitMML)
+
+label(_ChkPlayerFleet)
+label(_ChkPF00)
+label(_ChkPF01)
+label(_ChkPF02)
+label(_ChkPlayerTroop)
+label(_ChkPT00)
+label(_ChkPT01)
+label(_ChkPT02)
+
+label(iEnableMMR)
+label(iEnableMSR)
+label(iEnableMRP)
+label(iEnableMTP)
+label(iEnableMPP)
+label(iEnableMCP)
+label(iEnableMBP)
+label(iEnableMPT)
+label(iEnableGMD)
+label(iEnableMFW)
+label(iEnableMTM)
+label(iEnableQRP)
+label(iEnableMML)
+
+label(iOwnerID)
+label(iStatusID)
+label(iResIndex)
+label(iResMax)
+
+label(pPlayer)
+label(pRuler)
+label(pChar)
+label(pPlanet)
+label(pShip)
+label(pFleet)
+label(pCommon)
+label(pStatusInfo)
+label(pProd)
+label(pTile)
+label(pResInfo)
+
+//=========================================
+// Registering Symbols
+registersymbol(MyCode)
+registersymbol(iEnableMMR)
+registersymbol(iEnableMSR)
+registersymbol(iEnableMRP)
+registersymbol(iEnableMTP)
+registersymbol(iEnableMPP)
+registersymbol(iEnableMCP)
+registersymbol(iEnableMBP)
+registersymbol(iEnableMPT)
+registersymbol(iEnableGMD)
+registersymbol(iEnableMFW)
+registersymbol(iEnableMTM)
+registersymbol(iEnableQRP)
+registersymbol(iEnableMML)
+registersymbol(iOwnerID)
+registersymbol(iStatusID)
+registersymbol(iResIndex)
+registersymbol(iResMax)
+registersymbol(pPlayer)
+registersymbol(pRuler)
+registersymbol(pChar)
+registersymbol(pPlanet)
+registersymbol(pShip)
+registersymbol(pFleet)
+registersymbol(pCommon)
+registersymbol(pStatusInfo)
+registersymbol(pTile)
+registersymbol(pResInfo)
+
+//=========================================
+MyCode:
+//========================================= 110 ok
+// At main game screen
+_MonHumanPlayer:
+ push eax
+ push ebx
+ push edx
+
+ mov [pPlayer],esi
+ mov ecx,[esi+08]
+ mov [iOwnerID],ecx
+ mov ecx,[esi+00000108]
+ mov [pCommon],ecx
+
+ cmp dword ptr [iEnableMSR],0
+ je _MonHPZZ                       // Jump if feature is disabled
+
+ mov ecx,#100000
+ mov ebx,[esi+00000168]
+ cmp ebx,ecx
+ cmovs ebx,ecx
+ mov [esi+00000168],ebx
+
+ mov ebx,[esi+0000016c]
+ cmp ebx,ecx
+ cmovs ebx,ecx
+ mov [esi+0000016c],ebx
+
+ mov ebx,[esi+00000170]
+ cmp ebx,ecx
+ cmovs ebx,ecx
+ mov [esi+00000170],ebx
+
+_MonHPZZ:
+ mov ecx,[esi+0000084C]
+ test ecx,ecx
+ jz _ExitMHP
+
+ cmp dword ptr [iEnableMMR],0
+ je _ExitMHP                       // Jump if feature is disabled
+
+ mov ebx,[ecx+28]
+ test ebx,ebx
+ jz _ExitMHP
+
+ mov edx,[ecx+2c]
+ test edx,edx
+ jz _ExitMHP
+
+_MonHP00:
+ cmp ebx,edx
+ jns _ExitMHP
+
+ mov ecx,[ebx]
+ mov eax,[ecx+9c]
+ test eax,eax
+ js _MonHP01
+
+ shr eax,1
+
+ cmp eax,[ebx+04]
+ js _MonHP01
+
+ mov [ebx+04],eax
+
+_MonHP01:
+ lea ebx,[ebx+10]
+ jmp _MonHP00
+
+_ExitMHP:
+ pop edx
+ pop ebx
+ pop eax
+
+ mov ecx,[esi+0000084C]            // Original code (get pResourcesInfo)
+ jmp _BackMHP                      // Back to main code
+
+//========================================= ok
+// Character Under Cursor (displaying age)
+_MonSelChar:
+ mov [pChar],eax
+
+_ExitMSC:
+ mov ebx,[eax+00000098]            // Original code (get age)
+ jmp _BackMSC                      // Back to main code
+
+//========================================= 110 ok
+// During updating
+_MonResearchProg:
+ push ecx
+ push edx
+
+ cmp dword ptr [iEnableMRP],0
+ je _ExitMRP                       // Jump if feature is disabled
+
+ mov edx,[ebx+04]
+ cmp edx,[pPlayer]
+ jne _ExitMRP
+
+ cmp dword ptr [iEnableQRP],0
+ je _MonRPZZ                       // Jump if feature is disabled
+
+ mov edx,#65100000
+ jmp _MonRP00
+//--
+_MonRPZZ:
+ mov ecx,[edi+08]
+ test ecx,ecx
+ jz _ExitMRP
+
+ mov edx,[ecx+2c]
+ add edx,[ecx+30]
+ test edx,edx
+ js _ExitMRP
+
+ mov ecx,eax
+ add eax,eax
+ add eax,eax
+ add eax,ecx
+ add eax,eax
+
+_MonRP00:
+ cmp edx,[edi+04]
+ jle _ExitMRP
+
+ sub edx,eax
+ mov [edi+04],edx
+
+_ExitMRP:
+ pop edx
+ pop ecx
+
+ add [edi+04],eax                  // Original code (inc prog)
+ mov [ebp-14],eax                  // Original code (inc prog)
+ jmp _BackMRP                      // Back to main code
+
+//========================================= 110 ok
+// During updating
+_MonResearchProg2:
+ push ecx
+ push edx
+
+ cmp dword ptr [iEnableMRP],0
+ je _ExitRP2                       // Jump if feature is disabled
+
+ mov edx,[ebx+04]
+ cmp edx,[pPlayer]
+ jne _ExitRP2
+
+ cmp dword ptr [iEnableQRP],0
+ je _MonRPTZ                       // Jump if feature is disabled
+
+ mov edx,#65100000
+ jmp _MonRP20
+//--
+_MonRPTZ:
+ mov edx,[edi+08]
+ test edx,edx
+ jz _ExitRP2
+
+ mov edx,[ecx+2c]
+ add edx,[ecx+30]
+ test edx,edx
+ js _ExitRP2
+
+ mov ecx,esi
+ add esi,esi
+ add esi,esi
+ add esi,ecx
+ add eax,eax
+
+_MonRP20:
+ cmp edx,[edi+04]
+ jle _ExitRP2
+
+ sub edx,esi
+ mov [edi+04],edx
+
+_ExitRP2:
+ pop edx
+ pop ecx
+
+ add [edi+04],esi                  // Original code (inc prog)
+ mov [ebp-14],esi                  // Original code
+ jmp _BackRP2                      // Back to main code
+
+//========================================= ok
+// During updating (min = 90%)
+_MonTaskProg:
+ add [esi+1C],eax                  // Original code (inc prog)
+
+ cmp dword ptr [iEnableMTP],0
+ je _ExitMTP                       // Jump if feature is disabled
+
+ mov edi,[ebp+08]
+ test edi,edi
+ jz _ExitMTP
+
+ mov eax,[edi+000000a0]
+ cmp eax,[iOwnerID]
+ jne _ExitMTP
+
+ mov eax,#90000
+ cmp eax,[esi+1c]
+ js _ExitMTP
+
+ mov [esi+1c],eax
+
+_ExitMTP:
+ pop edi                           // Original code
+ pop esi                           // Original code
+ jmp _BackMTP                      // Back to main code
+
+//========================================= ok
+// During updating (min = 90%)
+_MonInvestigationProg:
+ add [ecx+1C],eax                  // Original code (inc prog)
+
+ cmp dword ptr [iEnableMTP],0
+ je _ExitMIP                       // Jump if feature is disabled
+
+ mov edi,[ebp+08]
+ test edi,edi
+ jz _ExitMIP
+
+ mov eax,[edi+000000a0]
+ cmp eax,[iOwnerID]
+ jne _ExitMIP
+
+ mov eax,#90000
+ cmp eax,[ecx+1c]
+ js _ExitMIP
+
+ mov [ecx+1c],eax
+
+_ExitMIP:
+ pop edi                           // Original code
+ pop esi                           // Original code
+ jmp _BackMIP                      // Back to main code
+
+//========================================= ok
+// Right After updating
+_MonProdProg:
+ cmp dword ptr [iEnableMPP],0
+ je _ExitMPP                       // Jump if feature is disabled
+
+ cmp edi,[pProd]
+ jne _ExitMPP
+
+ mov dword ptr [pProd],55555555
+
+ mov eax,[ebp-04]
+ lea eax,[eax-7d0]
+ cmp eax,[edi+2c]
+ js _ExitMPP
+
+ mov [edi+2c],eax
+
+_ExitMPP:
+ mov ecx,[edi+2C]                  // Original code (get prod prog)
+ xor eax,eax                       // Original code
+ jmp _BackMPP                      // Back to main code
+
+//========================================= ok
+// When updating (prepare environment for previous script)
+_MonProdProg2:
+ add [edi+2C],eax                  // Original code (set prod prog)
+
+ mov eax,[esi+04]
+ test eax,eax
+ jz _ExitPP2
+
+ mov eax,[eax+0000020c]
+ cmp eax,[iOwnerID]
+ jne _ExitPP2
+
+ mov [pProd],edi
+
+_ExitPP2:
+ mov eax,[esi+40]                  // Original code
+ jmp _BackPP2                      // Back to main code
+
+//========================================= ok
+// When updating (prepare environment for same script as previous one)
+_MonProdProg3:
+ mov ecx,[ebx+0000020c]
+ cmp ecx,[iOwnerID]
+ jne _ExitPP3
+
+ mov [pProd],eax
+
+_ExitPP3:
+ mov ecx,[ebp+0C]                  // Original code
+ add [eax+2C],ecx                  // Original code (upd prog)
+ jmp _BackPP3                      // Back to main code
+
+//========================================= ok
+// When updating (colonization/population growth on tiles)
+_MonColProg:
+ cmp dword ptr [iEnableMCP],0
+ je _ExitMCP                       // Jump if feature is disabled
+
+ mov edi,[esi+18]
+ test edi,edi
+ js _ExitMCP
+
+ mov edi,[ebx]
+ test edi,edi
+ js _ExitMCP
+
+ mov edi,[ebp-08]
+ test edi,edi
+ jz _MonCP00
+
+ cmp dword ptr [edi+00000284],'plan'
+ je _MonCP01
+
+_MonCP00:
+ mov edi,[ebp-0C]
+ test edi,edi
+ jz _ExitMCP
+
+ cmp dword ptr [edi+00000284],'plan'
+ jne _ExitMCP
+
+_MonCP01:
+ mov edi,[edi+0000020c]
+ cmp edi,[iOwnerID]
+ jne _ExitMCP
+
+ mov edi,#650000
+ cmp edi,[esi+18]
+ js _ExitMCP
+
+ mov [esi+18],edi
+
+_ExitMCP:
+ mov edi,[esi+18]                  // Original code (get cur colonization)
+ add edi,[ebx]                     // Original code
+ jmp _BackMCP                      // Back to main code
+
+//========================================= ok
+// When updating (Building at Planets) (days)
+_MonBuildProg:
+ cmp dword ptr [iEnableMBP],0
+ je _ExitMBP                       // Jump if feature is disabled
+
+ mov eax,[esi+08]
+ test eax,eax
+ js _ExitMBP
+
+ mov eax,[ebx+0000020c]
+ cmp eax,[iOwnerID]
+ jne _ExitMBP
+
+ mov eax,#355
+ cmp eax,[esi+08]
+ js _ExitMBP
+
+ mov [esi+08],eax
+
+_ExitMBP:
+ mov eax,[esi+08]                  // Original code (get cur #days passed)
+ sub esp,64                        // Original code
+ jmp _BackMBP                      // Back to main code
+
+//========================================= ok
+// When constructing by ship constructor (ex.: outpost)(%)
+_MonBuildProg2:
+ add [edi+24],eax                  // Original code (upd % prog)
+
+ cmp dword ptr [iEnableMBP],0
+ je _ExitBP2                       // Jump if feature is disabled
+
+ mov esi,[ebp+08]
+ test esi,esi
+ jz _ExitBP2
+
+ mov eax,[esi+000000a0]
+ cmp eax,[iOwnerID]
+ jne _ExitBP2
+
+ mov eax,#90000
+ cmp eax,[edi+24]
+ js _ExitBP2
+
+ mov [edi+24],eax
+
+_ExitBP2:
+ pop edi                           // Original code
+ pop esi                           // Original code
+ jmp _BackBP2                      // Back to main code
+
+//========================================= ok
+// When looking at the planet surface (min existing res = 10)
+// EDX is free
+_MonPlanetTiles:
+ cmp dword ptr [iEnableMPT],0
+ je _ExitMPT                       // Jump if feature is disabled
+
+ mov eax,[esi+10]
+ test eax,eax
+ jz _ExitMPT
+
+ mov ecx,[esi+04]
+ test ecx,ecx
+ jz _ExitMPT
+
+ mov ecx,[ecx+0000020c]
+ cmp ecx,[iOwnerID]
+ jne _ExitMPT
+
+ mov ecx,[esi+1c]
+ test ecx,ecx
+ jz _ExitMPT
+
+ mov edx,[esi+20]
+ test edx,edx
+ jz _ExitMPT
+
+ mov eax,#10000
+
+_MonPT00:
+ cmp ecx,edx
+ jge _ExitMPT
+
+ cmp eax,[ecx+04]
+ js _MonPT01
+
+ mov [ecx+04],eax
+
+_MonPT01:
+ lea ecx,[ecx+10]
+ jmp _MonPT00
+//--
+_ExitMPT:
+ mov ecx,[esi+64]                  // Original code (get pType)
+ mov eax,[ecx]                     // Original code
+ jmp _BackMPT                      // Back to main code
+
+//========================================= ok
+// During Battle (ship/stations)
+_MonShipHull:
+ cmp dword ptr [iEnableGMD],0
+ je _ExitMSH                       // Jump if feature is disabled
+
+ mov eax,[ebx+4c]
+ call _ChkPlayerFleet
+ jne _ExitMSH
+
+ xor esi,esi
+
+_ExitMSH:
+ sub [edi+00000088],esi            // Original code (dec cHull)
+ jmp _BackMSH                      // Back to main code
+
+//========================================= ok
+// When Government is open
+_MonPlayerRuler:
+ mov [pRuler],ebx
+
+_ExitMPR:
+ mov eax,[ebx+78]                  // Original code (get status)
+ cmp eax,05                        // Original code
+ jmp _BackMPR                      // Back to main code
+
+//========================================= ok
+// Last planet/sun/asteroid under cursor
+_MonSelPlanet:
+ mov [pPlanet],edi
+
+_ExitMSP:
+ mov edx,[edi+0000020C]            // Original code (get value)
+ jmp _BackMSP                      // Back to main code
+
+//========================================= ok
+// Last selected ship/station
+_MonSelShip:
+ mov [pShip],ecx
+
+_ExitMSS:
+ mov ecx,[ecx+000000A0]            // Original code (get cHull)
+ jmp _BackMSS                      // Back to main code
+
+//========================================= ok
+// Last selected fleet/station
+_MonSelFleet:
+ lea eax,[esi-04]
+ mov [pFleet],eax
+
+_ExitMSF:
+ mov eax,[esi+08]                  // Original code (get value)
+ push ebx                          // Original code
+ mov ebx,[ebp+08]                  // Original code
+ jmp _BackMSF                      // Back to main code
+
+//========================================= ok
+// Status Info of index iStatusID
+_MonStatusInfo:
+ push ecx
+
+ mov ecx,[iStatusID]
+ test ecx,ecx
+ js _ExitMSI
+
+ cmp ecx,MAXINDEX
+ jg _ExitMSI
+
+ imul ecx,ecx,70
+ lea ecx,[eax+ecx]
+ mov [pStatusInfo],ecx
+
+_ExitMSI:
+ pop ecx
+
+ cmp byte ptr [edx+eax+51],00      // Original code (chk something)
+ jmp _BackMSI                      // Back to main code
+
+//========================================= ok
+// When updating Warp Wind-down
+_MonFleetWarpWD:
+ push eax
+
+ dec [esi+00000094]                // Original code (upd WWD)
+
+ cmp dword ptr [iEnableMFW],0
+ je _ExitMFW                       // Jump if feature is disabled
+
+ mov eax,[esi+04]
+ test eax,eax
+ jz _ExitMFW
+
+ mov eax,[eax+000000a0]
+ cmp eax,[iOwnerID]
+ jne _ExitMFW
+
+ xor eax,eax
+ mov [esi+00000094],eax
+
+_ExitMFW:
+ pop eax
+ jmp _BackMFW                      // Back to main code
+
+//========================================= 110 ok
+// When updating Planetary Fortification
+_MonPlanetFortification:
+ cmp dword ptr [iEnableGMD],0
+ je _ExitMPF                       // Jump if feature is disabled
+
+ mov edx,[esi+0000020c]
+ cmp edx,[iOwnerID]
+ jne _ExitMPF
+
+ mov edx,[esi+000002bc]
+ test edx,edx
+ js _ExitMPF
+
+ cmp eax,edx
+ cmovs eax,edx
+
+_ExitMPF:
+ mov [esi+000002BC],eax            // Original code (upd Fort...)
+ jmp _BackMPF                      // Back to main code
+
+//========================================= ok
+// During Battle (Troops)
+_MonTroopHealth:
+ cmp dword ptr [iEnableGMD],0
+ je _ExitMTH                       // Jump if feature is disabled
+
+ mov eax,[esi+08]
+ call _ChkPlayerTroop
+ jne _ExitMTH
+
+ xor ecx,ecx
+
+_ExitMTH:
+ sub [esi+2C],ecx                  // Original code (dec cHealth)
+ mov eax,[esi+28]                  // Original code
+ jmp _BackMTH                      // Back to main code
+
+//========================================= ok
+// During Battle (Troops)(defender)
+_MonTroopMorale:
+ cmp dword ptr [iEnableMTM],0
+ je _ExitMTM                       // Jump if feature is disabled
+
+ mov eax,[esi+08]
+ call _ChkPlayerTroop
+ jne _ExitMTM
+
+ xor ebx,ebx
+
+_ExitMTM:
+ mov eax,[ebp-14]                  // Original code
+ sub [esi+64],ebx                  // Original code (dec Morale)
+ jmp _BackMTM                      // Back to main code
+
+//========================================= ok
+// During Battle (Troops)(attacker)
+_MonTroopMorale2:
+ cmp dword ptr [iEnableMTM],0
+ je _ExitTM2                       // Jump if feature is disabled
+
+ mov edx,eax
+ mov eax,[esi+08]
+ call _ChkPlayerTroop
+ mov eax,edx
+ jne _ExitTM2
+
+ xor eax,eax
+
+_ExitTM2:
+ sub [esi+64],eax                  // Original code
+ mov edx,[esi+64]                  // Original code (dec Morale)
+ jmp _BackTM2                      // Back to main code
+
+//========================================= ok
+// Last selected Tile
+_MonSelTile:
+ mov [pTile],edx
+
+_ExitSTE:
+ mov ecx,[edx+64]                  // Original code (get pInfo)
+ mov eax,[ecx]                     // Original code
+ jmp _BackSTE                      // Back to main code
+
+//========================================= ok
+// Find out the resource info of a given Index
+_MonResourceInfo:
+ push ebx
+
+ mov ecx,[eax+04]
+ sub ecx,[eax]
+
+ mov dword ptr [iResMax],00
+
+ test ecx,ecx
+ jz _ExitRIO
+
+ sar ecx,02
+ mov [iResMax],ecx
+ cmp ecx,[iResIndex]
+ js _ExitRIO
+
+ mov ecx,[iResIndex]
+ test ecx,ecx
+ jz _ExitRIO
+
+ mov ebx,[eax]
+ mov ecx,[ebx+ecx*4-04]
+ mov [pResInfo],ecx
+
+_ExitRIO:
+ pop ebx
+
+ mov ecx,[eax+04]                  // Original code (get pEnd)
+ sub ecx,[eax]                     // Original code (pBegin)
+ jmp _BackRIO                      // Back to main code
+
+//========================================= 110 new
+// When checking const prog during turn (for tiles)
+_MonTileConst:
+ cmp dword ptr [iEnableMBP],0
+ je _ExitMTC                       // Jump if feature is disabled
+
+ mov eax,[ebx+0000020c]
+ cmp eax,[iOwnerID]
+ jne _ExitMTC
+
+ mov eax,[ebx+000001E0]
+ mov ecx,[ebx+000001E4]
+ cmp eax,ecx
+ jns _ExitMTC
+
+ mov ecx,[eax]
+ test ecx,ecx
+ jz _ExitMTC
+
+ mov eax,[ecx+44]
+ test eax,eax
+ jz _ExitMTC
+
+ mov dword ptr [ecx+48],1
+
+_ExitMTC:
+ mov eax,[ebx+000001E0]            // Original code (get pList)
+ jmp _BackMTC                      // Back to main code
+
+//========================================= 110 brand-new
+// At the pick one leader up screen
+_MonMaxLeaders:
+ cmp dword ptr [iEnableMML],0
+ je _ExitMML                       // Jump if feature is disabled
+
+ cmp edi,[pPlayer]
+ jne _ExitMML
+
+ mov eax,#30000
+ cmp eax,[ebx+ecx*8+04]
+ js _ExitMML
+
+ mov [ebx+ecx*8+04],eax            // Additional # of leaders (30)
+
+_ExitMML:
+ cmp byte ptr [edx+00002661],00    // Original code
+ jmp _BackMML                      // Back to main code
+
+//========================================= 110 ok
+// Check if it is a player's ship/Station (based on its fleet id)
+// Input : EAX = FleetID
+// Output: Z = found and NZ = Not Found
+_ChkPlayerFleet:
+ push ebx
+ push ecx
+
+ mov ebx,[pPlayer]
+ mov ecx,[ebx+00000650]
+ mov ebx,[ebx+0000064c]
+ test ebx,ebx
+ jz _ChkPF01
+
+_ChkPF00:
+ cmp ecx,ebx
+ jle _ChkPF01
+
+ cmp eax,[ebx]
+ je _ChkPF02
+
+ lea ebx,[ebx+04]
+ jmp _ChkPF00
+//--
+_ChkPF01:
+ inc eax
+ test eax,eax
+
+_ChkPF02:
+ pop ecx
+ pop ebx
+ ret
+
+//========================================= 110
+// Check if it is a player's troop (based on its id)
+// Input : EAX = TroopID
+// Output: Z = found and NZ = Not Found
+_ChkPlayerTroop:
+ push ebx
+ push ecx
+
+ mov ebx,[pPlayer]
+ mov ecx,[ebx+00000660]
+ mov ebx,[ebx+0000065c]
+ test ebx,ebx
+ jz _ChkPT01
+
+_ChkPT00:
+ cmp ecx,ebx
+ jle _ChkPF01
+
+ cmp eax,[ebx]
+ je _ChkPT02
+
+ lea ebx,[ebx+04]
+ jmp _ChkPT00
+//--
+_ChkPT01:
+ inc eax
+ test eax,eax
+
+_ChkPT02:
+ pop ecx
+ pop ebx
+ ret
+
+//=========================================
+ db '=======================================&gt;'
+ db 'CE6.5 Script by Recifense 060416'
+//=========================================
+// Variables
+iEnableMMR:
+ dd 0
+iEnableMSR:
+ dd 0
+iEnableMRP:
+ dd 0
+iEnableMTP:
+ dd 0
+iEnableMPP:
+ dd 0
+iEnableMCP:
+ dd 0
+iEnableMBP:
+ dd 0
+iEnableMPT:
+ dd 0
+iEnableGMD:
+ dd 0
+iEnableMFW:
+ dd 0
+iEnableMTM:
+ dd 0
+iEnableQRP:
+ dd 0
+iEnableMML:
+ dd 0
+iOwnerID:
+ dd #999
+iStatusID:
+ dd 0
+iResIndex:
+ dd 2
+iResMax:
+ dd 2
+pPlayer:
+ dd MyCode
+pRuler:
+ dd 0
+pChar:
+ dd 0
+pPlanet:
+ dd 0
+pShip:
+ dd 0
+pFleet:
+ dd 0
+pTile:
+ dd 0
+pResInfo:
+ dd 0
+pCommon:
+ dd MyCode
+pStatusInfo:
+ dd 0
+pProd:
+ dd MyCode
+
+//=========================================
+// Hacking Points
+MOHP:
+ jmp _MonHumanPlayer
+ nop
+_BackMHP:
+
+MOSC:
+ jmp _MonSelChar
+ nop
+_BackMSC:
+
+MORP:
+ jmp _MonResearchProg
+ nop
+_BackMRP:
+
+MRP2:
+ jmp _MonResearchProg2
+ nop
+_BackRP2:
+
+MOTP:
+ jmp _MonTaskProg
+_BackMTP:
+
+MOIP:
+ jmp _MonInvestigationProg
+_BackMIP:
+
+MOPP:
+ jmp _MonProdProg
+_BackMPP:
+
+MPP2:
+ jmp _MonProdProg2
+ nop
+_BackPP2:
+
+MPP3:
+ jmp _MonProdProg3
+ nop
+_BackPP3:
+
+MOCP:
+ jmp _MonColProg
+_BackMCP:
+
+MOBP:
+ jmp _MonBuildProg
+ nop
+_BackMBP:
+
+MBP2:
+ jmp _MonBuildProg2
+_BackBP2:
+
+MOPT:
+ jmp _MonPlanetTiles
+_BackMPT:
+
+MOSH:
+ jmp _MonShipHull
+ nop
+_BackMSH:
+
+MOPR:
+ jmp _MonPlayerRuler
+ nop
+_BackMPR:
+
+MOSP:
+ jmp _MonSelPlanet
+ nop
+_BackMSP:
+
+MOSS:
+ jmp _MonSelShip
+ nop
+_BackMSS:
+
+MOSF:
+ jmp _MonSelFleet
+ nop
+ nop
+_BackMSF:
+
+MSIN:
+ jmp _MonStatusInfo
+_BackMSI:
+
+MOFW:
+ jmp _MonFleetWarpWD
+ nop
+_BackMFW:
+
+MOPF:
+ jmp _MonPlanetFortification
+ nop
+_BackMPF:
+
+MOTH:
+ jmp _MonTroopHealth
+ nop
+_BackMTH:
+
+MOTM:
+ jmp _MonTroopMorale
+ nop
+_BackMTM:
+
+MTM2:
+ jmp _MonTroopMorale2
+ nop
+_BackTM2:
+
+MSTE:
+ jmp _MonSelTile
+_BackSTE:
+
+MRIO:
+ jmp _MonResourceInfo
+_BackRIO:
+
+MOTC:
+ jmp _MonTileConst
+ nop
+_BackMTC:
+
+MOML:
+ jmp _MonMaxLeaders
+ nop
+ nop
+_BackMML:
+
+//=========================================
+// Script for Restoring Original Codes
+[DISABLE]
+MOHP:
+// mov ecx,[esi+0000084C]
+ db 8b 8e 4c 08 00 00
+
+MOSC:
+// mov ebx,[eax+00000098]
+ db 8b 98 98 00 00 00
+
+MORP:
+// add [edi+04],eax
+// mov [ebp-14],eax
+ db 01 47 04 89 45 ec
+
+MRP2:
+// add [edi+04],esi
+// mov [ebp-14],esi
+ db 01 77 04 89 75 ec
+
+MOTP:
+// add [esi+1C],eax
+// pop edi
+// pop esi
+ db 01 46 1c 5f 5e
+
+MOIP:
+// add [ecx+1C],eax
+// pop edi
+// pop esi
+ db 01 41 1c 5f 5e
+
+MOPP:
+// mov ecx,[edi+2C]
+// xor eax,eax
+ db 8b 4f 2c 33 c0
+
+MPP2:
+// add [edi+2C],eax
+// mov eax,[esi+40]
+ db 01 47 2c 8b 46 40
+
+MPP3:
+// mov ecx,[ebp+0C]
+// add [eax+2C],ecx
+ db 8b 4d 0c 01 48 2c
+
+MOCP:
+// mov edi,[esi+18]
+// add edi,[ebx]
+ db 8b 7e 18 03 3b
+
+MOBP:
+// mov eax,[esi+08]
+// sub esp,64
+ db 8b 46 08 83 ec 64
+
+MBP2:
+// add [edi+24],eax
+// pop edi
+// pop esi
+ db 01 47 24 5f 5e
+
+MOPT:
+// mov ecx,[esi+64]
+// mov eax,[ecx]
+ db 8b 4e 64 8b 01
+
+MOSH:
+// sub [edi+00000088],esi
+ db 29 b7 88 00 00 00
+
+MOPR:
+// mov eax,[ebx+78]
+// cmp eax,05
+ db 8b 43 78 83 f8 05
+
+MOSP:
+// mov edx,[edi+0000020C]
+ db 8b 97 0c 02 00 00
+
+MOSS:
+// mov ecx,[ecx+000000A0]
+ db 8b 89 a0 00 00 00
+
+MOSF:
+// mov eax,[esi+08]
+// push ebx
+// mov ebx,[ebp+08]
+ db 8b 46 08 53 8b 5d 08
+
+MSIN:
+// cmp byte ptr [edx+eax+51],00
+ db 80 7c 02 51 00
+
+MOFW:
+// dec [esi+00000094]
+ db ff 8e 94 00 00 00
+
+MOPF:
+// mov [esi+000002BC],eax
+ db 89 86 bc 02 00 00
+
+MOTH:
+// sub [esi+2C],ecx
+// mov eax,[esi+28]
+ db 29 4e 2c 8b 46 28
+
+MOTM:
+// mov eax,[ebp-14]
+// sub [esi+64],ebx
+ db 8b 45 ec 29 5e 64
+
+MTM2:
+// sub [esi+64],eax
+// mov edx,[esi+64]
+ db 29 46 64 8b 56 64
+
+MSTE:
+// mov ecx,[edx+64]
+// mov eax,[ecx]
+ db 8b 4a 64 8b 01
+
+MRIO:
+// mov ecx,[eax+04]
+// sub ecx,[eax]
+ db 8b 48 04 2b 08
+
+MOTC:
+// mov eax,[ebx+000001E0]
+ db 8b 83 e0 01 00 00
+
+MOML:
+// cmp byte ptr [edx+00002661],00
+ db 80 ba 61 26 00 00 00
+
+//=========================================
+// Unregistering Symbols
+unregistersymbol(MyCode)
+unregistersymbol(iEnableMMR)
+unregistersymbol(iEnableMSR)
+unregistersymbol(iEnableMRP)
+unregistersymbol(iEnableMTP)
+unregistersymbol(iEnableMPP)
+unregistersymbol(iEnableMCP)
+unregistersymbol(iEnableMBP)
+unregistersymbol(iEnableMPT)
+unregistersymbol(iEnableGMD)
+unregistersymbol(iEnableMFW)
+unregistersymbol(iEnableMTM)
+unregistersymbol(iEnableQRP)
+unregistersymbol(iEnableMML)
+unregistersymbol(iOwnerID)
+unregistersymbol(iStatusID)
+unregistersymbol(iResIndex)
+unregistersymbol(iResMax)
+unregistersymbol(pPlayer)
+unregistersymbol(pRuler)
+unregistersymbol(pChar)
+unregistersymbol(pPlanet)
+unregistersymbol(pShip)
+unregistersymbol(pFleet)
+unregistersymbol(pCommon)
+unregistersymbol(pStatusInfo)
+unregistersymbol(pTile)
+unregistersymbol(pResInfo)
+
+//=========================================
+dealloc(MyCode)
+//============= Scripts End ===============
+
+// ****************************************
+// NOTES
+// ****************************************
+{
+}
+
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>96</ID>
+          <Description>"[X] &lt;== Minimum Resources (main ones)"</Description>
+          <LastState/>
+          <Color>C08000</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[enable]
+define(test,LUDO)
+
+{$LUA}
+writeInteger("iEnableMMR",1)
+getAddressList().getMemoryRecordByID(96).Color = 0x00008000
+{$ASM}
+
+[disable]
+{$LUA}
+writeInteger("iEnableMMR",0)
+getAddressList().getMemoryRecordByID(96).Color = 0x00c08000
+{$ASM}
+
+</AssemblerScript>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Activate</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Deactivate</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>229</ID>
+          <Description>"[X] &lt;== Minimum Research Points"</Description>
+          <LastState/>
+          <Color>C08000</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[enable]
+define(test,LUDO)
+
+{$LUA}
+writeInteger("iEnableMSR",1)
+getAddressList().getMemoryRecordByID(229).Color = 0x00008000
+{$ASM}
+
+[disable]
+{$LUA}
+writeInteger("iEnableMSR",0)
+getAddressList().getMemoryRecordByID(229).Color = 0x00c08000
+{$ASM}
+
+</AssemblerScript>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Activate</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Deactivate</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>230</ID>
+          <Description>"[X] &lt;== Quick Research (in Few months or days)"</Description>
+          <Options moHideChildren="1" moDeactivateChildrenAsWell="1"/>
+          <LastState/>
+          <Color>C08000</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[enable]
+define(test,LUDO)
+
+{$LUA}
+writeInteger("iEnableMRP",1)
+getAddressList().getMemoryRecordByID(230).Color = 0x00008000
+{$ASM}
+
+[disable]
+{$LUA}
+writeInteger("iEnableMRP",0)
+getAddressList().getMemoryRecordByID(230).Color = 0x00c08000
+{$ASM}
+
+</AssemblerScript>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Activate</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Deactivate</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>245</ID>
+              <Description>"[X] &lt;== Pretty Quick Research"</Description>
+              <LastState/>
+              <Color>C08000</Color>
+              <VariableType>Auto Assembler Script</VariableType>
+              <AssemblerScript>[enable]
+define(test,LUDO)
+
+{$LUA}
+writeInteger("iEnableQRP",1)
+getAddressList().getMemoryRecordByID(245).Color = 0x00008000
+{$ASM}
+
+[disable]
+{$LUA}
+writeInteger("iEnableQRP",0)
+getAddressList().getMemoryRecordByID(245).Color = 0x00c08000
+{$ASM}
+
+</AssemblerScript>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>231</ID>
+          <Description>"[X] &lt;== Quick Tasks  (Survey, Investigation, etc)"</Description>
+          <LastState/>
+          <Color>C08000</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[enable]
+define(test,LUDO)
+
+{$LUA}
+writeInteger("iEnableMTP",1)
+getAddressList().getMemoryRecordByID(231).Color = 0x00008000
+{$ASM}
+
+[disable]
+{$LUA}
+writeInteger("iEnableMTP",0)
+getAddressList().getMemoryRecordByID(231).Color = 0x00c08000
+{$ASM}
+
+</AssemblerScript>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Activate</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Deactivate</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>232</ID>
+          <Description>"[X] &lt;== Quick Production (of ships)"</Description>
+          <LastState/>
+          <Color>C08000</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[enable]
+define(test,LUDO)
+
+{$LUA}
+writeInteger("iEnableMPP",1)
+getAddressList().getMemoryRecordByID(232).Color = 0x00008000
+{$ASM}
+
+[disable]
+{$LUA}
+writeInteger("iEnableMPP",0)
+getAddressList().getMemoryRecordByID(232).Color = 0x00c08000
+{$ASM}
+
+</AssemblerScript>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Activate</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Deactivate</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>233</ID>
+          <Description>"[X] &lt;== Quick Colonization/Population (in Few months or days)"</Description>
+          <LastState/>
+          <Color>C08000</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[enable]
+define(test,LUDO)
+
+{$LUA}
+writeInteger("iEnableMCP",1)
+getAddressList().getMemoryRecordByID(233).Color = 0x00008000
+{$ASM}
+
+[disable]
+{$LUA}
+writeInteger("iEnableMCP",0)
+getAddressList().getMemoryRecordByID(233).Color = 0x00c08000
+{$ASM}
+
+</AssemblerScript>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Activate</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Deactivate</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>234</ID>
+          <Description>"[X] &lt;== Quick Building (in Few months or days)"</Description>
+          <LastState/>
+          <Color>C08000</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[enable]
+define(test,LUDO)
+
+{$LUA}
+writeInteger("iEnableMBP",1)
+getAddressList().getMemoryRecordByID(234).Color = 0x00008000
+{$ASM}
+
+[disable]
+{$LUA}
+writeInteger("iEnableMBP",0)
+getAddressList().getMemoryRecordByID(234).Color = 0x00c08000
+{$ASM}
+
+</AssemblerScript>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Activate</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Deactivate</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>235</ID>
+          <Description>"[X] &lt;== Minimum Resource per Tile (look at the planet surface)"</Description>
+          <LastState/>
+          <Color>C08000</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[enable]
+define(test,LUDO)
+
+{$LUA}
+writeInteger("iEnableMPT",1)
+getAddressList().getMemoryRecordByID(235).Color = 0x00008000
+{$ASM}
+
+[disable]
+{$LUA}
+writeInteger("iEnableMPT",0)
+getAddressList().getMemoryRecordByID(235).Color = 0x00c08000
+{$ASM}
+
+</AssemblerScript>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Activate</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Deactivate</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>236</ID>
+          <Description>"[X] &lt;== God Mode (Ships/Stations/Planets/Troops)"</Description>
+          <LastState/>
+          <Color>C08000</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[enable]
+define(test,LUDO)
+
+{$LUA}
+writeInteger("iEnableGMD",1)
+getAddressList().getMemoryRecordByID(236).Color = 0x00008000
+{$ASM}
+
+[disable]
+{$LUA}
+writeInteger("iEnableGMD",0)
+getAddressList().getMemoryRecordByID(236).Color = 0x00c08000
+{$ASM}
+
+</AssemblerScript>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Activate</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Deactivate</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>246</ID>
+          <Description>"[X] &lt;== Static Troop Morale"</Description>
+          <LastState/>
+          <Color>C08000</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[enable]
+define(test,LUDO)
+
+{$LUA}
+writeInteger("iEnableMTM",1)
+getAddressList().getMemoryRecordByID(246).Color = 0x00008000
+{$ASM}
+
+[disable]
+{$LUA}
+writeInteger("iEnableMTM",0)
+getAddressList().getMemoryRecordByID(246).Color = 0x00c08000
+{$ASM}
+
+</AssemblerScript>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Activate</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Deactivate</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>241</ID>
+          <Description>"[X] &lt;== Fast Fleet Warp Wind-down"</Description>
+          <LastState/>
+          <Color>C08000</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[enable]
+define(test,LUDO)
+
+{$LUA}
+writeInteger("iEnableMFW",1)
+getAddressList().getMemoryRecordByID(241).Color = 0x00008000
+{$ASM}
+
+[disable]
+{$LUA}
+writeInteger("iEnableMFW",0)
+getAddressList().getMemoryRecordByID(241).Color = 0x00c08000
+{$ASM}
+
+</AssemblerScript>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Activate</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Deactivate</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>290</ID>
+          <Description>"[X] &lt;== Minimum Maximum # of Leaders"</Description>
+          <LastState/>
+          <Color>C08000</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[enable]
+define(test,LUDO)
+
+{$LUA}
+writeInteger("iEnableMML",1)
+getAddressList().getMemoryRecordByID(290).Color = 0x00008000
+{$ASM}
+
+[disable]
+{$LUA}
+writeInteger("iEnableMML",0)
+getAddressList().getMemoryRecordByID(290).Color = 0x00c08000
+{$ASM}
+
+</AssemblerScript>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Activate</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Deactivate</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>141</ID>
+          <Description>"[X] &lt;======= Player Info"</Description>
+          <Options moHideChildren="1"/>
+          <LastState Value="" RealAddress="00000000"/>
+          <Color>404080</Color>
+          <GroupHeader>1</GroupHeader>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>143</ID>
+              <Description>"Faction Name (&gt;16)"</Description>
+              <ShowAsHex>1</ShowAsHex>
+              <Color>0000FF</Color>
+              <VariableType>String</VariableType>
+              <Length>32</Length>
+              <Unicode>0</Unicode>
+              <ZeroTerminate>1</ZeroTerminate>
+              <Address>pPlayer</Address>
+              <Offsets>
+                <Offset>0</Offset>
+                <Offset>64</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>142</ID>
+              <Description>"Faction Name (&lt; 16)"</Description>
+              <ShowAsHex>1</ShowAsHex>
+              <Color>0000FF</Color>
+              <VariableType>String</VariableType>
+              <Length>16</Length>
+              <Unicode>0</Unicode>
+              <ZeroTerminate>1</ZeroTerminate>
+              <Address>pPlayer</Address>
+              <Offsets>
+                <Offset>60</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>144</ID>
+              <Description>"Physics Research Stored Points (x1000) ==&gt;"</Description>
+              <Color>FF00FF</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pPlayer</Address>
+              <Offsets>
+                <Offset>168</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>156</ID>
+              <Description>"Society Research Stored Points (x1000) ==&gt;"</Description>
+              <Color>FF00FF</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pPlayer</Address>
+              <Offsets>
+                <Offset>16C</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>157</ID>
+              <Description>"Engineering Research Stored Points (x1000) ==&gt;"</Description>
+              <Color>FF00FF</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pPlayer</Address>
+              <Offsets>
+                <Offset>170</Offset>
+              </Offsets>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>151</ID>
+          <Description>"[X] &lt;======= Current Ruler Info (Look at Government)"</Description>
+          <Options moHideChildren="1"/>
+          <LastState Value="" RealAddress="00000000"/>
+          <Color>404080</Color>
+          <GroupHeader>1</GroupHeader>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>152</ID>
+              <Description>"First Name (&lt; 16)"</Description>
+              <ShowAsHex>1</ShowAsHex>
+              <Color>0000FF</Color>
+              <VariableType>String</VariableType>
+              <Length>16</Length>
+              <Unicode>0</Unicode>
+              <ZeroTerminate>1</ZeroTerminate>
+              <Address>pRuler</Address>
+              <Offsets>
+                <Offset>10</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>153</ID>
+              <Description>"First Name (&gt;16)"</Description>
+              <ShowAsHex>1</ShowAsHex>
+              <Color>0000FF</Color>
+              <VariableType>String</VariableType>
+              <Length>32</Length>
+              <Unicode>0</Unicode>
+              <ZeroTerminate>1</ZeroTerminate>
+              <Address>pRuler</Address>
+              <Offsets>
+                <Offset>0</Offset>
+                <Offset>10</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>154</ID>
+              <Description>"Current XP (x1000) ==&gt;"</Description>
+              <Color>FF00FF</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pRuler</Address>
+              <Offsets>
+                <Offset>7C</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>155</ID>
+              <Description>"Age Base (x1) ==&gt;"</Description>
+              <Color>FF00FF</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pRuler</Address>
+              <Offsets>
+                <Offset>98</Offset>
+              </Offsets>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>146</ID>
+          <Description>"[X] &lt;======= Last Selected Character Info (game Paused)"</Description>
+          <Options moHideChildren="1"/>
+          <LastState Value="" RealAddress="00000000"/>
+          <Color>404080</Color>
+          <GroupHeader>1</GroupHeader>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>148</ID>
+              <Description>"First Name (&gt;16)"</Description>
+              <ShowAsHex>1</ShowAsHex>
+              <Color>0000FF</Color>
+              <VariableType>String</VariableType>
+              <Length>32</Length>
+              <Unicode>0</Unicode>
+              <ZeroTerminate>1</ZeroTerminate>
+              <Address>pChar</Address>
+              <Offsets>
+                <Offset>0</Offset>
+                <Offset>10</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>147</ID>
+              <Description>"First Name (&lt; 16)"</Description>
+              <ShowAsHex>1</ShowAsHex>
+              <Color>0000FF</Color>
+              <VariableType>String</VariableType>
+              <Length>16</Length>
+              <Unicode>0</Unicode>
+              <ZeroTerminate>1</ZeroTerminate>
+              <Address>pChar</Address>
+              <Offsets>
+                <Offset>10</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>149</ID>
+              <Description>"Current XP (x1000) ==&gt;"</Description>
+              <Color>FF00FF</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pChar</Address>
+              <Offsets>
+                <Offset>7C</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>150</ID>
+              <Description>"Age Base (x1) ==&gt;"</Description>
+              <Color>FF00FF</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pChar</Address>
+              <Offsets>
+                <Offset>98</Offset>
+              </Offsets>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>115</ID>
+          <Description>"[X] &lt;===================== Resource X Selected Tile Info"</Description>
+          <Options moHideChildren="1" moDeactivateChildrenAsWell="1"/>
+          <LastState Value="" RealAddress="00000000"/>
+          <Color>404080</Color>
+          <GroupHeader>1</GroupHeader>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>266</ID>
+              <Description>"[X] &lt;===================== Pick a Resource Info (by Index)"</Description>
+              <Options moHideChildren="1"/>
+              <LastState Value="" RealAddress="00000000"/>
+              <Color>4080FF</Color>
+              <GroupHeader>1</GroupHeader>
+              <CheatEntries>
+                <CheatEntry>
+                  <ID>258</ID>
+                  <Description>"Resource Current Index (1 to MAX) =====&gt;"</Description>
+                  <Color>0000FF</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>iResIndex</Address>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>116</ID>
+                  <Description>"Resource Maximum Index (DONNOT CHANGE IT)"</Description>
+                  <Color>0000FF</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>iResMax</Address>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>259</ID>
+                  <Description>"Resource Current Index Pointer (can be copied) &lt;======="</Description>
+                  <ShowAsHex>1</ShowAsHex>
+                  <Color>FF00FF</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pResInfo</Address>
+                  <CheatEntries>
+                    <CheatEntry>
+                      <ID>118</ID>
+                      <Description>"Resource Name (&gt;15)"</Description>
+                      <Color>0000FF</Color>
+                      <VariableType>String</VariableType>
+                      <Length>48</Length>
+                      <Unicode>0</Unicode>
+                      <ZeroTerminate>1</ZeroTerminate>
+                      <Address>pResInfo</Address>
+                      <Offsets>
+                        <Offset>0</Offset>
+                        <Offset>C</Offset>
+                      </Offsets>
+                    </CheatEntry>
+                    <CheatEntry>
+                      <ID>117</ID>
+                      <Description>"Resource Name (&lt;16)"</Description>
+                      <Color>0000FF</Color>
+                      <VariableType>String</VariableType>
+                      <Length>16</Length>
+                      <Unicode>0</Unicode>
+                      <ZeroTerminate>1</ZeroTerminate>
+                      <Address>pResInfo</Address>
+                      <Offsets>
+                        <Offset>C</Offset>
+                      </Offsets>
+                    </CheatEntry>
+                  </CheatEntries>
+                </CheatEntry>
+              </CheatEntries>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>267</ID>
+              <Description>"[X] &lt;===================== Selected Tile Resource(s) Info"</Description>
+              <Options moHideChildren="1"/>
+              <LastState Value="" RealAddress="00000000"/>
+              <Color>4080FF</Color>
+              <GroupHeader>1</GroupHeader>
+              <CheatEntries>
+                <CheatEntry>
+                  <ID>260</ID>
+                  <Description>"Tile 1st Resource Type Pointer (can pasted) =======&gt;"</Description>
+                  <ShowAsHex>1</ShowAsHex>
+                  <Color>FF00FF</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pTile</Address>
+                  <Offsets>
+                    <Offset>0</Offset>
+                    <Offset>1C</Offset>
+                  </Offsets>
+                  <CheatEntries>
+                    <CheatEntry>
+                      <ID>262</ID>
+                      <Description>"Tile 1st Resource Name (&gt;15)"</Description>
+                      <ShowAsHex>1</ShowAsHex>
+                      <Color>0000FF</Color>
+                      <VariableType>String</VariableType>
+                      <Length>16</Length>
+                      <Unicode>0</Unicode>
+                      <ZeroTerminate>1</ZeroTerminate>
+                      <Address>pTile</Address>
+                      <Offsets>
+                        <Offset>0</Offset>
+                        <Offset>C</Offset>
+                        <Offset>0</Offset>
+                        <Offset>1C</Offset>
+                      </Offsets>
+                    </CheatEntry>
+                    <CheatEntry>
+                      <ID>261</ID>
+                      <Description>"Tile 1st Resource Name (&lt;16)"</Description>
+                      <ShowAsHex>1</ShowAsHex>
+                      <Color>0000FF</Color>
+                      <VariableType>String</VariableType>
+                      <Length>16</Length>
+                      <Unicode>0</Unicode>
+                      <ZeroTerminate>1</ZeroTerminate>
+                      <Address>pTile</Address>
+                      <Offsets>
+                        <Offset>C</Offset>
+                        <Offset>0</Offset>
+                        <Offset>1C</Offset>
+                      </Offsets>
+                    </CheatEntry>
+                  </CheatEntries>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>263</ID>
+                  <Description>"Tile 2nd Resource Type Pointer (can pasted) =======&gt;"</Description>
+                  <ShowAsHex>1</ShowAsHex>
+                  <Color>FF00FF</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pTile</Address>
+                  <Offsets>
+                    <Offset>10</Offset>
+                    <Offset>1C</Offset>
+                  </Offsets>
+                  <CheatEntries>
+                    <CheatEntry>
+                      <ID>265</ID>
+                      <Description>"Tile 1st Resource Name (&gt;15)"</Description>
+                      <ShowAsHex>1</ShowAsHex>
+                      <Color>0000FF</Color>
+                      <VariableType>String</VariableType>
+                      <Length>16</Length>
+                      <Unicode>0</Unicode>
+                      <ZeroTerminate>1</ZeroTerminate>
+                      <Address>pTile</Address>
+                      <Offsets>
+                        <Offset>0</Offset>
+                        <Offset>C</Offset>
+                        <Offset>10</Offset>
+                        <Offset>1C</Offset>
+                      </Offsets>
+                    </CheatEntry>
+                    <CheatEntry>
+                      <ID>264</ID>
+                      <Description>"Tile 1st Resource Name (&lt;16)"</Description>
+                      <ShowAsHex>1</ShowAsHex>
+                      <Color>0000FF</Color>
+                      <VariableType>String</VariableType>
+                      <Length>16</Length>
+                      <Unicode>0</Unicode>
+                      <ZeroTerminate>1</ZeroTerminate>
+                      <Address>pTile</Address>
+                      <Offsets>
+                        <Offset>C</Offset>
+                        <Offset>10</Offset>
+                        <Offset>1C</Offset>
+                      </Offsets>
+                    </CheatEntry>
+                  </CheatEntries>
+                </CheatEntry>
+              </CheatEntries>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>228</ID>
+      <Description>"[X] &lt;== Table/Script Information"</Description>
+      <Options moHideChildren="1"/>
+      <LastState/>
+      <Color>0000FF</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>[enable]
+define(test,LUDO)
+
+{$LUA}
+getMainForm().CommentButton.doClick()
+{$ASM}
+
+[disable]
+
+</AssemblerScript>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols>
+    <SymbolEntry>
+      <Name>Recifense</Name>
+      <Address>20160604</Address>
+    </SymbolEntry>
+  </UserdefinedSymbols>
+  <Comments>===========================================
+ Game Title    : Stellaris
+ Game Version  : 1.1.0 (ed47)
+ Game Sponsor  : Ubykh
+ Process Name  : stellaris.exe
+ Relevant Info : 32bits/RTS with Pause
+ Script Version: 5.0
+ CE Version    : 6.5
+ Release date  : 04-Jun-2016
+ Author        : Recifense
+ History:
+ 14-Mar-16: First Release
+ 15-Mar-16: Add one more feature and Fixed GM (s2.0)
+ 18-Mar-16: Release for version 1.0.3.
+ 20-Mar-16: Added more features (Warp Wind-down/Troop Morale/GM/Research).
+ 23-Mar-16: Added more features (Planet Tile Info/Produced Resource Changing).
+ 02-Jun-16: Release for version 1.1.0. (+improvement) (s4.1)
+ 04-Jun-16: Added a new feature (max leaders) (s5.0)
+ Features:
+ - Minimum Resources:                   [1]
+   - Energy
+   - Minerals
+   - Influence
+ - Minimum Research Points:             [2]
+   - Physics
+   - Society
+   - Engineering
+ - Quick Research                       [3]
+   - Pretty Quick (new)                 [31]
+ - Quick Task (for some ships):         [4]
+   - Survey
+   - Investigation
+ - Quick Production (Ship Construction) [5]
+ - Quick Colonization and Population    [6]
+ - Quick Buiding                        [7]
+   - By Planet
+   - By Constructor Ship
+ - God Mode:                            [8]
+   - ships
+   - Stations
+   - Planets  (new)
+   - Troops   (new)
+ - Minimum Production per tile (new)    [9]
+ - Instant Warp Wind-down (new)         [A]
+ - Troop Morale (new)                   [B]
+ - Some Pointers                        [C]
+===========================================
+[1] It will not go under MAximum/2;
+[2] It will not go under 100;
+[3] It may take a few days or months (but always faster than normal);
+[31] Almost instantly;
+[4] It may take a few days (but always faster than normal);
+[5] It may take a few days (but always faster than normal);
+[6] It may take a few days or months (but always faster than normal);
+[7] It may take a few days (but always faster than normal);
+[8] That's it;
+[9] Minimum Resource = 10; (looking at the planet surface)
+[A] Fleet will fly from System to System with no delay;
+[B] Morale will not decrease during battle;
+[C] Used at the table;
+===========================================
+[USAGE]
+1) Run CE65;
+2) Run Game;
+3) Load the game process "stellaris.exe" in CE;
+4) Load this table and activate the main script;
+5) Now Activate the script of each cheat you want to use;
+6) Game On;
+===========================================
+HOTKEYS:
+[HOTKEYS]
+CTRL+Home      = Enable  ALL cheats;
+CTRL+End       = Disable ALL cheats;
+===========================================
+[IMPORTANT]
+Save your game before unsing the cheats.
+===========================================
+[INFO]
+Tested on Win 10 64bits
+===========================================
+BIG THANKS to Ubykh for providing the game.
+===========================================
+Have fun!
+</Comments>
+</CheatTable>

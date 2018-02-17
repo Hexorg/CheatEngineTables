@@ -1,0 +1,1661 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="19">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>214</ID>
+      <Description>"[X] &lt;=== CHECK WHAT CIV5 MODULE IS CURRENTLY ACTIVE"</Description>
+      <LastState/>
+      <Color>0000FF</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>[ENABLE]
+{$LUA}
+reinitializeSymbolhandler(true)
+
+local pid = getProcessIDFromProcessName(process)
+local ok = "None"
+
+if (pid == nil) then showMessage("No process is loaded")
+else
+--  print(pid,string.format('%X',pid))
+  local em = enumModules(pid)
+  for i,p in pairs(em) do
+    for a,b in pairs(p) do
+--      print("a=",a,"b=",b)
+      if (b == "CvGameCoreDLLFinal Release.dll") then ok = "Civ5"; end
+      if (b == "CvGameCore_Expansion1.dll") then ok = "Civ5 GK"; end
+      if (b == "CvGameCore_Expansion2.dll") then ok = "Civ5 BNW"; end
+    end
+  end
+  showMessage(ok)
+end
+
+{$ASM}
+[DISABLE]
+
+</AssemblerScript>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>126</ID>
+      <Description>"[X] &lt;== Civ 5 Brave New World - Faerun MOD v1.4 (steam) Script 3.2"</Description>
+      <Options moHideChildren="1" moDeactivateChildrenAsWell="1"/>
+      <LastState/>
+      <Color>FF0000</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>{
+===========================================
+ Game Title    : Civilization V - Brave New World - Faerun MOD
+ Game Version  : 1.4
+ Game Sponsor  : Myself
+ Proces Name   : CivilizationV.exe or CivilizationV_DX11.exe
+ Script Version: 3.2
+ CE Version    : 6.5
+ Release date  : 03-Oct-2016
+ Author        : Recifense
+ History:
+ 13-Jul-13: Release for version 1.0.3.18
+ 14-Jul-13: Release for version 1.0.3.18 (Script v2.1)
+ 20-Jul-13: Changed _MonGA to consider Game Pace (Script v2.2)
+ 22-Aug-13: Release for version 1.0.3.70
+ 14-Oct-13: Release for version 1.0.3.80 (Consider PACE in Const/Prod)
+ 16-Oct-13: Release for version 1.0.3.142 (+ 1turn improvement)
+ 27-Oct-14: Release for version 1.0.3.276
+ 08-Sep-16: Fix for GM (s3.1)
+ 03-Oct-16: Release for BNW Faerun MOD v1.4 (s3.2)
+ Features:
+ - Minimum Gold
+ - Minimum Faith
+ - Unlimited Fights per turn
+ - Unlimited Movement for selected unit
+ - God Mode
+   - Stronger Units
+ - Quick Research
+ - Quick Unit Production
+ - Quick Building Construction
+   - All
+   - Only Wonders
+ - Quick Golden Age progress
+ - Long Golden Age (minimum 40 turns)
+ - No spent strategic resource
+ - Minimum strategic resources (existing ones)
+ - Improvement in 1 Turn
+===========================================
+}
+
+//=========================================
+// Definitions
+define(LUDO,"CvGameCore_Expansion2.dll")
+
+define(MHPR,CvGameCore_Expansion2.dll+000d7d86) //*======
+define(MPGD,CvGameCore_Expansion2.dll+00206fe0) //=======
+define(MSUN,CvGameCore_Expansion2.dll+0021e9c2) //=#====#
+define(MSUS,CvGameCore_Expansion2.dll+0021e85b) //ne====# (x2)(1st)
+define(MSCY,CvGameCore_Expansion2.dll+0004cd95) //ne=====
+define(MMPT,CvGameCore_Expansion2.dll+00212907) //===#==#
+define(GDMD,CvGameCore_Expansion2.dll+00233eaa) //====### (s3.1)
+define(MPRH,CvGameCore_Expansion2.dll+001f521e) //=======
+define(MUPN,CvGameCore_Expansion2.dll+00053e3a) //=#=====
+define(MBCN,CvGameCore_Expansion2.dll+0003a554) //=*=====
+define(GMD1,CvGameCore_Expansion2.dll+00216c33) //*=====# (x3)(2nd)
+define(MGAE,CvGameCore_Expansion2.dll+00141d10) //=*=====
+define(MGAD,CvGameCore_Expansion2.dll+00141d22) //=*=====
+define(MCRH,CvGameCore_Expansion2.dll+001f4c2f) //=======
+define(MSSR,CvGameCore_Expansion2.dll+0014886b) //=======
+define(MMSR,CvGameCore_Expansion2.dll+001487cc) //=*=====
+define(MGPE,CvGameCore_Expansion2.dll+002074f6) //ne=====
+define(MTIT,CvGameCore_Expansion2.dll+00189bd9) //-new==#
+
+//=========================================
+// Constants used in the script (that can be changed)
+define(ctCE65,(float)6.5)
+
+//=========================================
+[ENABLE]
+//=========================================
+//LuaCall(CheckVersion())
+//=========================================
+// Check if script is compatible to this game version
+// If false the script will not be loaded
+
+assert(MHPR,8d 34 0b 8b ce e8 ?? ?? ?? ?? 8b ce e8 ?? ?? ?? ?? 84 c0 ?? ?? 8b)
+assert(MPGD,8b 49 08 b8 1f 85 eb 51 f7 e9 c1 fa 05 8b c2 c1 e8 1f 03 c2 c3 ??)
+assert(MSUN,83 bb fc 00 00 00 00 ?? ?? 56 8b 74 24 18 6a ff 8b ce e8 ?? ?? ??)
+assert(MSUS,8b 9e fc 00 00 00 8b ce ?? ?? e8 ?? ?? ?? ?? ?? ?? 8b 3d ?? ?? ??)
+assert(MSCY,2b 86 d0 01 00 00 6a 00 6a 01 8b ce 8b f8 e8 ?? ?? ?? ?? 85 c0 ??)
+assert(MMPT,83 be fc 00 00 00 00 ?? ?? 80 7c 24 08 00 b8 01 00 00 00 ?? ?? 39)
+assert(GDMD,8b 6c 24 78 56 8b f1 8b 0d ?? ?? ?? ?? 8b 86 f0 00 00 00 8b d1 2b d0)
+assert(MPRH,8b 0c aa b8 1f 85 eb 51 f7 e9 c1 fa 05 8b c2 c1 e8 1f 03 c2 ?? ??)
+assert(MUPN,8b 86 dc 07 00 00 8b 14 98 b8 1f 85 eb 51 f7 ea c1 fa 05 8b fa c1)
+assert(MBCN,8b 51 20 8b 14 82 03 54 24 08 89 44 24 04 89 54 24 08 e9 ?? ?? ??)
+assert(GMD1,83 be 44 04 00 00 00 ?? ?? 83 be b0 04 00 00 00 0f 9e c0 84 c0 ??)
+assert(MGAE,8b 81 04 02 00 00 c3 cc cc cc cc cc cc cc ?? ?? ?? ?? ?? ?? ?? ??)
+assert(MGAD,39 81 28 02 00 00 0f 9f c0 c3 cc cc cc cc ?? ?? ?? ?? ?? ?? ?? ??)
+assert(MCRH,8b 0c 88 b8 1f 85 eb 51 f7 e9 8b 4f 2c c1 fa 05 8b f2 c1 ee 1f 03)
+assert(MSSR,8b 34 82 8b 54 24 0c 52 50 e8 ?? ?? ?? ?? 2b c6 5e c2 08 00 ?? ??)
+assert(MMSR,8b 8e 30 0c 00 00 57 8b 3c 99 8b c8 e8 ?? ?? ?? ?? 83 f8 01 ?? ??)
+assert(MGPE,89 44 24 30 db 44 24 30 83 ec 08 8b c4 dc 7c 24 28 83 ec 08 dd 5c)
+assert(MTIT,8b 97 b8 00 00 00 8b 8c 24 34 01 00 00 66 01 2c 4a 8d 04 4a 8b 87)
+
+//=========================================
+alloc(MyCode,4096,LUDO)
+//=========================================
+// Declaration section
+label(_MonPlayer)
+label(_BackMP)
+label(_ExitMP)
+label(_MonGold)
+label(_MonG00)
+label(_BackMG)
+label(_ExitMG)
+label(_MonSel)
+label(_BackMS)
+label(_ExitMS)
+label(_MonSelS)
+label(_BackMSS)
+label(_ExitMSS)
+label(_MonSelCity)
+label(_BackMSC)
+label(_ExitMSC)
+label(_MonMP)
+label(_MonM0)
+label(_MonM1)
+label(_BackMMP)
+label(_ExitMMP)
+label(_GodMode)
+label(_GodM00)
+label(_BackGM)
+label(_ExitGM)
+label(_MonResearch)
+label(_BackMR)
+label(_ExitMR)
+label(_MonUnitProduction)
+label(_BackMUP)
+label(_ExitMUP)
+label(_MonBuildingConstruction)
+label(_MonBC0)
+label(_BackMBC)
+label(_ExitMBC)
+label(_GodMode1)
+label(_GodM10)
+label(_GodM11)
+label(_BackGM1)
+label(_ExitGM1)
+label(_MonGA)
+label(_BackMGA)
+label(_ExitMGA)
+label(_MonGADuration)
+label(_MonGAD0)
+label(_MonGAD1)
+label(_BackMGAD)
+label(_ExitMGAD)
+label(_MonCurRes)
+label(_BackMCR)
+label(_ExitMCR)
+label(_MonSpentSRes)
+label(_BackMSSR)
+label(_ExitMSSR)
+label(_MonMinimumSRes)
+label(_BackMMSR)
+label(_ExitMMSR)
+label(_MonGamePace)
+label(_BackMGP)
+label(_ExitMGP)
+label(_MonTileImprovement)
+label(_BackMTI)
+label(_ExitMTI)
+label(pUnit)
+label(pPlayer)
+label(pSel)
+label(pRes)
+label(pCRes)
+label(pCity)
+label(iEnableMG)
+label(iEnableMCF)
+label(iEnableMDA)
+label(iEnableMMP)
+label(iEnableGM)
+label(iEnableGMS)
+label(iEnableMR)
+label(iEnableMUP)
+label(iEnableMBC)
+label(iEnableMF)
+label(iEnableMGA)
+label(iEnableMGAD)
+label(iEnableMNP)
+label(iEnableMEC)
+label(iEnableOW)
+label(iEnableMSSR)
+label(iEnableMMSR)
+label(iEnableMTI)
+label(iPolicyPoints)
+label(iEmpireCulture)
+label(iMinFaith)
+label(iMinSRes)
+label(iLastGAL)
+label(iFullBaseGA)
+label(iHalfBaseGA)
+label(iBaseRH)
+
+//=========================================
+// Registering Symbols
+registersymbol(MyCode)
+registersymbol(pUnit)
+registersymbol(pPlayer)
+registersymbol(pSel)
+registersymbol(pRes)
+registersymbol(pCRes)
+registersymbol(pCity)
+registersymbol(iEnableMG)
+registersymbol(iEnableMCF)
+registersymbol(iEnableMDA)
+registersymbol(iEnableMMP)
+registersymbol(iEnableGM)
+registersymbol(iEnableGMS)
+registersymbol(iEnableMR)
+registersymbol(iEnableMUP)
+registersymbol(iEnableMBC)
+registersymbol(iEnableMF)
+registersymbol(iEnableMGA)
+registersymbol(iEnableMGAD)
+registersymbol(iEnableMNP)
+registersymbol(iEnableMEC)
+registersymbol(iEnableOW)
+registersymbol(iEnableMSSR)
+registersymbol(iEnableMMSR)
+registersymbol(iEnableMTI)
+registersymbol(iPolicyPoints)
+registersymbol(iEmpireCulture)
+registersymbol(iMinFaith)
+registersymbol(iMinSRes)
+
+//=========================================
+MyCode:
+//========================================= x2
+_MonPlayer:
+ mov [pPlayer],ecx              // Save pointer for further use
+
+_ExitMP:
+ lea esi,[ebx+ecx]              // Original code
+ mov ecx,esi                    // Original code
+ jmp _BackMP                    // Back to main code
+
+//========================================= x2
+// Gold and Faith
+_MonGold:
+ push ebx
+
+ mov eax,[ecx+04]
+ cmp eax,[pPlayer]
+ jne _ExitMG
+
+ cmp dword ptr [iEnableMG],0
+ je _MonG00                     // Jump if feature is disabled
+
+ mov eax,#6500000               // 64000
+ cmp eax,[ecx+08]
+ jle _MonG00
+
+ mov [ecx+08],eax
+
+_MonG00:
+ cmp dword ptr [iEnableMF],0
+ je _ExitMG                     // Jump if feature is disabled
+
+ mov ebx,[pPlayer]
+ mov eax,[iMinFaith]
+ cmp dword ptr [ebx+000000dc],eax
+ jge _ExitMG
+
+ mov dword ptr [ebx+000000dc],eax
+ mov dword ptr [ebx+000000e0],eax
+
+_ExitMG:
+ pop ebx
+
+ mov ecx,[ecx+08]               // Original code
+ mov eax,51eb851f               // Original code
+ jmp _BackMG                    // Back to main code
+
+//========================================= x2 MOD *
+// When just selected (land units)
+_MonSel:
+ mov [pSel],ebx
+
+_ExitMS:
+ cmp dword ptr [ebx+000000fc],00 // Original code (rds MP)
+ jmp _BackMS                    // Back to main code
+
+//========================================= x2 MOD *
+// When just selected (ships)
+_MonSelS:
+ mov [pSel],esi
+
+_ExitMSS:
+ mov ebx,[esi+000000fC]         // Original code (rds MP)
+ jmp _BackMSS                   // Back to main code
+
+//========================================= x2
+// When in the city detail screen
+_MonSelCity:
+ mov [pCity],esi
+
+_ExitMSC:
+ sub eax,[esi+000001D0]         // Original code (rds food)
+ jmp _BackMSC                   // Back to main code
+
+//========================================= x2 MOD *
+_MonMP:
+ push eax
+
+ cmp dword ptr [esi+58],0       // Player's unit? (**)
+ jne _ExitMMP
+
+ cmp dword ptr [iEnableMCF],0
+ je _MonM0                      // Jump if feature is disabled
+
+ mov dword ptr [esi+0000056c],#50 // Max # Fights per turn (**)
+ mov dword ptr [esi+00000578],0   // Cur # Fights = 0 (**)
+
+_MonM0:
+ cmp dword ptr [iEnableMDA],0
+ je _MonM1                      // Jump if feature is disabled
+
+ mov eax,[esi+000000fc]         // Get MP (**)
+ test eax,eax
+ jz _MonM1                      // Jump if MP = 0
+
+ test eax,1                     // Already cheated?
+ jnz _MonM1                     // Jump if true
+
+ shl eax,3                      // Multiply it by 8
+ or eax,1                       // Flag it as already cheated
+ mov [esi+000000fc],eax         // Update MP  (**)
+
+_MonM1:
+ cmp esi,[pSel]                 // Selected Player´s unit?
+ jne _ExitMMP
+
+ cmp dword ptr [iEnableMMP],0
+ je _ExitMMP                    // Jump if feature is disabled
+
+ cmp dword ptr [esi+000000fc],#120 // (**)
+ jge _ExitMMP
+
+ mov dword ptr [esi+000000fc],#120 // MP = 2 (**)
+
+_ExitMMP:
+ pop eax
+
+ cmp dword ptr [esi+000000FC],00 // Original code (**)
+ jmp _BackMMP                    // Back to main code
+
+//========================================= x2 S3.1 MOD
+_GodMode:
+ cmp dword ptr [ecx+58],0       // Player's unit? (**)
+ jne _ExitGM
+
+ cmp dword ptr [iEnableGM],0
+ je _GodM00                     // Jump if feature is disabled
+
+ mov [pUnit],ecx
+
+ xor ebp,ebp                    // Negative HP = 0  ()
+ mov [esp+78],ebp               // Value2Decrease = 0 ()
+ mov [ecx+000000f0],ebp         // NegHP = 0 ()
+
+ cmp dword ptr [iEnableMDA],0
+ je _GodM00                     // Jump if feature is disabled
+
+ mov ebp,#541
+ mov [ecx+000000fc],ebp         // Unit earns 10 MP ()
+
+_GodM00:
+ cmp dword ptr [iEnableMCF],0
+ je _ExitGM                     // Jump if feature is disabled
+
+ mov dword ptr [ecx+0000056c],#50 // Max # Fights per turn (**)
+ mov dword ptr [ecx+00000578],0   // Cur # Fights = 0 (**)
+
+_ExitGM:
+ mov ebp,[esp+78]               // Original code
+ push esi                       // Original code
+ jmp _BackGM                    // Back to main code
+
+//========================================= x2
+// Open the City Info
+// ESI * 100 = Value Needed
+_MonResearch:
+ cmp edi,[pPlayer]
+ jne _ExitMR
+
+ mov [pRes],edx                  // Save pointer for debugging
+
+ cmp dword ptr [iEnableMR],0
+ je _ExitMR                      // Jump if feature is disabled
+
+ cmp dword ptr [edx+ebp*4],0     // Under research?
+ je _ExitMR                      // Jump if false
+
+ mov ecx,#100
+ imul ecx,esi
+ dec ecx
+ cmp ecx,[edx+ebp*4]
+ jle _ExitMR
+
+ mov [edx+ebp*4],ecx             // Update with value_needed-1
+
+_ExitMR:
+ mov ecx,[edx+ebp*4]             // Original code
+ mov eax,51eb851f                // Original code
+ jmp _BackMR                     // Back to main code
+
+//========================================= X2 (NHP)
+// During turn changing
+// EBX = Index
+// ECX = pTypeInfo
+// ESI = pCity
+_MonUnitProduction:
+ push edx
+
+ cmp ebx,[esi+00000990]         // Current Unit Index
+ jne _ExitMUP
+
+ test ecx,ecx
+ jz _ExitMUP
+
+ cmp dword ptr [esi+54],0        // Is it a player's City?
+ jne _ExitMUP                    // Jump if false
+
+ cmp dword ptr [iEnableMUP],0
+ je _ExitMUP                     // Jump if feature is disabled
+
+ mov eax,[ecx+00000104]          // Get value needed
+ test eax,eax
+ jz _ExitMUP
+
+ mov edx,[iBaseRH]
+ imul edx,eax
+
+ dec edx
+
+ mov eax,[esi+000007DC]
+ cmp edx,[eax+ebx*4]
+ jle _ExitMUP
+
+ mov [eax+ebx*4],edx
+
+_ExitMUP:
+ pop edx
+
+ mov eax,[esi+000007DC]         // Original code (pUnitProdProg)
+ jmp _BackMUP                   // Back to main code
+
+//========================================= x2 New Approach
+// During Turn (All buildings or Only Wonders)
+_MonBuildingConstruction:
+ push ebx
+
+ mov edx,[ecx+5c]               // Get pCity
+ cmp edx,esi
+ jne _ExitMBC
+
+ cmp dword ptr [edx+54],0       // Is it a human player's construction?
+ jne _ExitMBC                   // Jump if false
+
+ cmp eax,[edx+00000990]         // Current Building Index
+ jne _ExitMBC
+
+ mov edx,[ecx+58]               // Get ppBuildingInfo
+ test edx,edx
+ jz _ExitMBC
+
+ mov edx,[edx+04]               // Get pBuildingInfo
+ test edx,edx
+ jz _ExitMBC
+
+ cmp dword ptr [iEnableMBC],0
+ je _ExitMBC                    // Jump if feature is disabled
+
+ mov ebx,[edx+eax*4]            // Get BuildInfoStr
+
+ cmp dword ptr [iEnableOW],0
+ je _MonBC0                     // Jump if feature is disabled
+
+ mov edx,[ebx+0c]
+ test edx,edx
+ jz _ExitMBC
+
+ mov edx,[edx+08]
+ cmp edx,'WOND'
+ jne _ExitMBC
+
+_MonBC0:
+ mov edx,[ebx+00000170]         // get Value_needed / 100
+ test edx,edx
+ jz _ExitMBC
+
+ mov ebx,[iBaseRH]
+ imul ebx,edx
+ dec ebx
+
+ mov edx,[ecx+20]               // Original code (**)
+ cmp ebx,[edx+eax*4]
+ js _ExitMBC
+
+ mov [edx+eax*4],ebx
+
+_ExitMBC:
+ pop ebx
+
+ mov edx,[ecx+20]               // Original code (**)
+ mov edx,[edx+eax*4]            // Original code ()
+ jmp _BackMBC                   // Back to main code
+
+//========================================= x2 MOD *
+// Get unit during battle
+_GodMode1:
+ cmp dword ptr [esi+58],00      // Player's unit?
+ jne _ExitGM1
+
+ cmp dword ptr [iEnableGM],0
+ je _ExitGM1                    // Jump if feature is disabled
+
+ cmp dword ptr [esi+00000444],0 // Combat unit? (strength)
+ je _ExitGM1                    // Jump if false
+
+ cmp dword ptr [iEnableGMS],0
+ je _GodM10                     // Jump if feature is disabled
+
+ cmp dword ptr [esi+00000444],#500
+ jge _GodM10
+
+ mov dword ptr [esi+00000444],#500  // Make strength = 500
+
+_GodM10:
+ cmp dword ptr [esi+00000368],#99
+ jge _ExitGM1
+
+ mov dword ptr [esi+00000368],#99   // Make Defense = 99%
+
+_GodM11:
+ cmp dword ptr [iEnableMCF],0
+ je _ExitGM1                     // Jump if feature is disabled
+
+ mov dword ptr [esi+0000056c],#50 // Max # Fights per turn (**)
+ mov dword ptr [esi+00000578],0   // Cur # Fights = 0 (**)
+
+_ExitGM1:
+ cmp dword ptr [esi+00000444],00 // Original code
+ jmp _BackGM1                   // Back to main code
+
+//========================================= x2 Modified
+// Golden Age (Under cursor)
+_MonGA:
+ cmp dword ptr [iEnableMGA],0
+ je _ExitMGA                     // Jump if feature is disabled
+
+ cmp ecx,[pPlayer]
+ jne _ExitMGA
+
+ mov eax,[ecx+0000021c]          // Get Golden Age counter (**)
+
+ push edx
+ mov edx,[iHalfBaseGA]
+ mul edx
+ mov edx,[iFullBaseGA]
+ add eax,edx
+ pop edx
+
+ dec eax
+ cmp eax,[ecx+00000204]
+ jle _ExitMGA
+
+ mov [ecx+00000204],eax          // Make GAProgress = [(counter+1)*500] - 1
+
+_ExitMGA:
+ mov eax,[ecx+00000204]          // Original code
+ jmp _BackMGA                    // Back to main code
+
+//========================================= x2
+_MonGADuration:
+ cmp ecx,[pPlayer]
+ jne _ExitMGAD
+
+ cmp dword ptr [iEnableMNP],0
+ je _MonGAD0                    // Jump if feature is disabled
+
+ mov eax,[iPolicyPoints]
+ cmp eax,[ecx+000000a4]
+ jle _MonGAD0
+
+ mov [ecx+000000a4],eax         // Update policy points
+
+_MonGAD0:
+ cmp dword ptr [iEnableMEC],0
+ je _MonGAD1                    // Jump if feature is disabled
+
+ mov eax,[iEmpireCulture]
+ cmp eax,[ecx+000000b0]         // (**)
+ jle _MonGAD1
+
+ mov [ecx+000000b0],eax         // Update policy points (**)
+
+_MonGAD1:
+ cmp dword ptr [iEnableMGAD],0
+ je _ExitMGAD                   // Jump if feature is disabled
+
+ mov eax,[ecx+0000021c]         // Get current GA counter (**)
+ cmp eax,[iLastGAL]             // Was it changed?
+ je _ExitMGAD                   // Jump if false
+
+ mov [iLastGAL],eax             // Save GA counter
+ inc eax
+
+ imul eax,eax,#20
+
+ cmp eax,[ecx+00000228]         // New value &lt;= current GA turn? (**)
+ jle _ExitMGAD                  // Jump if true
+
+ mov [ecx+00000228],eax         // Make GA Turns = GACounter * 20  (**)
+
+_ExitMGAD:
+ xor eax,eax                    // Original code
+ cmp [ecx+00000228],eax         // Original code  (**)
+ jmp _BackMGAD                  // Back to main code
+
+//========================================= x2
+// Activated when entering or leaving a city
+// Current Research
+_MonCurRes:
+ push ebx
+ lea ebx,[eax+ecx*4]
+ mov [pCRes],ebx                // Save pointer for further use
+ pop ebx
+
+_ExitMCR:
+ mov ecx,[eax+ecx*4]            // Original code
+ mov eax,51EB851F               // Original code
+ jmp _BackMCR                   // Back to main code
+
+//========================================= x2
+// Activated when entering or leaving a city
+_MonSpentSRes:
+ cmp dword ptr [iEnableMSSR],0
+ je _ExitMSSR                   // Jump if feature is disabled
+
+ cmp edi,[pPlayer]
+ jne _ExitMSSR
+
+ xor esi,esi
+ mov [edx+eax*4],esi
+
+_ExitMSSR:
+ mov esi,[edx+eax*4]            // Original code
+ mov edx,[esp+0C]               // Original code
+ jmp _BackMSSR                  // Back to main code
+
+//========================================= x2
+// Activated when entering or leaving a city
+_MonMinimumSRes:
+ push edi
+
+ mov ecx,[esi+00000C30]         // Original code
+
+ cmp dword ptr [iEnableMMSR],0
+ je _ExitMMSR                   // Jump if feature is disabled
+
+ cmp esi,[pPlayer]
+ jne _ExitMMSR
+
+ mov edi,[ecx+ebx*4]
+ test edi,edi
+ jz _ExitMMSR
+
+ mov edi,[iMinSRes]
+ cmp edi,[ecx+ebx*4]
+ jle _ExitMMSR
+
+ mov [ecx+ebx*4],edi
+
+_ExitMMSR:
+ pop edi
+ jmp _BackMMSR                  // Back to main code
+
+//========================================= x2 new
+// Activated when entering or leaving a city
+_MonGamePace:
+ mov [esp+30],eax               // Original code
+ fild dword ptr [esp+30]        // Original code
+
+ push eax
+ mov [iFullBaseGA],eax
+ shr eax,1
+ mov [iHalfBaseGA],eax
+ pop eax
+
+ push ecx
+ push edx
+
+ mov ecx,5
+ xor edx,edx
+ div ecx
+
+ mov [iBaseRH],eax
+
+ pop edx
+ pop ecx
+
+_ExitMGP:
+ jmp _BackMGP                   // Back to main code
+
+//========================================= x2 v3.0 MOD
+// When updating improvement
+_MonTileImprovement:
+ push esi
+
+ mov esi,[edi+000000bc]
+ test esi,esi
+ jz _ExitMTI
+
+ cmp dword ptr [esi+58],00       // Player's worker?
+ jne _ExitMTI
+
+ cmp dword ptr [iEnableMTI],0
+ je _ExitMTI                     // Jump if feature is disabled
+
+ mov bp,#6500
+
+_ExitMTI:
+ pop esi
+
+ mov edx,[edi+000000b8]          // Original code (get pImprovValueStr)
+ jmp _BackMTI                    // Back to main code
+
+ //=========================================
+ db '====================================&gt;'
+ db 'CE6.5 Script by Recifense 100316'
+//=========================================
+// Variables
+iEnableMG:
+ dd 0
+iEnableMCF:
+ dd 0
+iEnableMDA:
+ dd 0
+iEnableMMP:
+ dd 0
+iEnableGM:
+ dd 0
+iEnableGMS:
+ dd 0
+iEnableMR:
+ dd 0
+iEnableMUP:
+ dd 0
+iEnableMBC:
+ dd 0
+iEnableOW:
+ dd 0
+iEnableMF:
+ dd 0
+iEnableMGA:
+ dd 0
+iEnableMGAD:
+ dd 0
+iEnableMEC:
+ dd 0
+iEnableMNP:
+ dd 0
+iEnableMSSR:
+ dd 0
+iEnableMMSR:
+ dd 0
+iEnableMTI:
+ dd 0
+pUnit:
+ dd 0
+pPlayer:
+ dd MyCode
+pSel:
+ dd 0
+pRes:
+ dd 0
+pCRes:
+ dd 0
+pCity:
+ dd 0
+iLastGAL:
+ dd 0
+iMinFaith:
+ dd #640
+iPolicyPoints:
+ dd #500
+iEmpireCulture:
+ dd #500                               // Additional Empire Culture = 5%
+iMinSRes:
+ dd #50
+iFullBaseGA:
+ dd 0
+iHalfBaseGA:
+ dd 0
+iBaseRH:
+ dd #65
+
+//=========================================
+// Hacking Points
+MHPR:
+ jmp _MonPlayer
+_BackMP:
+
+MPGD:
+ jmp _MonGold
+ nop
+ nop
+ nop
+_BackMG:
+
+MSUN:
+ jmp _MonSel
+ nop
+ nop
+_BackMS:
+
+MSUS:
+ jmp _MonSelS
+ nop
+_BackMSS:
+
+MSCY:
+ jmp _MonSelCity
+ nop
+_BackMSC:
+
+MMPT:
+ jmp _MonMP
+ nop
+ nop
+_BackMMP:
+
+GDMD:
+ jmp _GodMode
+_BackGM:
+
+MPRH:
+ jmp _MonResearch
+ nop
+ nop
+ nop
+_BackMR:
+
+MUPN:
+ jmp _MonUnitProduction
+ nop
+_BackMUP:
+
+MBCN:
+ jmp _MonBuildingConstruction
+ nop
+_BackMBC:
+
+GMD1:
+ jmp _GodMode1
+ nop
+ nop
+_BackGM1:
+
+MGAE:
+ jmp _MonGA
+ nop
+_BackMGA:
+
+MGAD:
+ jmp _MonGADuration
+ nop
+_BackMGAD:
+
+MCRH:
+ jmp _MonCurRes
+ nop
+ nop
+ nop
+_BackMCR:
+
+MSSR:
+ jmp _MonSpentSRes
+ nop
+ nop
+_BackMSSR:
+
+MMSR:
+ jmp _MonMinimumSRes
+ nop
+_BackMMSR:
+
+MGPE:
+ jmp _MonGamePace
+ nop
+ nop
+ nop
+_BackMGP:
+
+MTIT:
+ jmp _MonTileImprovement
+ nop
+_BackMTI:
+
+//=========================================
+// Script for Restoring Original Codes
+[DISABLE]
+MHPR:
+// lea esi,[ebx+ecx]
+// mov ecx,esi
+ db 8d 34 0b 8b ce
+
+MPGD:
+// mov ecx,[ecx+08]
+// mov eax,51EB851F
+ db 8b 49 08 b8 1f 85 eb 51
+
+MSUN:
+// cmp dword ptr [ebx+000000fc],00
+ db 83 bb fc 00 00 00 00
+
+MSUS:
+// mov ebx,[esi+000000FC]
+ db 8b 9e fc 00 00 00
+
+MSCY:
+// sub eax,[esi+000001D0]
+ db 2b 86 d0 01 00 00
+
+MMPT:
+// cmp dword ptr [esi+000000FC],00
+ db 83 be fc 00 00 00 00
+
+GDMD:
+// mov ebp,[esp+78]
+// push esi
+ db 8b 6c 24 78 56
+
+MPRH:
+// mov ecx,[edx+ebp*4]
+// mov eax,51EB851F
+ db 8b 0c aa b8 1f 85 eb 51
+
+MUPN:
+// mov eax,[esi+000007DC]
+ db 8b 86 dc 07 00 00
+
+MBCN:
+// mov edx,[ecx+20]
+// mov edx,[edx+eax*4]
+ db 8b 51 20 8b 14 82
+
+GMD1:
+// cmp dword ptr [esi+00000444],00
+ db 83 be 44 04 00 00 00
+
+MGAE:
+// mov eax,[ecx+00000204]
+ db 8b 81 04 02 00 00
+
+MGAD:
+// cmp [ecx+00000228],eax
+ db 39 81 28 02 00 00
+
+MCRH:
+// mov ecx,[eax+ecx*4]
+// mov eax,51EB851F
+ db 8b 0c 88 b8 1f 85 eb 51
+
+MSSR:
+// mov esi,[edx+eax*4]
+// mov edx,[esp+0C]
+ db 8b 34 82 8b 54 24 0c
+
+MMSR:
+// mov eax,[edi+00000C30]
+ db 8b 8e 30 0c 00 00
+
+MGPE:
+// mov [esp+30],eax
+// fild dword ptr [esp+30]
+ db 89 44 24 30 db 44 24 30
+
+MTIT:
+// mov edx,[edi+000000B8]
+ db 8b 97 b8 00 00 00
+
+//=========================================
+// Unregistering Symbols
+unregistersymbol(MyCode)
+unregistersymbol(pUnit)
+unregistersymbol(pPlayer)
+unregistersymbol(pSel)
+unregistersymbol(pRes)
+unregistersymbol(pCRes)
+unregistersymbol(pCity)
+unregistersymbol(iEnableMG)
+unregistersymbol(iEnableMCF)
+unregistersymbol(iEnableMDA)
+unregistersymbol(iEnableMMP)
+unregistersymbol(iEnableGM)
+unregistersymbol(iEnableGMS)
+unregistersymbol(iEnableMR)
+unregistersymbol(iEnableMUP)
+unregistersymbol(iEnableMBC)
+unregistersymbol(iEnableMF)
+unregistersymbol(iEnableMGA)
+unregistersymbol(iEnableMGAD)
+unregistersymbol(iEnableMNP)
+unregistersymbol(iEnableMEC)
+unregistersymbol(iEnableOW)
+unregistersymbol(iEnableMSSR)
+unregistersymbol(iEnableMMSR)
+unregistersymbol(iEnableMTI)
+unregistersymbol(iPolicyPoints)
+unregistersymbol(iEmpireCulture)
+unregistersymbol(iMinFaith)
+unregistersymbol(iMinSRes)
+
+//=========================================
+dealloc(MyCode)
+//============= Scripts End ===============
+
+// ****************************************
+// NOTES
+// ****************************************
+{
+
+}
+
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>230</ID>
+          <Description>"[X] &lt;== Minimum Gold"</Description>
+          <LastState/>
+          <Color>C08000</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[enable]
+define(test,LUDO)
+
+{$LUA}
+writeInteger("iEnableMG",1)
+getAddressList().getMemoryRecordByID(230).Color = 0x00008000
+{$ASM}
+
+[disable]
+{$LUA}
+writeInteger("iEnableMG",0)
+getAddressList().getMemoryRecordByID(230).Color = 0x00c08000
+{$ASM}
+
+</AssemblerScript>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>231</ID>
+          <Description>"[X] &lt;== Minimum Faith"</Description>
+          <Options moHideChildren="1"/>
+          <LastState/>
+          <Color>C08000</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[enable]
+define(test,LUDO)
+
+{$LUA}
+writeInteger("iEnableMF",1)
+getAddressList().getMemoryRecordByID(231).Color = 0x00008000
+{$ASM}
+
+[disable]
+{$LUA}
+writeInteger("iEnableMF",0)
+getAddressList().getMemoryRecordByID(231).Color = 0x00c08000
+{$ASM}
+
+</AssemblerScript>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>129</ID>
+              <Description>"Minimum Faith Value ==&gt;"</Description>
+              <Color>0080FF</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>iMinFaith</Address>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>232</ID>
+          <Description>"[X] &lt;== Additional % Empire Culture"</Description>
+          <LastState/>
+          <Color>C08000</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[enable]
+define(test,LUDO)
+
+{$LUA}
+writeInteger("iEnableMEC",1)
+getAddressList().getMemoryRecordByID(232).Color = 0x00008000
+{$ASM}
+
+[disable]
+{$LUA}
+writeInteger("iEnableMEC",0)
+getAddressList().getMemoryRecordByID(232).Color = 0x00c08000
+{$ASM}
+
+</AssemblerScript>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>234</ID>
+          <Description>"[X] &lt;== Research in 2 Turns"</Description>
+          <LastState/>
+          <Color>C08000</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[enable]
+define(test,LUDO)
+
+{$LUA}
+writeInteger("iEnableMR",1)
+getAddressList().getMemoryRecordByID(234).Color = 0x00008000
+{$ASM}
+
+[disable]
+{$LUA}
+writeInteger("iEnableMR",0)
+getAddressList().getMemoryRecordByID(234).Color = 0x00c08000
+{$ASM}
+
+</AssemblerScript>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>236</ID>
+          <Description>"[X] &lt;== Quick Golden Age Entering"</Description>
+          <LastState/>
+          <Color>C08000</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[enable]
+define(test,LUDO)
+
+{$LUA}
+writeInteger("iEnableMGA",1)
+getAddressList().getMemoryRecordByID(236).Color = 0x00008000
+{$ASM}
+
+[disable]
+{$LUA}
+writeInteger("iEnableMGA",0)
+getAddressList().getMemoryRecordByID(236).Color = 0x00c08000
+{$ASM}
+
+</AssemblerScript>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>237</ID>
+          <Description>"[X] &lt;== Longer Golden Age Duration"</Description>
+          <LastState/>
+          <Color>C08000</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[enable]
+define(test,LUDO)
+
+{$LUA}
+writeInteger("iEnableMGAD",1)
+getAddressList().getMemoryRecordByID(237).Color = 0x00008000
+{$ASM}
+
+[disable]
+{$LUA}
+writeInteger("iEnableMGAD",0)
+getAddressList().getMemoryRecordByID(237).Color = 0x00c08000
+{$ASM}
+
+</AssemblerScript>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>238</ID>
+          <Description>"[X] &lt;== Unit can Move Unlimited Times"</Description>
+          <LastState/>
+          <Color>C08000</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[enable]
+define(test,LUDO)
+
+{$LUA}
+writeInteger("iEnableMMP",1)
+getAddressList().getMemoryRecordByID(238).Color = 0x00008000
+{$ASM}
+
+[disable]
+{$LUA}
+writeInteger("iEnableMMP",0)
+getAddressList().getMemoryRecordByID(238).Color = 0x00c08000
+{$ASM}
+
+</AssemblerScript>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>239</ID>
+          <Description>"[X] &lt;== God Mode"</Description>
+          <Options moHideChildren="1" moDeactivateChildrenAsWell="1"/>
+          <LastState/>
+          <Color>C08000</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[enable]
+define(test,LUDO)
+
+{$LUA}
+writeInteger("iEnableGM",1)
+getAddressList().getMemoryRecordByID(239).Color = 0x00008000
+{$ASM}
+
+[disable]
+{$LUA}
+writeInteger("iEnableGM",0)
+getAddressList().getMemoryRecordByID(239).Color = 0x00c08000
+{$ASM}
+
+</AssemblerScript>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>240</ID>
+              <Description>"[X] &lt;== Stronger Units"</Description>
+              <LastState/>
+              <Color>C08000</Color>
+              <VariableType>Auto Assembler Script</VariableType>
+              <AssemblerScript>[enable]
+define(test,LUDO)
+
+{$LUA}
+writeInteger("iEnableGMS",1)
+getAddressList().getMemoryRecordByID(240).Color = 0x00008000
+{$ASM}
+
+[disable]
+{$LUA}
+writeInteger("iEnableGMS",0)
+getAddressList().getMemoryRecordByID(240).Color = 0x00c08000
+{$ASM}
+
+</AssemblerScript>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>241</ID>
+          <Description>"[X] &lt;== Unit Can Fight Again"</Description>
+          <LastState/>
+          <Color>C08000</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[enable]
+define(test,LUDO)
+
+{$LUA}
+writeInteger("iEnableMCF",1)
+getAddressList().getMemoryRecordByID(241).Color = 0x00008000
+{$ASM}
+
+[disable]
+{$LUA}
+writeInteger("iEnableMCF",0)
+getAddressList().getMemoryRecordByID(241).Color = 0x00c08000
+{$ASM}
+
+</AssemblerScript>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>242</ID>
+          <Description>"[X] &lt;== Unit Production in 1 Turn"</Description>
+          <LastState/>
+          <Color>C08000</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[enable]
+define(test,LUDO)
+
+{$LUA}
+writeInteger("iEnableMUP",1)
+getAddressList().getMemoryRecordByID(242).Color = 0x00008000
+{$ASM}
+
+[disable]
+{$LUA}
+writeInteger("iEnableMUP",0)
+getAddressList().getMemoryRecordByID(242).Color = 0x00c08000
+{$ASM}
+
+</AssemblerScript>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>243</ID>
+          <Description>"[X] &lt;== Building Contruction in 1 Turn"</Description>
+          <Options moHideChildren="1" moDeactivateChildrenAsWell="1"/>
+          <LastState/>
+          <Color>C08000</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[enable]
+define(test,LUDO)
+
+{$LUA}
+writeInteger("iEnableMBC",1)
+getAddressList().getMemoryRecordByID(243).Color = 0x00008000
+{$ASM}
+
+[disable]
+{$LUA}
+writeInteger("iEnableMBC",0)
+getAddressList().getMemoryRecordByID(243).Color = 0x00c08000
+{$ASM}
+
+</AssemblerScript>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>244</ID>
+              <Description>"[X] &lt;== Only Wonders"</Description>
+              <LastState/>
+              <Color>C08000</Color>
+              <VariableType>Auto Assembler Script</VariableType>
+              <AssemblerScript>[enable]
+define(test,LUDO)
+
+{$LUA}
+writeInteger("iEnableOW",1)
+getAddressList().getMemoryRecordByID(244).Color = 0x00008000
+{$ASM}
+
+[disable]
+{$LUA}
+writeInteger("iEnableOW",0)
+getAddressList().getMemoryRecordByID(244).Color = 0x00c08000
+{$ASM}
+
+</AssemblerScript>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>245</ID>
+          <Description>"[X] &lt;== No Spent Strategic Resources"</Description>
+          <LastState/>
+          <Color>C08000</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[enable]
+define(test,LUDO)
+
+{$LUA}
+writeInteger("iEnableMSSR",1)
+getAddressList().getMemoryRecordByID(245).Color = 0x00008000
+{$ASM}
+
+[disable]
+{$LUA}
+writeInteger("iEnableMSSR",0)
+getAddressList().getMemoryRecordByID(245).Color = 0x00c08000
+{$ASM}
+
+</AssemblerScript>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>246</ID>
+          <Description>"[X] &lt;== Minimum Strategic Resources"</Description>
+          <Options moHideChildren="1"/>
+          <LastState/>
+          <Color>C08000</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[enable]
+define(test,LUDO)
+
+{$LUA}
+writeInteger("iEnableMMSR",1)
+getAddressList().getMemoryRecordByID(246).Color = 0x00008000
+{$ASM}
+
+[disable]
+{$LUA}
+writeInteger("iEnableMMSR",0)
+getAddressList().getMemoryRecordByID(246).Color = 0x00c08000
+{$ASM}
+
+</AssemblerScript>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>143</ID>
+              <Description>"Minimum Strategic Resources Value ==&gt;"</Description>
+              <Color>0080FF</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>iMinSRes</Address>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>247</ID>
+          <Description>"[X] &lt;== Tile Improvement in 1 Turn"</Description>
+          <LastState/>
+          <Color>C08000</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[enable]
+define(test,LUDO)
+
+{$LUA}
+writeInteger("iEnableMTI",1)
+getAddressList().getMemoryRecordByID(247).Color = 0x00008000
+{$ASM}
+
+[disable]
+{$LUA}
+writeInteger("iEnableMTI",0)
+getAddressList().getMemoryRecordByID(247).Color = 0x00c08000
+{$ASM}
+
+</AssemblerScript>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>248</ID>
+          <Description>"[X] &lt;================== Some Player Info"</Description>
+          <Options moHideChildren="1"/>
+          <LastState Value="" RealAddress="00000000"/>
+          <Color>404080</Color>
+          <GroupHeader>1</GroupHeader>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>144</ID>
+              <Description>"Current Research Progress Value (x100) ==&gt;"</Description>
+              <Color>FF0080</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pCRes</Address>
+              <Offsets>
+                <Offset>0</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>145</ID>
+              <Description>"Current Accumulated Culture (x1) ==&gt;"</Description>
+              <Color>8000FF</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pPlayer</Address>
+              <Offsets>
+                <Offset>A4</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>183</ID>
+              <Description>"Current Golden Age Progress (x1) ==&gt;"</Description>
+              <Color>8000FF</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pPlayer</Address>
+              <Offsets>
+                <Offset>204</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>184</ID>
+              <Description>"Current Golden Age Duration (x1) ==&gt;"</Description>
+              <Color>8000FF</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pPlayer</Address>
+              <Offsets>
+                <Offset>228</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>185</ID>
+              <Description>"Current Gold Value (x100) ==&gt;"</Description>
+              <Color>8000FF</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pPlayer</Address>
+              <Offsets>
+                <Offset>8</Offset>
+                <Offset>F528</Offset>
+              </Offsets>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>249</ID>
+          <Description>"[X] &lt;================== Some Selected City Info"</Description>
+          <Options moHideChildren="1"/>
+          <LastState Value="" RealAddress="00000000"/>
+          <Color>404080</Color>
+          <GroupHeader>1</GroupHeader>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>162</ID>
+              <Description>"Select City Food (x100) ==&gt;"</Description>
+              <Color>800080</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pCity</Address>
+              <Offsets>
+                <Offset>1D0</Offset>
+              </Offsets>
+              <Hotkeys>
+                <Hotkey>
+                  <Action>Set Value</Action>
+                  <Keys>
+                    <Key>17</Key>
+                    <Key>97</Key>
+                  </Keys>
+                  <Value>1</Value>
+                  <ID>0</ID>
+                </Hotkey>
+              </Hotkeys>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>163</ID>
+              <Description>"Select City Culture Growth (x1) ==&gt;"</Description>
+              <Color>800080</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pCity</Address>
+              <Offsets>
+                <Offset>100</Offset>
+              </Offsets>
+              <Hotkeys>
+                <Hotkey>
+                  <Action>Set Value</Action>
+                  <Keys>
+                    <Key>17</Key>
+                    <Key>97</Key>
+                  </Keys>
+                  <Value>1</Value>
+                  <ID>0</ID>
+                </Hotkey>
+              </Hotkeys>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>250</ID>
+          <Description>"[X] &lt;================== Some Unit Info"</Description>
+          <Options moHideChildren="1"/>
+          <LastState Value="" RealAddress="00000000"/>
+          <Color>404080</Color>
+          <GroupHeader>1</GroupHeader>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>146</ID>
+              <Description>"Select Unit Points (x1) ==&gt;"</Description>
+              <Color>0000FF</Color>
+              <VariableType>Byte</VariableType>
+              <Address>pSel</Address>
+              <Offsets>
+                <Offset>600</Offset>
+              </Offsets>
+              <Hotkeys>
+                <Hotkey>
+                  <Action>Set Value</Action>
+                  <Keys>
+                    <Key>17</Key>
+                    <Key>97</Key>
+                  </Keys>
+                  <Value>1</Value>
+                  <ID>0</ID>
+                </Hotkey>
+              </Hotkeys>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols>
+    <SymbolEntry>
+      <Name>Recifense</Name>
+      <Address>20161003</Address>
+    </SymbolEntry>
+  </UserdefinedSymbols>
+  <Comments>===========================================
+ Game Title    : Civilization V - Brave New World - Faerun MOD
+ Game Version  : 1.4
+ Game Sponsor  : Myself
+ Proces Name   : CivilizationV.exe or CivilizationV_DX11.exe
+ Script Version: 3.2
+ CE Version    : 6.5
+ Release date  : 03-Oct-2016
+ Author        : Recifense
+ History:
+ 13-Jul-13: Release for version 1.0.3.18
+ 14-Jul-13: Release for version 1.0.3.18 (Script v2.1)
+ 20-Jul-13: Changed _MonGA to consider Game Pace (Script v2.2)
+ 22-Aug-13: Release for version 1.0.3.70
+ 14-Oct-13: Release for version 1.0.3.80 (Consider PACE in Const/Prod)
+ 16-Oct-13: Release for version 1.0.3.142 (+ 1turn improvement)
+ 27-Oct-14: Release for version 1.0.3.276
+ 08-Sep-16: Fix for GM (s3.1)
+ 03-Oct-16: Release for BNW Faerun MOD v1.4 (s3.2)
+ Features:
+ - Minimum Gold
+ - Minimum Faith
+ - Unlimited Fights per turn
+ - Unlimited Movement for selected unit
+ - God Mode
+   - Stronger Units
+ - Quick Research
+ - Quick Unit Production
+ - Quick Building Construction
+   - All
+   - Only Wonders
+ - Quick Golden Age progress
+ - Long Golden Age (minimum 50 turns)
+ - No spent strategic resource
+ - Minimum strategic resources (existing ones)
+===========================================
+[NOTE] Activate the script by clicking on the [] on its left side.
+[NOTE] Enable the cheats by changing the 0's to 1's according to your will.
+===========================================
+HOTKEYS:
+NOT DEFINED
+===========================================
+[NOTE] You can create hotkeys for enable/disable the other cheats.
+===========================================
+[HOW DO I KNOW WHICH SCRIPT SHOULD ACTICATED?]
+1) Start or load a game;
+2) Go to CE and select the process CivilizationV.exe or CivilizationV_DX11.exe;
+3) Now click on MEMORY VIEW button;
+4) On the MEMORY VIEWER window, click on the menu VIEW and select the option "Enumerate DLL's and Symbols";
+5) Scroll the list and if you find:
+-- CvGameCore_Expansion2.dll   ==&gt; Civ 5 BNW
+===========================================
+[WARNING]
+Use the table wisely. You may get stuck without building or unit to construct/produce or without Social Policy. 
+===========================================
+Cheers!
+</Comments>
+</CheatTable>

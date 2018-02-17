@@ -1,0 +1,533 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="18">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>110513</ID>
+      <Description>"Player Stats Base Address Scan Initialization (Activate This First)"</Description>
+      <Options moHideChildren="1"/>
+      <LastState Activated="0"/>
+      <Color>800000</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>[ENABLE]
+registersymbol(playerstats_basepointer)
+registersymbol(playerstats_enemy_basepointer)
+registersymbol(playerstats_update_enable)
+registersymbol(playerstats_set_enable)
+registersymbol(playerstats_healthset_enable)
+registersymbol(playerstats_forceset_enable)
+registersymbol(playerstats_supportset_enable)
+registersymbol(playerstats_apset_enable)
+registersymbol(playerstats_enemyset_enable)
+
+alloc(playerstats_basepointer, 4)
+alloc(playerstats_enemy_basepointer, 4)
+alloc(playerstats_update_enable, 4)
+alloc(playerstats_set_enable, 4)
+alloc(playerstats_healthset_enable, 4)
+alloc(playerstats_forceset_enable, 4)
+alloc(playerstats_supportset_enable, 4)
+alloc(playerstats_apset_enable, 4)
+alloc(playerstats_enemyset_enable, 4)
+
+
+[DISABLE]
+unregistersymbol(playerstats_basepointer)
+unregistersymbol(playerstats_enemy_basepointer)
+unregistersymbol(playerstats_update_enable)
+unregistersymbol(playerstats_set_enable)
+unregistersymbol(playerstats_healthset_enable)
+unregistersymbol(playerstats_forceset_enable)
+unregistersymbol(playerstats_supportset_enable)
+unregistersymbol(playerstats_apset_enable)
+unregistersymbol(playerstats_enemyset_enable)
+
+dealloc(playerstats_basepointer)
+dealloc(playerstats_enemy_basepointer)
+dealloc(playerstats_update_enable)
+dealloc(playerstats_set_enable)
+dealloc(playerstats_healthset_enable)
+dealloc(playerstats_forceset_enable)
+dealloc(playerstats_supportset_enable)
+dealloc(playerstats_apset_enable)
+dealloc(playerstats_enemyset_enable)
+
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>110514</ID>
+          <Description>"Player Stats Base Address Scan (To Update: Battle)"</Description>
+          <LastState Activated="0"/>
+          <Color>804000</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[ENABLE]
+label(playerstats_savedAOB)
+label(playerstats_returnhere)
+label(playerstats_originalcode)
+label(playerstats_exit)
+
+label(playerstats_update_exit)
+label(playerstats_set_exit)
+label(playerstats_healthset_exit)
+label(playerstats_forceset_exit)
+label(playerstats_supportset_exit)
+label(playerstats_apset_exit)
+label(playerstats_enemy_entry)
+label(playerstats_enemyupdate_exit)
+label(playerstats_enemyset_exit)
+
+registersymbol(playerstats_savedAOB)
+
+//game.exe+1808EE - 85 F6                 - test esi,esi
+//game.exe+1808F0 - 0F84 17010000         - je game.exe+180A0D
+//game.exe+1808F6 - 0FB7 86 8C1B0000      - movzx eax,word ptr [esi+00001B8C]
+//game.exe+1808FD - 66 89 43 04           - mov [ebx+04],ax
+//game.exe+180901 - 0FB7 86 8E1B0000      - movzx eax,word ptr [esi+00001B8E]
+//game.exe+180908 - 66 89 43 06           - mov [ebx+06],ax
+aobscan(playerstats_searchedAOB, 0F B7 86 8C 1B 00 00 66 89 43 04)
+
+alloc(playerstats_newmem, 2048, playerstats_searchedAOB)
+alloc(playerstats_temp1, 4, playerstats_searchedAOB)
+
+
+playerstats_newmem:
+mov [playerstats_temp1], ebx
+
+cmp byte ptr [esi+38], 30
+jne playerstats_enemy_entry
+
+cmp dword ptr [playerstats_update_enable], #0
+je playerstats_update_exit
+mov [playerstats_basepointer], esi
+playerstats_update_exit:
+
+cmp dword ptr [playerstats_set_enable], #0
+je playerstats_set_exit
+playerstats_set_exit:
+
+cmp dword ptr [playerstats_healthset_enable], #0
+je playerstats_healthset_exit
+mov bx, [esi+1b96]
+mov word ptr [esi+1b8c], bx
+mov word ptr [esi+1b8e], bx
+playerstats_healthset_exit:
+
+cmp dword ptr [playerstats_forceset_enable], #0
+je playerstats_forceset_exit
+mov bx, [esi+1b98]
+mov word ptr [esi+1b90], bx
+playerstats_forceset_exit:
+
+cmp dword ptr [playerstats_supportset_enable], #0
+je playerstats_supportset_exit
+mov bx, [esi+1b9a]
+mov word ptr [esi+1b92], bx
+playerstats_supportset_exit:
+
+cmp dword ptr [playerstats_apset_enable], #0
+je playerstats_apset_exit
+mov bx, [esi+1b9c]
+mov word ptr [esi+1b94], bx
+playerstats_apset_exit:
+
+jmp playerstats_enemyset_exit
+
+playerstats_enemy_entry:
+
+cmp dword ptr [playerstats_update_enable], #0
+je playerstats_enemyupdate_exit
+mov [playerstats_enemy_basepointer], esi
+playerstats_enemyupdate_exit:
+
+cmp dword ptr [playerstats_enemyset_enable], #0
+je playerstats_enemyset_exit
+mov word ptr [esi+1b90], #0
+mov word ptr [esi+1b92], #0
+mov word ptr [esi+1b94], #0
+cmp word ptr [esi+1b8c], #5
+jl playerstats_enemyset_exit
+mov word ptr [esi+1b8c], #1
+mov word ptr [esi+1b8e], #1
+je playerstats_enemyset_exit
+
+playerstats_enemyset_exit:
+
+mov ebx, [playerstats_temp1]
+
+
+playerstats_originalcode:
+db 0F B7 86 8C 1B 00 00
+//movzx eax,word ptr [esi+00001B8C]
+
+
+playerstats_exit:
+jmp playerstats_returnhere
+
+
+playerstats_searchedAOB:
+playerstats_savedAOB:
+jmp playerstats_newmem
+nop
+nop
+playerstats_returnhere:
+
+
+[DISABLE]
+playerstats_savedAOB:
+db 0F B7 86 8C 1B 00 00
+//movzx eax,word ptr [esi+00001B8C]
+
+unregistersymbol(playerstats_savedAOB)
+
+dealloc(playerstats_newmem)
+dealloc(playerstats_temp1)
+
+</AssemblerScript>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>110515</ID>
+          <Description>"Health Gauge Set to Max?"</Description>
+          <DropDownList DisplayValueAsItem="1">0:No
+1:Yes
+</DropDownList>
+          <LastState Value="??" Activated="0" RealAddress="00000000"/>
+          <Color>FF8000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>playerstats_healthset_enable</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>110516</ID>
+          <Description>"Force Gauge Set to Max?"</Description>
+          <DropDownList DisplayValueAsItem="1">0:No
+1:Yes
+</DropDownList>
+          <LastState Value="??" Activated="0" RealAddress="00000000"/>
+          <Color>FF8000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>playerstats_forceset_enable</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>110517</ID>
+          <Description>"Support Gauge Set to Max?"</Description>
+          <DropDownList DisplayValueAsItem="1">0:No
+1:Yes
+</DropDownList>
+          <LastState Value="??" Activated="0" RealAddress="00000000"/>
+          <Color>FF8000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>playerstats_supportset_enable</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>110518</ID>
+          <Description>"AP Gauge Set to Max?"</Description>
+          <DropDownList DisplayValueAsItem="1">0:No
+1:Yes
+</DropDownList>
+          <LastState Value="??" Activated="0" RealAddress="00000000"/>
+          <Color>FF8000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>playerstats_apset_enable</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>110565</ID>
+          <Description>"Enemy Set to Weak?"</Description>
+          <DropDownList DisplayValueAsItem="1">0:No
+1:Yes
+</DropDownList>
+          <LastState Value="??" Activated="0" RealAddress="00000000"/>
+          <Color>FF8000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>playerstats_enemyset_enable</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>110519</ID>
+          <Description>"Player Stats Update Base Address?"</Description>
+          <DropDownList DisplayValueAsItem="1">0:No
+1:Yes
+</DropDownList>
+          <LastState Value="??" Activated="0" RealAddress="00000000"/>
+          <Color>FF8000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>playerstats_update_enable</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>110520</ID>
+          <Description>"Player Stats"</Description>
+          <Options moHideChildren="1"/>
+          <LastState Value="" Activated="0" RealAddress="00000000"/>
+          <Color>80000008</Color>
+          <GroupHeader>1</GroupHeader>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>110521</ID>
+              <Description>"Player 1"</Description>
+              <Options moHideChildren="1"/>
+              <LastState Value="" Activated="0" RealAddress="00000000"/>
+              <Color>80000008</Color>
+              <GroupHeader>1</GroupHeader>
+              <CheatEntries>
+                <CheatEntry>
+                  <ID>110522</ID>
+                  <Description>"Base Address"</Description>
+                  <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                  <Color>80000008</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>playerstats_basepointer</Address>
+                  <Offsets>
+                    <Offset>0</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>110566</ID>
+                  <Description>"Player"</Description>
+                  <LastState Activated="0" RealAddress="00000000"/>
+                  <Color>80000008</Color>
+                  <VariableType>String</VariableType>
+                  <Length>1</Length>
+                  <Unicode>0</Unicode>
+                  <ZeroTerminate>1</ZeroTerminate>
+                  <Address>playerstats_basepointer</Address>
+                  <Offsets>
+                    <Offset>38</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>110523</ID>
+                  <Description>"Health Gauge 1"</Description>
+                  <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                  <Color>80000008</Color>
+                  <VariableType>2 Bytes</VariableType>
+                  <Address>playerstats_basepointer</Address>
+                  <Offsets>
+                    <Offset>1B8C</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>110524</ID>
+                  <Description>"Health Gauge 2"</Description>
+                  <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                  <Color>80000008</Color>
+                  <VariableType>2 Bytes</VariableType>
+                  <Address>playerstats_basepointer</Address>
+                  <Offsets>
+                    <Offset>1B8E</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>110525</ID>
+                  <Description>"Force Gauge"</Description>
+                  <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                  <Color>80000008</Color>
+                  <VariableType>2 Bytes</VariableType>
+                  <Address>playerstats_basepointer</Address>
+                  <Offsets>
+                    <Offset>1B90</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>110526</ID>
+                  <Description>"Support Gauge"</Description>
+                  <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                  <Color>80000008</Color>
+                  <VariableType>2 Bytes</VariableType>
+                  <Address>playerstats_basepointer</Address>
+                  <Offsets>
+                    <Offset>1B92</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>110527</ID>
+                  <Description>"AP Gauge"</Description>
+                  <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                  <Color>80000008</Color>
+                  <VariableType>2 Bytes</VariableType>
+                  <Address>playerstats_basepointer</Address>
+                  <Offsets>
+                    <Offset>1B94</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>110528</ID>
+                  <Description>"Max Health Gauge"</Description>
+                  <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                  <Color>80000008</Color>
+                  <VariableType>2 Bytes</VariableType>
+                  <Address>playerstats_basepointer</Address>
+                  <Offsets>
+                    <Offset>1B96</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>110529</ID>
+                  <Description>"Max Force Gauge"</Description>
+                  <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                  <Color>80000008</Color>
+                  <VariableType>2 Bytes</VariableType>
+                  <Address>playerstats_basepointer</Address>
+                  <Offsets>
+                    <Offset>1B98</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>110530</ID>
+                  <Description>"Max Support Gauge"</Description>
+                  <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                  <Color>80000008</Color>
+                  <VariableType>2 Bytes</VariableType>
+                  <Address>playerstats_basepointer</Address>
+                  <Offsets>
+                    <Offset>1B9A</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>110531</ID>
+                  <Description>"Max AP Gauge"</Description>
+                  <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                  <Color>80000008</Color>
+                  <VariableType>2 Bytes</VariableType>
+                  <Address>playerstats_basepointer</Address>
+                  <Offsets>
+                    <Offset>1B9C</Offset>
+                  </Offsets>
+                </CheatEntry>
+              </CheatEntries>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>110554</ID>
+              <Description>"Player 2"</Description>
+              <Options moHideChildren="1"/>
+              <LastState Value="" Activated="0" RealAddress="00000000"/>
+              <Color>80000008</Color>
+              <GroupHeader>1</GroupHeader>
+              <CheatEntries>
+                <CheatEntry>
+                  <ID>110555</ID>
+                  <Description>"Base Address"</Description>
+                  <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                  <Color>80000008</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>playerstats_enemy_basepointer</Address>
+                  <Offsets>
+                    <Offset>0</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>110567</ID>
+                  <Description>"Player"</Description>
+                  <LastState Activated="0" RealAddress="00000000"/>
+                  <Color>80000008</Color>
+                  <VariableType>String</VariableType>
+                  <Length>1</Length>
+                  <Unicode>0</Unicode>
+                  <ZeroTerminate>1</ZeroTerminate>
+                  <Address>playerstats_enemy_basepointer</Address>
+                  <Offsets>
+                    <Offset>38</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>110556</ID>
+                  <Description>"Health Gauge 1"</Description>
+                  <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                  <Color>80000008</Color>
+                  <VariableType>2 Bytes</VariableType>
+                  <Address>playerstats_enemy_basepointer</Address>
+                  <Offsets>
+                    <Offset>1B8C</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>110557</ID>
+                  <Description>"Health Gauge 2"</Description>
+                  <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                  <Color>80000008</Color>
+                  <VariableType>2 Bytes</VariableType>
+                  <Address>playerstats_enemy_basepointer</Address>
+                  <Offsets>
+                    <Offset>1B8E</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>110558</ID>
+                  <Description>"Force Gauge"</Description>
+                  <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                  <Color>80000008</Color>
+                  <VariableType>2 Bytes</VariableType>
+                  <Address>playerstats_enemy_basepointer</Address>
+                  <Offsets>
+                    <Offset>1B90</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>110559</ID>
+                  <Description>"Support Gauge"</Description>
+                  <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                  <Color>80000008</Color>
+                  <VariableType>2 Bytes</VariableType>
+                  <Address>playerstats_enemy_basepointer</Address>
+                  <Offsets>
+                    <Offset>1B92</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>110560</ID>
+                  <Description>"AP Gauge"</Description>
+                  <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                  <Color>80000008</Color>
+                  <VariableType>2 Bytes</VariableType>
+                  <Address>playerstats_enemy_basepointer</Address>
+                  <Offsets>
+                    <Offset>1B94</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>110561</ID>
+                  <Description>"Max Health Gauge"</Description>
+                  <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                  <Color>80000008</Color>
+                  <VariableType>2 Bytes</VariableType>
+                  <Address>playerstats_enemy_basepointer</Address>
+                  <Offsets>
+                    <Offset>1B96</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>110562</ID>
+                  <Description>"Max Force Gauge"</Description>
+                  <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                  <Color>80000008</Color>
+                  <VariableType>2 Bytes</VariableType>
+                  <Address>playerstats_enemy_basepointer</Address>
+                  <Offsets>
+                    <Offset>1B98</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>110563</ID>
+                  <Description>"Max Support Gauge"</Description>
+                  <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                  <Color>80000008</Color>
+                  <VariableType>2 Bytes</VariableType>
+                  <Address>playerstats_enemy_basepointer</Address>
+                  <Offsets>
+                    <Offset>1B9A</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>110564</ID>
+                  <Description>"Max AP Gauge"</Description>
+                  <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                  <Color>80000008</Color>
+                  <VariableType>2 Bytes</VariableType>
+                  <Address>playerstats_enemy_basepointer</Address>
+                  <Offsets>
+                    <Offset>1B9C</Offset>
+                  </Offsets>
+                </CheatEntry>
+              </CheatEntries>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+  </CheatEntries>
+</CheatTable>

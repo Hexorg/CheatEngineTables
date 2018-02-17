@@ -1,0 +1,318 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="18">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>1</ID>
+      <Description>"[X] &lt;== BitDungeon II v1.95 Steam +6 Cheat Table (AikonCWD)"</Description>
+      <Options moHideChildren="1"/>
+      <LastState Activated="0"/>
+      <Color>FF00FF</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>[ENABLE]
+{ ########### AOB SCANS ########### }
+aobscan(ReadHP,66 0F D6 83 68 04 00 00)
+aobscan(ReadBC,8B 98 8C 00 00 00 83 EC)
+aobscan(SetDMG,FF F2 0F 5C C1 66 0F D6 87 78 01 00 00)
+aobscan(FastLV,89 98 88 00 00 00 8D)
+
+alloc(newmem,$1000)
+
+label(codeHP)
+label(codeBC)
+label(codeGM)
+label(codeLV)
+label(returnHP)
+label(returnBC)
+label(returnGM)
+label(returnLV)
+
+label(enemy)
+label(heroHP)
+label(enemyHP)
+
+label(iFastLV)
+label(cFastLV)
+registersymbol(iFastLV)
+
+label(igodMode)
+label(cgodMode)
+registersymbol(igodMode)
+
+label(iKiller)
+label(cKiller)
+registersymbol(iKiller)
+
+globalalloc(Health,4)
+globalalloc(BlackCoins,4)
+
+registersymbol(ReadHP)
+registersymbol(ReadBC)
+registersymbol(SetDMG)
+registersymbol(FastLV)
+
+newmem:
+
+{ ########### GET CURRENT HP ########### }
+codeHP:
+  mov [Health],edx
+  movq [ebx+00000468],xmm0
+  jmp returnHP
+
+{ ########### GET CURRENT BLACK COINS ########### }
+codeBC:
+  mov [BlackCoins],eax
+  mov ebx,[eax+0000008C]
+  jmp returnBC
+
+{ ########### GODMODE + 1HITKILL ########### }
+codeGM:
+  cmp edi,[Health]
+  jne enemy
+  cmp [igodMode],1
+  jne cgodMode
+  movq xmm0,[heroHP]
+  cgodMode:
+  movq [edi+00000178],xmm0
+  jmp returnGM
+
+enemy:
+  cmp [iKiller],1
+  jne cKiller
+  movq xmm0,[enemyHP]
+  cKiller:
+  movq [edi+00000178],xmm0
+  jmp returnGM
+
+{ ########### FAST LVL UP ########### }
+codeLV:
+  cmp [iFastLV],1
+  jne cFastLV
+  add ebx,ebx
+  add ebx,ebx
+  add ebx,ebx
+  add ebx,ebx
+  cFastLV:
+  mov [eax+00000088],ebx
+  jmp returnLV
+
+{ ########### SET VARIABLES ########### }
+heroHP:
+  dq (double)9999
+
+enemyHP:
+  dq (double)0
+
+iFastLV:
+  dd 0
+
+igodMode:
+  dd 0
+
+iKiller:
+  dd 0
+
+ReadHP:
+  jmp codeHP
+  nop
+  nop
+  nop
+returnHP:
+
+ReadBC:
+  jmp codeBC
+  nop
+returnBC:
+
+SetDMG+05:
+  jmp codeGM
+  nop
+  nop
+  nop
+returnGM:
+
+FastLV:
+  jmp codeLV
+  nop
+returnLV:
+
+[DISABLE]
+
+{$lua}
+getAddressList().getMemoryRecordByID(14).Active=false
+getAddressList().getMemoryRecordByID(15).Active=false
+getAddressList().getMemoryRecordByID(17).Active=false
+{$asm}
+
+ReadHP:
+  db 66 0F D6 83 68 04 00 00
+
+ReadBC:
+  db 8B 98 8C 00 00 00
+
+SetDMG+05:
+  db 66 0F D6 87 78 01 00 00
+
+FastLV:
+  db 89 98 88 00 00 00
+
+unregistersymbol(ReadHP)
+unregistersymbol(ReadBO)
+unregistersymbol(ReadGM)
+unregistersymbol(FastLV)
+unregistersymbol(iFastLV)
+unregistersymbol(igodMode)
+unregistersymbol(iKiller)
+
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: 07A9C16D ReadHP
+
+07A9C15D: F3 0F 7E 82 78 01 00 00  -  movq xmm0,[edx+00000178]
+07A9C165: 85 DB                    -  test ebx,ebx
+07A9C167: 0F 84 09 7F 94 00        -  je 083E4076
+// ---------- INJECTING HERE ----------
+07A9C16D: 66 0F D6 83 68 04 00 00  -  movq [ebx+00000468],xmm0
+// ---------- DONE INJECTING  ----------
+07A9C175: 8B 9A 34 01 00 00        -  mov ebx,[edx+00000134]
+07A9C17B: 85 DB                    -  test ebx,ebx
+07A9C17D: 0F 84 F3 7E 94 00        -  je 083E4076
+
+// ORIGINAL CODE - INJECTION POINT: 07BF9CBA ReadBC
+
+07BF9CAF: 8B 43 10                 -  mov eax,[ebx+10]
+07BF9CB2: 85 C0                    -  test eax,eax
+07BF9CB4: 0F 84 ED 05 00 00        -  je 07BFA2A7
+// ---------- INJECTING HERE ----------
+07BF9CBA: 8B 98 8C 00 00 00        -  mov ebx,[eax+0000008C]
+// ---------- DONE INJECTING  ----------
+07BF9CC0: 83 EC 0C                 -  sub esp,0C
+07BF9CC3: 53                       -  push ebx
+07BF9CC4: B9 20 B0 A5 03           -  mov ecx,03A5B020
+
+// ORIGINAL CODE - INJECTION POINT: 07F54B17 GM
+
+07F54AFB: F3 0F 7E 87 78 01 00 00  -  movq xmm0,[edi+00000178]
+07F54B03: F3 0F 7E 8D 60 FF FF FF  -  movq xmm1,[ebp-000000A0]
+07F54B0B: 66 0F D6 8D D0 FE FF FF  -  movq [ebp-00000130],xmm1
+07F54B13: F2 0F 5C C1              -  subsd xmm0,xmm1
+// ---------- INJECTING HERE ----------
+07F54B17: 66 0F D6 87 78 01 00 00  -  movq [edi+00000178],xmm0
+// ---------- DONE INJECTING  ----------
+07F54B1F: 8B 05 58 02 6E 0E        -  mov eax,[0E6E0258]
+07F54B25: 83 EC 04                 -  sub esp,04
+07F54B28: FF B5 F4 FE FF FF        -  push [ebp-0000010C]
+}
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>18</ID>
+          <Description>"[ ========= EDITOR ========= ]"</Description>
+          <LastState Value="" Activated="0" RealAddress="00000000"/>
+          <Color>FF0000</Color>
+          <GroupHeader>1</GroupHeader>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>2</ID>
+          <Description>"Current HP"</Description>
+          <LastState Value="9957" Activated="0" RealAddress="05A87BC0"/>
+          <Color>FF0000</Color>
+          <VariableType>Double</VariableType>
+          <Address>Health</Address>
+          <Offsets>
+            <Offset>178</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>10</ID>
+          <Description>"Current Black Coins"</Description>
+          <LastState Value="700" Activated="0" RealAddress="0810B12C"/>
+          <Color>FF0000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>BlackCoins</Address>
+          <Offsets>
+            <Offset>8C</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>12</ID>
+          <Description>"Current Experience"</Description>
+          <LastState Value="109400" Activated="0" RealAddress="0810B128"/>
+          <Color>FF0000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>BlackCoins</Address>
+          <Offsets>
+            <Offset>88</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>19</ID>
+          <Description>"[ ========= CHEAT OPTIONS ========= ]"</Description>
+          <LastState Value="" Activated="0" RealAddress="00000000"/>
+          <Color>008000</Color>
+          <GroupHeader>1</GroupHeader>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>14</ID>
+          <Description>"&lt;== Enable/Disable: Fast LVL up!"</Description>
+          <LastState Activated="0"/>
+          <Color>008000</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[ENABLE]
+
+iFastLV:
+  dd 1
+
+[DISABLE]
+
+iFastLV:
+  dd 0
+
+</AssemblerScript>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>15</ID>
+          <Description>"&lt;== Enable/Disable: GodMode"</Description>
+          <LastState Activated="0"/>
+          <Color>008000</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[ENABLE]
+
+igodMode:
+  dd 1
+
+[DISABLE]
+
+igodMode:
+  dd 0
+
+</AssemblerScript>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>17</ID>
+          <Description>"&lt;== Enable/Disable: 1 Hit Kill"</Description>
+          <LastState Activated="0"/>
+          <Color>008000</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[ENABLE]
+
+iKiller:
+  dd 1
+
+[DISABLE]
+
+iKiller:
+  dd 0
+
+</AssemblerScript>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols/>
+  <Comments>BitDungeon II v1.95 Steam
++6 Cheat Table
+07/01/2015
+AikonCWD
+</Comments>
+</CheatTable>

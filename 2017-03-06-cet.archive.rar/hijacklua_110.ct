@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="14">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>0</ID>
+      <Description>"script (lua_state hijack)"</Description>
+      <Color>80000008</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>[ENABLE]
+//code from here to '[DISABLE]' will be used to enable the cheat
+alloc(newmem,2048) //2kb should be enough
+label(returnhere)
+label(doOurLoadString)
+
+label(bForceLoadString)
+registersymbol(bForceLoadString)
+label(command)
+registersymbol(command)
+
+newmem:
+cmp [bForceLoadString],0
+jne doOurLoadString
+sar eax,04
+ret
+
+doOurLoadString:
+mov [bForceLoadString],0
+
+mov ecx,[esp+04]
+push command
+push ecx
+call lua5.1-32.luaL_loadstring
+add esp,08
+
+mov ecx,[esp+04]
+push 0
+push -1
+push 0
+push ecx
+call lua5.1-32.lua_pcall
+add esp,10
+
+mov ecx,[esp+04]
+mov eax,[ecx+08]
+sub eax,[ecx+0C]
+sar eax,04
+ret
+
+bForceLoadString:
+dd 0
+command:
+db 'playerStats.Health = 100;',0
+
+lua5.1-32.lua_gettop+A:
+jmp newmem
+returnhere:
+
+[DISABLE]
+dealloc(newmem)
+lua5.1-32.lua_gettop+A:
+sar eax,04
+ret
+int 3
+//Alt: db C1 F8 04 C3 CC
+
+unregistersymbol(bForceLoadString)
+unregistersymbol(command)
+</AssemblerScript>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>1</ID>
+      <Description>"set to 1 to enable"</Description>
+      <Color>80000008</Color>
+      <VariableType>4 Bytes</VariableType>
+      <Address>bForceLoadString</Address>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>2</ID>
+      <Description>"current command"</Description>
+      <Color>80000008</Color>
+      <VariableType>String</VariableType>
+      <Length>200</Length>
+      <Unicode>0</Unicode>
+      <ZeroTerminate>1</ZeroTerminate>
+      <Address>command</Address>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols/>
+  <LuaScript>openProcess('cheatengine-i386.exe')
+
+playerStats = {}
+playerStats.Health = 30
+
+if timer~=nil then object_destroy(timer);timer=nil;end
+
+timer = createTimer(nil,true)
+timer_setInterval(timer,1000)
+timer_onTimer(timer, function (sender)
+                  if playerStats.Health &gt;=100 then
+                    timer_setEnabled(timer, false)
+                    showMessage('success')
+                  end
+                end
+)
+</LuaScript>
+</CheatTable>

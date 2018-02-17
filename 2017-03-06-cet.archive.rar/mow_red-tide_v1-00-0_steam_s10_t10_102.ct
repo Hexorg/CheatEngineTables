@@ -1,0 +1,464 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="16">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>8</ID>
+      <Description>"[X] &lt;== Men of War - Red Tide  v1.00.0 Steam Script 1.0"</Description>
+      <Options moHideChildren="1"/>
+      <Color>FF0000</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>{
+===========================================
+ Game Title    : Men of War - Red Tide
+ Game Version  : 1.00.0 (steam)
+ Game Sponsor  : Myself
+ Process Name  : RedTide.exe
+ Script Version: 1.0
+ CE Version    : 6.3
+ Release date  : 22-Mar-2014
+ Author        : Recifense
+ History:
+ 22-Mar-14: First Release
+ Features:
+ - God Mode
+ - Unlimited Fuel
+ - Unlimited Ammo
+ - Full Stamina
+===========================================
+}
+
+//=========================================
+// Definitions
+define(LUDO,"RedTide.exe")
+define(GDMD,RedTide.exe+004ca3bb)
+define(MPFL,RedTide.exe+003ef1e0)
+define(MPAO,RedTide.exe+0035d220)
+define(MPSA,RedTide.exe+004c9dc5)
+
+define(IDAS,RedTide.exe+009a8cec)
+
+//=========================================
+// Constants used in the script (that can be changed)
+// define(ctMMON,#63000)  // Minimum Money
+
+//=========================================
+[ENABLE]
+//=========================================
+//LuaCall(CheckVersion())
+//=========================================
+// Check if script is compatible to this game version
+// If false the script will not be loaded
+
+assert(GDMD,d9 9e 94 00 00 00 ?? ?? 8d 4c 24 10 e8 ?? ?? ?? ?? 8b 56 0c 52)
+assert(MPFL,d8 ae 90 00 00 00 d9 1c 24 e8 ?? ?? ?? ?? dd d8 5e 59 c3 ?? ??)
+assert(MPAO,8b 44 24 04 89 41 2c c2 04 00 cc cc cc cc cc cc 56 57 8b f1 33)
+assert(MPSA,d9 00 d9 55 00 d8 64 24 1c d9 e1 d8 1d ?? ?? ?? ?? df e0 f6 c4)
+
+//=========================================
+alloc(MyCode,4096,LUDO)
+//=========================================
+// Declaration section
+label(_GodMode)
+label(_BackGMD)
+label(_ExitGMD)
+label(_MonPlayerFuel)
+label(_BackMPF)
+label(_ExitMPF)
+label(_MonPlayerAmmo)
+label(_MonPA00)
+label(_MonPA01)
+label(_BackMPA)
+label(_ExitMPA)
+label(_MonPlayerStamina)
+label(_BackMPS)
+label(_ExitMPS)
+label(iEnableGMD)
+label(iEnableMPF)
+label(iEnableMPA)
+label(iEnableMPS)
+label(pHero)
+
+//=========================================
+// Registering Symbols
+registersymbol(MyCode)
+registersymbol(iEnableGMD)
+registersymbol(iEnableMPF)
+registersymbol(iEnableMPA)
+registersymbol(iEnableMPS)
+registersymbol(pHero)
+
+//=========================================
+MyCode:
+//========================================= ok
+// During Combat
+_GodMode:
+ pushfd
+
+ mov [pHero],esi                   // Save pointer for debugging
+
+ cmp dword ptr [iEnableGMD],0
+ je _ExitGMD                       // Jump if feature is disabled
+
+ push edi
+ push eax
+ mov edi,[esi+0c]                  // Get ptr to Owner ID
+ mov ax,[IDAS]                     // Get player ID
+ cmp ax,[edi+000002f2]
+ pop eax
+ pop edi
+ jne _ExitGMD                      // Jump if it is not a playerÂ´s unit
+
+ fstp st(0)                        // Discard value
+ mov dword ptr [esi+00000090],(float)123450.0
+ fld dword ptr [esi+00000090]      // Get max HP
+
+_ExitGMD:
+ popfd
+
+ fstp dword ptr [esi+00000094]     // Original code
+ jmp _BackGMD                      // Back to main code
+
+//========================================= ok
+// When spending fuel
+_MonPlayerFuel:
+ cmp dword ptr [iEnableMPF],0
+ je _ExitMPF                       // Jump if feature is disabled
+
+ push edi
+ push eax
+ mov edi,[esi+08]                  // Get ptr to Owner ID
+ mov ax,[IDAS]                     // Get player ID
+ cmp ax,[edi+000002f2]
+ pop eax
+ pop edi
+ jne _ExitMPF                      // Jump if it is not a playerÂ´s unit
+
+ push eax
+ mov eax,[esi+0000008C]
+ mov [esi+00000090],eax
+ pop eax
+
+ fstp st(0)                        // Discard value
+ fldz                              // Make valut to decrease = 0
+
+_ExitMPF:
+ fsubr dword ptr [esi+00000090]    // Original code
+ jmp _BackMPF                      // Back to main code
+
+//========================================= ok
+// When shooting (ammo in use)
+_MonPlayerAmmo:
+ push edi
+
+ mov eax,[esp+08]                  // Original code (+04)
+
+ cmp dword ptr [iEnableMPA],0
+ je _ExitMPA                       // Jump if feature is disabled
+
+ mov edi,[ecx+18]                  // Human ?
+ test edi,edi
+ jz _MonPA00                       // Jump if false
+
+ cmp dword ptr [edi+04],00010001   // Really human?
+ jne _ExitMPA                      // Jump if false
+
+ mov edi,[edi+24]
+ test edi,edi
+ jz _ExitMPA                       // Jump if it is a null pointer
+ jmp _MonPA01
+//===
+_MonPA00:
+ mov edi,[ecx+1c]
+ or edi,edi
+ jz _ExitMPA                       // Jump if it is a null pointer
+
+ cmp dword ptr [edi+08],0          // Tank or similar?
+ jne _ExitMPA                      // Jump if false
+
+ mov edi,[edi+24]
+ or edi,edi
+ jz _ExitMPA                       // Jump if it is a null pointer
+
+_MonPA01:
+ mov di,[edi+000002f2]             // Get Unit ID
+ cmp di,[IDAS]                     // PlayerÂ´s UNIT?
+ jne _ExitMPA                      // Jump if it is not a playerÂ´s unitÂ´s ammo
+
+ test eax,eax                      // Next value = 0?
+ jz _ExitMPA                       // Jump if true
+
+ cmp eax,[ecx+2c]                  // New value greater than current one?
+ jge _ExitMPA                      // Jump if true
+
+ mov eax,[ecx+2c]                  // Make new value = current value
+
+_ExitMPA:
+ pop edi
+
+ mov [ecx+2C],eax                  // Original code
+ jmp _BackMPA                      // Back to main code
+
+//========================================= ok
+_MonPlayerStamina:
+ cmp dword ptr [iEnableMPS],0
+ je _ExitMPS                       // Jump if feature is disabled
+
+ push edi
+ push eax
+ mov edi,[esi+0c]                  // Get ptr to Owner ID
+ mov ax,[IDAS]                     // Get player ID
+ cmp ax,[edi+000002f2]
+ pop eax
+ pop edi
+ jne _ExitMPS                      // Jump if it is not a playerÂ´s unit
+
+ mov dword ptr [eax],(float)100.0  // New stamina = 100.0
+
+_ExitMPS:
+ fld dword ptr [eax]               // Original code
+ fst dword ptr [ebp+00]            // Original code
+ jmp _BackMPS                      // Back to main code
+
+//=========================================
+ db '==========================================&gt;'
+ db 'CE6.3 Script by Recifense 032214'
+//=========================================
+// Variables
+iEnableGMD:
+ dd 0
+iEnableMPF:
+ dd 0
+iEnableMPA:
+ dd 0
+iEnableMPS:
+ dd 0
+pHero:
+ dd 0
+
+//=========================================
+// Hacking Points
+GDMD:
+ jmp _GodMode
+ nop
+_BackGMD:
+
+MPFL:
+ jmp _MonPlayerFuel
+ nop
+_BackMPF:
+
+MPAO:
+ jmp _MonPlayerAmmo
+ nop
+ nop
+_BackMPA:
+
+MPSA:
+ jmp _MonPlayerStamina
+_BackMPS:
+
+//=========================================
+// Script for Restoring Original Codes
+[DISABLE]
+GDMD:
+// fstp dword ptr [esi+00000094]
+ db d9 9e 94 00 00 00
+
+MPFL:
+// fsubr dword ptr [esi+00000090]
+ db d8 ae 90 00 00 00
+
+MPAO:
+// mov eax,[esp+04]
+// mov [ecx+2C],eax
+ db 8b 44 24 04 89 41 2c
+
+MPSA:
+// fld dword ptr [eax]
+// fst dword ptr [ebp+00]
+ db d9 00 d9 55 00
+
+//=========================================
+// Unregistering Symbols
+unregistersymbol(MyCode)
+unregistersymbol(iEnableGMD)
+unregistersymbol(iEnableMPF)
+unregistersymbol(iEnableMPA)
+unregistersymbol(iEnableMPS)
+unregistersymbol(pHero)
+
+//=========================================
+dealloc(MyCode)
+//============= Scripts End ===============
+
+// ****************************************
+// NOTES
+// ****************************************
+{
+}
+
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>1</ID>
+          <Description>"Enable/Disable God Mode =&gt; (1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableGMD</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>3</ID>
+          <Description>"Enable/Disable Infinite Fuel =&gt; (1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMPF</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>45</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>46</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>2</ID>
+          <Description>"Enable/Disable Infinite Ammo =&gt; (1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMPA</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>33</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>34</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>4</ID>
+          <Description>"Enable/Disable Infinite Stamina =&gt; (1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMPS</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols/>
+  <Comments>===========================================
+ Game Title    : Men of War - Red Tide
+ Game Version  : 1.00.0 (steam)
+ Game Sponsor  : Myself
+ Process Name  : RedTide.exe
+ Script Version: 1.0
+ CE Version    : 6.3
+ Release date  : 20-Apr-2014
+ Author        : Recifense
+ History:
+ 20-Apr-14: First Release
+ Features:
+ - God Mode        [1]
+ - Unlimited Fuel  [2]
+ - Unlimited Ammo  [3]
+ - Full Stamina    [4]
+===========================================
+[1] Player's soldiers only; (*)
+[2] That's it;
+[3] That's it;
+[4] For player's soldiers only;
+(*) They will be very hard to kill; But you can win a scenario using just one; :) 
+===========================================
+[USAGE]
+1) Run CE63;
+2) Run Game;
+3) Load the game process in CE;
+4) Load the table and activate the script [X];
+4) Change the VALUE to 1 of each cheat you want to use (Enable/Disable...);
+5) Game On;
+===========================================
+[HOTKEYS]
+CTRL+Home  = Enable  GM/FS cheats;
+CTRL+End   = Disable GM/FS cheats;
+-----------
+CTRL+PageUp   = Enable  UF cheat;
+CTRL+PageDown = Disable UF cheat;
+-----------
+CTRL+Insert = Enable  UA cheat;
+CTRL+Delete = Disable UA cheat;
+===========================================
+[ADVICE]
+When you can,save the game before starting using table/cheat. So you can always come back in case you don't like the result.
+===========================================
+[INFO]
+Tested on Win 7 64bits
+===========================================
+Cheers!
+ 
+</Comments>
+</CheatTable>

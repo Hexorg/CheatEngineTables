@@ -1,0 +1,262 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="18">
+  <CheatEntries/>
+  <UserdefinedSymbols/>
+  <LuaScript>if cheatEngineIs64Bit() then
+	package.cpath=package.cpath..[[;.\clibs64\?.dll]]
+else
+	package.cpath=package.cpath..[[;.\clibs32\?.dll]]
+end
+function closeCloudApp()
+	closeCE()
+end
+TimeStamp = (os.date ("%c"))
+local http = require("socket.http");
+local JSON = require ("json");
+local md5 = require ("md5");
+MD5 = md5.sumhexa;
+MyServer = 'http://innovative-data.co.za/t_server/'
+
+
+
+local server = "http://innovative-data.co.za/t_server/lua_server.php";
+
+local b = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/'
+function enc(data)
+	return ((data:gsub('.', function(x)
+		local r,b='',x:byte()
+		for i=8,1,-1 do r=r..(b%2^i-b%2^(i-1)&gt;0 and '1' or '0') end
+		return r;
+		end)..'0000'):gsub('%d%d%d?%d?%d?%d?', function(x)
+		if (#x &lt; 6) then return '' end
+		local c=0
+		for i=1,6 do c=c+(x:sub(i,i)=='1' and 2^(6-i) or 0) end
+		return b:sub(c+1,c+1)
+	end)..({ '', '==', '=' })[#data%3+1])
+end
+function dec(data)
+	data = string.gsub(data, '[^'..b..'=]', '')
+	return (data:gsub('.', function(x)
+		if (x == '=') then return '' end
+		local r,f='',(b:find(x)-1)
+		for i=6,1,-1 do r=r..(f%2^i-f%2^(i-1)&gt;0 and '1' or '0') end
+		return r;
+		end):gsub('%d%d%d?%d?%d?%d?%d?%d?', function(x)
+		if (#x ~= 8) then return '' end
+		local c=0
+		for i=1,8 do c=c+(x:sub(i,i)=='1' and 2^(8-i) or 0) end
+		return string.char(c)
+	end))
+end
+
+
+
+
+
+login = {};
+function login:SaveSettings()
+	if MyPath then
+		settingsFile = io.open(MyPath .."Login.ini", "w");
+		if (settingsFile ~= nil) then
+			settingsFile:write(self.editu.Caption .."\n");
+			settingsFile:write(self.editp.Caption);
+			settingsFile:close();
+		end
+	end
+end
+function login:EnterLoginEdit(sender, key)
+	key_hex = string.byte(key); if key_hex==13 then key = nil; self:login(); return key; end; return key;
+end
+function login:Prepare()
+	self.form = createForm(true);
+	self.form.hide()
+	self.form.top = 10000;
+	setProperty(self.form , "BiDiMode", "bdLeftToRight");
+	setProperty(self.form , "ShowInTaskBar", "stAlways");
+	setProperty(self.form , "FormStyle", "fsSystemStayOnTop");
+	setProperty(login.form , "Position", "poScreenCenter");
+	sleep(100);
+	setProperty(self.form , "FormStyle", "fsNormal");
+	self.form.onClose = function (sender) sender.hide(); closeCloudApp(); end;
+	self.form.Caption = "Login"
+	self.form.Width = 435;
+	self.form.Height = 222;
+	self.label1 = createLabel(self.form);
+	self.label1.Caption = "Please login Using your www.Dhoomcreation.net account to continue.";
+	self.label1.Top = 5;
+	self.label1.Left = 5;
+	self.label2 = createLabel(self.form);
+	self.label2.Caption = "Username";
+	self.label2.Top = 25;
+	self.label2.Left = 5;
+	self.label3 = createLabel(self.form);
+	self.label3.Caption = "Password";
+	self.label3.Top = 25;
+	self.label3.Left = 170;
+	self.editu = createEdit(self.form);
+	self.editu.Caption = '';
+	self.editu.Top = 67;
+	self.editu.Left = 95;
+	self.editu.Width = 305;
+	self.editu.Height = 20;
+
+	self.editp = createEdit(self.form);
+	self.editp.Caption = '';
+	self.editp.Top = 118;
+	self.editp.Left = 95;
+	self.editp.Width = 305;
+	self.editp.Height = 20;
+	setProperty(self.editp,"PasswordChar", "*");
+	setProperty(self.editp,'EchoMode','emPassword');
+
+
+	self.loginb = createPanel(self.form);
+	self.loginb.Caption = 'Login';
+	self.loginb.Left = 300;
+	self.loginb.Top = 160;
+	self.loginb.Width = 102;
+	self.loginb.Height = 38;
+	self.loginb.onClick = function () self:login(); end;
+	self.label4 = createLabel(self.form);
+	self.label4.Caption = "Don't have account?\nClick to register an account!";
+	setProperty(self.label4 , "Alignment", "taCenter");
+	local prop1 = getProperty(self.label4, "Font");
+	setProperty(prop1, "Color", 0x000107FE);
+	setProperty(self.label4, "Cursor", "-21");
+	self.label4.Top = 65;
+	self.label4.Left = 5;
+	self.label4.onClick = function () shellExecute("http://www.innovative-data.co.za"); end;
+	self.label5 = createLabel(self.form);
+	self.label5.Caption = "Forgot password?\nClick to reset password!";
+	setProperty(self.label5 , "Alignment", "taCenter");
+	local prop1 = getProperty(self.label5, "Font");
+	setProperty(prop1, "Color", 0x000107FE);
+	setProperty(self.label5, "Cursor", "-21");
+	self.label5.Top = 65;
+	self.label5.Left = 215;
+	self.label5.onClick = function () shellExecute("http://www.innovative-data.co.za"); end;
+	self.remembercheck = createCheckBox(self.form);
+	self.remembercheck.Top = 160;
+	self.remembercheck.Left = 95;
+	self.remembercheck.Caption = 'Remember me!';
+	local FontHeight = getProperty(self.remembercheck, "Font");
+	setProperty(FontHeight , "Style", "[fsBold]");
+	self.editu.OnKeyPress=function (sender,key) key_hex = string.byte(key); if key_hex==13 then key = nil; self:login(); return key; end; return key; end;
+	self.editp.OnKeyPress=function (sender,key) key_hex = string.byte(key); if key_hex==13 then key = nil; self:login(); return key; end; return key; end;
+
+	setProperty(self.loginb, "Color", 0x000000);
+	local prop1 = getProperty(self.loginb, "Font");
+	setProperty(prop1, "Color", 0x000107FE);
+	local FontHeight = getProperty(self.loginb, "Font");
+	setProperty(FontHeight , "Style", "[fsBold]");
+
+	--	MyPath = TrainerOrigin
+	MyPath = "c:\\"
+	if MyPath then
+		--[[local f = assert(io.open(MyPath.."log.txt", "r"))
+		content = f:read("*all")
+		f:close()
+		return content]]
+		dofile(MyPath.."Cloud App+Settings.ini.txt", "r")
+	end
+	image = createImage(self.form);
+	image_stretch(image, true);
+	image.width = 447
+	image.height = 234
+	image.top = -10
+	image.left = -10
+
+	setProperty(image, 'Anchors','akTop,akLeft,akRight,akBottom');
+	canvas = image.getCanvas();
+	brush = canvas.getBrush();
+	brush.Color = 0xF0F0F0;
+	canvas.fillRect(canvas, 0, 0, self.form.width, self.form.width);
+	pen = canvas.getPen();
+	pen.width = 2;
+	pen.Color = 0x000000;
+	for i,table in pairs(Flower) do
+		for _,color in pairs(Flower[i]) do
+			canvas_setPixel(canvas, i + 5 , _ + 5, color)
+		end
+	end
+	self.form.visible = true
+end
+
+
+
+function login:login()
+	if (self.remembercheck.Checked == true) then
+		self:SaveSettings();
+	end
+
+	API = {POST = function(data) return http.request(server, data) end; URL = MyServer..'lua_server.php'};
+	local data,status = API.POST("data="..(JSON.encode ({username = self.editu.Text; password = MD5(self.editp.Text)})));
+
+	if (not data or status ~= 200) then
+		showMessage("database issue");
+		return;
+	else
+		obj = JSON.decode((data));
+		--'error' =&gt; '',
+		-- 'baseIDs' =&gt; $bases,
+		--			'mainData' =&gt; $file1,
+		--		 'buildData' =&gt; $file2,
+		--			'tableData' =&gt; $file3
+
+		if (obj.error ~= '') then
+			showMessage(obj.error)
+			cloSeCloudApp()
+
+			return
+		else
+			showMessage("Logged On SucessFully! Welcome ".. self.editu.Text.."\nLogged on : ".. TimeStamp)
+			gidstr=string.gsub(obj.baseIDs,",",'x')
+			--print(gidstr)
+			gidstr='x'..gidstr..'x'
+
+			Callmain = RunMain('MainRun')
+			Callmain()
+
+		end
+	end
+
+
+
+
+
+end
+
+login:Prepare()
+MyPath = TrainerOrigin
+if MyPath then
+	settingsFile = io.open(MyPath.."Login.ini", "r")
+	if (settingsFile == nil) then
+		login.form.show()
+		setProperty(login.form, "ShowInTaskBar", "stAlways")
+		setProperty(login.form, "FormStyle", "fsSystemStayOnTop")
+		sleep(100)
+		setProperty(login.form, "FormStyle", "fsNormal")
+		wincontrol_setFocus(login.form)
+		wincontrol_setFocus(login.editu)
+		return
+	else
+		settingsFile = nil
+		login:LoadSettings()
+	end
+end
+
+
+
+
+function RunMain(dataname)
+
+	myHacks=obj.mainData;
+
+	local dataTable =loadstring(myHacks)();
+
+	local data = dataTable[dataname]
+	return data;
+
+end;
+</LuaScript>
+</CheatTable>

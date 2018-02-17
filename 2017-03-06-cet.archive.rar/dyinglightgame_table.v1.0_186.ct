@@ -1,0 +1,370 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="18">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>17</ID>
+      <Description>"God Mode"</Description>
+      <Options moHideChildren="1"/>
+      <LastState Activated="0"/>
+      <Color>0000FF</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>{
+By Daijobu @ Cheatengine.org
+Credit: SunBeam - I used his original address to find the call that calculates the players' max HP.
+}
+//==ENABLE==//
+[ENABLE]
+//==============================//
+{Allocations}
+alloc(pGod,64,"gamedll_x64_rwdi.dll"+9880A3)
+alloc(pHealth,64,"gamedll_x64_rwdi.dll"+808220)
+alloc(pFetchMaxHP,64,"gamedll_x64_rwdi.dll"+97F2E8)
+{Labels}
+label(pHealthDisplay)
+label(pMaxHP)
+label(pGodTrigger)
+label(_pGodexit)
+label(_pGodSkipStore)
+label(_pFetchMaxHPexit)
+label(_pHealthexit)
+label(_pGodScanRet)
+label(_pHealthScanRet)
+label(_pFetchMaxHPScanRet)
+{Symbols}
+registersymbol(pHealthDisplay)
+registersymbol(pMaxHP)
+registersymbol(pGodTrigger)
+registersymbol(_pGodScanRet)
+registersymbol(_pHealthScanRet)
+registersymbol(_pFetchMaxHPScanRet)
+{Array of Byte Scans}
+aobscanmodule(_pGodScan,gamedll_x64_rwdi.dll,0F 28 F9 FF 50 18 84 C0) //Offset +3
+aobscanmodule(_pSkipGod,gamedll_x64_rwdi.dll,F3 0F 10 83 ** ** 00 00 0F 29 74 24 ** 0F 57 F6 0F 2F C6 76) //No offset
+aobscanmodule(_pGodSkip,gamedll_x64_rwdi.dll,E8 D1 65 FF FF 0F 28 74 24 **) //Offset +5
+aobscanmodule(_pHealthScan,gamedll_x64_rwdi.dll,00 F3 0F 10 83 D4 10 00 00 41) //Offset +1
+aobscanmodule(_pFetchMaxHPScan,gamedll_x64_rwdi.dll,00 48 8B 5C 24 ** F3 0F 58 87 ** ** 00 00 48 83 C4 ** 5F C3) //Offset +1
+
+//==============================//
+pGod+32:
+pGodTrigger:
+dq 0
+
+pHealth+32:
+pHealthDisplay:
+dq 0
+
+pFetchMaxHP+32:
+pMaxHP:
+dq 0
+
+_pGodSkip+5: //Location of skip (Offset 5 or A. Use 5.)
+_pGodSkipStore:
+
+//==============================//
+pGod:
+cmp [pGodTrigger],0
+jne pGod+40
+call qword ptr [rax+18]
+test al,al
+je _pSkipGod
+jmp _pGodexit
+
+{This is a dirty workaround. Certain events overwrite the players HP.
+Higher up in the function reg. xmm0 (after being processed) is being moved into reg. rbx+10D4.
+Therefore, move [pMaxHP] into rbx+10D4 to "fix" loading screens.
+As loading screens also call this function.}
+pGod+40:
+push rax
+mov rax,[pMaxHP]
+mov [rbx+000010D4],rax
+pop rax
+call qword ptr [rax+18]
+test al,al
+je _pGodSkipStore
+jmp _pGodexit
+
+//==============================//
+{This hooks right after the call that calculates Max HP and returns xmm0.}
+pFetchMaxHP:
+mov rbx,[rsp+30]
+movss [pMaxHP],xmm0
+jmp _pFetchMaxHPexit
+
+//==============================//
+{Simple health display, refreshes every frame(?)}
+pHealth:
+movss xmm0,[rbx+000010D4]
+mov [pHealthDisplay],rbx //Pointer (+10D4)
+jmp _pHealthexit
+
+//==============================//
+_pGodScan+3:
+_pGodScanRet:
+jmp pGod
+db 90 90
+_pGodexit:
+
+//==============================//
+_pFetchMaxHPScan+1:
+_pFetchMaxHPScanRet:
+jmp pFetchMaxHP
+_pFetchMaxHPexit:
+
+//==============================//
+_pHealthScan+1:
+_pHealthScanRet:
+jmp pHealth
+db 90 90 90
+_pHealthexit:
+
+//==DISABLE==//
+[DISABLE]
+//==============================//
+dealloc(pGod)
+_pGodScanRet:
+db FF 50 18 84 C0 74 16
+{"gamedll_x64_rwdi.dll"+9880A3:
+call qword ptr [rax+18]
+test al,al}
+
+//==============================//
+dealloc(pFetchMaxHP)
+_pFetchMaxHPScanRet:
+db 48 8B 5C 24 30
+{mov rbx,[rsp+30]}
+
+//==============================//
+dealloc(pHealth)
+_pHealthScanRet:
+db F3 0F 10 83 D4 10 00 00
+{"gamedll_x64_rwdi.dll"+99827C:
+movss xmm0,[rbx+000010D4]}
+
+//==============================//
+unregistersymbol(pHealthDisplay)
+unregistersymbol(pGodTrigger)
+unregistersymbol(_pGodScanRet)
+unregistersymbol(_pHealthScanRet)
+unregistersymbol(pMaxHP)
+unregistersymbol(_pFetchMaxHPScanRet)
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>20</ID>
+          <Description>"Enable or Disable God Mode"</Description>
+          <LastState Activated="0"/>
+          <Color>FF0000</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[ENABLE]
+pGodTrigger:
+db 1
+ 
+ 
+[DISABLE]
+pGodTrigger:
+db 0
+</AssemblerScript>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>18</ID>
+          <Description>"Current Health Value"</Description>
+          <LastState Value="??" Activated="0" RealAddress="00000000"/>
+          <Color>80000008</Color>
+          <VariableType>Float</VariableType>
+          <Address>pHealthDisplay</Address>
+          <Offsets>
+            <Offset>10D4</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>338</ID>
+          <Description>"Maximum Health Value"</Description>
+          <LastState Value="??" Activated="0" RealAddress="00000000"/>
+          <Color>80000008</Color>
+          <VariableType>Float</VariableType>
+          <Address>pMaxHP</Address>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>31</ID>
+      <Description>"Day/Night Cycle Time"</Description>
+      <Options moHideChildren="1"/>
+      <LastState Activated="0"/>
+      <Color>0000FF</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>[ENABLE]
+{}
+alloc(wTime,96,"gamedll_x64_rwdi.dll"+33F883)
+{}
+label(wTimeExit)
+label(wTimeAoBret)
+{}
+registersymbol(wTime)
+registersymbol(wTimeAoBret)
+{}
+aobscanmodule(wTimeAoB,gamedll_x64_rwdi.dll,F3 0F 59 05 ** ** 57 01 72 0C 0F 28 C1 48 83 C4 ** 5B C3 0F 57 C0 48 83 C4 ** 5B C3)
+
+//--------------------//
+wTime+0:
+dd 0
+
+wTime+16:
+dd 0
+
+//--------------------//
+wTime+32:
+cmp [wTime+16],0
+je wTime+74
+movss [wTime+0],xmm0
+cmp [wTime+16],(float)23.99
+jbe wTime+60
+add rsp,20
+pop rbx
+jmp wTimeExit
+
+wTime+60:
+movss xmm0,[wTime+16]
+add rsp,20
+pop rbx
+jmp wTimeExit
+
+wTime+74:
+movss [wTime+16],xmm0
+jmp wTime+32
+
+wTimeAoB+16: //"gamedll_x64_rwdi.dll"+33F883:
+wTimeAoBret:
+jmp wTime+32
+wTimeExit:
+
+[DISABLE]
+dealloc(wTime)
+wTimeAoBret: //"gamedll_x64_rwdi.dll"+33F883:
+db 48 83 C4 20 5B
+{add rsp,20
+pop rbx}
+unregistersymbol(wTime)
+unregistersymbol(wTimeAoBret)
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>34</ID>
+          <Description>"Warning: actual time keeps going, this sets the day/night cycle!"</Description>
+          <LastState Value="" Activated="0" RealAddress="00000000"/>
+          <Color>008000</Color>
+          <GroupHeader>1</GroupHeader>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>32</ID>
+          <Description>"Set Time of Day (00.01 to 23.99 - 24HR Clock)"</Description>
+          <LastState Value="??" Activated="0" RealAddress="00000000"/>
+          <Color>FF0000</Color>
+          <VariableType>Float</VariableType>
+          <Address>wTime+16</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>33</ID>
+          <Description>"Real Time (HH:Minute in Percentage)"</Description>
+          <LastState Value="??" Activated="0" RealAddress="00000000"/>
+          <Color>80000008</Color>
+          <VariableType>Float</VariableType>
+          <Address>wTime+0</Address>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>39</ID>
+      <Description>"Infinite Melee Swing Stamina"</Description>
+      <LastState Activated="0"/>
+      <Color>0000FF</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>[ENABLE]
+aobscanmodule(pStamina,gamedll_x64_rwdi.dll,0F 2F 3D ** ** ** ** F3 0F 11 7B ** 0F 28 7C 24 **) //Offset +7
+registersymbol(_pStamina)
+label(_pStamina)
+
+pStamina+7: //"gamedll_x64_rwdi.dll"+AB1797:
+_pStamina:
+db 90 90 90 90 90
+{movss [rbx+10],xmm7}
+
+[DISABLE]
+_pStamina: //"gamedll_x64_rwdi.dll"+AB1797:
+db F3 0F 11 7B 10
+{movss [rbx+10],xmm7}
+unregistersymbol(_pStamina)
+</AssemblerScript>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>42</ID>
+      <Description>"Unlimited Sprint"</Description>
+      <LastState Activated="0"/>
+      <Color>0000FF</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>[ENABLE]
+aobscanmodule(pSprint,gamedll_x64_rwdi.dll,F3 0F 5C C7 F3 0F 11 43 **)
+registersymbol(_pSprint)
+label(_pSprint)
+
+pSprint+4: //"gamedll_x64_rwdi.dll"+AA4903:
+_pSprint:
+db 90 90 90 90 90
+{movss [rbx+10],xmm0}
+
+[DISABLE]
+ _pSprint: //"gamedll_x64_rwdi.dll"+AA4903:
+db F3 0F 11 43 10
+{movss [rbx+10],xmm0}
+unregistersymbol(_pSprint)
+</AssemblerScript>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>56</ID>
+      <Description>"Unlimited Weapon Durability"</Description>
+      <LastState Activated="0"/>
+      <Color>0000FF</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>//--------------------//
+[ENABLE]
+{}
+alloc(pDurability,64,"gamedll_x64_rwdi.dll"+5BADD6)
+{}
+label(pDurabilityExit)
+label(_pDurabilityScan)
+{}
+registersymbol(pDurability)
+registersymbol(_pDurabilityScan)
+{}
+aobscanmodule(pDurabilityScan,gamedll_x64_rwdi.dll,48 8D 4F ** F3 0F 11 77 **) //Offset +4
+
+//--------------------//
+pDurability:
+cmp r15,0 //Everything else populates r15, on hit r15 is empty.
+jne pDurability+32
+movss [rdi+04],xmm0 //xmm0 contains max durability
+jmp pDurabilityExit
+
+pDurability+32:
+movss [rdi+04],xmm6 //xmm6 contains new durability
+jmp pDurabilityExit
+
+//--------------------//
+pDurabilityScan+4: //"gamedll_x64_rwdi.dll"+5BADD6:
+_pDurabilityScan:
+jmp pDurability
+pDurabilityExit:
+
+//--------------------//
+[DISABLE]
+dealloc(pDurability)
+_pDurabilityScan: //"gamedll_x64_rwdi.dll"+5BADD6:
+db F3 0F 11 77 04
+{movss [rdi+04],xmm6}
+unregistersymbol(pDurability)
+unregistersymbol(_pDurabilityScan)
+</AssemblerScript>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols/>
+</CheatTable>

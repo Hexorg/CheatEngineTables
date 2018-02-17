@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="18">
+  <CheatEntries>
+  </CheatEntries>
+  <UserdefinedSymbols/>
+  <Structures StructVersion="2">
+  </Structures>
+  <LuaScript>function DEC_HEX(IN)
+    local B,K,OUT,I,D=16,"0123456789ABCDEF","",0
+    while IN&gt;0 do
+        I=I+1
+        IN,D=math.floor(IN/B),math.mod(IN,B)+1
+        OUT=string.sub(K,D,D)..OUT
+    end
+    return OUT
+end
+
+pointsaddress = getAddress("LC2.exe+60C582")
+-- LC2.exe+60C582 - 8B 9E 7C0A0000        - mov ebx,[esi+00000A7C]
+-- LC2.exe+60C588 - 2B 9E 800A0000        - sub ebx,[esi+00000A80]
+
+timeaddress = getAddress("LC2.exe+414401")
+-- LC2.exe+414401 - 0F31                  - rdtsc
+-- LC2.exe+414403 - 2B 46 28              - sub eax,[esi+28]
+-- LC2.exe+414406 - C7 46 28 00000000     - mov [esi+28],00000000
+-- LC2.exe+41440D - 1B 56 2C              - sbb edx,[esi+2C]
+-- LC2.exe+414410 - 01 46 20              - add [esi+20],eax
+-- LC2.exe+414413 - C7 46 2C 00000000     - mov [esi+2C],00000000
+-- LC2.exe+41441A - C6 46 30 00           - mov byte ptr [esi+30],00
+-- LC2.exe+41441E - 11 56 24              - adc [esi+24],edx
+
+table=getAddressList()
+
+while addresslist_getCount(table) > 0 do
+	memoryrecord_delete(addresslist_getMemoryRecord(table, 0)) 
+end
+
+debug_removeBreakpoint(pointsaddress)
+debug_removeBreakpoint(timeaddress)
+
+function debugger_onBreakpoint()
+  if (EIP == pointsaddress) then
+
+    table=getAddressList()
+
+    total_points=addresslist_createMemoryRecord(table)
+    memoryrecord_setAddress(total_points, DEC_HEX(ESI + 0x0A7C))
+    memoryrecord_setDescription(total_points, "Total points")
+
+    dungeon_points=addresslist_createMemoryRecord(table)
+    memoryrecord_setAddress(dungeon_points, DEC_HEX(ESI + 0x0A80))
+    memoryrecord_setDescription(dungeon_points, "Points before dungeon")
+
+    memoryrecord_freeze(total_points)
+    memoryrecord_setValue(total_points, memoryrecord_getValue(dungeon_points) + 100000)
+
+    debug_removeBreakpoint(pointsaddress)
+    debug_continueFromBreakpoint(0)
+
+    return 1
+  else
+    if (EIP == timeaddress) then
+
+        table=getAddressList()
+
+        dungeon_time=addresslist_createMemoryRecord(table)
+        memoryrecord_setAddress(dungeon_time, DEC_HEX(ESI + 0x20))
+        memoryrecord_setDescription(dungeon_time, "Total dungeon time")
+        memoryrecord_setType(dungeon_time, vtQword)
+
+        memoryrecord_freeze(dungeon_time)
+
+        pause_sys_time=addresslist_createMemoryRecord(table)
+        memoryrecord_setAddress(pause_sys_time, DEC_HEX(ESI + 0x28))
+        memoryrecord_setDescription(pause_sys_time, "System time on game pause")
+        memoryrecord_setType(pause_sys_time, vtQword)
+
+        debug_removeBreakpoint(timeaddress)
+        debug_continueFromBreakpoint(0)
+
+      return 1
+    else
+      return 0
+    end
+  end
+end
+
+debug_setBreakpoint(pointsaddress)
+debug_setBreakpoint(timeaddress)
+</LuaScript>
+</CheatTable>

@@ -1,0 +1,166 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="18">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>320</ID>
+      <Description>"Infinite Racing Timer"</Description>
+      <LastState Activated="0"/>
+      <Color>80000008</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>[ENABLE]
+
+// Timer Missions (Races) v1.7.0
+// FC64.dll+193340D - F3 0F11 83 50020000   - movss [rbx+00000250],xmm0
+// Scan for elapsed number of seconds on float, Value between X and Y
+
+aobscanmodule( _tmp0, FC64.dll, F3 0F 10 83 ?? ?? ?? ?? F3 0F 58 83 ?? ?? ?? ?? F3 0F 11 83 ?? ?? ?? ?? 74 )
+
+label( RacingTimerHookSpot )
+registersymbol( RacingTimerHookSpot )
+label( RacingTimerHookSpot_back )
+alloc( RacingTimerHook, 256, FC64.dll )
+registersymbol( RacingTimerHook )
+
+RacingTimerHook:
+xorps xmm0,xmm0
+movss [rbx+250],xmm0
+jmp RacingTimerHookSpot_back
+
+_tmp0+10:
+RacingTimerHookSpot:
+jmp RacingTimerHook
+nop
+nop
+nop
+RacingTimerHookSpot_back:
+
+[DISABLE]
+
+RacingTimerHookSpot:
+movss [rbx+250],xmm0
+
+unregistersymbol( RacingTimerHook )
+dealloc( RacingTimerHook )
+unregistersymbol( RacingTimerHookSpot )
+</AssemblerScript>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>322</ID>
+      <Description>"Durgesh/Bomb Defusal Timer"</Description>
+      <Options moHideChildren="1"/>
+      <LastState Activated="0"/>
+      <Color>80000008</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>[ENABLE]
+
+// FC64.dll+120C0A0 - 48 83 EC 38           - sub rsp,38
+// FC64.dll+120C0A4 - 0FB6 42 30            - movzx eax,byte ptr [rdx+30]
+// FC64.dll+120C0A8 - 44 8B 4A 2C           - mov r9d,[rdx+2C]
+// FC64.dll+120C0AC - 44 0FB6 42 28         - movzx r8d,byte ptr [rdx+28]
+// FC64.dll+120C0B1 - F3 0F10 4A 20         - movss xmm1,[rdx+20]
+// FC64.dll+120C0B6 - 48 81 C1 A81C0000     - add rcx,00001CA8
+// FC64.dll+120C0BD - 88 44 24 20           - mov [rsp+20],al
+// FC64.dll+120C0C1 - E8 8A160800           - call FC64.dll+128D750
+// FC64.dll+120C0C6 - B0 01                 - mov al,01             &lt;- hides timer completely
+// FC64.dll+120C0C8 - 48 83 C4 38           - add rsp,38
+// FC64.dll+120C0CC - C3                    - ret
+
+// FC64.dll+7F7120 - 40 53                 - push rbx               &lt;- grab timer info here from rbx
+// FC64.dll+7F7122 - 48 83 EC 30           - sub rsp,30
+// FC64.dll+7F7126 - 80 39 00              - cmp byte ptr [rcx],00
+// FC64.dll+7F7129 - 0F29 74 24 20         - movaps [rsp+20],xmm6
+
+//aobscanmodule( _tmp0, FC64.dll, 48 83 EC 38 0F B6 42 ?? 44 8B 4A ?? 44 0F B6 42 )
+aobscanmodule( _tmp1, FC64.dll, 40 53 48 83 EC 30 80 39 00 0F 29 74 24 )
+
+/*label( HideTimerPatch )
+registersymbol( HideTimerPatch )*/
+
+label( GrabTimerInfo )
+registersymbol( GrabTimerInfo )
+alloc( TimerHook, 512, FC64.dll )
+registersymbol( TimerHook )
+label( back )
+label( pTimer )
+registersymbol( pTimer )
+label( exit )
+
+/*_tmp0:
+HideTimerPatch:
+mov al,01
+ret
+nop*/
+
+TimerHook+100:
+pTimer:
+dq 0
+
+TimerHook:
+cmp [rbx+4],(float)16.0
+jl exit
+mov [pTimer],rbx
+exit:
+push rbx
+sub rsp,30
+jmp back
+
+_tmp1:
+GrabTimerInfo:
+jmp TimerHook
+nop
+back:
+
+[DISABLE]
+
+/*HideTimerPatch:
+sub rsp,38
+movzx eax,byte ptr [rdx+30]*/
+
+GrabTimerInfo:
+db 40 53 48 83 EC 30
+
+unregistersymbol( pTimer )
+unregistersymbol( TimerHook )
+dealloc( TimerHook )
+unregistersymbol( GrabTimerInfo )
+//unregistersymbol( HideTimerPatch )
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>327</ID>
+          <Description>"Flag (set it to 1 to disable counter )"</Description>
+          <LastState Value="??" Activated="0" RealAddress="00000000"/>
+          <Color>80000008</Color>
+          <VariableType>Byte</VariableType>
+          <Address>pTimer</Address>
+          <Offsets>
+            <Offset>1</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>325</ID>
+          <Description>"Max (in seconds)"</Description>
+          <LastState Value="??" Activated="0" RealAddress="00000000"/>
+          <Color>80000008</Color>
+          <VariableType>Float</VariableType>
+          <Address>pTimer</Address>
+          <Offsets>
+            <Offset>4</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>326</ID>
+          <Description>"Counter (in seconds)"</Description>
+          <LastState Value="??" Activated="0" RealAddress="00000000"/>
+          <Color>80000008</Color>
+          <VariableType>Float</VariableType>
+          <Address>pTimer</Address>
+          <Offsets>
+            <Offset>8</Offset>
+          </Offsets>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols/>
+</CheatTable>

@@ -1,0 +1,434 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="14">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>100</ID>
+      <Description>"[X] &lt;== MB wb V1.153 Script 2.0 AOB"</Description>
+      <Options moHideChildren="1"/>
+      <Color>FF0000</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>{
+===========================================
+ Game Title    : Mount&amp;Blade Warband
+ Game Version  : 1.153
+ Process Name  : mb_warband.exe
+ Script Version: 2.0
+ CE Version    : 6.2
+ Release date  : 18-Jun-2012 (adapted from version 1.153)
+ Author        : Recifense
+ Features:
+ - God Mode
+ - Thaler (Money)
+ - Unlimited Ammo
+ - Inventory Items (full)
+ - Some pointers
+===========================================}
+
+[ENABLE]
+//=========================================
+alloc(MyCode,2048,mb_warband.exe)
+//=========================================
+
+AOBScan(aobMonHero,D9 83 04 60 00 00 d9 86 20 02 00 00 da e9)  //153
+AOBScan(aobMonHero1,8b 80 ec 40 01 00 8b 94 10 8c 02 00 00)    //153
+AOBScan(aobGodMode,83 ec 08 d9 96 04 60 00 00 d9 5c 24 10)     //+03 153
+AOBScan(aobMonAmmo,81 e1 ff 00 00 00 2b c1 ?? ?? 8b 16)        //153
+AOBScan(aobMonItem,8b 4f 04 81 e1 ff 00 00 00 2b c1 50)        //+03 153
+AOBScan(aobMonHorse,D9 87 04 60 00 00 d9 86 24 02 00 00 da e9) //153
+
+//=========================================
+// Declaration section
+label(pMonHero)
+label(pMonHero1)
+label(pGodMode)
+label(pMonAmmo)
+label(pMonItem)
+label(pMonHorse)
+label(_MonHero)
+label(_BackMH)
+label(_ExitMH)
+label(_MonHero1)
+label(_BackMH1)
+label(_ExitMH1)
+label(_GodMode)
+label(_GodM0)
+label(_BackGM)
+label(_ExitGM)
+label(_MonAmmo)
+label(_MonA0)
+label(_BackMA)
+label(_ExitMA)
+label(_MonItem)
+label(_BackMI)
+label(_ExitMI)
+label(_MonHorse)
+label(_BackMHe)
+label(_ExitMHe)
+label(pSel)
+label(pUnitHP)
+label(pUnitInfo)
+label(iEnableGM)
+label(iEnableMM)
+label(iEnableMA)
+label(iEnableMI)
+label(iPlayerID)
+
+//=========================================
+// Registering Symbols
+registersymbol(MyCode)
+registersymbol(pSel)
+registersymbol(pUnitHP)
+registersymbol(pUnitInfo)
+registersymbol(iEnableGM)
+registersymbol(iEnableMM)
+registersymbol(iEnableMA)
+registersymbol(iEnableMI)
+registersymbol(iPlayerID)
+registersymbol(pMonHero)
+registersymbol(pMonHero1)
+registersymbol(pGodMode)
+registersymbol(pMonAmmo)
+registersymbol(pMonItem)
+registersymbol(pMonHorse)
+
+//=========================================
+MyCode:
+//========================================= 153
+// While HP BAR is visible
+_MonHero:
+ mov [pUnitHP],ebx
+
+ cmp dword ptr [iEnableGM],0
+ je _ExitMH                        // Jump if feature is disabled
+
+ mov eax,[ebx+00006000]            // Get max HP
+ mov [ebx+00006004],eax            // Upd Cur HP
+ mov [ebx+00005ffc],eax            // Upd HP
+
+_ExitMH:
+ fld dword ptr [ebx+00006004]      // Original code (rds cHP)
+ jmp _BackMH                       // Back to main code
+
+//========================================= 153
+// On the status screen
+_MonHero1:
+ mov eax,[eax+000140eC]            // Original code
+ mov [pUnitInfo],eax
+
+ cmp dword ptr [iEnableMM],0
+ je _ExitMH1                       // Jump if feature is disabled
+
+ cmp dword ptr [eax+000005d0],#150000 // Thaler
+ jge _ExitMH1
+
+ mov dword ptr [eax+000005d0],#150000
+
+_ExitMH1:
+ jmp _BackMH1                      // Back to main code
+
+//========================================= 153
+_GodMode:
+ cmp dword ptr [iEnableGM],0
+ je _ExitGM                        // Jump if feature is disabled
+
+ cmp esi,[pUnitHP]
+ je _GodM0
+
+ cmp dword ptr [esi+000007ac],0 //**07a8
+ jne _ExitGM
+
+_GodM0:
+ fstp st(0)
+
+ fld dword ptr [esi+00006000]
+
+_ExitGM:
+ fst dword ptr [esi+00006004]      // Original code (upd HP)
+ jmp _BackGM                       // Back to main code
+
+//========================================= 153
+_MonAmmo:
+ cmp dword ptr [iEnableMA],0
+ je _ExitMA                        // Jump if feature is disabled
+
+ mov ecx,[esp+10]
+ cmp ecx,[pUnitHP]
+ je _MonA0
+
+ cmp dword ptr [ecx+000007ac],0 //**07a8
+ jne _ExitMA
+
+_MonA0:
+ xor ecx,ecx
+ mov [esi+04],cl                   // Make spent_ammo = 0
+ mov [esi-04],cl                   // Reload ammo
+
+_ExitMA:
+ mov ecx,[esi+04]                  // Restore ECX
+ and ecx,000000FF                  // Original code
+ jmp _BackMA                       // Back to main code
+
+//========================================= 153
+// On inventory
+_MonItem:
+ cmp dword ptr [iEnableMI],0
+ je _ExitMI                        // Jump if feature is disabled
+
+ xor ecx,ecx
+ mov [edi+04],cl                   // Make consumed_qtty = 0
+
+_ExitMI:
+ mov ecx,[edi+04]                  // Restore ECX
+ and ecx,000000FF                  // Original code
+ jmp _BackMI                       // Back to main code
+
+//========================================= 153
+// While HP BAR is visible
+_MonHorse:
+ mov [pSel],edi
+
+ cmp dword ptr [iEnableGM],0
+ je _ExitMHe                       // Jump if feature is disabled
+
+ mov eax,[edi+00006000]            // Get max HP
+ mov [edi+00006004],eax            // Upd Cur HP
+ mov [edi+00005ffc],eax            // Upd HP
+
+_ExitMHe:
+ fld dword ptr [edi+00006004]      // Original code (rds cHP)
+ jmp _BackMHe                      // Back to main code
+
+//=========================================
+ db '==============================&gt;'
+ db 'CE6.1 Script by Recifense 061812'
+//=========================================
+// Variables
+iEnableGM:
+ dd 1
+iEnableMM:
+ dd 1
+iEnableMA:
+ dd 1
+iEnableMI:
+ dd 1
+pSel:
+ dd 0
+pUnitHP:
+ dd 0
+pUnitInfo:
+ dd 0
+iPlayerID:
+ dd 0
+
+//=========================================
+// Hacking Points
+aobMonHero:
+pMonHero:
+ jmp _MonHero
+ nop
+_BackMH:
+
+aobMonHero1:
+pMonHero1:
+ jmp _MonHero1
+ nop
+_BackMH1:
+
+aobGodMode+03:
+pGodMode:
+ jmp _GodMode
+ nop
+_BackGM:
+
+aobMonAmmo:
+pMonAmmo:
+ jmp _MonAmmo
+ nop
+_BackMA:
+
+aobMonItem+03:
+pMonItem:
+ jmp _MonItem
+ nop
+_BackMI:
+
+aobMonHorse:
+pMonHorse:
+ jmp _MonHorse
+ nop
+_BackMHe:
+
+//=========================================
+// Script for Restoring Original Codes
+[DISABLE]
+pMonHero: //ok
+//fld dword ptr [ebx+00006004]
+ db d9 83 04 60 00 00
+
+pMonHero1: //NHP
+//mov eax,[eax+000140EC]
+ db 8b 80 ec 40 01 00
+
+pGodMode: //ok
+//fst dword ptr [esi+00006004]
+ db d9 96 04 60 00 00
+
+pMonAmmo: //ok
+//and ecx,000000FF
+ db 81 e1 ff 00 00 00
+
+pMonItem: //ok
+//and ecx,000000FF
+ db 81 e1 ff 00 00 00
+
+pMonHorse: //ok
+//fld dword ptr [edi+00006004]
+ db d9 87 04 60 00 00
+
+//=========================================
+// Unregistering Symbols
+unregistersymbol(MyCode)
+unregistersymbol(pSel)
+unregistersymbol(pUnitHP)
+unregistersymbol(pUnitInfo)
+unregistersymbol(iEnableGM)
+unregistersymbol(iEnableMM)
+unregistersymbol(iEnableMA)
+unregistersymbol(iEnableMI)
+unregistersymbol(iPlayerID)
+unregistersymbol(pMonHero)
+unregistersymbol(pMonHero1)
+unregistersymbol(pGodMode)
+unregistersymbol(pMonAmmo)
+unregistersymbol(pMonItem)
+unregistersymbol(pMonHorse)
+
+//=========================================
+dealloc(MyCode)
+//============= Scripts End ===============
+
+// ****************************************
+// NOTES
+// ****************************************
+{
+}
+
+
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>101</ID>
+          <Description>"Enable/Disable God Mode"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableGM</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>102</ID>
+          <Description>"Enable/Disable Unlimited Ammo"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMA</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>103</ID>
+          <Description>"Enable/Disable Refill Selected Inv Item"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMI</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>104</ID>
+          <Description>"Enable/Disable Minimum Money(thaler)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMM</Address>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>105</ID>
+              <Description>"Hero's Attribute Points"</Description>
+              <Color>0000FF</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pUnitInfo</Address>
+              <Offsets>
+                <Offset>2C0</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>106</ID>
+              <Description>"Hero's Skill Points"</Description>
+              <Color>0000FF</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pUnitInfo</Address>
+              <Offsets>
+                <Offset>2BC</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>107</ID>
+              <Description>"Hero's Weapons Points"</Description>
+              <Color>0000FF</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pUnitInfo</Address>
+              <Offsets>
+                <Offset>2C4</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>108</ID>
+              <Description>"Hero's XP"</Description>
+              <Color>0000FF</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pUnitInfo</Address>
+              <Offsets>
+                <Offset>2B4</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>109</ID>
+              <Description>"Hero's Money (Thaler)"</Description>
+              <Color>0000FF</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pUnitInfo</Address>
+              <Offsets>
+                <Offset>5D0</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>110</ID>
+              <Description>"Inventory 1st Item ID"</Description>
+              <Color>0000FF</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pUnitInfo</Address>
+              <Offsets>
+                <Offset>2D0</Offset>
+              </Offsets>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols/>
+  <Comments>===========================================
+ Game Title    : Mount&amp;Blade Warband
+ Game Version  : 1.153
+ Process Name  : mb_warband.exe
+ Script Version: 2.0
+ CE Version    : 6.2
+ Release date  : 18-Jun-2012 (adapted from version 1.153)
+ Author        : Recifense
+ Features:
+ - God Mode
+ - Thaler (Money)
+ - Unlimited Ammo
+ - Inventory Items (full)
+ - Some pointers
+===========================================
+1) God mode for Hero and party (including horses)
+2) Minimum Thaler (Money) (150000)
+3) Unlimited Ammo and instant reload (Hero and Party) 
+4) Refill Selected Inventory Item (Simply pass the cursor over it)
+5) Inventory 1st Item ID (you can create/change the first item in your inventory)
+</Comments>
+</CheatTable>

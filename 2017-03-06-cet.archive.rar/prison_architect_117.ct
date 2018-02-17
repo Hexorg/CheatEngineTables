@@ -1,0 +1,448 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="16">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>0</ID>
+      <Description>"SCRIPT: Money"</Description>
+      <Color>FF0000</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>{ Game   : Prison Architect.exe
+  Version: Steam
+  Date   : 2013-11-29
+  Author : jgoemat
+
+  Here is where money is loaded every frame.
+
+  globals+0000: pMoneyBase (Money at +CC0, daily spending at +CC4)
+  globals+0004: flagMoney
+  globals+0008: flagSpendingLimit
+}
+
+[ENABLE]
+
+globalalloc(globals,$100000)
+
+aobscanmodule(INJECT_MONEY,prison architect.exe,F3 0F 2C 82 C0 0C 00 00) // should be unique
+alloc(newmem,$1000)
+
+label(code)
+label(skipMoney)
+label(skipSpendingLimit)
+label(return)
+
+newmem:
+
+code:
+  mov [globals],edx
+  cmp dword ptr [globals+4],1
+  jne skipMoney
+  mov eax,(float)999999
+  mov [edx+00000CC0],(float)999999
+skipMoney:
+  cmp dword ptr [globals+8],1
+  jne skipSpendingLimit
+  mov [edx+00000CC4],999999
+skipSpendingLimit:
+  cvttss2si eax,[edx+00000CC0]
+  jmp return
+
+INJECT_MONEY:
+  jmp code
+  nop
+  nop
+  nop
+return:
+registersymbol(INJECT_MONEY)
+
+[DISABLE]
+
+INJECT_MONEY:
+  db F3 0F 2C 82 C0 0C 00 00
+
+unregistersymbol(INJECT_MONEY)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: "prison architect.exe"+28FF0C
+
+"prison architect.exe"+28FEDD: 50                   - push eax
+"prison architect.exe"+28FEDE: 8B 4D 80             - mov ecx,[ebp-80]
+"prison architect.exe"+28FEE1: E8 4AC7FFFF          - call prison architect.exe+28C630
+"prison architect.exe"+28FEE6: D9 5D DC             - fstp dword ptr [ebp-24]
+"prison architect.exe"+28FEE9: F3 0F2A 45 14        - cvtsi2ss xmm0,[ebp+14]
+"prison architect.exe"+28FEEE: F3 0F5C 45 DC        - subss xmm0,[ebp-24]
+"prison architect.exe"+28FEF3: F3 0F5E 05 187D8300  - divss xmm0,[prison architect.exe+437D18]
+"prison architect.exe"+28FEFB: F3 0F11 45 FC        - movss [ebp-04],xmm0
+"prison architect.exe"+28FF00: 8B 0D 20F28600       - mov ecx,[prison architect.exe+46F220]
+"prison architect.exe"+28FF06: 8B 91 FC000000       - mov edx,[ecx+000000FC]
+// ---------- INJECTING HERE ----------
+"prison architect.exe"+28FF0C: F3 0F2C 82 C00C0000  - cvttss2si eax,[edx+00000CC0]
+// ---------- DONE INJECTING  ----------
+"prison architect.exe"+28FF14: 50                   - push eax
+"prison architect.exe"+28FF15: 8D 4D C0             - lea ecx,[ebp-40]
+"prison architect.exe"+28FF18: 51                   - push ecx
+"prison architect.exe"+28FF19: E8 D250F9FF          - call prison architect.exe+224FF0
+"prison architect.exe"+28FF1E: 83 C4 08             - add esp,08
+"prison architect.exe"+28FF21: 50                   - push eax
+"prison architect.exe"+28FF22: 8D 55 E0             - lea edx,[ebp-20]
+"prison architect.exe"+28FF25: 52                   - push edx
+"prison architect.exe"+28FF26: E8 650E0100          - call prison architect.exe+2A0D90
+"prison architect.exe"+28FF2B: 83 C4 08             - add esp,08
+}
+</AssemblerScript>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>4</ID>
+      <Description>"SCRIPT: Build"</Description>
+      <Color>FF0000</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>{ Game   : Prison Architect.exe
+  Version: Steam
+  Date   : 2013-11-29
+  Author : jgoemat
+
+  This is where current progress (in seconds) is loaded before being compared
+  to the total time needed to complete a job (in seconds)
+}
+
+[ENABLE]
+
+globalalloc(globals,$100000)
+// globals+100: pLastBuildItem
+// globals+104: flagInstantBuild
+
+aobscanmodule(INJECT_BUILD,prison architect.exe,F3 0F 10 40 40 0F 2F 41) // should be unique
+alloc(newmem,$1000)
+
+label(code)
+label(skip)
+label(return)
+
+newmem:
+
+code:
+  mov [globals+100],eax
+  cmp dword ptr [globals+104],1
+  jne skip
+  movss xmm0,[eax+44] // load total time to build
+  movss [eax+40],xmm0 // store as current progress
+skip:
+  movss xmm0,[eax+40]
+  jmp return
+
+INJECT_BUILD:
+  jmp code
+return:
+registersymbol(INJECT_BUILD)
+
+[DISABLE]
+
+INJECT_BUILD:
+  db F3 0F 10 40 40
+
+unregistersymbol(INJECT_BUILD)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: "prison architect.exe"+1D3440
+
+"prison architect.exe"+1D3409: 68 1C788100             - push prison architect.exe+41781C
+"prison architect.exe"+1D340E: 8B 0D F8F18600          - mov ecx,[prison architect.exe+46F1F8]
+"prison architect.exe"+1D3414: E8 A7210700             - call prison architect.exe+2455C0
+"prison architect.exe"+1D3419: 8B 8D FCFEFFFF          - mov ecx,[ebp-00000104]
+"prison architect.exe"+1D341F: F3 0F10 41 40           - movss xmm0,[ecx+40]
+"prison architect.exe"+1D3424: F3 0F58 45 0C           - addss xmm0,[ebp+0C]
+"prison architect.exe"+1D3429: 8B 95 FCFEFFFF          - mov edx,[ebp-00000104]
+"prison architect.exe"+1D342F: F3 0F11 42 40           - movss [edx+40],xmm0
+"prison architect.exe"+1D3434: 8B 85 FCFEFFFF          - mov eax,[ebp-00000104]
+"prison architect.exe"+1D343A: 8B 8D FCFEFFFF          - mov ecx,[ebp-00000104]
+// ---------- INJECTING HERE ----------
+"prison architect.exe"+1D3440: F3 0F10 40 40           - movss xmm0,[eax+40]             // load current progress
+// ---------- DONE INJECTING  ----------
+"prison architect.exe"+1D3445: 0F2F 41 44              - comiss xmm0,[ecx+44]            // compare with time needed to complete job
+"prison architect.exe"+1D3449: 72 0C                   - jb prison architect.exe+1D3457
+"prison architect.exe"+1D344B: C7 85 48FEFFFF 01000000 - mov [ebp-000001B8],00000001
+"prison architect.exe"+1D3455: EB 0A                   - jmp prison architect.exe+1D3461
+"prison architect.exe"+1D3457: C7 85 48FEFFFF 00000000 - mov [ebp-000001B8],00000000
+"prison architect.exe"+1D3461: 8A 85 48FEFFFF          - mov al,[ebp-000001B8]
+"prison architect.exe"+1D3467: 8B E5                   - mov esp,ebp
+"prison architect.exe"+1D3469: 5D                      - pop ebp
+"prison architect.exe"+1D346A: C2 0800                 - ret 0008
+"prison architect.exe"+1D346D: 8D 49 00                - lea ecx,[ecx+00]
+}
+</AssemblerScript>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>6</ID>
+      <Description>"SCRIPT: Research"</Description>
+      <Color>FF0000</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>{ Game   : Prison Architect.exe
+  Version: Steam Alpha 15
+  Date   : 2013-11-29
+  Author : jgoemat
+
+  This increases the fraction of research done (0.0 to 1.0).  The cheat will
+  set the value to 1.0.
+}
+
+[ENABLE]
+
+globalalloc(globals,$100000)
+// globals+200: pResearchBase
+// globals+204: flagInstantResearch
+
+aobscanmodule(INJECT_RESEARCH,prison architect.exe,F3 0F 11 41 5C 8B 55 FC) // should be unique
+alloc(newmem,$1000)
+
+label(code)
+label(skip)
+label(return)
+
+newmem:
+
+code:
+  mov [globals+200],ecx
+  cmp dword ptr [globals+204],1
+  jne skip
+  mov [ecx+5C],(float)1
+  movss xmm0,[ecx+5C]
+skip:
+  movss [ecx+5C],xmm0
+  jmp return
+
+INJECT_RESEARCH:
+  jmp code
+return:
+registersymbol(INJECT_RESEARCH)
+
+[DISABLE]
+
+INJECT_RESEARCH:
+  db F3 0F 11 41 5C
+
+unregistersymbol(INJECT_RESEARCH)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: "prison architect.exe"+1F2657
+
+"prison architect.exe"+1F262B: 0F86 AD000000        - jbe prison architect.exe+1F26DE
+"prison architect.exe"+1F2631: 8B 55 FC             - mov edx,[ebp-04]
+"prison architect.exe"+1F2634: F3 0F2A 42 4C        - cvtsi2ss xmm0,[edx+4C]
+"prison architect.exe"+1F2639: F3 0F10 4D 0C        - movss xmm1,[ebp+0C]
+"prison architect.exe"+1F263E: F3 0F5E C8           - divss xmm1,xmm0
+"prison architect.exe"+1F2642: F3 0F11 4D F8        - movss [ebp-08],xmm1
+"prison architect.exe"+1F2647: 8B 45 FC             - mov eax,[ebp-04]
+"prison architect.exe"+1F264A: F3 0F10 40 5C        - movss xmm0,[eax+5C]
+"prison architect.exe"+1F264F: F3 0F58 45 F8        - addss xmm0,[ebp-08]
+"prison architect.exe"+1F2654: 8B 4D FC             - mov ecx,[ebp-04]
+// ---------- INJECTING HERE ----------
+"prison architect.exe"+1F2657: F3 0F11 41 5C        - movss [ecx+5C],xmm0
+// ---------- DONE INJECTING  ----------
+"prison architect.exe"+1F265C: 8B 55 FC             - mov edx,[ebp-04]
+"prison architect.exe"+1F265F: 83 C2 5C             - add edx,5C
+"prison architect.exe"+1F2662: 89 55 F4             - mov [ebp-0C],edx
+"prison architect.exe"+1F2665: 8B 45 F4             - mov eax,[ebp-0C]
+"prison architect.exe"+1F2668: F3 0F10 00           - movss xmm0,[eax]
+"prison architect.exe"+1F266C: 0F2F 05 A47C8300     - comiss xmm0,[prison architect.exe+437CA4]
+"prison architect.exe"+1F2673: 76 11                - jna prison architect.exe+1F2686
+"prison architect.exe"+1F2675: 8B 4D F4             - mov ecx,[ebp-0C]
+"prison architect.exe"+1F2678: F3 0F10 05 A47C8300  - movss xmm0,[prison architect.exe+437CA4]
+"prison architect.exe"+1F2680: F3 0F11 01           - movss [ecx],xmm0
+}
+</AssemblerScript>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>1</ID>
+      <Description>"Cheats"</Description>
+      <Options moHideChildren="1"/>
+      <Color>80000008</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>{ Game   : Prison Architect.exe
+  Version: Steam
+  Date   : 2013-11-29
+  Author : jgoemat
+
+  This is to enable cheats and access to them independent of script enabling
+  and disabling by using globally allocated memory
+
+  globals+0000: pMoneyBase (Money at +CC0, daily spending at +CC4)
+  globals+0004: flagMoney
+  globals+0008: flagSpendingLimit
+}
+
+[ENABLE]
+
+globalalloc(globals,$100000)
+
+[DISABLE]
+
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>2</ID>
+          <Description>"F1: Money"</Description>
+          <Color>80000008</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>{ Game   : Prison Architect.exe
+  Version: Steam
+  Date   : 2013-11-29
+  Author : jgoemat
+
+  Sets or clears flag that enables money cheat
+}
+
+[ENABLE]
+
+globalalloc(globals,$100000)
+
+globals+0004:
+  dd 1
+
+[DISABLE]
+
+globals+0004:
+  dd 0
+
+</AssemblerScript>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Toggle Activation</Action>
+              <Keys>
+                <Key>112</Key>
+              </Keys>
+              <ID>0</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>3</ID>
+          <Description>"F2: Spending Limit"</Description>
+          <Color>80000008</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>{ Game   : Prison Architect.exe
+  Version: Steam
+  Date   : 2013-11-29
+  Author : jgoemat
+
+  Sets or clears flag that enables spending limit cheat
+}
+
+[ENABLE]
+
+globalalloc(globals,$100000)
+
+globals+0008:
+  dd 1
+
+[DISABLE]
+
+globals+0008:
+  dd 0
+
+</AssemblerScript>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Toggle Activation</Action>
+              <Keys>
+                <Key>113</Key>
+              </Keys>
+              <ID>0</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>5</ID>
+          <Description>"F3: Instant Build"</Description>
+          <Color>80000008</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>{ Game   : Prison Architect.exe
+  Version: Steam
+  Date   : 2013-11-29
+  Author : jgoemat
+
+  Sets or clears flag that enables instant build cheat
+}
+
+[ENABLE]
+
+globalalloc(globals,$100000)
+
+globals+0104:
+  dd 1
+
+[DISABLE]
+
+globals+0104:
+  dd 0
+
+</AssemblerScript>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Toggle Activation</Action>
+              <Keys>
+                <Key>114</Key>
+              </Keys>
+              <ID>0</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>7</ID>
+          <Description>"F3: Instant Build"</Description>
+          <Color>80000008</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>{ Game   : Prison Architect.exe
+  Version: Steam
+  Date   : 2013-11-29
+  Author : jgoemat
+
+  Sets or clears flag that enables instant research
+}
+
+[ENABLE]
+
+globalalloc(globals,$100000)
+
+globals+0204:
+  dd 1
+
+[DISABLE]
+
+globals+0204:
+  dd 0
+
+</AssemblerScript>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Toggle Activation</Action>
+              <Keys>
+                <Key>115</Key>
+              </Keys>
+              <ID>0</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols>
+    <SymbolEntry>
+      <Name>globals</Name>
+      <Address>18100000</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>INJECT_MONEY</Name>
+      <Address> 0068FF0C</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>INJECT_BUILD</Name>
+      <Address> 005D3440</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>INJECT_RESEARCH</Name>
+      <Address> 005F2657</Address>
+    </SymbolEntry>
+  </UserdefinedSymbols>
+</CheatTable>

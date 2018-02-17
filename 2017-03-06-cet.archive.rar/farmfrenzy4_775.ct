@@ -1,0 +1,490 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="18">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>1</ID>
+      <Description>"Money"</Description>
+      <Options moHideChildren="1"/>
+      <LastState Activated="0"/>
+      <Color>80000008</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>[ENABLE]
+
+// The Change Money AOB-scan targets the following code:
+// 8B 86 9C 06 00 00     mov eax, [esi+69C]
+// 8D 0C 38              lea ecx, [eax+edi]
+// 3B C1                 cmp eax, ecx
+// 0F 46 C1              cmovbe eax, ecx
+// 89 8E 9C 06 00 00     mov [esi+69C], ecx
+aobscanmodule(changeMoney, FarmFrenzy4.exe, 8B 86 9C 06 00 00 8D 0C 38 3B C1 0F 46 C1 89 8E 9C 06 00 00);
+registersymbol(_changeMoney);
+label(_changeMoney);
+
+alloc(newmem, 1024);
+
+label(changeMoneyHook);
+label(originalCode);
+label(return);
+
+label(pState);
+registersymbol(pState);
+label(bEnableMinMoney);
+registersymbol(bEnableMinMoney);
+label(dwMinMoney);
+registersymbol(dwMinMoney);
+
+newmem:
+
+/*
+ * ================================  Variables  ================================
+ */
+
+// Address of the memory that contains current money value, among other things
+pState:
+    dd 0
+// Determines whether the money value should never go less than dwMinMoney.
+// Any non-zero value means TRUE
+bEnableMinMoney:
+    dd 0
+// The default value for minimum money. Can be altered by user via CE interface
+dwMinMoney:
+    dd #1000
+
+
+/*
+ * ============================  Actual hooks code =============================
+ */
+
+//// Hook for the routine that changes money ///////////////////////////////////
+changeMoneyHook:
+    // Memorize the address of memory with game state
+    // (used to display this info in CE interface)
+    mov [pState], esi
+
+    cmp [bEnableMinMoney], 0
+    jz originalCode
+    cmp ecx, [dwMinMoney] // If the player currently has more than dwMinMoney money,
+    jae originalCode // go to original code since we don't want to lock the money,
+                     // only to prevent ir from going lower than dwMinMoney
+    mov ecx, [dwMinMoney] // Set the money to the minimum desired value
+
+originalCode:
+    mov [esi+69C], ecx
+    jmp return
+
+
+/*
+ * =================================  Patches  =================================
+ */
+changeMoney+E:
+_changeMoney:
+    jmp changeMoneyHook
+    nop
+return:
+
+[DISABLE]
+dealloc(newmem);
+
+_changeMoney:
+    mov [esi+69C], ecx
+//  db 89 8E 9C 06 00 00
+
+unregistersymbol(dwMinMoney);
+unregistersymbol(bEnableMinMoney);
+unregistersymbol(pState);
+unregistersymbol(_changeMoney);
+
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>11</ID>
+          <Description>"Enable minimum money"</Description>
+          <DropDownList ReadOnly="1" DescriptionOnly="1" DisplayValueAsItem="1">0:Off
+1:On
+</DropDownList>
+          <LastState Value="??" Activated="0" RealAddress="00000000"/>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>bEnableMinMoney</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>97</Key>
+              </Keys>
+              <Value>0</Value>
+              <Description>Allow money to change freely</Description>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>0</Value>
+              <Description>Allow money to change freely</Description>
+              <ID>1</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>103</Key>
+              </Keys>
+              <Value>1</Value>
+              <Description>Make money never go below certain limit</Description>
+              <ID>2</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>1</Value>
+              <Description>Make money never go below certain limit</Description>
+              <ID>3</ID>
+            </Hotkey>
+          </Hotkeys>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>111</ID>
+              <Description>"Minimum money value"</Description>
+              <LastState Value="??" Activated="0" RealAddress="00000000"/>
+              <Color>808000</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>dwMinMoney</Address>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>12</ID>
+          <Description>"Current money ==&gt;"</Description>
+          <LastState Value="??" Activated="0" RealAddress="00000000"/>
+          <Color>808080</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>pState</Address>
+          <Offsets>
+            <Offset>69C</Offset>
+          </Offsets>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>2</ID>
+      <Description>"Timer"</Description>
+      <Options moHideChildren="1"/>
+      <LastState Activated="0"/>
+      <Color>80000008</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>[ENABLE]
+
+// The Compute Ticks AOB-scan targets the following code:
+// 8B 3D ?? ?? ?? ??        mov edi, ds:GetTickCount
+// 8D 73 08                 lea esi, [ebx+8]
+// C7 45 08 03 00 00 00     mov [ebp+8], 3
+aobscanmodule(computeTicks, FarmFrenzy4.exe, 8B 3D ?? ?? ?? ?? 8D 73 08 C7 45 08 03 00 00 00);
+registersymbol(_computeTicks);
+label(_computeTicks);
+
+// The HUD AOB-scan targets the following code:
+// 8B 40 30       mov eax, [eax+30]
+// 2B C7          sub eax, edi
+// 8D 4C 24 18    lea ecx, [esp+18]
+// E8 ........    call ........
+aobscanmodule(hud, FarmFrenzy4.exe, 8B 40 30 2B C7 8D 4C 24 18 E8);
+registersymbol(_hud);
+label(_hud);
+
+alloc(newmem, 1024);
+
+label(timerHook);
+label(freezeTimer);
+label(doSlowdowns);
+label(originalComputeTicksCode);
+label(hudHook);
+label(originalHudCode);
+label(returnComputeTicks);
+label(returnHud);
+
+label(pTimers);
+registersymbol(pTimers);
+label(bFreezeTimer);
+registersymbol(bFreezeTimer);
+label(bResetTimer);
+registersymbol(bResetTimer);
+label(fSlowdownTimerCoef);
+registersymbol(fSlowdownTimerCoef);
+label(fSlowdownAnimTimerCoef);
+registersymbol(fSlowdownAnimTimerCoef);
+
+
+newmem:
+
+/*
+ * ================================  Variables  ================================
+ */
+
+// Address of the structure containing 3 timers
+pTimers:
+    dd 0
+// Determines whether the Elapsed Time timer will be paused. Any non-zero value means TRUE
+bFreezeTimer:
+    dd 0
+// Whether the Elapsed Time should be reset back to 00:00 mid-level
+bResetTimer:
+    dd 0
+// Coeficient that is used to multiply the timer increment each iteration
+fSlowdownTimerCoef:
+    dd 3F800000 // it's a float value, it means 1.0
+// Same purpose as for fSlowdownTimerCoef, only for a different timer
+fSlowdownAnimTimerCoef:
+    dd 3F800000 // same here as above
+
+
+/*
+ * ============================  Actual hooks code =============================
+ */
+
+//// Hook for the routine that updates timers //////////////////////////////////
+timerHook:
+    mov [pTimers], ebx // Memorize the address of the timers structure
+
+    cmp [bFreezeTimer], 0
+    jnz freezeTimer
+    cmp [fSlowdownTimerCoef], 0
+    jnz doSlowdowns
+
+freezeTimer:
+    // Clear the flag so the timer will think the game is 'paused'
+    mov byte ptr [ebx+40], 0
+
+doSlowdowns:
+    // Handle speed of the Elapsed Time timer
+    mov esi, [fSlowdownTimerCoef]
+    mov [ebx+3C], esi
+
+    // Handle speed of the animations timer
+    mov esi, [fSlowdownAnimTimerCoef]
+    mov [ebx+14], esi
+
+originalComputeTicksCode:
+    lea esi, [ebx+8]
+    mov [ebp+8], 3
+    jmp returnComputeTicks
+
+//// Hook for the routine that updates HUD /////////////////////////////////////
+hudHook:
+    cmp [bResetTimer], 0
+    jz originalHudCode
+    mov [eax+30], edi // Copy level start time back into the timer, effectively resetting it
+    and [bResetTimer], 0 // Set the Reset Timer variable back to 0
+
+originalHudCode:
+    mov eax, [eax+30]
+    sub eax, edi
+    jmp returnHud
+
+
+/*
+ * =================================  Patches  =================================
+ */
+computeTicks+6:
+_computeTicks:
+    jmp timerHook
+    nop
+    nop
+    nop
+    nop
+    nop
+returnComputeTicks:
+
+hud:
+_hud:
+    jmp hudHook
+returnHud:
+
+[DISABLE]
+dealloc(newmem);
+
+_hud:
+    mov eax, [eax+30]
+    sub eax, edi
+//  db 8B 40 30 2B C7
+
+_computeTicks:
+    lea esi, [ebx+8]
+    mov [ebp+8], 3
+//  db 8D 73 08 C7 45 08 03 00 00 00
+
+unregistersymbol(fSlowdownAnimTimerCoef);
+unregistersymbol(fSlowdownTimerCoef);
+unregistersymbol(bResetTimer);
+unregistersymbol(bFreezeTimer);
+unregistersymbol(pTimers);
+unregistersymbol(_hud);
+unregistersymbol(_computeTicks);
+
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>21</ID>
+          <Description>"Freeze Elapsed Time"</Description>
+          <DropDownList ReadOnly="1" DescriptionOnly="1" DisplayValueAsItem="1">0:Do not freeze
+1:Freeze timer
+</DropDownList>
+          <LastState Value="??" Activated="0" RealAddress="00000000"/>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>bFreezeTimer</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>96</Key>
+              </Keys>
+              <Value>0</Value>
+              <Description>Unfreezes the timer</Description>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>45</Key>
+              </Keys>
+              <Value>0</Value>
+              <Description>Unfreezes the timer</Description>
+              <ID>1</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>110</Key>
+              </Keys>
+              <Value>1</Value>
+              <Description>Freezes the timer</Description>
+              <ID>2</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>46</Key>
+              </Keys>
+              <Value>1</Value>
+              <Description>Freezes the timer</Description>
+              <ID>3</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>22</ID>
+          <Description>"Adjust speed of Elapsed Time timer by ==&gt;"</Description>
+          <DropDownList DescriptionOnly="1" DisplayValueAsItem="1">1:Normal timer speed
+0.6666666865:1.5x slower
+0.5:2x slower
+0.3333333433:3x slower
+0.25:4x slower
+0.200000003:5x slower
+0.1000000015:10x slower
+0:Freeze the timer
+</DropDownList>
+          <LastState Value="??" Activated="0" RealAddress="00000000"/>
+          <Color>800000</Color>
+          <VariableType>Float</VariableType>
+          <Address>fSlowdownTimerCoef</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>23</ID>
+          <Description>"Adjust speed of product animations by ==&gt;"</Description>
+          <DropDownList DescriptionOnly="1" DisplayValueAsItem="1">1:Normal animations speed
+0.6666666865:1.5x slower
+0.5:2x slower
+0.3333333433:3x slower
+0.25:4x slower
+0.200000003:5x slower
+0.1000000015:10x slower
+</DropDownList>
+          <LastState Value="??" Activated="0" RealAddress="00000000"/>
+          <Color>800000</Color>
+          <VariableType>Float</VariableType>
+          <Address>fSlowdownAnimTimerCoef</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>24</ID>
+          <Description>"Current timer value, in milliseconds ==&gt;"</Description>
+          <LastState Value="??" Activated="0" RealAddress="00000000"/>
+          <Color>808080</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>pTimers</Address>
+          <Offsets>
+            <Offset>30</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>25</ID>
+          <Description>"Reset Elapsed Time"</Description>
+          <LastState Value="??" Activated="0" RealAddress="00000000"/>
+          <Color>909090</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>bResetTimer</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>111</Key>
+              </Keys>
+              <Value>1</Value>
+              <Description>Forces reset of Elapsed Time</Description>
+              <ID>0</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols/>
+  <Comments>==========================================
+ Game Title:      Farm Frenzy 4 (Steam edition, with achievements)
+ Process Name:    FarmFrenzy4.exe
+ Script Version:  1.0
+ CE Version:      6.4
+ Author:          Yuri Sakhno (George1)
+ Release Date:    14-Dec-2014
+ 
+ Features:
+   + Allows to make Money never go less than certain value
+   + Elapsed Time timer freezing
+   + Change the speed at which Elapsed Time timer counts time
+   + Change the speed of some animations (useful for catching produce mid-air)
+ 
+ History:
+   14-Dec-14:  Initial release; Money and Timers supported
+==========================================
+ How to use:
+   Activate the script by clicking on an empty box next to the function
+   in Cheat Engine's list. Then change values of the options you desire
+   to activate.
+
+   Note: If the top-level function (like Money or Timer) does not expand when
+   you click in the empty box, it means that your game is not compatible with
+   this version of the table.
+==========================================
+ Hot Keys:
+   Ctrl+Home  - Make money never go below certain limit
+   Ctrl+End   - Allow money to change freely (normal behavior)
+   Ctrl+Ins   - Unfreeze the Elapsed Time
+   Ctrl+Del   - Freeze the Elapsed Time
+   Ctrl+Grey/ - Reset current Elapsed Time back to 00:00
+
+   Note: money-related hot keys only work if you've activated the Money function.
+   Timer-related hot keys only work if you've activated the Timer function.
+==========================================
+</Comments>
+</CheatTable>

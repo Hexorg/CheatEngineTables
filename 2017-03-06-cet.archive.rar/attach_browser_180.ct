@@ -1,0 +1,280 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="18">
+  <Forms>
+    <UDF1 Class="TCEForm" Encoding="Ascii85">Ws@Z}):Zf)-K2{tB!G}R#xdNX8sdP(tw}!{sq0D.+4-v2br%cA4z^aOehoi?zrf!=f)w?(NNsncB8Mc.etDn2[mrgzKt3Oz!8^#{xv0AzhvV1XDPAl0O}+UO/hD{oPvGXfaleC.C0VJ.9d+Klixn1:k}0{b1/7[(.rarzO.C@v!bnZNVqmi{wWApNh0F-MrP!_OQcf49s8NJ7==t+8F5+^lBKTHf5oeg/QgIRIxNay=IF3=EFjM!33Qc?C*1$27,X;5(^FER8eW=a=i+@!T5lIS*d%$lc:ZInI,ov(gejh}dw5apPdR{+qk$1/*;yDqJ.(LzJ01(pt-wVEJ68/H8c)sUAi+Tlz?YE8^jtS1YBf!i504c8v-d2rlmvn3hy#wJ=6I?I927+aD8oT%8#0:wcDTjhLL%wBGBGtbb-K8liFb)y6pcE:A!w3)IXPOZkhV%A+h]_yO*lRwJ==,=KR6nhd$gqOZV3tj8)){P08_8u7.+/.Ml^BFn9O?-o^Z}(%GgM/Q8VG]DJVT.2HXqK3Dk}VQn:91rwUafd4.w@?,CjMfJQQfHOtSV3y_qj?U4d_pMB84C[5%}[)_iDWt#-0eiZhrfcG,NNeuE$2ApKlRJ68JUUfMG*dT3$==61E</UDF1>
+  </Forms>
+  <CheatEntries/>
+  <UserdefinedSymbols/>
+  <LuaScript>------------------------------------------------ COLOR VARIABLES USE FOR TEXT MESSAGES
+red="0x00ff00"
+green="0x00ff00"
+
+------------------------------------------------ DEFINE BROWSER COMBOBOX PROPERTIES, ETC
+al = combobox_getItems(UDF1.BrowserCombo)
+strings_clear(al)
+strings_add(al, 'Browser list...')
+strings_add(al, 'Google Chrome')
+strings_add(al, 'Firefox')
+strings_add(al, 'Firefox(Unity Game)')
+strings_add(al, 'Maxthon')
+strings_add(al, 'Internet Explorer')
+strings_add(al, 'Opera')
+strings_add(al, 'SeaMonkey Windows 7')
+strings_add(al, 'UC Browser')
+strings_add(al, 'Comodo Dragon')
+setProperty(UDF1.BrowserCombo , "ItemIndex", "0")
+all_enabled = 0
+success = 1
+
+errorOnLookupFailure(false)
+alreadycheckedPIDS={}
+openNextProcTimer = createTimer(nil,false)
+timer_setInterval(openNextProcTimer, 1000)
+timer_onTimer(openNextProcTimer,
+function(sender)
+	local tempPIDtable = getPids()
+	if #tempPIDtable == 0 then return end
+	timer_setEnabled(sender,false)
+	openProcess(tempPIDtable[1])
+end)
+
+------------------------------------------------ CHECK MAJOR PROCESS
+function checkProcessMajor()
+	reinitializeSymbolhandler()
+	if getAddress("pepflashplayer.dll")~=0 or getAddress("AdobeCPGetAPI") ~=0 then
+		return true
+	end
+	return false
+end
+
+function getPids()
+	local SL=createStringlist()
+	getProcesslist(SL)
+	local tempPIDtable={}
+	for i=0,strings_getCount(SL)-1 do
+		local entry = strings_getString(SL,i)
+		local processname = entry:sub(10,255)
+		local PID = tonumber('0x'..entry:sub(1,8))
+		if processname == "chrome.exe" then
+			if alreadycheckedPIDS[PID]~=true then
+				table.insert(tempPIDtable,PID)
+			end
+		end
+	end
+	object_destroy(SL)
+	return tempPIDtable
+end
+
+function checkProcess(sender)
+	timer_setEnabled(sender,false)
+	alreadycheckedPIDS[getOpenedProcessID()]=true
+	if checkProcessMajor() then
+		timer_setEnabled(openNextProcTimer,false)
+		alreadycheckedPIDS={}
+		enableBrowsers()
+	else
+		timer_setEnabled(openNextProcTimer,true)
+	end
+end
+
+checkProcessTimer = createTimer(nil,false)
+timer_setInterval(checkProcessTimer, 100)
+timer_onTimer(checkProcessTimer, checkProcess)
+
+function onOpenProcess()
+   if success == 1 then return end
+   timer_setEnabled(checkProcessTimer,true)
+end
+
+------------------------------------------------ SCAN BROWSER
+function scanBrowser()
+	AttachItems = combobox_getItems(UDF1.BrowserCombo)
+	AttachIndex = combobox_getItemIndex(UDF1.BrowserCombo)
+	local font = getProperty(UDF1.LabelAttach , "Font")
+	setProperty(font, "Color", green)
+	control_setCaption(UDF1.LabelAttach, "Attached to PID: " .. "Scanning Process, Please wait...")
+--	processMessages()
+	if AttachIndex == -1 then return end
+	if AttachIndex == 0 then
+		control_setCaption(UDF1.LabelAttach, "Attached to PID: " .. "no Browser selected.")
+		return
+	end
+	local check = strings_getString(AttachItems,AttachIndex)
+	if check == 'Google Chrome' then
+		success = 0
+		local test = openProcess("chrome.exe")
+		if test == nil then
+			setProperty(font , "Color", red)
+			control_setCaption(UDF1.LabelAttach, "Attached to PID: " .. "Chrome not found.")
+			timer_setEnabled(openNextProcTimer,false)
+			return
+		end
+		strings_add(getAutoAttachList(),"chrome.exe")
+		timer_setEnabled(openNextProcTimer,true)
+		return
+	end
+
+	if check == 'Firefox' or check == 'Internet Explorer' or check == 'SeaMonkey Windows 7' then openProcess("FlashPlayerPlugin") end
+		errorOnLookupFailure(false)
+		reinitializeSymbolhandler()
+		err=getAddress("kernel32.dll")==0
+	if err==true then
+		setProperty(font , "Color", red)
+		control_setCaption(UDF1.LabelAttach, "Attached to PID: " .. "Flash player plugin not found")
+	else
+		local PID=getOpenedProcessID()
+		setProperty(font, "Color", green)
+		control_setCaption(UDF1.LabelAttach, "Attached to PID: " .. PID .. " - flash player plugin")
+	end
+
+	if check == 'Firefox(Unity Game)' or check == 'Internet Explorer Windows XP' or check == 'SeaMonkey Windows XP' then openProcess("plugin-container.exe") end
+		errorOnLookupFailure(false)
+		reinitializeSymbolhandler()
+		err=getAddress("kernel32.dll")==0
+	if err==true then
+		setProperty(font , "Color", red)
+		control_setCaption(UDF1.LabelAttach, "Attached to PID: " .. "Flash player plugin not found")
+	else
+		local PID=getOpenedProcessID()
+		setProperty(font, "Color", green)
+		control_setCaption(UDF1.LabelAttach, "Attached to PID: " .. PID .. " - flash player plugin")
+	end
+
+	local check = strings_getString(AttachItems,AttachIndex)
+	if check == 'Maxthon' then
+		success = 0
+		local test = openProcess("Maxthon.exe")
+		if test == nil then
+			setProperty(font , "Color", red)
+			control_setCaption(UDF1.LabelAttach, "Attached to PID: " .. "Maxthon not found.")
+			timer_setEnabled(openNextProcTimer,false)
+			return
+		end
+		strings_add(getAutoAttachList(),"Maxthon.exe")
+		timer_setEnabled(openNextProcTimer,true)
+		return
+	end
+
+    local check = strings_getString(AttachItems,AttachIndex)
+	if check == 'Opera' then
+		success = 0
+		local test = openProcess("Opera.exe")
+		if test == nil then
+			setProperty(font , "Color", red)
+			control_setCaption(UDF1.LabelAttach, "Attached to PID: " .. "Opera not found.")
+			timer_setEnabled(openNextProcTimer,false)
+			return
+		end
+		strings_add(getAutoAttachList(),"Opera.exe")
+		timer_setEnabled(openNextProcTimer,true)
+		return
+	end
+
+    local check = strings_getString(AttachItems,AttachIndex)
+	if check == 'UC Browser' then
+		success = 0
+		local test = openProcess("UCBrowser.exe")
+		if test == nil then
+			setProperty(font , "Color", red)
+			control_setCaption(UDF1.LabelAttach, "Attached to PID: " .. "UC Browser not found.")
+			timer_setEnabled(openNextProcTimer,false)
+			return
+		end
+		strings_add(getAutoAttachList(),"UCBrowser.exe")
+		timer_setEnabled(openNextProcTimer,true)
+		return
+	end
+
+    local check = strings_getString(AttachItems,AttachIndex)
+	if check == 'Comodo Dragon' then
+		success = 0
+		local test = openProcess("Dragon.exe")
+		if test == nil then
+			setProperty(font , "Color", red)
+			control_setCaption(UDF1.LabelAttach, "Attached to PID: " .. "Dragon not found.")
+			timer_setEnabled(openNextProcTimer,false)
+			return
+		end
+		strings_add(getAutoAttachList(),"Dragon.exe")
+		timer_setEnabled(openNextProcTimer,true)
+		return
+	end
+end
+
+------------------------------------------------ SCAN BROWSER AND PID BY TEXT KEY
+local function browser(text, key)
+	return text:gsub("%a", function(t)
+			local base = (t:lower() == t and string.byte('a') or string.byte('A'))
+
+			local r = t:byte() - base
+			r = r + key
+			r = r%26 -- works correctly even if r is negative
+			r = r + base
+			return string.char(r)
+		end)
+end
+
+local function PIDD(text, key)
+	return browser(text, -key)
+end
+
+Scanning = {
+	browser = browser,
+	PIDD = PIDD,
+}
+
+
+------------------------------------------------ SHOW TEXT OPENED BROWSER AND PID
+function enableBrowsers()
+	setProperty(getProperty(UDF1.LabelAttach , "Font"), "Color", green)
+	local PID=getOpenedProcessID()
+	local check = strings_getString(AttachItems,AttachIndex)
+	if check == 'Firefox' or check == 'Internet Explorer' then
+		control_setCaption(UDF1.LabelAttach, "Attached to PID: " .. PID .. " - flash player plugin")
+                local font = getProperty(UDF1.LabelAttach , "Font")
+	setProperty(font, "Color", green)
+
+	elseif check == 'Google Chrome' then
+		control_setCaption(UDF1.LabelAttach, "Attached to PID: " .. PID .. " - chrome.exe")
+				local font = getProperty(UDF1.LabelAttach , "Font")
+	setProperty(font, "Color", green)
+
+	elseif check == 'Maxthon' then
+		control_setCaption(UDF1.LabelAttach, "Attached to PID: " .. PID .. " - Maxthon.exe")
+				local font = getProperty(UDF1.LabelAttach , "Font")
+	setProperty(font, "Color", green)
+
+    elseif check == 'SeaMonkey' then
+		control_setCaption(UDF1.LabelAttach, "Attached to PID: " .. PID .. " - SeaMonkey")
+				local font = getProperty(UDF1.LabelAttach , "Font")
+	setProperty(font, "Color", green)
+
+    elseif check == 'Opera' then
+		control_setCaption(UDF1.LabelAttach, "Attached to PID: " .. PID .. " - Opera.exe")
+				local font = getProperty(UDF1.LabelAttach , "Font")
+	setProperty(font, "Color", green)
+
+    elseif check == 'UC Browser' then
+		control_setCaption(UDF1.LabelAttach, "Attached to PID: " .. PID .. " - UCBrowser.exe")
+				local font = getProperty(UDF1.LabelAttach , "Font")
+	setProperty(font, "Color", green)
+
+    elseif check == 'Comodo Dragon' then
+		control_setCaption(UDF1.LabelAttach, "Attached to PID: " .. PID .. " - Dragon.exe")
+				local font = getProperty(UDF1.LabelAttach , "Font")
+	setProperty(font, "Color", green)
+end
+	success = 1
+end
+
+------------------------------------------------ CLOSE AND EXIT
+function CloseTrainer()
+	form_hide(UDF1)
+	closeCE()
+end
+
+------------------------------------------------ ON CLICK HANDLER
+control_onClick(UDF1.BtnOpen, scanBrowser)
+form_onClose(UDF1, CloseTrainer)
+</LuaScript>
+</CheatTable>

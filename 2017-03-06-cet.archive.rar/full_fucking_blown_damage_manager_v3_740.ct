@@ -1,0 +1,522 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="19">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>0</ID>
+      <Description>"Full Fucking Blown Damage Manager"</Description>
+      <Options moHideChildren="1" moManualExpandCollapse="1"/>
+      <LastState Value="" Activated="1" RealAddress="00000000"/>
+      <Color>0080FF</Color>
+      <GroupHeader>1</GroupHeader>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>2679</ID>
+          <Description>"Damage   Taken   Manager"</Description>
+          <Options moHideChildren="1" moManualExpandCollapse="1"/>
+          <LastState/>
+          <Color>000000</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>{ Game   : DyingLightGame.exe
+  Version:
+  Date   : 2016-03-05
+  Author : Akuma
+
+  This script does blah blah blah
+}
+
+[ENABLE]
+
+aobscanmodule(Natural_Aspirated_Damage_Manager_ret,gamedll_x64_rwdi.dll,44 0F 28 44 24 20 F3 0F 11 83 54) // should be unique
+alloc(Newmem_NADM,$1000,"gamedll_x64_rwdi.dll"+AAED71)
+
+label(Code_NADM)
+label(Return_NADM)
+label(Math_Start)
+alloc(MiniD_Adjust,32)
+registersymbol(MiniD_Adjust)
+
+MiniD_Adjust+C:
+dd (float)100
+
+MiniD_Adjust:
+dd (float)-1
+
+MiniD_Adjust+18:            // comiss for health boost
+dd (float)-0.000001
+
+
+
+
+Newmem_NADM:
+
+Code_NADM:
+//  movss [MiniD_Adjust],xmm0
+  movaps xmm8,[rsp+20]
+  movss xmm14,[rbx+00000954]
+  mov [MiniD_Adjust+10],rbx
+  movss xmm15,xmm14
+   jmp Math_Start
+
+Math_Start:
+  subss xmm14,xmm0
+  movss [MiniD_Adjust+4],xmm14            // Damage Taken
+
+   movss xmm13,[MiniD_Adjust+18]
+    comiss xmm14,xmm13                   // chgeck for heal
+     jb Return_NADM
+
+  mulss xmm14,[MiniD_Adjust]
+
+  movss [MiniD_Adjust+8],xmm14             // Damage Adjusted
+  subss xmm15,xmm14
+  movss xmm0,xmm15
+
+   movss xmm13,[MiniD_Adjust+C]   // This is max health
+    comiss xmm15,xmm13
+     ja Max_Health
+
+  jmp Return_NADM
+
+Max_Health:
+  movss xmm0,xmm13
+  jmp Return_NADM
+
+Natural_Aspirated_Damage_Manager_ret:
+  jmp Code_NADM
+  nop
+Return_NADM:
+registersymbol(Natural_Aspirated_Damage_Manager_ret)
+
+
+
+//////////////////////Max Health Grab
+
+aobscanmodule(Max_Health_MiniD_ret,gamedll_x64_rwdi.dll,0F 2F 86 1C 12 00 00) // should be unique
+alloc(Newmem_Grab_Max,$1000,"gamedll_x64_rwdi.dll"+AB2315)
+
+label(Code_Grab_Max)
+label(Return_Grab_Max)
+
+Newmem_Grab_Max:
+
+Code_Grab_Max:
+  movss [MiniD_Adjust+c],xmm0
+  comiss xmm0,[rsi+0000121C]
+  jmp Return_Grab_Max
+
+Max_Health_MiniD_ret:
+  jmp Code_Grab_Max
+  nop
+  nop
+Return_Grab_Max:
+registersymbol(Max_Health_MiniD_ret)
+
+[DISABLE]
+
+Natural_Aspirated_Damage_Manager_ret:
+  db 44 0F 28 44 24 20
+
+unregistersymbol(Natural_Aspirated_Damage_Manager_ret)
+dealloc(Newmem_NADM)
+
+Max_Health_MiniD_ret:
+  db 0F 2F 86 1C 12 00 00
+
+unregistersymbol(Max_Health_MiniD_ret)
+dealloc(Newmem_Grab_Max)
+
+dealloc(MiniD_Adjust)
+unregistersymbol(MiniD_Adjust)
+
+{
+// ORIGINAL Code_NADM - INJECTION POINT: "gamedll_x64_rwdi.dll"+AAED71
+
+"gamedll_x64_rwdi.dll"+AAED53: 48 8B 07                 -  mov rax,[rdi]
+"gamedll_x64_rwdi.dll"+AAED56: 48 8B CF                 -  mov rcx,rdi
+"gamedll_x64_rwdi.dll"+AAED59: FF 90 48 01 00 00        -  call qword ptr [rax+00000148]
+"gamedll_x64_rwdi.dll"+AAED5F: 0F 2F F7                 -  comiss xmm6,xmm7
+"gamedll_x64_rwdi.dll"+AAED62: 73 05                    -  jae gamedll_x64_rwdi.dll+AAED69
+"gamedll_x64_rwdi.dll"+AAED64: 0F 28 C7                 -  movaps xmm0,xmm7
+"gamedll_x64_rwdi.dll"+AAED67: EB 08                    -  jmp gamedll_x64_rwdi.dll+AAED71
+"gamedll_x64_rwdi.dll"+AAED69: 0F 2F F0                 -  comiss xmm6,xmm0
+"gamedll_x64_rwdi.dll"+AAED6C: 77 03                    -  ja gamedll_x64_rwdi.dll+AAED71
+"gamedll_x64_rwdi.dll"+AAED6E: 0F 28 C6                 -  movaps xmm0,xmm6
+// ---------- INJECTING HERE ----------
+"gamedll_x64_rwdi.dll"+AAED71: 44 0F 28 44 24 20        -  movaps xmm8,[rsp+20]
+// ---------- DONE INJECTING  ----------
+"gamedll_x64_rwdi.dll"+AAED77: F3 0F 11 83 54 09 00 00  -  movss [rbx+00000954],xmm0
+"gamedll_x64_rwdi.dll"+AAED7F: 40 84 F6                 -  test sil,sil
+"gamedll_x64_rwdi.dll"+AAED82: 74 15                    -  je gamedll_x64_rwdi.dll+AAED99
+"gamedll_x64_rwdi.dll"+AAED84: 0F 2F F8                 -  comiss xmm7,xmm0
+"gamedll_x64_rwdi.dll"+AAED87: 72 10                    -  jb gamedll_x64_rwdi.dll+AAED99
+"gamedll_x64_rwdi.dll"+AAED89: 41 B1 01                 -  mov cl,01
+"gamedll_x64_rwdi.dll"+AAED8C: 45 33 C0                 -  xor r8d,r8d
+"gamedll_x64_rwdi.dll"+AAED8F: 33 D2                    -  xor edx,edx
+"gamedll_x64_rwdi.dll"+AAED91: 48 8B CF                 -  mov rcx,rdi
+"gamedll_x64_rwdi.dll"+AAED94: E8 37 5C FF FF           -  call gamedll_x64_rwdi.dll+AA49D0
+}
+
+
+{
+// ORIGINAL Code_Grab_Max - INJECTION POINT: "gamedll_x64_rwdi.dll"+AB2315
+
+"gamedll_x64_rwdi.dll"+AB22FC: CC                             -  int 3
+"gamedll_x64_rwdi.dll"+AB22FD: CC                             -  int 3
+"gamedll_x64_rwdi.dll"+AB22FE: CC                             -  int 3
+"gamedll_x64_rwdi.dll"+AB22FF: CC                             -  int 3
+"gamedll_x64_rwdi.dll"+AB2300: 40 56                          -  push rsi
+"gamedll_x64_rwdi.dll"+AB2302: 48 83 EC 20                    -  sub rsp,20
+"gamedll_x64_rwdi.dll"+AB2306: 48 8B 01                       -  mov rax,[rcx]
+"gamedll_x64_rwdi.dll"+AB2309: 83 CA FF                       -  or edx,-01
+"gamedll_x64_rwdi.dll"+AB230C: 48 8B F1                       -  mov rsi,rcx
+"gamedll_x64_rwdi.dll"+AB230F: FF 90 48 01 00 00              -  call qword ptr [rax+00000148]
+// ---------- INJECTING HERE ----------
+"gamedll_x64_rwdi.dll"+AB2315: 0F 2F 86 1C 12 00 00           -  comiss xmm0,[rsi+0000121C]
+// ---------- DONE INJECTING  ----------
+"gamedll_x64_rwdi.dll"+AB231C: 73 3A                          -  jae gamedll_x64_rwdi.dll+AB2358
+"gamedll_x64_rwdi.dll"+AB231E: 48 8B 06                       -  mov rax,[rsi]
+"gamedll_x64_rwdi.dll"+AB2321: 48 89 5C 24 30                 -  mov [rsp+30],rbx
+"gamedll_x64_rwdi.dll"+AB2326: 83 CA FF                       -  or edx,-01
+"gamedll_x64_rwdi.dll"+AB2329: 48 8B CE                       -  mov rcx,rsi
+"gamedll_x64_rwdi.dll"+AB232C: 48 89 7C 24 38                 -  mov [rsp+38],rdi
+"gamedll_x64_rwdi.dll"+AB2331: 48 8B BE C8 08 00 00           -  mov rdi,[rsi+000008C8]
+"gamedll_x64_rwdi.dll"+AB2338: FF 90 48 01 00 00              -  call qword ptr [rax+00000148]
+"gamedll_x64_rwdi.dll"+AB233E: 48 8D 8E C8 08 00 00           -  lea rcx,[rsi+000008C8]
+"gamedll_x64_rwdi.dll"+AB2345: 45 33 C0                       -  xor r8d,r8d
+}
+</AssemblerScript>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>2680</ID>
+              <Description>"Taken Damage Adjust           ---&gt;"</Description>
+              <DropDownList DescriptionOnly="1" DisplayValueAsItem="1">0:God Mode
+0.5: Half Damage
+.1:1/10 Damage
+-1:Damage Heals
+</DropDownList>
+              <Color>FF1A00</Color>
+              <VariableType>Float</VariableType>
+              <Address>MiniD_Adjust</Address>
+              <CheatEntries>
+                <CheatEntry>
+                  <ID>2681</ID>
+                  <Description>"Damage Taken"</Description>
+                  <Color>8D8DF3</Color>
+                  <VariableType>Float</VariableType>
+                  <Address>MiniD_Adjust+4</Address>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>2682</ID>
+                  <Description>"Damage Taken Adjusted"</Description>
+                  <Color>B972D3</Color>
+                  <VariableType>Float</VariableType>
+                  <Address>MiniD_Adjust+8</Address>
+                </CheatEntry>
+              </CheatEntries>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>11369</ID>
+          <Description>"Damage    Given   Manager"</Description>
+          <Options moHideChildren="1" moManualExpandCollapse="1"/>
+          <LastState/>
+          <Color>000000</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>{ Game   : DyingLightGame.exe
+  Version:
+  Date   : 2016-03-08
+  Author : Akuma
+
+  This script does blah blah blah
+}
+
+[ENABLE]
+
+
+aobscanmodule(Player_Start_Again_ret,gamedll_x64_rwdi.dll,F3 0F 11 83 E0 00 00 00 48 8B 01) // should be unique
+alloc(Newmem_Grab_Player,$1000,"gamedll_x64_rwdi.dll"+AA09B2)
+
+label(Code_Grab_Player)
+label(Return_Grab_Player)
+
+alloc(Player_Start,8)
+registersymbol(Player_Start)
+
+Newmem_Grab_Player:
+
+Code_Grab_Player:
+  mov [Player_Start],rsi
+  movss [rbx+000000E0],xmm0
+  jmp Return_Grab_Player
+
+Player_Start_Again_ret:
+  jmp Code_Grab_Player
+  nop
+  nop
+  nop
+Return_Grab_Player:
+registersymbol(Player_Start_Again_ret)
+
+//////////// Dmage Manager/////////////
+
+aobscanmodule(GIVETH_DAMAGE_ret,gamedll_x64_rwdi.dll,F3 0F 5C CE F3 41 0F 11 4F 7C) // should be unique
+alloc(newmem,$1000,"gamedll_x64_rwdi.dll"+2142A5)
+
+label(code)
+label(return)
+
+label(Kill_Zombie)
+label(Damage_Zombie)
+
+alloc(Damage_Giveth,64)
+registersymbol(Damage_Giveth)
+
+Damage_Giveth:
+dd (float)2
+
+
+
+Damage_Giveth+18:
+dd (float)0.0001
+
+newmem:
+
+check:
+
+//jmp code
+  cmp  rsi,[Player_Start]
+   je code
+    jmp Damage_Zombie
+
+code:
+  mov [Damage_Giveth+20],r15
+  movss [Damage_Giveth+4],xmm1
+  movss [Damage_Giveth+8],xmm0
+  movss [Damage_Giveth+10],xmm6
+  mulss xmm6,[Damage_Giveth]
+  addss xmm6,[Damage_Giveth+18]       // 1 hit point to ensure Kill
+  movss [Damage_Giveth+14],xmm6
+   comiss xmm6,xmm1
+    ja Kill_Zombie
+      jmp Damage_Zombie
+
+Kill_Zombie:
+  subss xmm1,xmm1
+  movss [r15+78],xmm1
+      jmp return
+
+Damage_Zombie:
+  subss xmm1,xmm6
+  movss [r15+7C],xmm1
+  jmp return
+
+GIVETH_DAMAGE_ret:
+  jmp check
+  nop
+  nop
+  nop
+  nop
+  nop
+return:
+registersymbol(GIVETH_DAMAGE_ret)
+
+
+
+//////////////////////////////////////////////////////
+
+
+
+
+
+
+[DISABLE]
+
+
+GIVETH_DAMAGE_ret:
+  db F3 0F 5C CE F3 41 0F 11 4F 7C
+
+unregistersymbol(GIVETH_DAMAGE_ret)
+dealloc(newmem)
+
+dealloc(Damage_Giveth)
+unregistersymbol(Damage_Giveth)
+
+Player_Start_Again_ret:
+  db F3 0F 11 83 E0 00 00 00
+
+unregistersymbol(Player_Start_Again_ret)
+dealloc(Newmem_Grab_Player)
+
+
+dealloc(Player_Start)
+unregistersymbol(Player_Start)
+
+
+
+
+{
+// ORIGINAL Code_Grab_Player - INJECTION POINT: "gamedll_x64_rwdi.dll"+AB363A
+
+"gamedll_x64_rwdi.dll"+AB3612: FF 90 F0 08 00 00        -  call qword ptr [rax+000008F0]
+"gamedll_x64_rwdi.dll"+AB3618: 84 C0                    -  test al,al
+"gamedll_x64_rwdi.dll"+AB361A: 74 6B                    -  je gamedll_x64_rwdi.dll+AB3687
+"gamedll_x64_rwdi.dll"+AB361C: 48 39 9F 68 09 00 00     -  cmp [rdi+00000968],rbx
+"gamedll_x64_rwdi.dll"+AB3623: 74 09                    -  je gamedll_x64_rwdi.dll+AB362E
+"gamedll_x64_rwdi.dll"+AB3625: 48 8B 87 70 09 00 00     -  mov rax,[rdi+00000970]
+"gamedll_x64_rwdi.dll"+AB362C: EB 03                    -  jmp gamedll_x64_rwdi.dll+AB3631
+"gamedll_x64_rwdi.dll"+AB362E: 48 8B C3                 -  mov rax,rbx
+"gamedll_x64_rwdi.dll"+AB3631: 48 39 98 68 05 00 00     -  cmp [rax+00000568],rbx
+"gamedll_x64_rwdi.dll"+AB3638: 74 07                    -  je gamedll_x64_rwdi.dll+AB3641
+// ---------- INJECTING HERE ----------
+"gamedll_x64_rwdi.dll"+AB363A: 48 8B 98 70 05 00 00     -  mov rbx,[rax+00000570]
+// ---------- DONE INJECTING  ----------
+"gamedll_x64_rwdi.dll"+AB3641: 48 8B CE                 -  mov rcx,rsi
+"gamedll_x64_rwdi.dll"+AB3644: E8 07 ED 02 00           -  call gamedll_x64_rwdi.dll+AE2350
+"gamedll_x64_rwdi.dll"+AB3649: 84 C0                    -  test al,al
+"gamedll_x64_rwdi.dll"+AB364B: 74 3A                    -  je gamedll_x64_rwdi.dll+AB3687
+"gamedll_x64_rwdi.dll"+AB364D: 48 85 DB                 -  test rbx,rbx
+"gamedll_x64_rwdi.dll"+AB3650: 0F 84 C7 00 00 00        -  je gamedll_x64_rwdi.dll+AB371D
+"gamedll_x64_rwdi.dll"+AB3656: 48 8B 43 28              -  mov rax,[rbx+28]
+"gamedll_x64_rwdi.dll"+AB365A: 48 8D 4B 28              -  lea rcx,[rbx+28]
+"gamedll_x64_rwdi.dll"+AB365E: FF 90 80 06 00 00        -  call qword ptr [rax+00000680]
+"gamedll_x64_rwdi.dll"+AB3664: 84 C0                    -  test al,al
+}
+
+
+{
+// ORIGINAL CODE - INJECTION POINT: "gamedll_x64_rwdi.dll"+AA09B2
+
+"gamedll_x64_rwdi.dll"+AA098A: 44 0F 29 50 88           -  movaps [rax-78],xmm10
+"gamedll_x64_rwdi.dll"+AA098F: 48 8B F1                 -  mov rsi,rcx
+"gamedll_x64_rwdi.dll"+AA0992: 44 0F 28 D1              -  movaps xmm10,xmm1
+"gamedll_x64_rwdi.dll"+AA0996: 48 85 DB                 -  test rbx,rbx
+"gamedll_x64_rwdi.dll"+AA0999: 74 61                    -  je gamedll_x64_rwdi.dll+AA09FC
+"gamedll_x64_rwdi.dll"+AA099B: 80 79 50 00              -  cmp byte ptr [rcx+50],00
+"gamedll_x64_rwdi.dll"+AA099F: 74 5B                    -  je gamedll_x64_rwdi.dll+AA09FC
+"gamedll_x64_rwdi.dll"+AA09A1: F3 0F 10 83 E0 00 00 00  -  movss xmm0,[rbx+000000E0]
+"gamedll_x64_rwdi.dll"+AA09A9: 48 8B 4B 18              -  mov rcx,[rbx+18]
+"gamedll_x64_rwdi.dll"+AA09AD: F3 41 0F 5C C2           -  subss xmm0,xmm10
+// ---------- INJECTING HERE ----------
+"gamedll_x64_rwdi.dll"+AA09B2: F3 0F 11 83 E0 00 00 00  -  movss [rbx+000000E0],xmm0
+// ---------- DONE INJECTING  ----------
+"gamedll_x64_rwdi.dll"+AA09BA: 48 8B 01                 -  mov rax,[rcx]
+"gamedll_x64_rwdi.dll"+AA09BD: FF 90 28 01 00 00        -  call qword ptr [rax+00000128]
+"gamedll_x64_rwdi.dll"+AA09C3: 84 C0                    -  test al,al
+"gamedll_x64_rwdi.dll"+AA09C5: 75 2D                    -  jne gamedll_x64_rwdi.dll+AA09F4
+"gamedll_x64_rwdi.dll"+AA09C7: 48 8B CB                 -  mov rcx,rbx
+"gamedll_x64_rwdi.dll"+AA09CA: E8 E1 40 0F 00           -  call gamedll_x64_rwdi.dll+B94AB0
+"gamedll_x64_rwdi.dll"+AA09CF: 4C 8B 5B 18              -  mov r11,[rbx+18]
+"gamedll_x64_rwdi.dll"+AA09D3: F3 0F 10 05 7D B2 92 00  -  movss xmm0,[gamedll_x64_rwdi.dll+13CBC58]
+"gamedll_x64_rwdi.dll"+AA09DB: 41 0F 2F 83 C4 11 00 00  -  comiss xmm0,[r11+000011C4]
+"gamedll_x64_rwdi.dll"+AA09E3: 73 0F                    -  jae gamedll_x64_rwdi.dll+AA09F4
+}
+</AssemblerScript>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>11351</ID>
+              <Description>"Dealt Damage Adjust             ---&gt;"</Description>
+              <DropDownList DescriptionOnly="1" DisplayValueAsItem="1">0.5:Half Damage
+1:Normal Damage
+2:Double Damage
+10000: One Hit Kill
+</DropDownList>
+              <Color>FF1A00</Color>
+              <VariableType>Float</VariableType>
+              <Address>Damage_Giveth</Address>
+              <CheatEntries>
+                <CheatEntry>
+                  <ID>11354</ID>
+                  <Description>"Damage Giveth"</Description>
+                  <Color>8D8DF3</Color>
+                  <VariableType>Float</VariableType>
+                  <Address>Damage_Giveth+10</Address>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>11355</ID>
+                  <Description>"Damage Giveth Adjusted"</Description>
+                  <Color>B972D3</Color>
+                  <VariableType>Float</VariableType>
+                  <Address>Damage_Giveth+14</Address>
+                  <CheatEntries>
+                    <CheatEntry>
+                      <ID>11370</ID>
+                      <Description>"Show Extra Stats"</Description>
+                      <Options moHideChildren="1" moManualExpandCollapse="1"/>
+                      <LastState Value="" Activated="1" RealAddress="00000000"/>
+                      <Color>C0C0C0</Color>
+                      <GroupHeader>1</GroupHeader>
+                      <CheatEntries>
+                        <CheatEntry>
+                          <ID>11388</ID>
+                          <Description>"Player_Start"</Description>
+                          <ShowAsHex>1</ShowAsHex>
+                          <VariableType>8 Bytes</VariableType>
+                          <Address>Player_Start</Address>
+                        </CheatEntry>
+                        <CheatEntry>
+                          <ID>11352</ID>
+                          <Description>"Enemy Current Health"</Description>
+                          <Color>C5A770</Color>
+                          <VariableType>Float</VariableType>
+                          <Address>Damage_Giveth+4</Address>
+                        </CheatEntry>
+                        <CheatEntry>
+                          <ID>11353</ID>
+                          <Description>"Enemy Max Health"</Description>
+                          <Color>7BB983</Color>
+                          <VariableType>Float</VariableType>
+                          <Address>Damage_Giveth+8</Address>
+                        </CheatEntry>
+                        <CheatEntry>
+                          <ID>11359</ID>
+                          <Description>"Enemy Pointer"</Description>
+                          <ShowAsHex>1</ShowAsHex>
+                          <Color>C0C0C0</Color>
+                          <VariableType>8 Bytes</VariableType>
+                          <Address>Damage_Giveth+20</Address>
+                          <CheatEntries>
+                            <CheatEntry>
+                              <ID>11360</ID>
+                              <Description>"Enemy Health Game Based"</Description>
+                              <Color>C0C0C0</Color>
+                              <VariableType>Float</VariableType>
+                              <Address>Damage_Giveth+20</Address>
+                              <Offsets>
+                                <Offset>7C</Offset>
+                              </Offsets>
+                            </CheatEntry>
+                            <CheatEntry>
+                              <ID>11371</ID>
+                              <Description>"Enemy Health Game Based"</Description>
+                              <Color>C0C0C0</Color>
+                              <VariableType>Float</VariableType>
+                              <Address>Damage_Giveth+20</Address>
+                              <Offsets>
+                                <Offset>78</Offset>
+                              </Offsets>
+                            </CheatEntry>
+                          </CheatEntries>
+                        </CheatEntry>
+                      </CheatEntries>
+                    </CheatEntry>
+                  </CheatEntries>
+                </CheatEntry>
+              </CheatEntries>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols>
+    <SymbolEntry>
+      <Name>Character_Start_ret</Name>
+      <Address>7F943D2363A</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>Player_Start_ret</Name>
+      <Address> 7F943B70364</Address>
+    </SymbolEntry>
+  </UserdefinedSymbols>
+</CheatTable>

@@ -1,0 +1,957 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="14">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>39</ID>
+      <Description>"[X] &lt;== March of the Eagles v1.0 Script 1.1"</Description>
+      <Options moHideChildren="1"/>
+      <Color>FF0000</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>{
+===========================================
+ Game Title    : March of the Eagles
+ Game Version  : 1.0
+ Game Sponsor  : FLT (via Internet)
+ Proces Name   : MotE.exe
+ Script Version: 1.1
+ CE Version    : 6.2
+ Release date  : 24-Feb-2013
+ Author        : Recifense
+ History:
+ 18-Feb-13: First Release
+ 24-Feb-13: A Fix on GM
+ Features:
+ - Minimum Ducats             (6200)
+ - Minimum Prestige           (620)
+ - Maximum War Exhaustion     (0.5)
+ - Minimum Idea Points        (620)
+ - Minimum Morale (Army/Navy) (10)
+ - Minimum Diplomats          (4)
+ - Recruitment/Construction in 1 Day
+ - Army/Fleet Movement to adjacent area in 1 day
+ - God Mode (+Morale)
+ - Take Ownership of a conquered province (enable construction)
+ - Make a conquered province a core one   (enable recruitment)
+ - Stronger Troop:
+   - Speed Modifier                  (50%)
+   - Infantry Attack Modifier        (50%)
+   - Light Infantry Attack Modifier  (50%)
+   - Cavalry Attack Modifier         (50%)
+   - Artillery Attack Modifier       (50%)
+   - Big Ship Attack Modifier        (50%)
+   - Light Ship Attack Modifier      (50%)
+   - Infantry Defense Modifier       (50%)
+   - Light Infantry Defense Modifier (50%)
+   - Cavalry Defense Modifier        (50%)
+   - Artillery Defense Modifier      (50%)
+   - Big Ship Defense Modifier       (50%)
+   - Light Ship Defense Modifier     (50%)
+   - Army Evasion Modifier           (50%)
+   - Casualty Trickleback Modifier   (50%)
+   - Global Ship Repair Modifier     (50%)
+   - Frontage Modifier               (50%)
+===========================================
+}
+
+//=========================================
+// Definitions
+define(LUDO,"MotE.exe")
+
+//=========================================
+[ENABLE]
+//=========================================
+//LuaCall(CheckVersion())
+//=========================================
+// Check if script is compatible to this game version
+// If false the script will not be loaded
+
+assert(LUDO+003a6eb6,8b 7d 08 8b f1 89 7e 0c 39 5f 2c ??) //_MSTown
+assert(LUDO+0033f5c0,8b 90 0c 15 00 00 8b 7b 10 89 45 cc) //_MPId
+assert(LUDO+002047d3,8b 89 c8 05 00 00 8b 45 08 89 08 5d) //_MPlayer
+assert(LUDO+001f34c1,8b 4d ec 3b 08 ?? ?? 8b 17 8b 42 1c) //_MTRec
+assert(LUDO+002a0b73,39 be 84 00 00 00 0f 8c ?? ?? ?? ??) //_MArmyMov
+assert(LUDO+0028c826,8b 46 68 03 45 08 8b 4e 60 89 46 68) //_GMode
+assert(LUDO+0028c623,8b 45 08 01 41 30 8b 51 30 56 8b 35) //_MMorale
+
+//=========================================
+alloc(MyCode,4096,LUDO)
+//=========================================
+// Declaration section
+label(_MonSelTown)
+label(_MonST00)
+label(_BackMST)
+label(_ExitMST)
+label(_MonPlayerID)
+label(_BackMPI)
+label(_ExitMPI)
+label(_MonPlayer)
+label(_MonP00)
+label(_MonP01)
+label(_MonP02)
+label(_MonP03)
+label(_MonP04)
+label(_MonP05)
+label(_MonP06)
+label(_BackMP)
+label(_ExitMP)
+label(_MonTroopRec)
+label(_BackMTR)
+label(_ExitMTR)
+label(_MonArmyMove)
+label(_BackMAM)
+label(_ExitMAM)
+label(_GodMode)
+label(_BackGM)
+label(_ExitGM)
+label(_MonMorale)
+label(_BackMMO)
+label(_ExitMMO)
+
+label(pUnit)
+label(pPlayer)
+label(pTown)
+
+label(iEnableMDU)
+label(iEnableMPR)
+label(iEnableMWE)
+label(iEnableMIP)
+label(iEnableMMO)
+label(iEnableMDI)
+label(iEnableMTR)
+label(iEnableMAM)
+label(iEnableGMD)
+label(iEnableTOS)
+label(iEnableMCP)
+label(iEnableMST)
+label(iPlayerID)
+
+//=========================================
+// Registering Symbols
+registersymbol(MyCode)
+registersymbol(pUnit)
+registersymbol(pPlayer)
+registersymbol(pTown)
+registersymbol(iEnableMDU)
+registersymbol(iEnableMPR)
+registersymbol(iEnableMWE)
+registersymbol(iEnableMIP)
+registersymbol(iEnableMMO)
+registersymbol(iEnableMDI)
+registersymbol(iEnableMTR)
+registersymbol(iEnableMAM)
+registersymbol(iEnableGMD)
+registersymbol(iEnableTOS)
+registersymbol(iEnableMCP)
+registersymbol(iEnableMST)
+registersymbol(iPlayerID)
+
+//=========================================
+MyCode:
+//=========================================
+// When clicking on a town/city/province/whatever
+_MonSelTown:
+ push ebx
+
+ mov edi,[ebp+08]                  // Original code
+
+ cmp dword ptr [iEnableTOS],0
+ je _MonST00                       // Jump if feature is disabled
+// Take Ownership
+ mov esi,[edi+34]
+ cmp esi,[iPlayerID]
+ jne _MonST00
+
+ mov [edi+2c],esi
+ mov esi,[edi+30]
+ mov [edi+28],esi
+
+_MonST00:
+ cmp dword ptr [iEnableMCP],0
+ je _ExitMST                       // Jump if feature is disabled
+
+ mov ebx,[edi+2c]
+ cmp ebx,[iPlayerID]
+ jne _ExitMST
+
+ mov esi,[edi+00001838]
+ test esi,esi
+ jz _ExitMST
+
+ cmp esi,[edi+0000183C]
+ jne _ExitMST
+
+ mov [esi+04],ebx
+ mov ebx,[edi+28]
+ mov [esi+00],ebx
+
+_ExitMST:
+ pop ebx
+
+ mov [pTown],edi
+ mov esi,ecx                       // Original code
+ jmp _BackMST                      // Back to main code
+
+//=========================================
+// All the time during a match
+_MonPlayerID:
+ mov edx,[eax+0000150C]            // Original code
+
+_ExitMPI:
+ mov [iPlayerID],edx
+ jmp _BackMPI                      // Back to main code
+
+//=========================================
+// All the time during a match
+// Resources: Money, Prestige, Idea Points, Morale, Diplomats
+_MonPlayer:
+ push ebx
+
+ mov eax,[ecx+1c]
+ cmp eax,[iPlayerID]
+ jne _ExitMP
+
+ mov [pPlayer],ecx
+
+// Ducats
+ cmp dword ptr [iEnableMDU],0
+ je _MonP00                        // Jump if feature is disabled
+
+ mov eax,#62000000
+ cmp eax,[ecx+000005C8]
+ jle _MonP00
+
+ mov [ecx+000005C8],eax
+
+// Prestige
+_MonP00:
+ cmp dword ptr [iEnableMPR],0
+ je _MonP01                        // Jump if feature is disabled
+
+ mov eax,#620000
+ cmp eax,[ecx+00000A84]
+ jle _MonP01
+
+ mov [ecx+00000A84],eax
+
+// War Exhaustion
+_MonP01:
+ cmp dword ptr [iEnableMWE],0
+ je _MonP02                        // Jump if feature is disabled
+
+ mov eax,#500
+ cmp eax,[ecx+00000AA8]
+ jge _MonP02
+
+ mov [ecx+00000AA8],eax
+
+// Idea Points
+_MonP02:
+ cmp dword ptr [iEnableMIP],0
+ je _MonP03                        // Jump if feature is disabled
+
+ mov eax,#620000
+ cmp eax,[ecx+00002588]
+ jle _MonP03
+
+ mov [ecx+00002588],eax
+
+// Morale
+_MonP03:
+ cmp dword ptr [iEnableMMO],0
+ je _MonP05                        // Jump if feature is disabled
+
+ mov eax,#10000
+ cmp eax,[ecx+000021E0]
+ jle _MonP04
+
+ mov [ecx+000021E0],eax
+
+_MonP04:
+ cmp eax,[ecx+000021E4]
+ jle _MonP05
+
+ mov [ecx+000021E4],eax
+
+// Stronger Troops
+_MonP05:
+ cmp dword ptr [iEnableMST],0
+ je _MonP06                        // Jump if feature is disabled
+
+ mov eax,#500                      // 50%
+
+ mov ebx,[ecx+0000228c]            // Speed Modifier
+ cmp eax,ebx
+ cmovg ebx,eax
+ mov [ecx+0000228c],ebx
+
+ mov ebx,[ecx+000022A4]            // Infantry Attack Modifier
+ cmp eax,ebx
+ cmovg ebx,eax
+ mov [ecx+000022A4],ebx
+
+ mov ebx,[ecx+000022A8]            // Light Infantry Attack Modifier
+ cmp eax,ebx
+ cmovg ebx,eax
+ mov [ecx+000022A8],ebx
+
+ mov ebx,[ecx+000022AC]            // Cavalry Attack Modifier
+ cmp eax,ebx
+ cmovg ebx,eax
+ mov [ecx+000022AC],ebx
+
+ mov ebx,[ecx+000022B0]            // Artillery Attack Modifier
+ cmp eax,ebx
+ cmovg ebx,eax
+ mov [ecx+000022B0],ebx
+
+ mov ebx,[ecx+000022B8]            // Big Ship Attack Modifier
+ cmp eax,ebx
+ cmovg ebx,eax
+ mov [ecx+000022B8],ebx
+
+ mov ebx,[ecx+000022BC]            // Light Ship Attack Modifier
+ cmp eax,ebx
+ cmovg ebx,eax
+ mov [ecx+000022BC],ebx
+
+ mov ebx,[ecx+000022D0]            // Infantry Defense Modifier
+ cmp eax,ebx
+ cmovg ebx,eax
+ mov [ecx+000022D0],ebx
+
+ mov ebx,[ecx+000022D4]            // Light Infantry Defense Modifier
+ cmp eax,ebx
+ cmovg ebx,eax
+ mov [ecx+000022D4],ebx
+
+ mov ebx,[ecx+000022D8]            // Cavalry Defense Modifier
+ cmp eax,ebx
+ cmovg ebx,eax
+ mov [ecx+000022D8],ebx
+
+ mov ebx,[ecx+000022DC]            // Artillery Defense Modifier
+ cmp eax,ebx
+ cmovg ebx,eax
+ mov [ecx+000022DC],ebx
+
+ mov ebx,[ecx+000022E4]            // Big Ship Defense Modifier
+ cmp eax,ebx
+ cmovg ebx,eax
+ mov [ecx+000022E4],ebx
+
+ mov ebx,[ecx+000022E8]            // Light Ship Defense Modifier
+ cmp eax,ebx
+ cmovg ebx,eax
+ mov [ecx+000022E8],ebx
+
+ mov ebx,[ecx+00002378]            // Army Evasion Modifier
+ cmp eax,ebx
+ cmovg ebx,eax
+ mov [ecx+00002378],ebx
+
+ mov ebx,[ecx+00002390]            // Casualty Trickleback Modifier
+ cmp eax,ebx
+ cmovg ebx,eax
+ mov [ecx+00002390],ebx
+
+ mov ebx,[ecx+00002398]            // Global Ship Repair Modifier
+ cmp eax,ebx
+ cmovg ebx,eax
+ mov [ecx+00002398],ebx
+
+ mov eax,fffffe0c                  // -50%
+
+ mov ebx,[ecx+00002380]            // Frontage Modifier
+ cmp ebx,eax
+ cmovg ebx,eax
+ mov [ecx+00002380],ebx
+
+// Diplomats
+_MonP06:
+ cmp dword ptr [iEnableMDI],0
+ je _ExitMP                        // Jump if feature is disabled
+
+ mov eax,[ecx+00002424]
+ test eax,eax
+ jz _ExitMP
+
+ mov eax,[eax]
+ test eax,eax
+ jz _ExitMP
+
+ cmp dword ptr [eax+08],#4000
+ jge _ExitMP
+
+ mov dword ptr [eax+08],#4000
+
+_ExitMP:
+ pop ebx
+
+ mov ecx,[ecx+000005C8]            // Original code
+ jmp _BackMP                       // Back to main code
+
+//=========================================
+// Recruitment/Construction in 1 day
+// When day changes
+// EDI = base, ESI = Town
+_MonTroopRec:
+ cmp dword ptr [iEnableMTR],0
+ je _ExitMTR                       // Jump if feature is disabled
+
+ mov ecx,[edi+20]                  // Get pTown
+ cmp ecx,esi
+ jne _ExitMTR
+
+ mov ecx,[esi+2c]
+ cmp ecx,[iPlayerID]
+ jne _ExitMTR
+
+ mov ecx,[ebp-14]                  // get current date
+ mov [edi+14],ecx
+
+ xor ecx,ecx
+ lea ecx,[ecx+01]
+ mov [edi+18],ecx
+ mov [edi+1c],ecx
+
+_ExitMTR:
+ mov ecx,[ebp-14]                  // Original code
+ cmp ecx,[eax]                     // Original code (date2finish)
+ jmp _BackMTR                      // Back to main code
+
+//=========================================
+// Army movement to adjacent area in 1 day
+// When day changes
+// EDI = valueneeded, ESI = Army
+_MonArmyMove:
+ push ecx
+
+ cmp dword ptr [iEnableMAM],0
+ je _ExitMAM                       // Jump if feature is disabled
+
+ mov ecx,[esi+5c]
+ cmp ecx,[iPlayerID]
+ jne _ExitMAM
+
+ mov [esi+00000084],edi            // Progress = 100%
+
+_ExitMAM:
+ pop ecx
+
+ cmp [esi+00000084],edi            // Original code
+ jmp _BackMAM                      // Back to main code
+
+//=========================================
+// When updating troop size
+_GodMode:
+ mov [pUnit],esi                   // Save ptr for debugging
+
+ cmp dword ptr [iEnableGMD],0
+ je _ExitGM                        // Jump if feature is disabled
+
+ mov eax,[esi+54]
+ cmp eax,[iPlayerID]
+ jne _ExitGM
+
+ mov eax,[ebp+08]
+ test eax,eax
+ jns _ExitGM
+
+ neg eax
+ mov [ebp+08],eax
+
+_ExitGM:
+ mov eax,[esi+68]                  // Original code
+ add eax,[ebp+08]                  // Original code
+ jmp _BackGM                       // Back to main code
+
+//=========================================
+// When updating troop morale
+_MonMorale:
+ cmp dword ptr [iEnableGMD],0
+ je _ExitMMO                       // Jump if feature is disabled
+
+ mov eax,[ecx+54]
+ cmp eax,[iPlayerID]
+ jne _ExitMMO
+
+ mov eax,[ebp+08]
+ test eax,eax
+ jns _ExitMMO
+
+ neg eax
+ mov [ebp+08],eax
+
+_ExitMMO:
+ mov eax,[ebp+08]                  // Original code
+ add [ecx+30],eax                  // Original code
+ jmp _BackMMO                      // Back to main code
+
+//=========================================
+ db '===========================&gt;'
+ db 'CE6.2 Script by Recifense 022413'
+//=========================================
+// Variables
+iEnableMDU:
+ dd 0
+iEnableMPR:
+ dd 0
+iEnableMWE:
+ dd 0
+iEnableMIP:
+ dd 0
+iEnableMMO:
+ dd 0
+iEnableMDI:
+ dd 0
+iEnableMTR:
+ dd 0
+iEnableMAM:
+ dd 0
+iEnableGMD:
+ dd 0
+iEnableTOS:
+ dd 0
+iEnableMCP:
+ dd 0
+iEnableMST:
+ dd 0
+pUnit:
+ dd 0
+pPlayer:
+ dd 0
+pTown:
+ dd 0
+iPlayerID:
+ dd #999
+
+//=========================================
+// Hacking Points
+LUDO+003a6eb6:
+ jmp _MonSelTown
+_BackMST:
+
+LUDO+0033f5c0:
+ jmp _MonPlayerID
+ nop
+_BackMPI:
+
+LUDO+002047d3:
+ jmp _MonPlayer
+ nop
+_BackMP:
+
+LUDO+001f34c1:
+ jmp _MonTroopRec
+_BackMTR:
+
+LUDO+002a0b73:
+ jmp _MonArmyMove
+ nop
+_BackMAM:
+
+LUDO+0028c826:
+ jmp _GodMode
+ nop
+_BackGM:
+
+LUDO+0028c623:
+ jmp _MonMorale
+ nop
+_BackMMO:
+
+//=========================================
+// Script for Restoring Original Codes
+[DISABLE]
+LUDO+003a6eb6:
+// mov edi,[ebp+08]
+// mov esi,ecx
+ db 8b 7d 08 8b f1
+
+LUDO+0033f5c0:
+// mov edx,[eax+0000150C]
+ db 8b 90 0c 15 00 00
+
+LUDO+002047d3:
+// mov ecx,[ecx+000005C8]
+ db 8b 89 c8 05 00 00
+
+LUDO+002a0b73:
+// cmp [esi+00000084],edi
+ db 39 be 84 00 00 00
+
+LUDO+001f34c1:
+// mov ecx,[ebp-14]
+// cmp ecx,[eax]
+ db 8b 4d ec 3b 08
+
+LUDO+0028c826:
+// mov eax,[esi+68]
+// add eax,[ebp+08]
+ db 8b 46 68 03 45 08
+
+LUDO+0028c623:
+// mov eax,[ebp+08]
+// add [ecx+30],eax
+ db 8b 45 08 01 41 30
+
+//=========================================
+// Unregistering Symbols
+unregistersymbol(MyCode)
+unregistersymbol(pUnit)
+unregistersymbol(iEnableMDU)
+unregistersymbol(iEnableMPR)
+unregistersymbol(iEnableMWE)
+unregistersymbol(iEnableMIP)
+unregistersymbol(iEnableMMO)
+unregistersymbol(iEnableMDI)
+unregistersymbol(iEnableMTR)
+unregistersymbol(iEnableMAM)
+unregistersymbol(iEnableGMD)
+unregistersymbol(iEnableTOS)
+unregistersymbol(iEnableMCP)
+unregistersymbol(iEnableMST)
+unregistersymbol(pPlayer)
+unregistersymbol(pTown)
+unregistersymbol(iPlayerID)
+
+//=========================================
+dealloc(MyCode)
+//============= Scripts End ===============
+
+// ****************************************
+// NOTES
+// ****************************************
+{
+1805.1.1.7 = 59611807 = 6805*365+07
+}
+
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>22</ID>
+          <Description>"Enable/Disable Minimum Ducats =&gt; (1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMDU</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>23</ID>
+          <Description>"Enable/Disable Minimum Prestige =&gt; (1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMPR</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>24</ID>
+          <Description>"Enable/Disable Maximum War Exhaustion =&gt; (1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMWE</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>25</ID>
+          <Description>"Enable/Disable Minimum Idea Points =&gt; (1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMIP</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>26</ID>
+          <Description>"Enable/Disable Minimum Diplomats =&gt; (1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMDI</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>27</ID>
+          <Description>"Enable/Disable Production in 1 day =&gt; (1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMTR</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>28</ID>
+          <Description>"Enable/Disable Quick Movement =&gt; (1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMAM</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>33</ID>
+          <Description>"Enable/Disable God Mode =&gt; (1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableGMD</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>34</ID>
+          <Description>"Enable/Disable Take Ownership =&gt; (1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableTOS</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>33</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>34</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>40</ID>
+          <Description>"Enable/Disable Make it a Core Province =&gt; (1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMCP</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>36</ID>
+          <Description>"Enable/Disable Stronger Units =&gt; (1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMST</Address>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols>
+    <SymbolEntry>
+      <Name>iEnableMD</Name>
+      <Address>03B100DB</Address>
+    </SymbolEntry>
+  </UserdefinedSymbols>
+  <Comments>===========================================
+ Game Title    : March of the Eagles
+ Game Version  : 1.0
+ Game Sponsor  : FLT (via Internet)
+ Proces Name   : MotE.exe
+ Script Version: 1.1
+ CE Version    : 6.2
+ Release date  : 24-Feb-2013
+ Author        : Recifense
+ History:
+ 18-Feb-13: First Release
+ 24-Feb-13: A Fix on GM
+ Features:
+ - Minimum Ducats             (6200)               [1]
+ - Minimum Prestige           (620)                [1]
+ - Maximum War Exhaustion     (0.5)                [1]
+ - Minimum Idea Points        (620)                [1]
+ - Minimum Morale (Army/Navy) (10)                 [1]
+ - Minimum Diplomats          (4)                  [1]
+ - Recruitment/Construction in 1 Day               [2]
+ - Army/Fleet Movement to adjacent area in 1 day   [3]
+ - God Mode (+Morale)                              [4]
+ - Take Ownership of a conquered province (enable construction) [5]
+ - Make a conquered province a core one   (enable recruitment)  [6]
+ - Stronger Troop:                                              [7]
+   - Speed Modifier                  (50%)
+   - Infantry Attack Modifier        (50%)
+   - Light Infantry Attack Modifier  (50%)
+   - Cavalry Attack Modifier         (50%)
+   - Artillery Attack Modifier       (50%)
+   - Big Ship Attack Modifier        (50%)
+   - Light Ship Attack Modifier      (50%)
+   - Infantry Defense Modifier       (50%)
+   - Light Infantry Defense Modifier (50%)
+   - Cavalry Defense Modifier        (50%)
+   - Artillery Defense Modifier      (50%)
+   - Big Ship Defense Modifier       (50%)
+   - Light Ship Defense Modifier     (50%)
+   - Army Evasion Modifier           (50%)
+   - Casualty Trickleback Modifier   (50%)
+   - Global Ship Repair Modifier     (50%)
+   - Frontage Modifier               (50%)
+===========================================
+[1] That's it;
+[2] Troop/Ship/Bulding/Improvement in 1 day;
+[3] Invading an enemy province can take 2 day (because of the fight);
+[4] For Troops and Ships;
+[5] You will be able to construct/improve in the province;
+[6] You will also be able to recruit in the province; (depends on [5]).
+[7] That's it. [BEWARE] Once used, there is no comming back.
+===========================================
+HOTKEYs:
+CTRL+Home = ENABLE  all cheats (except for [5], [6] and [7])
+CTRL+Home = DISABLE all cheats (except for [5], [6] and [7])
+[NOTE] You can easily create or modify HOTKEYs.
+===========================================
+That's not all that I want to implement, but it is enough for now.
+===========================================
+Cheers!
+</Comments>
+</CheatTable>

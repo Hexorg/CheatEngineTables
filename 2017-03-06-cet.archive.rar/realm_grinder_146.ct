@@ -1,0 +1,317 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="19">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>92</ID>
+      <Description>"Spells Don't Use Mana"</Description>
+      <LastState/>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>/**
+ * Script created by Zanzer; AoBs found and created by ParkourPenguin
+ * http://forum.cheatengine.org/viewtopic.php?p=5620925#5620925
+ *
+ * Note that this might not work for all spells. I dunno.
+ */
+{$lua}
+cheat_name = "NoManaUse"
+[ENABLE]
+local pattern = "85 ?? 74 16 F3 0F 7E ?? ?? F2 0F 10 ?? ?? ?? ?? ?? F2 0F 59 ?? 66 0F D6 ?? ?? DD"
+local replace = "90 90 90 90 F3 0F 7E ?? ?? F2 0F 10 ?? ?? ?? ?? ?? 66 0F 57 C0 66 0F D6 ?? ?? DD"
+local scans = AOBScan(pattern)
+if scans == nil then
+  showMessage("Unable to find pattern:\n"..pattern)
+else
+  local saved = {}
+  local length = (#replace + 1) / 3
+  for i = 0, scans.Count - 1 do
+	local backup = readBytes(scans[i], length, true)
+	local bytes = {}
+	for hex in string.gmatch(replace, "%S+") do
+	  local size = #bytes + 1
+	  if hex == "??" then
+		bytes[size] = backup[size]
+	  else
+		bytes[size] = tonumber(hex, 16)
+	  end
+	end
+	saved[i] = backup
+	writeBytes(scans[i], bytes)
+  end
+  _G[cheat_name] = {
+	["scans"] = scans,
+	["saved"] = saved
+  }
+end
+[DISABLE]
+local vars = _G[cheat_name]
+if vars ~= nil then
+  local scans = vars.scans
+  local saved = vars.saved
+  for i = 0, scans.Count - 1 do
+	writeBytes(scans[i], saved[i])
+  end
+  scans.Destroy()
+  vars.scans = nil
+  vars.saved = nil
+  vars = nil
+  _G[cheat_name] = nil
+end
+</AssemblerScript>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>6</ID>
+      <Description>"Coins Per Second Multiplier"</Description>
+      <Options moHideChildren="1"/>
+      <LastState/>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>{ Game   : Realm Grinder
+  Version: 1.4.46.3
+  Date   : 2016-02-01
+  Author : ParkourPenguin
+
+  This script multiplies the amount of coins you get every second
+  by some value you provide.
+
+  Note that this can take up to 5 seconds to take effect in game.
+}
+
+[ENABLE]
+aobscan(CoinsPerSecond,DD ?? ?? ?? FF FF F3 0F 7E ?? ?? ?? FF FF F2 0F 59 ?? 66 0F D6 ?? ?? F3 0F 7E ?? ?? F2 0F 58 ?? 66 0F D6 ?? ?? F3 0F 7E ?? ?? 66 0F D6 86 ?? ?? 00 00 8B)
+alloc(newmem,1024)
+
+label(CPSMultiplier)
+
+registersymbol(CoinsPerSecond)
+registersymbol(CPSMultiplier)
+
+newmem:
+  addsd xmm0,xmm1
+  mulsd xmm0,[CPSMultiplier]
+  readmem(CoinsPerSecond+20,5)
+  jmp CoinsPerSecond+25
+  db CC CC
+CPSMultiplier:
+  dq (double)2
+
+CoinsPerSecond+1C:
+  jmp newmem
+
+[DISABLE]
+CoinsPerSecond+1C:
+  db F2 0F 58 C1 66
+
+unregistersymbol(CoinsPerSecond)
+unregistersymbol(CPSMultiplier)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE
+
+08F04A61 - FF D0                 - call eax
+08F04A63 - 83 C4 10              - add esp,10 (16)
+08F04A66 - F2 0F10 15 28C3AC05   - movsd xmm2,[05ACC328] ( [0.01] )
+08F04A6E - F3 0F7E 85 18FFFFFF   - movq xmm0,[ebp-000000E8]
+08F04A76 - DD 9D 20FFFFFF        - fstp qword ptr [ebp-000000E0]
+08F04A7C - F3 0F7E 8D 20FFFFFF   - movq xmm1,[ebp-000000E0]
+08F04A84 - F2 0F59 CA            - mulsd xmm1,xmm2
+08F04A88 - 66 0FD6 4D C0         - movq [ebp-40],xmm1
+08F04A8D - F3 0F7E 4D C0         - movq xmm1,[ebp-40]
+////////////////////////////////////////////////////////// INJECTING HERE
+08F04A92 - F2 0F58 C1            - addsd xmm0,xmm1
+08F04A96 - 66 0FD6 45 B8         - movq [ebp-48],xmm0
+////////////////////////////////////////////////////////// DONE INJECTING
+08F04A9B - F3 0F7E 45 B8         - movq xmm0,[ebp-48]
+08F04AA0 - 66 0FD6 86 C0000000   - movq [esi+000000C0],xmm0
+08F04AA8 - 8B 75 A0              - mov esi,[ebp-60]
+08F04AAB - 83 EC 0C              - sub esp,0C ( 12 )
+08F04AAE - 56                    - push esi
+08F04AAF - E8 69F2AB54           - call pepflashplayer.PPP_ShutdownBroker+82B2A
+08F04AB4 - 83 C4 10              - add esp,10 ( 16 )
+
+}
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>7</ID>
+          <Description>"Multiplier (NOT TO SCALE)"</Description>
+          <VariableType>Double</VariableType>
+          <Address>CPSMultiplier</Address>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>0</ID>
+      <Description>"Decrypt Constant Values"</Description>
+      <Options moManualExpandCollapse="1"/>
+      <LastState/>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>{ Game   : Realm Grinder
+  Version: 1.4.41.2
+  Date   : 2015-11-29
+  Author : ParkourPenguin
+
+  This script adds some constant values the game had encrypted to your table
+  as decrypted values.
+  Play around in the game a bit before activating this script to get the most
+  possible results. Disable and re-enable it later if you think you might be
+  missing something.
+}
+{$lua}
+if syntaxcheck then return end
+[ENABLE]
+------ Utility Functions ------
+--BitXOR function: credits to "Donald Reynolds", stack overflow
+--stackoverflow.com/questions/5977654/lua-bitwise-logical-operations
+local function BitXOR(a,b)
+    local p,c=1,0
+    while a&gt;0 and b&gt;0 do
+        local ra,rb=a%2,b%2
+        if ra~=rb then c=c+p end
+        a,b,p=(a-ra)/2,(b-rb)/2,p*2
+    end
+    if a&lt;b then a=b end
+    while a&gt;0 do
+        local ra=a%2
+        if ra&gt;0 then c=c+p end
+        a,p=(a-ra)/2,p*2
+    end
+    return c
+end
+
+------ Script Enable ------
+encValAOBs = AOBScan("BB ?? ?? ?? ?? 81 F3 ?? ?? ?? ?? 66 ?? ?? ?? F2","+X",0)
+encValAsmBackups = {}
+
+if encValAOBs == nil then
+  showMessage("Sorry, I couldn't find any encrypted values.")
+  return
+end
+
+
+--set parent record of the decrypted values in the table
+local al = getAddressList()
+local parentName = "Decrypt Constant Values"
+local parentRec
+
+parentRec = al.getMemoryRecordByDescription(parentName)
+
+if parentRec == nil then
+  parentName = inputQuery("Error",string.format("Could not find the script \"%s\".\nWhat record would you like to put the decoded values under?",parentName),"Found Encrypted Values")
+  if parentName == nil or parentName == "" then
+    parentName = "Found Encrypted Values"
+  end
+  parentRec = al.getMemoryRecordByDescription(parentName)
+  if parentRec == nil then
+    parentRec = al.createMemoryRecord()
+    parentRec.Description = parentName
+    parentRec.Type = vtString
+    parentRec.String.Size = 0
+  end
+end
+
+encValParentName = parentRec.Description
+
+--override memory, add unencrypted values
+for i=0,encValAOBs.Count-1,1 do
+  local errorHasHappened = false
+  local addy = tonumber(encValAOBs[i],16)
+  local val = readInteger(addy+1)
+  local encryp = readInteger(addy+7)
+  local newVal = BitXOR(val,encryp)
+
+  --backup old machine code
+  encValAsmBackups[i] = readBytes(addy,11,true)
+
+  --override encrypted num w/ decrypted num
+  if not errorHasHappened then
+    if not writeInteger(addy+1,newVal) then
+      fullAccess(addy+1,4)
+      if not writeInteger(addy+1,newVal) then
+        messageDialog("Could not write to address " .. getNameFromAddress(addy+1),mtError,mbOK)
+        errorHasHappened = true
+      end
+    end
+  end
+
+  --override XOR decryption w/ nops
+  if not errorHasHappened then
+    if not writeBytes(addy+5,0x90,0x90,0x90,0x90,0x90,0x90) then
+      fullAccess(addy+5,6)
+      if not writeBytes(addy+5,0x90,0x90,0x90,0x90,0x90,0x90) then
+        messageDialog("Could not write to address " .. getNameFromAddress(addy+5),mtError,mbOK)
+        writeInteger(addy+1,val)
+        errorHasHappened = true
+      end
+    end
+  end
+
+  --add to cheat table
+  if not errorHasHappened then
+    local rec = al.createMemoryRecord()
+    rec.Description = "Decrypted Value " .. tostring(i+1)
+    rec.Type = vtDword
+    rec.Address = getNameFromAddress(addy+1)
+    rec.appendToEntry(parentRec)
+  end
+end
+
+
+[DISABLE]
+--remove cheat table
+if encValParentName ~= nil and type(encValParentName) == "string" then
+  local al = getAddressList()
+  local parentRec = al.getMemoryRecordByDescription(encValParentName)
+  if parentRec ~= nil then
+    if parentRec.Type == vtString and parentRec.String.Size == 0 then
+      parentRec.destroy()
+    else
+      for i = 0, parentRec.Count-1, 1 do
+        parentRec.Child[0].destroy()
+      end
+    end
+  end
+end
+
+--restore old addresses
+if encValAOBs ~= nil then
+  for i=0,encValAOBs.Count-1,1 do
+    local addy = tonumber(encValAOBs[i],16)
+
+    if not writeBytes(addy,encValAsmBackups[i]) then
+    fullAccess(addy,11)
+      if not writeBytes(addy,encValAsmBackups[i]) then
+        messageDialog("Could not restore backup to address " .. tostring(addy),mtError,mbOK)
+      end
+    end
+  end
+end
+
+
+--cleanup
+if encValAOBs and encValAOBs.destroy then encValAOBs.destroy() end
+encValAOBs = nil
+encValAsmBackups = nil
+encValParentName = nil
+
+</AssemblerScript>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols>
+    <SymbolEntry>
+      <Name>manaMultiplier</Name>
+      <Address>01EA0026</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>playground</Name>
+      <Address>00D60000</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>ManaPointer</Name>
+      <Address>08AED223</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>manaBaseP</Name>
+      <Address>00700015</Address>
+    </SymbolEntry>
+  </UserdefinedSymbols>
+</CheatTable>

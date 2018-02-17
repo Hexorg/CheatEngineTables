@@ -1,0 +1,586 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="14">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>1</ID>
+      <Description>"[X] &lt;== Divinity II  V1.4.9.70 Script AOB"</Description>
+      <Options moHideChildren="1"/>
+      <Color>FF0000</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>{
+===========================================
+ Divinity II: The Dragon Knight Saga
+ Game Version  : 1.4.9.70
+ Script Version: 2.0
+ CE Version    : 5.6
+ GodMode, Mana and Gold
+ 12-Nov-2010 For version 1.4.9.32
+ 27-Dec-2010 Changed offsets for version 1.4.9.70 + _MonXP
+ 27-Dec-2010 AOB Version
+===========================================
+}
+
+[ENABLE]
+//=========================================
+alloc(MyCode,4096,Divinity2.exe)
+//=========================================
+
+aobscan(aobGodMode,d9 9e 8c 01 00 00 5e 83 c4 08)
+aobscan(aobMonMana,d9 9e 90 01 00 00 5e 83 c4 08 c2 04 00)
+aobscan(aobMonGold,8b 81 94 00 00 00 c3 cc cc cc cc cc cc cc cc cc 8b 81 8c)
+aobscan(aobMonPlayer,d9 86 8c 01 00 00 d9 44 24 04 d8 d1)
+aobscan(aobMonXP,8b 44 24 04 01 81 90 00 00 00) //+04
+
+//=========================================
+// Declaration section
+label(pGodMode)
+label(pMonMana)
+label(pMonGold)
+label(pMonPlayer)
+label(pMonXP)
+label(_GodMode)
+label(_BackGM)
+label(_ExitGM)
+label(_MonMana)
+label(_BackMM)
+label(_ExitMM)
+label(_MonGold)
+label(_BackMG)
+label(_ExitMG)
+label(_MonPlayer)
+label(_BackMP)
+label(_MonXP)
+label(_BackMX)
+label(_ExitMX)
+label(pHero)
+label(pHero1)
+label(pGoldXP)
+label(iEnableGM)
+label(iEnableMM)
+label(iEnableMG)
+label(iEnableMX)
+label(iMinGold)
+label(iEAX)
+
+registersymbol(MyCode)
+registersymbol(pHero)
+registersymbol(pHero1)
+registersymbol(pGoldXP)
+registersymbol(iEnableGM)
+registersymbol(iEnableMM)
+registersymbol(iEnableMG)
+registersymbol(iEnableMX)
+registersymbol(iMinGold)
+registersymbol(pGodMode)
+registersymbol(pMonMana)
+registersymbol(pMonGold)
+registersymbol(pMonPlayer)
+registersymbol(pMonXP)
+
+//=========================================
+MyCode:
+//=========================================
+_GodMode:
+ push eax
+ 
+ cmp dword ptr [iEnableGM],0
+ je _ExitGM                     // Jump if feature is disabled
+ 
+ cmp byte ptr [esi+00000184],1  // Player´s unit?
+ jne _ExitGM                    // Jump if false
+ 
+ mov [pHero],esi                // Save pointer for debugging
+
+ fst dword ptr [iEAX]
+ mov eax,[iEAX]
+ cmp eax,[esi+0000018c]        
+ jge _ExitGM
+ 
+ fstp st(0)                     // Discard value
+ fld dword ptr [esi+0000018c]   // Get current HP
+
+_ExitGM:
+ fstp dword ptr [esi+0000018c]  // Original code
+ pop eax
+ jmp _BackGM                    // Back to main code
+
+//=========================================
+_MonMana:
+ push eax
+ 
+ cmp dword ptr [iEnableMM],0
+ je _ExitMM                     // Jump if feature is disabled
+ 
+ cmp byte ptr [esi+00000184],1  // Player´s unit?
+ jne _ExitMM                    // Jump if false
+ 
+ mov [pHero],esi                // Save pointer for debugging
+
+ fst dword ptr [iEAX]
+ mov eax,[iEAX]
+ cmp eax,[esi+00000190]
+ jge _ExitMM
+ 
+ fstp st(0)                     // Discard value
+ fld dword ptr [esi+00000190]   // Get current Mana
+
+_ExitMM:
+ fstp dword ptr [esi+00000190]  // Original code
+ pop eax
+ jmp _BackMM                    // Back to main code
+
+//=========================================
+_MonGold:
+ cmp dword ptr [iEnableMG],0
+ je _ExitMG                     // Jump if feature is disabled
+
+ cmp ecx,[pGoldXP]
+ jne _ExitMG                    // Jump if it is not the player´s gold
+ 
+ mov eax,[iMinGold]             // Get minimum value
+ cmp eax,[ecx+00000094]         // Current value &gt;= minimum?
+ jle _ExitMG                    // Jump if true
+ 
+ mov [ecx+00000094],eax         // Update gold
+
+_ExitMG: 
+ mov eax,[ecx+00000094]         // Original code
+ jmp _BackMG                    // Back to main code
+
+//=========================================
+_MonPlayer:
+ mov [pHero1],esi               // Save pointer for debugging
+ 
+ mov esi,[esi+000000fc]         // Get pointer to Gold Structure
+ mov [pGoldXP],esi              // Save it for further use
+
+ mov esi,[pHero1]
+ 
+ fld dword ptr [esi+0000018c]   // Original code
+ jmp _BackMP                    // Back to main code
+
+//=========================================
+_MonXP:
+ cmp dword ptr [iEnableMX],0
+ je _ExitMX                     // Jump if feature is disabled
+
+ cmp ecx,[pGoldXP]
+ jne _ExitMX                    // Jump if it is not the player´s XP
+ 
+ xor eax,eax                    // Make value2decrease = 0
+ mov [ecx+00000090],eax         // Make XP_Debt = 0 
+
+_ExitMX: 
+ add [ecx+00000090],eax         // Original code (update XP Debt)
+ jmp _BackMX                    // Back to main code
+
+//=========================================
+ db '=============================&gt;'
+ db 'CE6.2 Script by Recifense 103012'
+//=========================================
+// Variables
+iEnableGM:
+ dd 0
+iEnableMM:
+ dd 0
+iEnableMG:
+ dd 0
+iEnableMX:
+ dd 0
+pHero:
+ dd 0
+pHero1:
+ dd 0 
+pGoldXP:
+ dd 0 
+iMinGold:
+ dd #62000
+iEAX:
+ dd 0
+
+//=========================================
+// Hacking Points
+//Divinity2.exe+002ef2b9:
+//Divinity2.exe+002fdd99:
+aobGodMode:
+pGodMode:
+ jmp _GodMode
+ nop
+_BackGM:
+
+//Divinity2.exe+002e8860:
+//Divinity2.exe+002f7290:
+aobMonMana:
+pMonMana:
+ jmp _MonMana
+ nop
+_BackMM:
+
+//Divinity2.exe+003172a0:
+//Divinity2.exe+00325010:
+aobMonGold:
+pMonGold:
+ jmp _MonGold
+ nop
+_BackMG:
+
+//Divinity2.exe+002f214f:
+//Divinity2.exe+00300c2f:
+aobMonPlayer:
+pMonPlayer:
+ jmp _MonPlayer
+ nop
+_BackMP:
+
+//Divinity2.exe+00325044:
+aobMonXP+04:
+pMonXP:
+ jmp _MonXP
+ nop
+_BackMX:
+
+//=========================================
+// Original Codes
+[DISABLE]
+//Divinity2.exe+002ef2b9:
+//Divinity2.exe+002fdd99:
+pGodMode:
+ fstp dword ptr [esi+0000018c]
+
+//Divinity2.exe+002e8860:
+//Divinity2.exe+002f7290:
+pMonMana:
+ fstp dword ptr [esi+00000190]
+
+//Divinity2.exe+003172a0:
+//Divinity2.exe+00325010:
+pMonGold:
+ mov eax,[ecx+00000094]
+
+//Divinity2.exe+002f214f:
+//Divinity2.exe+00300c2f:
+pMonPlayer:
+ fld dword ptr [esi+0000018c]
+
+//Divinity2.exe+00325044:
+pMonXP:
+ add [ecx+00000090],eax
+ 
+unregistersymbol(MyCode)
+unregistersymbol(pHero)
+unregistersymbol(pHero1)
+unregistersymbol(pGoldXP)
+unregistersymbol(iEnableGM)
+unregistersymbol(iEnableMM)
+unregistersymbol(iEnableMG)
+unregistersymbol(iEnableMX)
+unregistersymbol(iMinGold)
+unregistersymbol(pGodMode)
+unregistersymbol(pMonMana)
+unregistersymbol(pMonGold)
+unregistersymbol(pMonPlayer)
+unregistersymbol(pMonXP)
+
+dealloc(MyCode)
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>2</ID>
+          <Description>"Enable/Disable God Mode =&gt; (1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableGM</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>3</ID>
+          <Description>"Enable/Disable Unlimited Mana =&gt;(1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMM</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>4</ID>
+          <Description>"Enable/Disable Minimum Gold =&gt; (1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMG</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>6</ID>
+              <Description>"Minimum Gold Value"</Description>
+              <Color>0080FF</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>iMinGold</Address>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>5</ID>
+          <Description>"Enable/Disable No decreasing XP =&gt; (1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMX</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>18</ID>
+          <Description>"=========== Hero's Information =========="</Description>
+          <ShowAsHex>1</ShowAsHex>
+          <Color>000080</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>pHero1</Address>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>9</ID>
+              <Description>"Hero's Gold"</Description>
+              <Color>0000FF</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pHero1</Address>
+              <Offsets>
+                <Offset>94</Offset>
+                <Offset>FC</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>10</ID>
+              <Description>"Hero's XP"</Description>
+              <Color>0000FF</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pHero1</Address>
+              <Offsets>
+                <Offset>8C</Offset>
+                <Offset>FC</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>12</ID>
+              <Description>"Hero's Skill Points"</Description>
+              <Color>0000FF</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pHero1</Address>
+              <Offsets>
+                <Offset>3C</Offset>
+                <Offset>FC</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>11</ID>
+              <Description>"Hero's Attribute Points"</Description>
+              <Color>0000FF</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pHero1</Address>
+              <Offsets>
+                <Offset>2C</Offset>
+                <Offset>FC</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>13</ID>
+              <Description>"Hero's Vitality"</Description>
+              <Color>0000FF</Color>
+              <VariableType>Float</VariableType>
+              <Address>pHero1</Address>
+              <Offsets>
+                <Offset>28</Offset>
+                <Offset>104</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>14</ID>
+              <Description>"Hero's Spirit"</Description>
+              <Color>0000FF</Color>
+              <VariableType>Float</VariableType>
+              <Address>pHero1</Address>
+              <Offsets>
+                <Offset>3C</Offset>
+                <Offset>104</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>15</ID>
+              <Description>"Hero's Strength"</Description>
+              <Color>0000FF</Color>
+              <VariableType>Float</VariableType>
+              <Address>pHero1</Address>
+              <Offsets>
+                <Offset>50</Offset>
+                <Offset>104</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>16</ID>
+              <Description>"Hero's Dexterity"</Description>
+              <Color>0000FF</Color>
+              <VariableType>Float</VariableType>
+              <Address>pHero1</Address>
+              <Offsets>
+                <Offset>64</Offset>
+                <Offset>104</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>17</ID>
+              <Description>"Hero's Intelligence"</Description>
+              <Color>0000FF</Color>
+              <VariableType>Float</VariableType>
+              <Address>pHero1</Address>
+              <Offsets>
+                <Offset>78</Offset>
+                <Offset>104</Offset>
+              </Offsets>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols>
+    <SymbolEntry>
+      <Name>pHero</Name>
+      <Address>03A40170</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>pHero1</Name>
+      <Address>03A40174</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>pGoldXP</Name>
+      <Address>03A40178</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>iEnableGM</Name>
+      <Address>03A40160</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>iEnableMM</Name>
+      <Address>03A40164</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>iEnableMG</Name>
+      <Address>03A40168</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>iEnableMX</Name>
+      <Address>03A4016C</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>iMinGold</Name>
+      <Address>03A4017C</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>pGodMode</Name>
+      <Address>0075BCB9</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>pMonMana</Name>
+      <Address>00755160</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>pMonGold</Name>
+      <Address>008C98A0</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>pMonPlayer</Name>
+      <Address>0075EADF</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>pMonXP</Name>
+      <Address>008C98D4</Address>
+    </SymbolEntry>
+  </UserdefinedSymbols>
+  <Comments>===========================================
+ Divinity II: The Dragon Knight Saga
+ Game Version  : 1.4.9.70
+ Script Version: 2.0
+ CE Version    : 5.6
+ GodMode, Mana and Gold
+ 12-Nov-2010 For version 1.4.9.32
+ 27-Dec-2010 Changed offsets for version 1.4.9.70 + _MonXP
+ 27-Dec-2010 AOB Version
+===========================================
+HOTKEYS:
+CTRL+Home = Enable  cheats;
+CTRL+End  = Disable cheats;
+===========================================
+Cheers!
+</Comments>
+</CheatTable>

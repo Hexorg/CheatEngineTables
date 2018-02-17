@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="14">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>564</ID>
+      <Description>"ItemLeveller"</Description>
+      <Options moHideChildren="1"/>
+      <Color>80000008</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>[ENABLE]
+// ItemStart+1EC+3EC+258 // char level from weapon
+// CC CC CC CC 8B 81 D0 01 00 00 C3 CC CC CC CC
+// Borderlands2.exe+DAF4C - CC                    - int 3
+// Borderlands2.exe+DAF4D - CC                    - int 3
+// Borderlands2.exe+DAF4E - CC                    - int 3
+// Borderlands2.exe+DAF4F - CC                    - int 3
+// Borderlands2.exe+DAF50 - 8B 81 D0010000        - mov eax,[ecx+000001D0]
+// Borderlands2.exe+DAF56 - C3                    - ret
+// Borderlands2.exe+DAF57 - CC                    - int 3
+// Borderlands2.exe+DAF58 - CC                    - int 3
+// Borderlands2.exe+DAF59 - CC                    - int 3
+// Borderlands2.exe+DAF5A - CC                    - int 3
+//
+// CC CC 8B 81 D0 01 00 00 C3 CC CC
+
+aobscan(ItemLevel_Addr,CC CC 8B 81 D0 01 00 00 C3 CC CC)
+alloc(ItemLevel_Data,4096)
+label(ItemLevel_Hook)
+label(ItemLevel_Start)
+label(ItemLevel_Exit)
+label(ItemLevel_Return)
+
+label(ItemLevel_ItemAddr)
+label(ItemLevel_TargetLvl)
+label(ItemLevel_DesLvl)
+
+label(ItemLevel_GetPlayerLvl)
+label(ItemLevel_GotLvl)
+label(ItemLevel_NotGun)
+label(ItemLevel_MakeChange)
+
+registersymbol(ItemLevel_Hook)
+registersymbol(ItemLevel_ItemAddr)
+registersymbol(ItemLevel_DesLvl)
+
+// Found Game code to hook
+ItemLevel_Addr+2:
+ItemLevel_Hook:
+jmp ItemLevel_Start
+nop
+ItemLevel_Return:
+
+// Our Data
+ItemLevel_Data:
+ItemLevel_ItemAddr:
+db 00 00 00 00
+ItemLevel_TargetLvl:
+db 00 00 00 00
+ItemLevel_DesLvl:
+db 00 00 00 00
+// Our Code
+ItemLevel_Start:
+pushfd
+pushad
+mov [ItemLevel_ItemAddr], ecx // Store Item Location for convenience.
+// Check if desired Level Specified:
+mov eax, [ItemLevel_DesLvl]
+cmp eax, 0
+je ItemLevel_GetPlayerLvl
+mov [ItemLevel_TargetLvl], eax
+jmp ItemLevel_GotLvl
+// Check Player Level
+ItemLevel_GetPlayerLvl:
+mov eax, [ecx+1EC]
+cmp eax, 0
+je ItemLevel_Exit
+mov eax, [eax+3EC]
+cmp eax, 0
+je ItemLevel_Exit
+mov eax, [eax+258]
+cmp eax, 0
+je ItemLevel_Exit
+mov [ItemLevel_TargetLvl], eax
+ItemLevel_GotLvl:
+// Current Item Display Level is at +1E0
+mov ebx, [ecx+1E0]
+cmp ebx, 0
+je ItemLevel_Exit
+cmp ebx, [ecx+E3C] // Compare Current Level with Weapon Actual Level Offset +E3C
+jne ItemLevel_NotGun
+// Matches gun level
+lea eax, [ecx+E3C]
+jmp ItemLevel_MakeChange
+ItemLevel_NotGun:
+cmp ebx, [ecx+8B4] // Compare Current Level with Item Actual Level Offset +8B4
+jne ItemLevel_Exit // No Match, exit.
+lea eax, [ecx+8B4] // Matches, assign address to EAX
+ItemLevel_MakeChange:
+mov ebx, [ItemLevel_TargetLvl]
+mov [eax], ebx // Assign New Value to Actual Level
+lea eax, [ecx+1E4] // Additional Level Specification at +1E4, not auto updated
+mov [eax], ebx // Update Additional Level Specification.
+ItemLevel_Exit:
+popad
+popfd
+mov eax,[ecx+000001D0]
+jmp ItemLevel_Return
+
+[DISABLE]
+ItemLevel_Hook:
+db 8B 81 D0 01 00 00
+
+dealloc(ItemLevel_Data)
+unregistersymbol(ItemLevel_Hook)
+unregistersymbol(ItemLevel_ItemAddr)
+unregistersymbol(ItemLevel_DesLvl)
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>565</ID>
+          <Description>"ItemAddr (Info Only, address of Item Structure)"</Description>
+          <ShowAsHex>1</ShowAsHex>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>ItemLevel_ItemAddr</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>566</ID>
+          <Description>"Desired NonZero to specify new level other than current level"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>ItemLevel_DesLvl</Address>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols>
+    <SymbolEntry>
+      <Name>Count3240</Name>
+      <Address>09D6040C</Address>
+    </SymbolEntry>
+  </UserdefinedSymbols>
+</CheatTable>

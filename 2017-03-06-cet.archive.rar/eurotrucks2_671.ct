@@ -1,0 +1,308 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="18">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>163</ID>
+      <Description>"Game: Euro Truck Simulator 2 (x86) - Version: 2015-11-29"</Description>
+      <LastState Value="" Activated="0" RealAddress="00000000"/>
+      <Color>FF0000</Color>
+      <GroupHeader>1</GroupHeader>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>161</ID>
+      <Description>"Euro Truck Simulator 2 - Money @ Menu"</Description>
+      <Options moHideChildren="1"/>
+      <LastState Activated="1"/>
+      <Color>008000</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>{
+  Game   : eurotrucks2.exe
+  Version: 1.19.2.1s - 32-bit (backwards compatible, forward compatible)
+  Updated Date   : 2015-11-29
+  Author : Daijobu
+  Note: I love auto AOB. Thanks Dark Byte&amp;Co.
+}
+
+[ENABLE]
+{Init}
+aobscanmodule(pMoneyAOB1,eurotrucks2.exe,FF 70 * FF 70 * E8 * * * * 8B 4C 24 * 83 C4 * C7 44 24 14)
+aobscanmodule(pMoneyAOB2,eurotrucks2.exe,DF * * 83 EC * D8 0D * * * * D8 05 * * * * DD 1C 24 E8) //Offset +6 (fmul dword ptr [eurotrucks2.exe+X])
+alloc(pMoney,$1000)
+alloc(pStoredBytes1,64)
+{Labels}
+label(pOriginalCode)
+label(pSetMoney)
+label(pGetMoney)
+label(pUpdateMoney)
+label(pExit)
+label(pMoneyPTR1)
+label(pMoneyPTR2)
+label(pCurrencyFloat)
+{Symbols}
+registersymbol(pMoneyAOB1)
+registersymbol(pStoredBytes1)
+registersymbol(pMoneyPTR1)
+registersymbol(pCurrencyFloat)
+
+{Init Vars}
+pMoney+128:
+pMoneyPTR1:
+dd 0
+
+pMoney+160:
+pMoneyPTR2:
+dd 0
+
+pMoney+192:
+pCurrencyFloat:
+dd 0
+
+pStoredBytes1:
+readmem(pMoneyAOB2+8,4) {read 4 bytes from our location}
+
+{Start Script}
+{===== #1 =====}
+pMoney:
+push ecx
+  mov ecx,[pStoredBytes1]
+  mov ecx,[ecx] {Dereference}
+  mov [pCurrencyFloat],ecx
+pop ecx
+  cmp [pMoneyPTR1],0
+  je pGetMoney
+pushad
+  mov eax,[pMoneyPTR1]
+  mov ebx,[pMoneyPTR2]
+  cmp eax,ebx
+popad
+  je pGetMoney
+  jmp pSetMoney
+
+pSetMoney:
+{Get our value and convert it to â‚¬uros using the games' multiplier}
+  fild dword ptr [pMoneyPTR1]
+  fdiv dword ptr [pCurrencyFloat]
+  fistp dword ptr [pMoneyPTR1]
+  jmp pUpdateMoney
+
+pGetMoney:
+  fild dword ptr [eax+28]
+  fmul dword ptr [pCurrencyFloat]
+  fist dword ptr [pMoneyPTR1]
+  fistp dword ptr [pMoneyPTR2]
+  jmp pOriginalCode
+
+pUpdateMoney:
+pushad
+  mov edx,[pMoneyPTR1]
+  mov [eax+28],edx
+popad
+  jmp pGetMoney
+
+pOriginalCode:
+  push [eax+2C]
+  push [eax+28]
+jmp pExit
+
+{===== #2 =====}
+{Injection Point}
+pMoneyAOB1: {Main injection point}
+  jmp pMoney
+  db 90
+pExit:
+
+[DISABLE]
+pMoneyAOB1:
+  db FF 70 2C FF 70 28
+
+unregistersymbol(pCurrencyFloat)
+unregistersymbol(pMoneyPTR1)
+unregistersymbol(pStoredBytes1)
+unregistersymbol(pMoneyAOB1)
+dealloc(pStoredBytes1)
+dealloc(pMoney)
+
+{
+// ORIGINAL
+
+"eurotrucks2.exe"+20BC08: 6A 00                    -  push 00
+"eurotrucks2.exe"+20BC0A: 56                       -  push esi
+"eurotrucks2.exe"+20BC0B: 8D 4C 24 30              -  lea ecx,[esp+30]
+"eurotrucks2.exe"+20BC0F: E8 8C BB E7 FF           -  call eurotrucks2.exe+877A0
+"eurotrucks2.exe"+20BC14: 8B 47 30                 -  mov eax,[edi+30]
+"eurotrucks2.exe"+20BC17: 32 D2                    -  xor dl,dl
+"eurotrucks2.exe"+20BC19: 68 1C C1 BE 01           -  push eurotrucks2.exe+C8C11C
+"eurotrucks2.exe"+20BC1E: 51                       -  push ecx
+"eurotrucks2.exe"+20BC1F: 8D 4C 24 34              -  lea ecx,[esp+34]
+// ---------- INJECTING HERE ----------
+"eurotrucks2.exe"+20BC23: FF 70 2C                 -  push [eax+2C]
+"eurotrucks2.exe"+20BC26: FF 70 28                 -  push [eax+28]
+// ---------- DONE INJECTING  ----------
+"eurotrucks2.exe"+20BC29: E8 82 49 EF FF           -  call eurotrucks2.exe+1005B0
+"eurotrucks2.exe"+20BC2E: 8B 4C 24 34              -  mov ecx,[esp+34]
+"eurotrucks2.exe"+20BC32: 83 C4 10                 -  add esp,10
+"eurotrucks2.exe"+20BC35: C7 44 24 14 70 B5 A6 01  -  mov [esp+14],eurotrucks2.exe+B0B570
+"eurotrucks2.exe"+20BC3D: 8D 51 01                 -  lea edx,[ecx+01]
+"eurotrucks2.exe"+20BC40: 8A 01                    -  mov al,[ecx]
+"eurotrucks2.exe"+20BC42: 41                       -  inc ecx
+"eurotrucks2.exe"+20BC43: 84 C0                    -  test al,al
+"eurotrucks2.exe"+20BC45: 75 F9                    -  jne eurotrucks2.exe+20BC40
+"eurotrucks2.exe"+20BC47: 6A FF                    -  push -01
+"eurotrucks2.exe"+20BC49: 2B CA                    -  sub ecx,edx
+}
+
+//This is old, keeping it here for reference of the struct that fetches the multiplier.
+//pushad
+  //mov edi,[pCurrencyID] {Load the active currency ID}
+  //mov eax,[eurotrucks2.exe+XXXXXX] {Static, needs a workaround. This is the base (1.18.1.3 x86).}
+  //mov eax,[eax+A4]
+  //lea eax,[eax+240]
+  //mov eax,[eax+4]
+  //lea eax,[eax+edi*4] {Table entry: ID * 4 = address with multiplier}
+  //mov eax,[eax]
+  //mov [pCurrencyMultiplier],eax {Deprecated symbol}
+//popad
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>164</ID>
+          <Description>"Instructions (activate me!):"</Description>
+          <Options moHideChildren="1"/>
+          <LastState Value="" Activated="0" RealAddress="00000000"/>
+          <Color>0000FF</Color>
+          <GroupHeader>1</GroupHeader>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>167</ID>
+              <Description>"Load your Profile into the Main Menu."</Description>
+              <LastState Value="" Activated="0" RealAddress="00000000"/>
+              <Color>0080FF</Color>
+              <GroupHeader>1</GroupHeader>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>168</ID>
+              <Description>"To update the currency display or edit the currency.."</Description>
+              <LastState Value="" Activated="0" RealAddress="00000000"/>
+              <Color>0080FF</Color>
+              <GroupHeader>1</GroupHeader>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>169</ID>
+              <Description>"..open a menu like Skills or Truck Dealers and return to the Main Menu."</Description>
+              <LastState Value="" Activated="0" RealAddress="00000000"/>
+              <Color>0080FF</Color>
+              <GroupHeader>1</GroupHeader>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>162</ID>
+          <Description>"Player Money [edit this value]"</Description>
+          <LastState Value="??" Activated="0" RealAddress="004D0128"/>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>pMoneyPTR1</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>166</ID>
+          <Description>"Active Currency Multiplier [display only]"</Description>
+          <LastState Value="??" Activated="0" RealAddress="004D0192"/>
+          <ShowAsSigned>0</ShowAsSigned>
+          <Color>80000008</Color>
+          <VariableType>Float</VariableType>
+          <Address>pCurrencyFloat</Address>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols>
+    <SymbolEntry>
+      <Name>w3_pExpgain_aob</Name>
+      <Address>7FF6B25781A0</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>w3_pExpgain_ptr</Name>
+      <Address>7FF6B0D50064</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>ES2_EXP_PTR</Name>
+      <Address>2AA90000</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>ES2_MONEY_PTR</Name>
+      <Address>2AA90010</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>ES2_FUEL_PTR</Name>
+      <Address>0E9B0020</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>pointer1</Name>
+      <Address>0E9B0030</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>ES2_FUELDRV_PTR</Name>
+      <Address>2AA90020</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>ES2_SLEEPY_PTR</Name>
+      <Address>2AA90030</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>ES2_EXP_AOB_JMP</Name>
+      <Address>00436247</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>ES2_EXP_VAR1</Name>
+      <Address>0F960080</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>ES2_EXP_VAR2</Name>
+      <Address>0F960084</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>ES2_EXP_VAR3</Name>
+      <Address>0F960087</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>ES2_MONEY_AOB_JMP</Name>
+      <Address>0042EAC6</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>ES2_MONEY_AOB_2_JMP</Name>
+      <Address>0046B1C8</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>ES2_MONEY_VAR1</Name>
+      <Address>0F970080</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>ES2_FUELDRV_AOB_JMP</Name>
+      <Address>006CB9C0</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>ES2_FUELDRV_VAR</Name>
+      <Address>0F980080</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>ES2_SLEEPY_AOB_JMP</Name>
+      <Address>00463026</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>ES2_SLEEPY_VAR</Name>
+      <Address>0F9A0080</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>pMoneyAOB1</Name>
+      <Address> 01043393</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>pMoneyPTR1</Name>
+      <Address>004D0128</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>pCurrencyFloat</Name>
+      <Address>004D0192</Address>
+    </SymbolEntry>
+  </UserdefinedSymbols>
+</CheatTable>

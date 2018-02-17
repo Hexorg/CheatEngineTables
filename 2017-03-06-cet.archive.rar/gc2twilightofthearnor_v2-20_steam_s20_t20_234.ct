@@ -1,0 +1,728 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="18">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>34</ID>
+      <Description>"[X] &lt;== Galactic Civilization II Twilight Of The Arnor v2.20 Steam Script v20"</Description>
+      <Options moHideChildren="1"/>
+      <LastState Activated="0"/>
+      <Color>FF0000</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>{
+===========================================
+ Game Title    : Galactic Civilization 2 - Twilight Of The Arnor
+ Game Version  : 2.20
+ Game Sponsor  : Myself
+ Proces Name   : GC2TwilightOfTheArnor.exe
+ Script Version: 2.0
+ CE Version    : 6.4
+ Release date  : 18-Dec-2015
+ Author        : Recifense
+ History:
+ 09-Jan-14: First Release
+ 09-Jan-14: Added one more feature
+ 18-Dec-15: Release for version 2.20
+ Features:
+ - Minimum Empire Treasure
+ - Research in 1 Turn
+ - Move Unlimited Times (changed)
+ - Minimum Troop/Colonists for Sel Ship
+ - God Mode:
+   - Ships
+   - Invasion
+ - Ability Points
+ - Some Pointers
+===========================================
+}
+
+//=========================================
+// Definitions
+define(LUDO,"GC2TwilightOfTheArnor.exe")
+define(MHPR,GC2TwilightOfTheArnor.exe+00090fbc) //=
+define(MPRH,GC2TwilightOfTheArnor.exe+0027d124) //=
+define(MSUN,GC2TwilightOfTheArnor.exe+002ea0fb) //=
+define(MMPT,GC2TwilightOfTheArnor.exe+0023ba66) //=
+define(GDMD,GC2TwilightOfTheArnor.exe+001ffa4b) //=
+define(MPIN,GC2TwilightOfTheArnor.exe+0035ee9b) //=
+define(METE,GC2TwilightOfTheArnor.exe+0027028e) //=
+define(MAPT,GC2TwilightOfTheArnor.exe+00148309) //=
+
+//=========================================
+// Constants used in the script (that can be changed)
+define(ctMMON,#10000)  // Minimum Money
+define(ctMMAP,#200)    // Minimum Ability Points
+define(ctMMTS,#2500)   // Minimum Troop Size
+//=========================================
+[ENABLE]
+//=========================================
+//LuaCall(CheckVersion())
+//=========================================
+// Check if script is compatible to this game version
+// If false the script will not be loaded
+
+assert(MHPR,8b 85 c0 0b 00 00 8d 54 24 30 52 50 e8 ?? ?? ?? ?? 8b 44 24 3c)
+assert(MPRH,8b 96 c4 0b 00 00 39 04 8a ?? ?? 53 8b d9 8b cf e8 ?? ?? ?? ??)
+assert(MSUN,89 b7 c0 6d 05 00 ?? ?? 6a 01 8b ce e8 ?? ?? ?? ?? 6a 00 8b ce)
+assert(MMPT,29 86 c4 01 00 00 ?? ?? 89 9e c4 01 00 00 f6 46 70 02 ?? ?? 56)
+assert(GDMD,01 ae b8 01 00 00 2b c5 8b ce 89 86 b0 01 00 00 ff 92 ac 00 00)
+assert(MPIN,8b 86 84 00 00 00 8d 14 80 8b 46 54 57 8d 3c 80 03 d2 03 ff 90)
+assert(METE,29 97 b8 0b 00 00 8b 46 14 0f af 46 0c 01 87 7c be 00 00 81 c7)
+assert(MAPT,89 86 08 03 00 00 89 9e 0c 03 00 00 33 ff ?? ?? 8d a4 24 00 00)
+
+//=========================================
+alloc(MyCode,4096,LUDO)
+//=========================================
+// Declaration section
+label(_MonHumanPlayer)
+label(_BackMHP)
+label(_ExitMHP)
+label(_MonPlayerResearch)
+label(_BackMPR)
+label(_ExitMPR)
+label(_MonSelUnit)
+label(_MonSU00)
+label(_MonSU01)
+label(_BackMSU)
+label(_ExitMSU)
+label(_MonMovePoints)
+label(_BackMMP)
+label(_ExitMMP)
+label(_GodMode)
+label(_BackGMD)
+label(_ExitGMD)
+label(_MonPlanetInvasion)
+label(_MonPI00)
+label(_BackMPI)
+label(_ExitMPI)
+label(_MonEmpireTreasure)
+label(_BackMET)
+label(_ExitMET)
+label(_MonAbilityPoints)
+label(_BackMAP)
+label(_ExitMAP)
+label(iEnableMET)
+label(iEnableMPR)
+label(iEnableMMP)
+label(iEnableMMC)
+label(iEnableGMD)
+label(iEnableMAP)
+label(iPlayerID)
+label(iRTCount)
+label(pPlayer)
+label(pSel)
+
+//=========================================
+// Registering Symbols
+registersymbol(MyCode)
+registersymbol(iEnableMET)
+registersymbol(iEnableMPR)
+registersymbol(iEnableMMP)
+registersymbol(iEnableMMC)
+registersymbol(iEnableGMD)
+registersymbol(iEnableMAP)
+registersymbol(iPlayerID)
+registersymbol(iRTCount)
+registersymbol(pPlayer)
+registersymbol(pSel)
+
+//=========================================
+MyCode:
+//=========================================
+// Main game screen (open/close Menu)
+_MonHumanPlayer:
+ mov dword ptr [iRTCount],1
+
+ mov [pPlayer],ebp
+
+ mov eax,[ebp+04]
+ mov [iPlayerID],eax
+
+ cmp dword ptr [iEnableMET],0
+ je _ExitMHP
+
+ mov eax,ctMMON
+
+ cmp eax,[ebp+00000BB8]
+ js _ExitMHP
+
+ mov [ebp+00000BB8],eax
+
+_ExitMHP:
+ mov eax,[ebp+00000BC0]            // Original code (rds Pop)
+ jmp _BackMHP                      // Back to main code
+
+//=========================================
+// During Turn
+_MonPlayerResearch:
+ mov edx,[esi+00000BC4]            // Original code (rds pRes)
+
+ cmp esi,[pPlayer]
+ jne _ExitMPR
+
+ cmp dword ptr [iRTCount],0
+ je _ExitMPR
+
+ cmp dword ptr [iEnableMPR],0
+ je _ExitMPR
+
+ mov [edx+ecx*4],eax
+
+ dec dword ptr [iRTCount]
+
+_ExitMPR:
+ jmp _BackMPR                      // Back to main code
+
+//=========================================
+// Upon Selecting a Unit
+_MonSelUnit:
+ push ebx
+ pushfd
+
+ test esi,esi
+ jz _ExitMSU
+
+ mov [pSel],esi
+
+ mov ebx,[esi+68]
+
+ cmp ebx,[iPlayerID]
+ jne _ExitMSU
+
+ cmp dword ptr [iEnableMMP],0
+ je _MonSU00
+
+ cmp dword ptr [esi+000001c4],0
+ jne _MonSU00
+
+ mov ebx,[esi+000001c8]
+ mov [esi+000001c4],ebx
+
+_MonSU00:
+ cmp dword ptr [iEnableGMD],0
+ je _MonSU01
+
+ mov ebx,#1000
+
+ cmp dword ptr [esi+000001b4],ebx
+ jge _MonSU01
+
+ mov dword ptr [esi+000001b4],ebx
+
+_MonSU01:
+ cmp dword ptr [iEnableMMC],0
+ je _ExitMSU
+
+ cmp dword ptr [esi+000001d8],0
+ je _ExitMSU
+
+ mov ebx,ctMMTS
+
+ cmp dword ptr [esi+000001d8],ebx
+ jge _ExitMSU
+
+ mov dword ptr [esi+000001d8],ebx
+
+_ExitMSU:
+ popfd
+ pop ebx
+
+ mov [edi+00056DC0],esi            // Original code (pSel)
+ jmp _BackMSU
+
+//=========================================
+// When moving
+_MonMovePoints:
+ push ebx
+
+ cmp dword ptr [iEnableMMP],0
+ je _ExitMMP
+
+ cmp esi,[pSel]
+ jne _ExitMMP
+
+ mov ebx,[esi+00000068]
+ cmp ebx,[iPlayerID]
+ jne _ExitMMP
+
+ xor eax,eax
+
+_ExitMMP:
+ pop ebx
+
+ sub [esi+000001C4],eax            // Original code (upd MP)
+ jmp _BackMMP
+
+//=========================================
+// Ship During Combat
+_GodMode:
+ push ebx
+
+ cmp dword ptr [iEnableGMD],0
+ je _ExitGMD
+
+ mov ebx,[esi+00000068]
+ cmp ebx,[iPlayerID]
+ jne _ExitGMD
+
+ xor ebp,ebp
+ mov [esi+000001B8],ebp
+
+_ExitGMD:
+ pop ebx
+
+ add [esi+000001B8],ebp            // Original code (upd Damage)
+ jmp _BackGMD                      // Back to main code
+
+//=========================================
+// During Invasion
+_MonPlanetInvasion:
+ cmp dword ptr [iEnableGMD],0
+ je _ExitMPI
+
+ mov eax,[esi+48]           // Get pointer to attacker information
+ mov eax,[eax+04]           // Get attacker ID
+ cmp eax,[iPlayerID]        // Is it a player's Troop?
+ jne _MonPI00               // Jump if false
+
+ mov dword ptr [esi+00000084],0 // Make the defender's advantage = 0
+ jmp _ExitMPI               // Go to original code
+//==
+_MonPI00:
+ mov eax,[esi+78]           // Get pointer to Defender information
+ mov eax,[eax+04]           // Get defender ID
+ cmp eax,[iPlayerID]        // Is it a player's Planet?
+ jne _ExitMPI               // Jump if false
+
+ mov dword ptr [esi+54],0   // Make the attacker's advantage = 0
+
+_ExitMPI:
+ mov eax,[esi+00000084]     // Original code (get defender's advantage)
+ jmp _BackMPI               // Go back to the original code
+
+//=========================================
+// When decreasing
+_MonEmpireTreasure:
+ push eax
+
+ cmp edi,[pPlayer]
+ jne _ExitMET
+
+ cmp dword ptr [iEnableMET],0
+ je _ExitMET
+
+ xor edx,edx
+
+ mov eax,ctMMON
+ cmp eax,[edi+00000BB8]
+ js _ExitMET
+
+ mov [edi+00000BB8],eax
+
+_ExitMET:
+ pop eax
+
+ sub [edi+00000BB8],edx            // Original code (upd ET)
+ jmp _BackMET                      // Back to main code
+
+//=========================================
+// At the ability screen
+_MonAbilityPoints:
+ cmp dword ptr [iEnableMAP],0
+ je _ExitMAP
+
+ mov eax,ctMMAP
+
+_ExitMAP:
+ mov [esi+00000308],eax            // Original code
+ jmp _BackMAP                      // Back to main code
+
+//=========================================
+ db '================================&gt;'
+ db 'CE6.4 Script by Recifense 121815'
+//=========================================
+// Variables
+iEnableMET:
+ dd 0
+iEnableMPR:
+ dd 0
+iEnableMMP:
+ dd 0
+iEnableMMC:
+ dd 0
+iEnableGMD:
+ dd 0
+iEnableMAP:
+ dd 0
+iPlayerID:
+ dd #9999
+iRTCount:
+ dd 2
+pPlayer:
+ dd MyCode
+pSel:
+ dd MyCode
+
+//=========================================
+// Hacking Points
+MHPR:
+ jmp _MonHumanPlayer
+ nop
+_BackMHP:
+
+MPRH:
+ jmp _MonPlayerResearch
+ nop
+_BackMPR:
+
+MSUN:
+ jmp _MonSelUnit
+ nop
+_BackMSU:
+
+MMPT:
+// jmp _MonMovePoints
+// nop
+_BackMMP:
+
+GDMD:
+ jmp _GodMode
+ nop
+_BackGMD:
+
+MPIN:
+ jmp _MonPlanetInvasion
+ nop
+_BackMPI:
+
+METE:
+ jmp _MonEmpireTreasure
+ nop
+_BackMET:
+
+MAPT:
+ jmp _MonAbilityPoints
+ nop
+_BackMAP:
+
+//=========================================
+// Script for Restoring Original Codes
+[DISABLE]
+MHPR:
+// mov eax,[ebp+00000BC0]
+ db 8b 85 c0 0b 00 00
+
+MPRH:
+// mov edx,[esi+00000BC4]
+ db 8b 96 c4 0b 00 00
+
+MSUN:
+// mov [edi+00056DC0],esi
+ db 89 b7 c0 6d 05 00
+
+MMPT:
+// sub [esi+000001C4],eax
+ db 29 86 c4 01 00 00
+
+GDMD:
+// add [esi+000001B8],ebp
+ db 01 ae b8 01 00 00
+
+MPIN:
+// mov eax,[esi+00000084]
+ db 8b 86 84 00 00 00
+
+METE:
+// sub [edi+00000BB8],edx
+ db 29 97 b8 0b 00 00
+
+MAPT:
+// mov [esi+00000308],eax
+ db 89 86 08 03 00 00
+
+//=========================================
+// Unregistering Symbols
+unregistersymbol(MyCode)
+unregistersymbol(iEnableMET)
+unregistersymbol(iEnableMPR)
+unregistersymbol(iEnableMMP)
+unregistersymbol(iEnableMMC)
+unregistersymbol(iEnableGMD)
+unregistersymbol(iEnableMAP)
+unregistersymbol(iPlayerID)
+unregistersymbol(iRTCount)
+unregistersymbol(pPlayer)
+unregistersymbol(pSel)
+
+//=========================================
+dealloc(MyCode)
+//============= Scripts End ===============
+
+// ****************************************
+// NOTES
+// ****************************************
+{
+}
+
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>2</ID>
+          <Description>"Enable/Disable Minimum Empire Treasure =&gt; (1/0)"</Description>
+          <LastState Value="??" Activated="0" RealAddress="00000000"/>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMET</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>3</ID>
+          <Description>"Enable/Disable Research Tech in 1 Turn =&gt; (1/0)"</Description>
+          <LastState Value="??" Activated="0" RealAddress="00000000"/>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMPR</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>4</ID>
+          <Description>"Enable/Disable Move Unlimited Times (Sel Ship) =&gt; (1/0)"</Description>
+          <LastState Value="??" Activated="0" RealAddress="00000000"/>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMMP</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>6</ID>
+          <Description>"Enable/Disable Minimum Colonists/Troops in Sel Ship =&gt; (1/0)"</Description>
+          <LastState Value="??" Activated="0" RealAddress="00000000"/>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMMC</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>5</ID>
+          <Description>"Enable/Disable God Mode =&gt; (1/0)"</Description>
+          <LastState Value="??" Activated="0" RealAddress="00000000"/>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableGMD</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>35</ID>
+          <Description>"Enable/Disable Minimum Ability Points =&gt; (1/0)"</Description>
+          <LastState Value="??" Activated="0" RealAddress="00000000"/>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMAP</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>33</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>34</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols>
+    <SymbolEntry>
+      <Name>pSelShip</Name>
+      <Address>014E01F6</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>iEnableME</Name>
+      <Address>014E01FE</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>iEnableMR</Name>
+      <Address>014E0202</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>iEnableMM</Name>
+      <Address>014E0206</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>iEnableGM</Name>
+      <Address>014E020A</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>iEnableMC</Name>
+      <Address>014E020E</Address>
+    </SymbolEntry>
+  </UserdefinedSymbols>
+  <Comments>===========================================
+ Game Title    : Galactic Civilization 2 - Twilight Of The Arnor
+ Game Version  : 2.20
+ Game Sponsor  : Myself
+ Proces Name   : GC2TwilightOfTheArnor.exe
+ Script Version: 2.0
+ CE Version    : 6.4
+ Release date  : 18-Dec-2015
+ Author        : Recifense
+ History:
+ 09-Jan-14: First Release
+ 09-Jan-14: Added one more feature
+ 18-Dec-15: Release for version 2.20
+ Features:
+ - Minimum Empire Treasure              [1]
+ - Research in 1 Turn                   [2]
+ - Unlimited MP for Sel Ship            [3]
+ - Minimum Troop/Colonists for Sel Ship [4]
+ - God Mode:                            [5]
+   - Ships
+   - Invasion
+ - Minimum Ability Points               [6] **
+ - Some Pointers                        [7]
+===========================================
+[1] Empire Treasure will not go under 10000;
+[2] That's it;
+[3] That's it;
+[4] The minimum value is 2500;
+[5] That's it;
+[6] The minimum value is 200;
+[7] Just for debugging;
+===========================================
+[USAGE]
+1) Run CE63;
+2) Run Game;
+3) Load the game process "GC2TwilightOfTheArnor.exe" in CE;
+4) Change the value to 1 of each cheat you want to use;
+5) Game On;
+--------------
+[MAP]
+1) Go to Customize Yuor Civilization/Overview TAB;
+2) ENABLE the MAP cheat and change TAB to "Abilities";
+3) Spend the points according to your preferences;
+4) Change the TAB to Overview and DISABLE the MAP cheat;
+5) Press NEXT
+===========================================
+HOTKEYS:
+CTRL+Home = Enable  all cheats (but MAP);
+CTRL+End  = Disable all cheats (but MAP);
+-----------
+CTRL+PageUp   = Enable  MAP cheat;
+CTRL+PageDown = Disable MAP cheat;
+-----------
+[NOTE] You can change the hotkeys.
+===========================================
+[ADVICE]
+When you can,save the game before starting using table/cheat. So you can always come back in case you don't like the result.
+===========================================
+[INFO]
+Tested on Win 7 64bits
+===========================================
+Cheers!
+</Comments>
+</CheatTable>

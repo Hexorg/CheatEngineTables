@@ -1,0 +1,358 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="18">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>18</ID>
+      <Description>"[Debug]"</Description>
+      <Options moHideChildren="1"/>
+      <LastState Value="" Activated="0" RealAddress="00000000"/>
+      <Color>C0C0C0</Color>
+      <GroupHeader>1</GroupHeader>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>34</ID>
+          <Description>"HardwareDebugWithCondition"</Description>
+          <LastState Activated="0"/>
+          <Color>80000008</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[ENABLE]
+
+{$lua}
+
+debugProcess()
+
+function debugger_onBreakpoint()
+  if readFloat(RCX+90) &gt; 0 then
+    print("hello")
+  end
+  debug_continueFromBreakpoint(co_run)
+  return 1
+end
+
+debug_setBreakpoint(0xAA1694)
+
+{$asm}
+
+[DISABLE]
+
+{$lua}
+
+debug_removeBreakpoint(0xAA1694)
+
+{$asm}
+</AssemblerScript>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>20</ID>
+          <Description>"[Enable]"</Description>
+          <Options moHideChildren="1"/>
+          <LastState Activated="0"/>
+          <Color>000080</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[ENABLE]
+
+aobscanmodule( g_PlayerObj_AOB, Fallout4.exe, 40534883EC20483B0D736EEA05 )
+label( g_PlayerObj )
+registersymbol( g_PlayerObj )
+g_PlayerObj_AOB+6:
+g_PlayerObj:
+
+[DISABLE]
+
+unregistersymbol( g_PlayerObj )
+</AssemblerScript>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>19</ID>
+      <Description>"No Recoil &amp; Spread"</Description>
+      <Options moHideChildren="1"/>
+      <LastState Activated="0"/>
+      <Color>80000008</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>[ENABLE]
+
+aobscanmodule( g_PlayerObj_AOB, Fallout4.exe, 40534883EC20483B0D736EEA05 )
+label( g_PlayerObj )
+registersymbol( g_PlayerObj )
+g_PlayerObj_AOB+6:
+g_PlayerObj:
+
+aobscanmodule( noRecoil_AOB, Fallout4.exe, 488B8988000000440F2948B8 )
+aobscanmodule( noSpread_a_AOB, Fallout4.exe, F30F118990000000488B8988000000 )
+aobscanmodule( noSpread_b_AOB, Fallout4.exe, F30F109794000000F30F118790000000 )
+label( noRecoil )
+registersymbol( noRecoil )
+label( noSpread_a )
+registersymbol( noSpread_a )
+label( noSpread_b )
+registersymbol( noSpread_b )
+alloc( RecoilSpread_hook, 1024 )
+label( noRecoil_hook )
+label( noRecoil_do )
+label( noSpread_hook_a )
+label( noSpread_hook_a_exit )
+label( back_s_a )
+label( noSpread_hook_b )
+label( noSpread_hook_b_exit )
+label( back_s_b )
+alloc( gPlayer, 8 )
+registersymbol( gPlayer )
+alloc( gWeapon, 8 )
+registersymbol( gWeapon )
+label( fNeg )
+label( positive )
+label( back_r )
+
+RecoilSpread_hook:
+noRecoil_hook:
+  push rax
+  push rbx
+  push rcx
+  push rdi
+  mov rbx,rcx                       // store weapon structure pointer for later use
+  mov rax,g_PlayerObj               // &lt;-- compute the x64 address for the player structure pointer
+  xor rdi,rdi
+  cmp dword [rax+3],80000000
+  jb short positive
+    mov rdi,ffffffff00000000
+  positive:
+  mov ecx,[rax+3]
+  add rdi,rcx
+  add rax,edi
+  add rax,7
+  mov [gPlayer],rax                 // and store it for later use --&gt;
+  mov rcx,rbx                       // get back the weapon structure pointer
+  mov [gWeapon],rcx                 // store weapon pointer for debugging purposes
+  mov rcx,[rcx+88]                  // as mentioned, +0x88 offset in weapon structure contains the player structure pointer
+  mov rax,[gPlayer]                 // get player structure pointer
+  mov rax,[rax]
+  cmp rcx,rax                       // and check it against +0x88 stored pointer
+  je noRecoil_do              		// if it's us, do 'no recoil' and 'no spread'
+  pop rdi                           // else, exit
+  pop rcx
+  pop rbx
+  pop rax
+  mov rcx,[rcx+88]
+  jmp back_r
+noRecoil_do:
+  pop rdi
+  pop rcx
+  pop rbx
+  pop rax
+  mov [rcx+30],(float)0.0
+  mov [rcx+24],(float)0.0
+  mov [rcx+20],(float)0.0
+  mov [rcx+34],(float)0.0
+  mov [rcx+2C],0
+  mov [rcx+28],(float)0.0
+  mov [rcx+8],(float)0.0
+  mov rcx,[rcx+88]
+  jmp back_r
+
+noSpread_hook_a:
+  push rbx
+  mov rbx,[gPlayer]
+  cmp rbx,0
+  je noSpread_hook_a_exit
+  mov rbx,[rbx]
+  cmp rbx,[rcx+88]
+  pop rbx
+  jne @f
+  movss xmm1,[fNeg]
+  movss [rcx+00000090],xmm1
+  jmp back_s_a
+@@:
+  jmp back_s_a
+noSpread_hook_a_exit:
+  pop rbx
+  movss [rcx+00000090],xmm1
+  jmp back_s_a
+
+noSpread_hook_b:
+  push rbx
+  mov rbx,[gPlayer]
+  cmp rbx,0
+  je noSpread_hook_b_exit
+  mov rbx,[rbx]
+  cmp rbx,[rdi+88]
+  pop rbx
+  jne @f
+  movss xmm0,[fNeg]
+  movss [rdi+00000090],xmm0
+  jmp back_s_b
+@@:
+  jmp back_s_b
+noSpread_hook_b_exit:
+  pop rbx
+  movss [rdi+00000090],xmm0
+  jmp back_s_b
+
+fNeg:
+  dq (float)-1.0
+
+noRecoil_AOB:
+noRecoil:
+  jmp noRecoil_hook
+  db 90 90
+  back_r:
+
+noSpread_a_AOB:
+noSpread_a:
+  jmp noSpread_hook_a
+  db 90 90 90
+  back_s_a:
+
+noSpread_b_AOB+8:
+noSpread_b:
+  jmp noSpread_hook_b
+  db 90 90 90
+  back_s_b:
+
+[DISABLE]
+
+noRecoil:
+mov rcx,[rcx+88]
+
+noSpread_a:
+movss [rcx+00000090],xmm1
+
+noSpread_b:
+movss [rdi+00000090],xmm0
+
+unregistersymbol( gWeapon )
+dealloc( gWeapon )
+unregistersymbol( gPlayer )
+dealloc( gPlayer )
+dealloc( RecoilSpread_hook )
+unregistersymbol( noSpread_b )
+unregistersymbol( noSpread_a )
+unregistersymbol( noRecoil )
+unregistersymbol( g_PlayerObj )
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>21</ID>
+          <Description>"gPlayer"</Description>
+          <LastState Value="??" Activated="0" RealAddress="6F310400"/>
+          <ShowAsHex>1</ShowAsHex>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>gPlayer</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>22</ID>
+          <Description>"gWeapon"</Description>
+          <LastState Value="??" Activated="0" RealAddress="6F310408"/>
+          <ShowAsHex>1</ShowAsHex>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>gWeapon</Address>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>28</ID>
+              <Description>"+0x30"</Description>
+              <LastState Value="??" Activated="0" RealAddress="00000000"/>
+              <Color>80000008</Color>
+              <VariableType>Float</VariableType>
+              <Address>gWeapon</Address>
+              <Offsets>
+                <Offset>30</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>25</ID>
+              <Description>"+0x24"</Description>
+              <LastState Value="??" Activated="0" RealAddress="00000000"/>
+              <Color>80000008</Color>
+              <VariableType>Float</VariableType>
+              <Address>gWeapon</Address>
+              <Offsets>
+                <Offset>24</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>24</ID>
+              <Description>"+0x20"</Description>
+              <LastState Value="??" Activated="0" RealAddress="00000000"/>
+              <Color>80000008</Color>
+              <VariableType>Float</VariableType>
+              <Address>gWeapon</Address>
+              <Offsets>
+                <Offset>20</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>29</ID>
+              <Description>"+0x34"</Description>
+              <LastState Value="??" Activated="0" RealAddress="00000000"/>
+              <Color>80000008</Color>
+              <VariableType>Float</VariableType>
+              <Address>gWeapon</Address>
+              <Offsets>
+                <Offset>34</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>27</ID>
+              <Description>"+0x2C"</Description>
+              <LastState Value="??" Activated="0" RealAddress="00000000"/>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>gWeapon</Address>
+              <Offsets>
+                <Offset>2C</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>26</ID>
+              <Description>"+0x28"</Description>
+              <LastState Value="??" Activated="0" RealAddress="00000000"/>
+              <Color>80000008</Color>
+              <VariableType>Float</VariableType>
+              <Address>gWeapon</Address>
+              <Offsets>
+                <Offset>28</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>23</ID>
+              <Description>"+0x8"</Description>
+              <LastState Value="??" Activated="0" RealAddress="00000000"/>
+              <Color>80000008</Color>
+              <VariableType>Float</VariableType>
+              <Address>gWeapon</Address>
+              <Offsets>
+                <Offset>8</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>31</ID>
+              <Description>"+0x90"</Description>
+              <LastState Value="??" Activated="0" RealAddress="00000000"/>
+              <Color>80000008</Color>
+              <VariableType>Float</VariableType>
+              <Address>gWeapon</Address>
+              <Offsets>
+                <Offset>90</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>33</ID>
+              <Description>"+0xC"</Description>
+              <LastState Value="??" Activated="0" RealAddress="00000000"/>
+              <Color>80000008</Color>
+              <VariableType>Float</VariableType>
+              <Address>gWeapon</Address>
+              <Offsets>
+                <Offset>C</Offset>
+              </Offsets>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols/>
+</CheatTable>

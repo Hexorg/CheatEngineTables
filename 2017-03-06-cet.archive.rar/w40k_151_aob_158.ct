@@ -1,0 +1,310 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="14">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>20</ID>
+      <Description>"[X]&lt;== WH40K DoW Script AOB"</Description>
+      <Options moHideChildren="1"/>
+      <Color>FF0000</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>{
+===========================================
+ Game Title    : Warhammer 40k - Dawn of War
+ Game Version  : 1.5.1
+ Script Version: 1.0
+ CE Version    : 6.1
+ Release date  : 16-Dec-2012 (AOB)
+ Author        : Recifense
+ Features:
+ - God Mode
+ - Minimum Resources
+ - Unlimited Squads/Vehicles
+===========================================
+}
+
+[ENABLE]
+//=========================================
+// Check if script is compatible to this game version
+// If false the script will not be loaded
+AOBScan(aob_MonPlayer,55 8b 68 38 57 8b 78 5c e8 ?? ?? ?? ?? 8b cf 8b d8) //+00
+AOBScan(aob_GodMode,d9 44 24 08 8b 44 24 08 d8 1d ?? ?? ?? ?? 89 46 14) //+00
+AOBScan(aob_MonRes,33 d2 d9 04 91 d8 1d ?? ?? ?? ?? df e0 f6 c4 05)     //+0B
+
+//=========================================
+alloc(MyCode,4096,W40k.exe)
+//=========================================
+// Declaration section
+label(p_MonPlayer)
+label(p_GodMode)
+label(p_MonRes)
+
+label(_MonPlayer)
+label(_BackMP)
+label(_ExitMP)
+label(_GodMode)
+label(_BackGM)
+label(_ExitGM)
+label(_MonRes)
+label(_MonR0)
+label(_BackMR)
+label(_ExitMR)
+label(iEnableGM)
+label(iEnableMR)
+label(iEnableUU)
+label(pPlayerStr)
+label(pPlayerGM)
+
+//=========================================
+// Registering Symbols
+registersymbol(MyCode)
+registersymbol(iEnableGM)
+registersymbol(iEnableMR)
+registersymbol(iEnableUU)
+registersymbol(pPlayerStr)
+registersymbol(pPlayerGM)
+
+registersymbol(p_MonPlayer)
+registersymbol(p_GodMode)
+registersymbol(p_MonRes)
+
+//=========================================
+MyCode:
+//===========================================
+// This piece of code copies to a known place
+// the Player Structure Address
+
+_MonPlayer:
+ push ebp                          // Original code
+ mov ebp,[eax+38]                  // Original code
+ push edi                          // Original code
+
+ mov [pPlayerStr],ebp              // Save pointer for debugging
+
+ cmp dword ptr [iEnableUU],0
+ je _ExitMP                        // Jump if feature is disabled
+
+ mov dword ptr [ebp+000001c0],0
+ mov dword ptr [ebp+000001c4],0
+ mov dword ptr [ebp+000001c8],0
+
+_ExitMP:
+ jmp _BackMP                       // Back to main code
+
+//===========================================
+// This piece of code checks if the current unit
+// belongs to the player. If so, %HP = 1.00
+
+_GodMode:
+ mov eax,ebx
+
+ cmp dword ptr [iEnableGM],0
+ je _ExitGM                        // Jump if feature is disabled
+
+ mov ebx,[esi+04]                  // Get pointer L1
+ test ebx,ebx
+ jz _ExitGM
+
+ mov ebx,[ebx+04]                  // Get pointer L2
+ test ebx,ebx
+ jz _ExitGM
+
+ mov ebx,[ebx+0c]                  // Get pOwner
+ cmp ebx,[pPlayerStr]
+ jne _ExitGM
+
+ mov ebx,(float)1.0                // %HP = 100
+ mov [esp+08],ebx
+
+ mov [pPlayerGM],esi               // For debugging
+
+_ExitGM:
+ mov ebx,eax
+
+ fld dword ptr [esp+08]            // Original code
+ mov eax,[esp+08]                  // Original code
+ jmp _BackGM                       // Back to main code
+
+//===========================================
+// This one checks if the current resource belongs
+// to the player. If so, it does not let it go under
+// 5000.
+
+_MonRes:
+ pushfd
+
+ cmp dword ptr [iEnableMR],0
+ je _ExitMR                        // Jump if feature is disabled
+
+ cmp edi,[pPlayerStr]
+ jne _ExitMR
+
+ mov eax,(float)5000               // Minimum Resource value
+ cmp edx,#2
+ jl _MonR0
+
+ mov eax,(float)100                // Minimum Resource value for OrkResource
+
+_MonR0:
+ cmp eax,[ecx+edx*4]
+ jl _ExitMR
+
+ mov [ecx+edx*4],eax
+
+_ExitMR:
+ popfd
+
+ fnstsw ax                         // Original code
+ test ah,05                        // Original code
+ jmp _BackMR                       // Back to main code
+
+//=========================================
+ db '==============================&gt;'
+ db 'CE6.2 Script by Recifense 121612'
+//=========================================
+// Variables
+iEnableGM:
+ dd 1
+iEnableMR:
+ dd 1
+iEnableUU:
+ dd 1
+pPlayerStr:
+ dd 0
+pPlayerGM:
+ dd 0
+
+//=========================================
+// Hacking Points
+//W40k.exe+01d535:
+aob_MonPlayer:
+p_MonPlayer:
+ jmp _MonPlayer
+_BackMP:
+
+//W40kMod.dll+07633b:
+aob_GodMode: // NHP
+p_GodMode:
+ jmp _GodMode
+ nop
+ nop
+ nop
+_BackGM:
+
+//W40kMod.dll+052a85:
+aob_MonRes+0b: // NHP
+p_MonRes:
+ jmp _MonRes
+_BackMR:
+
+//=========================================
+// Script for Restoring Original Codes
+[DISABLE]
+//W40k.exe+01d535:
+p_MonPlayer:
+// push ebp
+// mov ebp,[eax+38]
+// push edi
+ db 55 8b 68 38 57
+
+//W40kMod.dll+07633b:
+// fcomp dword ptr [W40kMod.dll+1807b0]
+p_GodMode:
+// fld dword ptr [esp+08]
+// mov eax,[esp+08]
+ db d9 44 24 08 8b 44 24 08
+
+//W40kMod.dll+052a85:
+// fcomp dword ptr [W40kMod.dll+17ee74]
+p_MonRes:
+// fnstsw ax
+// test ah,05
+ db df e0 f6 c4 05
+
+//=========================================
+// Unregistering Symbols
+unregistersymbol(iEnableGM)
+unregistersymbol(iEnableMR)
+unregistersymbol(iEnableUU)
+unregistersymbol(pPlayerStr)
+unregistersymbol(pPlayerGM)
+
+unregistersymbol(p_MonPlayer)
+unregistersymbol(p_GodMode)
+unregistersymbol(p_MonRes)
+
+//=========================================
+dealloc(MyCode)
+//============= Scripts End ===============
+
+// ****************************************
+// NOTES
+// ****************************************
+{
+struct PLAYER:
+0000 = 0F38e664
+0004 = i1000
+018c = fRequisition
+0190 = fPower
+0194 = fOrkResource
+01f0 = fcOrks
+01f4 = icSquad
+01f8 = icVehicle
+
+struct UNITHP:
+0000 = 0f390194
+0004 = ppOwner
+0014 = f%HP (1.0 = 100%)
+0018 = fHP
+
+struct ppOWNER:
+0000 = 0f38d714
+0004 = pOwner
+0010 = pUnitHP
+
+struct pOWNER:
+0000 = 0f38e204
+000C = pPlayer
+0010 = ppOwner
+}
+
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>6</ID>
+          <Description>"Enable/Disable God Mode ==&gt; (1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableGM</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>7</ID>
+          <Description>"Enable/Disable Minimum Resources ==&gt; (1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMR</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>12</ID>
+          <Description>"Enable/Disable Unlimited Units ==&gt; (1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableUU</Address>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols/>
+  <Comments>===========================================
+ Game Title    : Warhammer 40k - Dawn of War
+ Game Version  : 1.5.1
+ Script Version: 1.0
+ CE Version    : 6.1
+ Release date  : 16-Dec-2012 (AOB)
+ Author        : Recifense
+ Features:
+ - God Mode
+ - Minimum Resources
+ - Unlimited Squads/Vehicles
+===========================================
+</Comments>
+</CheatTable>

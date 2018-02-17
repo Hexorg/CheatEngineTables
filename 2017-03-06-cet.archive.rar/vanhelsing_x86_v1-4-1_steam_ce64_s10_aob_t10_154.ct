@@ -1,0 +1,797 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="18">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>21</ID>
+      <Description>"[X] &lt;== The Incredible Adventures of Van Helsing v1.4.1 x86 Steam Script v1.0"</Description>
+      <Options moHideChildren="1"/>
+      <LastState Activated="0"/>
+      <Color>FF0000</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>{
+===========================================
+ Game Title    : The Incredible Adventures of Van Helsing
+ Game Version  : 1.4.1
+ Game Sponsor  : Myself
+ Process Name  : VanHelsing_x86.exe
+ Script Version: 1.0 (AOB)
+ CE Version    : 6.4
+ Release date  : 05-Jul-2015
+ Author        : Recifense
+ History:
+ 23-May-14: First Release
+ 24-May-14: Release for version 1.0.01d (patch by CODEX)
+ 02-Jun-14: Release for version 1.0.02  (patch by 3DM)
+ 21-Jun-14: Release for version 1.0.03  (patch by 3DM)(CE64)
+ 28-Dec-14: Release for version 1.0.04c (Steam)
+ 05-Jul-15: Release for version 1.4.1 (Steam)(AOB)
+ Features:
+ - God Mode
+ - Unlimited Mana
+ - Minimum Gold
+   - Minimum Gold Value (6400)
+ - Minimum Portions:
+   - Healing
+   - Mana
+ - Full Rage
+ - Some pointers
+===========================================
+}
+
+//=========================================
+// Definitions
+define(LUDO,"VanHelsing_x86.exe")
+
+//=========================================
+// Constants used in the script (that can be changed)
+define(ctCE64,(float)6.4)
+define(ctMMON,#640000)  // Minimum Money
+
+//=========================================
+[ENABLE]
+//=========================================
+//LuaCall(CheckVersion())
+//=========================================
+// Check if script is compatible to this game version
+// If false the script will not be loaded
+
+AOBScan(MOVH,8b 8f 50 08 00 00 2b cb 89 4d 08 db 45 08 2b c3 89 45 08 da 75 08 68 ?? ?? ?? ?? 8d 8d 70)
+AOBScan(MOCN,8b 87 50 08 00 00 89 45 9c 8b 87 54 08 00 00 40 50 8b cf ff d2)
+AOBScan(GDMD,d9 96 d0 03 00 00 d9 e8 de d9 df e0 f6 c4 01 ?? ?? 8b 06 8b 90)
+AOBScan(MMAN,d9 9e c4 08 00 00 e8 ?? ?? ?? ?? 8b 80 98 01 00 00 83 c4 04 83)
+AOBScan(MPRE,89 8b c8 08 00 00 c7 45 f0 00 00 00 00 8d b3 74 0b 00 00 8d 64)
+AOBScan(MPGD,8b 87 3c 0b 00 00 50 8d 85 14 ff ff ff 68 ?? ?? ?? ?? 50 c6 45)
+AOBScan(MPPN,8b 50 34 01 55 08 80 79 19 00 ?? ?? 8b 41 08 80 78 19 00 ?? ??)
+
+//=========================================
+alloc(MyCode,4096,LUDO)
+//=========================================
+// Declaration section
+label(_MonVanHelsing)
+label(_BackMVH)
+label(_ExitMVH)
+label(_MonCompanion)
+label(_BackMCN)
+label(_ExitMCN)
+label(_GodMode)
+label(_BackGMD)
+label(_ExitGMD)
+label(_MonPlayerMana)
+label(_BackMPM)
+label(_ExitMPM)
+label(_MonPlayerRage)
+label(_BackMPR)
+label(_ExitMPR)
+label(_MonPlayerGold)
+label(_BackMPG)
+label(_ExitMPG)
+label(_MonPlayerPortions)
+label(_MonPP00)
+label(_BackMPP)
+label(_ExitMPP)
+
+label(iEnableGMD)
+label(iEnableMPM)
+label(iEnableMPG)
+label(iEnableMPP)
+label(iEnableMPR)
+
+label(pVanHelsing)
+label(pCompanion)
+label(pGold)
+label(pPlayer)
+
+//=========================================
+// Registering Symbols
+registersymbol(MyCode)
+registersymbol(iEnableGMD)
+registersymbol(iEnableMPM)
+registersymbol(iEnableMPG)
+registersymbol(iEnableMPP)
+registersymbol(iEnableMPR)
+
+registersymbol(pVanHelsing)
+registersymbol(pCompanion)
+registersymbol(pGold)
+
+registersymbol(MOVH)
+registersymbol(MOCN)
+registersymbol(GDMD)
+registersymbol(MMAN)
+registersymbol(MPRE)
+registersymbol(MPGD)
+registersymbol(MPPN)
+
+//=========================================
+MyCode:
+//========================================= ok
+// Main game screen
+_MonVanHelsing:
+ mov [pVanHelsing],edi
+
+ mov ecx,[edi+000003c8]
+ mov [pPlayer],ecx
+
+_ExitMVH:
+ mov ecx,[edi+00000850]            // Original code (rd XP)
+ jmp _BackMVH                      // Back to main code
+
+//========================================= ok
+// Main game screen
+_MonCompanion:
+ mov [pCompanion],edi
+
+_ExitMCN:
+ mov eax,[edi+00000850]            // Original code (rd XP)
+ jmp _BackMCN                      // Back to main code
+
+//========================================= ok
+// During Combat
+_GodMode:
+ push eax
+
+ cmp dword ptr [iEnableGMD],0
+ je _ExitGMD                       // Jump if feature is disabled
+
+ mov eax,[esi+000003c8]
+ cmp eax,[pPlayer]
+ jne _ExitGMD
+
+ fstp st(0)
+ fild dword ptr [esi+000003e4]
+
+_ExitGMD:
+ pop eax
+
+ fst dword ptr [esi+000003D0]      // Original code (upd HP)
+ jmp _BackGMD                      // Back to main code
+
+//========================================= ok
+// During Combat
+_MonPlayerMana:
+ push eax
+
+ cmp dword ptr [iEnableMPM],0
+ je _ExitMPM                       // Jump if feature is disabled
+
+ mov eax,[esi+000003c8]
+ cmp eax,[pPlayer]
+ jne _ExitMPM
+
+ fstp st(0)
+ fild dword ptr [esi+00000c64]
+
+_ExitMPM:
+ pop eax
+
+ fstp dword ptr [esi+000008C4]     // Original code (upd Mana)
+ jmp _BackMPM                      // Back to main code
+
+//========================================= ok
+// When updating rage (inc or dec)
+_MonPlayerRage:
+ push eax
+
+ cmp dword ptr [iEnableMPR],0
+ je _ExitMPR                       // Jump if feature is disabled
+
+ mov eax,[ebx+000003c8]
+ cmp eax,[pPlayer]
+ jne _ExitMPR
+
+ cmp ecx,[ebp-18]
+ jns _ExitMPR
+
+ mov ecx,[ebp-18]
+
+_ExitMPR:
+ pop eax
+
+ mov [ebx+000008C8],ecx            // Original code (upd Rage)
+ jmp _BackMPR                      // Back to main code
+
+//========================================= ok
+// In Inventory Screen
+_MonPlayerGold:
+ mov [pGold],edi
+
+ cmp dword ptr [iEnableMPG],0
+ je _ExitMPG                       // Jump if feature is disabled
+
+ mov eax,ctMMON
+ cmp eax,[edi+00000B3C]
+ js _ExitMPG
+
+ mov [edi+00000B3C],eax
+
+_ExitMPG:
+ mov eax,[edi+00000B3C]            // Original code (rd GOLD)
+ jmp _BackMPG                      // Back to main code
+
+//========================================= new
+// When in Inventory Screen (Portions)
+_MonPlayerPortions:
+ push eax
+ push ecx
+
+ mov ecx,eax
+
+ cmp dword ptr [iEnableMPP],0
+ je _ExitMPP                       // Jump if feature is disabled
+
+ mov eax,[ecx+00000154]
+ test eax,eax
+ jz _ExitMPP
+
+ mov eax,[eax+04]
+ test eax,eax
+ jz _ExitMPP
+
+ mov eax,[eax]
+ cmp eax,0061004d
+ je _MonPP00
+
+ cmp eax,00650048
+ jne _ExitMPP
+
+_MonPP00:
+ mov eax,#64
+ cmp eax,[ecx+34]
+ jle _ExitMPP
+
+ mov [ecx+34],eax
+
+_ExitMPP:
+ pop ecx
+ pop eax
+
+ mov edx,[eax+34]                  // Original code
+ add [ebp+08],edx                  // Original code
+ jmp _BackMPP                      // Back to main code
+
+//=========================================
+ db '============================&gt;'
+ db 'CE6.4 Script by Recifense 070515'
+//=========================================
+// Variables
+iEnableGMD:
+ dd 0
+iEnableMPM:
+ dd 0
+iEnableMPG:
+ dd 0
+iEnableMPP:
+ dd 0
+iEnableMPR:
+ dd 0
+pVanHelsing:
+ dd 0
+pCompanion:
+ dd 0
+pGold:
+ dd 0
+pPlayer:
+ dd MyCode
+
+//=========================================
+// Hacking Points
+MOVH:
+ jmp _MonVanHelsing
+ nop
+_BackMVH:
+
+MOCN:
+ jmp _MonCompanion
+ nop
+_BackMCN:
+
+GDMD:
+ jmp _GodMode
+ nop
+_BackGMD:
+
+MMAN:
+ jmp _MonPlayerMana
+ nop
+_BackMPM:
+
+MPRE:
+ jmp _MonPlayerRage
+ nop
+_BackMPR:
+
+MPGD:
+ jmp _MonPlayerGold
+ nop
+_BackMPG:
+
+MPPN:
+ jmp _MonPlayerPortions
+ nop
+_BackMPP:
+
+//=========================================
+// Script for Restoring Original Codes
+[DISABLE]
+MOVH:
+// mov ecx,[edi+00000850]
+ db 8b 8f 50 08 00 00
+
+MOCN:
+// mov eax,[edi+00000850]
+ db 8b 87 50 08 00 00
+
+GDMD:
+// fst dword ptr [esi+000003D0]
+ db d9 96 d0 03 00 00
+
+MMAN:
+// fstp dword ptr [esi+000008C4]
+ db d9 9e c4 08 00 00
+
+MPRE:
+// mov [ebx+000008C8],ecx
+ db 89 8b c8 08 00 00
+
+MPGD:
+// mov eax,[edi+00000B3C]
+ db 8b 87 3c 0b 00 00
+
+MPPN:
+// mov edx,[eax+34]
+// add [ebp+08],edx
+ db 8b 50 34 01 55 08
+
+//=========================================
+// Unloading Scripts
+{$lua}
+getAddressList().getMemoryRecordByID(94).Active=false
+getAddressList().getMemoryRecordByID(94).Color=0x0c08000
+getAddressList().getMemoryRecordByID(95).Active=false
+getAddressList().getMemoryRecordByID(95).Color=0x0c08000
+getAddressList().getMemoryRecordByID(96).Active=false
+getAddressList().getMemoryRecordByID(96).Color=0x0c08000
+getAddressList().getMemoryRecordByID(97).Active=false
+getAddressList().getMemoryRecordByID(97).Color=0x0c08000
+getAddressList().getMemoryRecordByID(98).Active=false
+getAddressList().getMemoryRecordByID(98).Color=0x0c08000
+{$asm}
+
+//=========================================
+// Unregistering Symbols
+unregistersymbol(MyCode)
+unregistersymbol(iEnableGMD)
+unregistersymbol(iEnableMPM)
+unregistersymbol(iEnableMPG)
+unregistersymbol(iEnableMPP)
+unregistersymbol(iEnableMPR)
+unregistersymbol(pVanHelsing)
+unregistersymbol(pCompanion)
+unregistersymbol(pGold)
+
+unregistersymbol(MOVH)
+unregistersymbol(MOCN)
+unregistersymbol(GDMD)
+unregistersymbol(MMAN)
+unregistersymbol(MPRE)
+unregistersymbol(MPGD)
+unregistersymbol(MPPN)
+
+//=========================================
+dealloc(MyCode)
+//============= Scripts End ===============
+
+// ****************************************
+// NOTES
+// ****************************************
+{
+
+}
+
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>94</ID>
+          <Description>"[X] &lt;== God Mode --------------------------------------&gt; (HK: CTRL+Home / CTRL+End)"</Description>
+          <LastState Activated="0"/>
+          <Color>C08000</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[enable]
+define(test,LUDO)
+
+{$LUA}
+writeInteger("iEnableGMD",1)
+getAddressList().getMemoryRecordByID(94).Color=0x0008000
+{$ASM}
+
+[disable]
+{$LUA}
+writeInteger("iEnableGMD",0)
+getAddressList().getMemoryRecordByID(94).Color=0x0c08000
+{$ASM}
+
+</AssemblerScript>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Activate</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Deactivate</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>95</ID>
+          <Description>"[X] &lt;== Full Mana ---------------------------------------&gt; (HK: CTRL+Home / CTRL+End)"</Description>
+          <LastState Activated="0"/>
+          <Color>C08000</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[enable]
+define(test,LUDO)
+
+{$LUA}
+writeInteger("iEnableMPM",1)
+getAddressList().getMemoryRecordByID(95).Color=0x0008000
+{$ASM}
+
+[disable]
+{$LUA}
+writeInteger("iEnableMPM",0)
+getAddressList().getMemoryRecordByID(95).Color=0x0c08000
+{$ASM}
+
+</AssemblerScript>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Activate</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Deactivate</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>97</ID>
+          <Description>"[X] &lt;== Minimum Potions ----------------------------&gt; (HK: CTRL+Home / CTRL+End)"</Description>
+          <LastState Activated="0"/>
+          <Color>C08000</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[enable]
+define(test,LUDO)
+
+{$LUA}
+writeInteger("iEnableMPP",1)
+getAddressList().getMemoryRecordByID(97).Color=0x0008000
+{$ASM}
+
+[disable]
+{$LUA}
+writeInteger("iEnableMPP",0)
+getAddressList().getMemoryRecordByID(97).Color=0x0c08000
+{$ASM}
+
+</AssemblerScript>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Activate</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Deactivate</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>98</ID>
+          <Description>"[X] &lt;== Full Rage ----------------------------------------&gt; (HK: CTRL+Home / CTRL+End)"</Description>
+          <LastState Activated="0"/>
+          <Color>C08000</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[enable]
+define(test,LUDO)
+
+{$LUA}
+writeInteger("iEnableMPR",1)
+getAddressList().getMemoryRecordByID(98).Color=0x0008000
+{$ASM}
+
+[disable]
+{$LUA}
+writeInteger("iEnableMPR",0)
+getAddressList().getMemoryRecordByID(98).Color=0x0c08000
+{$ASM}
+
+</AssemblerScript>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Activate</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Deactivate</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>96</ID>
+          <Description>"[X] &lt;== Minimum Gold ---------------------------------&gt; (HK: CTRL+Home / CTRL+End)"</Description>
+          <Options moHideChildren="1"/>
+          <LastState Activated="0"/>
+          <Color>C08000</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[enable]
+define(test,LUDO)
+
+{$LUA}
+writeInteger("iEnableMPG",1)
+getAddressList().getMemoryRecordByID(96).Color=0x0008000
+{$ASM}
+
+[disable]
+{$LUA}
+writeInteger("iEnableMPG",0)
+getAddressList().getMemoryRecordByID(96).Color=0x0c08000
+{$ASM}
+
+</AssemblerScript>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Activate</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Deactivate</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>54</ID>
+          <Description>"======================= Helsing Info ====================="</Description>
+          <Options moHideChildren="1"/>
+          <LastState Value="" Activated="0" RealAddress="00000000"/>
+          <Color>404080</Color>
+          <GroupHeader>1</GroupHeader>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>29</ID>
+              <Description>"Name (DO NOT CHANGE THIS)"</Description>
+              <LastState Activated="0" RealAddress="00000000"/>
+              <ShowAsHex>1</ShowAsHex>
+              <Color>000080</Color>
+              <VariableType>String</VariableType>
+              <Length>16</Length>
+              <Unicode>1</Unicode>
+              <ZeroTerminate>1</ZeroTerminate>
+              <Address>pVanHelsing</Address>
+              <Offsets>
+                <Offset>0</Offset>
+                <Offset>CC8</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>24</ID>
+              <Description>"Ability Points Available ==&gt; "</Description>
+              <LastState Value="??" Activated="0" RealAddress="00000000"/>
+              <Color>0000FF</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pVanHelsing</Address>
+              <Offsets>
+                <Offset>848</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>26</ID>
+              <Description>"Attribute Points Available ==&gt; "</Description>
+              <LastState Value="??" Activated="0" RealAddress="00000000"/>
+              <Color>0000FF</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pVanHelsing</Address>
+              <Offsets>
+                <Offset>84C</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>25</ID>
+              <Description>"Current XP ==&gt; "</Description>
+              <LastState Value="??" Activated="0" RealAddress="00000000"/>
+              <Color>0000FF</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pVanHelsing</Address>
+              <Offsets>
+                <Offset>850</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>28</ID>
+              <Description>"Current Gold ==&gt;"</Description>
+              <LastState Value="??" Activated="0" RealAddress="00000000"/>
+              <Color>0000FF</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pGold</Address>
+              <Offsets>
+                <Offset>B3C</Offset>
+              </Offsets>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>55</ID>
+          <Description>"====================== Katarina  Info ====================="</Description>
+          <Options moHideChildren="1"/>
+          <LastState Value="" Activated="0" RealAddress="00000000"/>
+          <Color>404080</Color>
+          <GroupHeader>1</GroupHeader>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>56</ID>
+              <Description>"Name (DO NOT CHANGE THIS)"</Description>
+              <LastState Activated="0" RealAddress="00000000"/>
+              <ShowAsHex>1</ShowAsHex>
+              <Color>000080</Color>
+              <VariableType>String</VariableType>
+              <Length>16</Length>
+              <Unicode>1</Unicode>
+              <ZeroTerminate>1</ZeroTerminate>
+              <Address>pCompanion</Address>
+              <Offsets>
+                <Offset>0</Offset>
+                <Offset>CC8</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>57</ID>
+              <Description>"Ability Points Available ==&gt; "</Description>
+              <LastState Value="??" Activated="0" RealAddress="00000000"/>
+              <Color>0000FF</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pCompanion</Address>
+              <Offsets>
+                <Offset>848</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>58</ID>
+              <Description>"Attribute Points Available ==&gt; "</Description>
+              <LastState Value="??" Activated="0" RealAddress="00000000"/>
+              <Color>0000FF</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pCompanion</Address>
+              <Offsets>
+                <Offset>84C</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>59</ID>
+              <Description>"Current XP ==&gt; "</Description>
+              <LastState Value="??" Activated="0" RealAddress="00000000"/>
+              <Color>0000FF</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pCompanion</Address>
+              <Offsets>
+                <Offset>850</Offset>
+              </Offsets>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols>
+    <SymbolEntry>
+      <Name>Recifense</Name>
+      <Address>20150705</Address>
+    </SymbolEntry>
+  </UserdefinedSymbols>
+  <Comments>===========================================
+ Game Title    : The Incredible Adventures of Van Helsing
+ Game Version  : 1.4.1
+ Game Sponsor  : Myself
+ Process Name  : VanHelsing_x86.exe
+ Script Version: 1.0 (AOB)
+ CE Version    : 6.4
+ Release date  : 05-Jul-2015
+ Author        : Recifense
+ History:
+ 23-May-14: First Release
+ 24-May-14: Release for version 1.0.01d (patch by CODEX)
+ 02-Jun-14: Release for version 1.0.02  (patch by 3DM)
+ 21-Jun-14: Release for version 1.0.03  (patch by 3DM)(CE64)
+ 28-Dec-14: Release for version 1.0.04c (Steam)
+ 05-Jul-15: Release for version 1.4.1 (Steam)(AOB)
+ Features:
+ - God Mode       [1]
+ - Full Mana      [2]
+ - Minimum Gold   [3]
+ - Some Pointers  [4]
+===========================================
+[1] It works for main character and companion;
+[2] It works for main character and companion;
+[3] You have to open inventory in order to make it work;
+[4] It can be changed by the user;
+[5] You have to open inventory second tab in order to make it work;
+[6] That's it;
+[7] Used on the table;
+===========================================
+[USAGE]
+1) Run CE64;
+2) Run Game;
+3) Load the game process "VanHelsing_x86.exe" in CE;
+4) Now Activate the script of each cheat you want to use;
+5) Game On;
+===========================================
+HOTKEYS:
+CTRL+Home = Enable  all cheats;
+CTRL+End  = Disable all cheats;
+===========================================
+[NOTE] The script uses AOB CE feature. So it may work with other versions of the game. And it can take a while to load.
+===========================================
+Cheers!
+</Comments>
+</CheatTable>

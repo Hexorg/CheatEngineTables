@@ -1,0 +1,1263 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="24">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>19</ID>
+      <Description>"[X] &lt;== Civilization VI v1.0.0.38 (235603) Script v2.1"</Description>
+      <Options moHideChildren="1" moDeactivateChildrenAsWell="1"/>
+      <LastState/>
+      <Color>FF0000</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>{
+===========================================
+ Game Title    : Civilization VI
+ Game Version  : 1.0.0.38 (235603)
+ Game Sponsor  : Fennix102
+ Process Name  : CivilizationVI.exe
+ Relevant Info : 64bits/TBS/New Engine
+ Script Version: 2.1
+ CE Version    : 6.6
+ Release date  : 19-Nov-2016
+ Author        : Recifense
+ History:
+ 22-Oct-2016: Preliminary Release 1 (7 features)
+ 24-Oct-2016: Preliminary Release 2 (6 more features)
+ 25-Oct-2016: First Release
+ 02-Nov-2016: Added unit prod in 1 turn (s2.0)
+ 19-Nov-2016: Release for version 1.0.0.38. (s2.1)
+ Features:
+ - Minimum Gold
+ - Move unlimited Times
+ - Unic Can Act Again
+ - God Mode
+ - Research in 1 turn
+ - Build Construction in 1 turn:
+   - Only Wonders
+ - Unlimited Works for Builders
+ - Build District in 1 turn
+ - Build Project in 1 turn
+ - City Minimum Pop
+ - Minimum Faith
+ - City Garrison HP
+ - Unit Production in 1 turn (new)
+ - Some Pointers
+===========================================
+}
+
+//=========================================
+// Checking CE version
+{$lua}
+  if(getCEVersion() &lt; 6.6) then
+    ShowMessage('Sorry. CE version should be 6.6 or above')
+  end
+{$asm}
+
+//=========================================
+// Checking Selected Process
+{$lua}
+  if(process == nil) then
+    ShowMessage('No process was selected')
+  elseif ((process ~= "CivilizationVI.exe") and (process ~= "CivilizationVI_DX12.exe")) then
+    ShowMessage('Error. Expected Process = CivilizationVI.exe or CivilizationVI_DX12.exe')
+  end
+{$asm}
+
+//=========================================
+// Definitions
+define(LUDO,"CivilizationVI.exe")
+define(MOPG,GameCore_Base_FinalRelease.dll+004c1fca) //*
+define(MUMP,GameCore_Base_FinalRelease.dll+0041e18b) //X
+define(MUDE,GameCore_Base_FinalRelease.dll+001ebbfd) //=
+define(MUD2,GameCore_Base_FinalRelease.dll+001ebbe6) //N
+define(MUD3,GameCore_Base_FinalRelease.dll+000707e7) //N
+define(MUD4,GameCore_Base_FinalRelease.dll+000707f1) //N
+define(MOPR,GameCore_Base_FinalRelease.dll+0019b01a) //=
+define(MOPP,GameCore_Base_FinalRelease.dll+0003bdde) //=
+define(MOSC,GameCore_Base_FinalRelease.dll+00050fd0) //=
+define(MODB,GameCore_Base_FinalRelease.dll+0003bf65) //=
+define(MOPB,GameCore_Base_FinalRelease.dll+0003c20c) //=
+define(MDHP,GameCore_Base_FinalRelease.dll+000989bb) //X
+define(MOUP,GameCore_Base_FinalRelease.dll+0003bbdb) //=
+
+//=========================================
+// Constants used in the script (that can be changed)
+define(ctCE66,(float)6.6)
+define(ctMGLD,#6600)   // Minimum Gold
+define(ctMFAI,#660)    // Minimum Faith
+define(ctMUMP,#4)      // Minimum MP
+
+//=========================================
+[ENABLE]
+//=========================================
+//LuaCall(CheckVersion())
+//=========================================
+// Check if script is compatible to this game version
+// If false the script will not be loaded
+
+assert(MOPG,8b 81 a0 00 00 00 48 8b fa 89 02 48 8b d9 e8 ?? ?? ?? ?? 48 8b cb)
+assert(MUMP,4c 8b bf 78 12 00 00 48 8b f0 44 8b b7 20 02 00 00 4d 85 ff ?? ??)
+assert(MUDE,44 8b 87 28 05 00 00 33 db 41 3b f0 ?? ?? 0f b7 87 20 02 00 00 48)
+assert(MUD2,48 8d 8f 08 05 00 00 44 0f b6 44 24 40 48 8d 54 24 40 e8 ?? ?? ??)
+assert(MUD3,45 03 b5 28 05 00 00 49 8b cd 41 03 84 24 28 05 00 00 44 89 b5 c8)
+assert(MUD4,41 03 84 24 28 05 00 00 44 89 b5 c8 00 00 00 89 44 24 40 e8 ?? ??)
+assert(MOPR,48 8b 97 90 02 00 00 c1 e0 08 41 39 04 16 0f 8c ?? ?? ?? ?? 41 b0)
+assert(MOPP,48 8b 87 f0 00 00 00 4a 8d 0c b5 00 00 00 00 41 c1 e7 08 48 89 4d)
+assert(MOSC,8b 88 e8 01 00 00 e8 ?? ?? ?? ?? 48 8b cf 8b d8 e8 ?? ?? ?? ?? 2b c3 8b c8 48)
+assert(MODB,48 8b 87 20 01 00 00 41 c1 e7 08 44 39 3c 98 0f 8c ?? ?? ?? ?? 48)
+assert(MOPB,48 8b 87 38 01 00 00 48 8d 0c 9d 00 00 00 00 41 c1 e7 08 48 89 4d 67)
+assert(MDHP,8b 87 00 04 00 00 ?? ?? 81 fd 3d 6a a5 6d ?? ?? 33 c0 ?? ?? 8b 81)
+assert(MOUP,48 8b 87 08 01 00 00 41 c1 e7 08 46 39 3c b0 0f 8c ?? ?? ?? ?? 44 8b 6e 10)
+
+//=========================================
+alloc(MyCode,4096,GameCore_Base_FinalRelease.dll)
+//=========================================
+// Declaration section
+label(_MonPlayerGold)
+label(_MonPG00)
+label(_BackMPG)
+label(_ExitMPG)
+label(_MonUnitMP)
+label(_MonUM00)
+label(_MonUM01)
+label(_MonUM02)
+label(_BackMUM)
+label(_ExitMUM)
+label(_MonUnitDamage)
+label(_BackMUD)
+label(_ExitMUD)
+label(_MonUnitDamage2)
+label(_BackUD2)
+label(_ExitUD2)
+label(_MonUnitDamage3)
+label(_BackUD3)
+label(_ExitUD3)
+label(_MonUnitDamage4)
+label(_BackUD4)
+label(_ExitUD4)
+label(_MonPlayerResearch)
+label(_BackMPR)
+label(_ExitMPR)
+label(_MonPlayerProd)
+label(_MonPP00)
+label(_BackMPP)
+label(_ExitMPP)
+label(_MonDistrictBuild)
+label(_BackMDB)
+label(_ExitMDB)
+label(_MonProjectBuild)
+label(_BackMPB)
+label(_ExitMPB)
+label(_MonSelCity)
+label(_BackMSC)
+label(_ExitMSC)
+label(_MonDistrictHP)
+label(_BackMDH)
+label(_ExitMDH)
+label(_MonUnitProd)
+label(_BackMUP)
+label(_ExitMUP)
+
+label(iEnableMPG)
+label(iEnableMMP)
+label(iEnableFCA)
+label(iEnableGMD)
+label(iEnableMPR)
+label(iEnableMPP)
+label(iEnableMNW)
+label(iEnableMDB)
+label(iEnableMPB)
+label(iEnableMPF)
+label(iEnablePWO)
+label(iEnableQLU)
+label(iEnableCMP)
+label(iEnableMDH)
+label(iEnableMUP)
+label(iPlayerID)
+
+label(pPlayer)
+label(pGold)
+label(pUnit)
+label(pResearch)
+label(pCity)
+
+//=========================================
+// Registering Symbols
+registersymbol(MyCode)
+registersymbol(iEnableMPG)
+registersymbol(iEnableMMP)
+registersymbol(iEnableFCA)
+registersymbol(iEnableGMD)
+registersymbol(iEnableMPR)
+registersymbol(iEnableMPP)
+registersymbol(iEnableMNW)
+registersymbol(iEnableMDB)
+registersymbol(iEnableMPB)
+registersymbol(iEnableMPF)
+registersymbol(iEnablePWO)
+registersymbol(iEnableQLU)
+registersymbol(iEnableCMP)
+registersymbol(iEnableMDH)
+registersymbol(iEnableMUP)
+registersymbol(pGold)
+registersymbol(pPlayer)
+registersymbol(pUnit)
+registersymbol(pResearch)
+registersymbol(pCity)
+
+//=========================================
+MyCode:
+//========================================= 10038
+// When GOLD is changed (Gold / Faith)
+_MonPlayerGold:
+ push rbx
+
+ movzx eax,[rcx+40]
+ cmp eax,[iPlayerID]
+ jne _ExitMPG
+
+ mov rbx,[rcx+78]
+ test rbx,rbx
+ jz _ExitMPG
+
+ mov [pGold],rcx
+ mov [pPlayer],rbx
+
+ cmp dword ptr [iEnableMPG],0
+ je _MonPG00                       // Jump if feature is disabled
+
+ mov eax,ctMGLD
+ shl eax,08
+
+ cmp eax,[rcx+000000A0]
+ js _MonPG00
+
+ mov [rcx+000000A0],eax
+
+_MonPG00:
+ cmp dword ptr [iEnableMPF],0
+ je _ExitMPG                       // Jump if feature is disabled
+
+ mov eax,ctMFAI
+ shl eax,08
+
+ cmp eax,[rbx+00007200]
+ js _ExitMPG
+
+ mov [rbx+00007200],eax
+
+_ExitMPG:
+ pop rbx
+
+ mov eax,[rcx+000000A0]            // Original code (get Gold)
+ jmp _BackMPG                      // Back to main code
+
+//=========================================
+align 10,cc
+//========================================= 10038 X
+// When a unit is selected (move points/Act Again/Works/Points)
+_MonUnitMP:
+ push rax
+
+ mov r15,[rdi+00001278]            // Original code (get pMP2)
+
+ movzx eax,[rdi+40]
+ cmp eax,[iPlayerID]
+ jne _ExitMUM
+
+ mov [pUnit],rdi
+
+ test r15,r15
+ jz _ExitMUM
+
+ cmp dword ptr [iEnableMMP],0
+ je _MonUM00                       // Jump if feature is disabled
+
+ mov eax,ctMUMP
+ shl eax,08
+
+ cmp eax,[r15+00000148]
+ js _MonUM00
+
+ mov [r15+00000148],eax
+ mov [rdi+00000608],eax
+
+_MonUM00:
+ cmp dword ptr [iEnableFCA],0
+ je _MonUM01                       // Jump if feature is disabled
+
+ mov eax,#1
+ cmp [rdi+00000640],eax
+ jns _MonUM01
+
+ mov [rdi+00000640],eax
+
+_MonUM01:
+ cmp dword ptr [iEnableQLU],0
+ je _MonUM02                       // Jump if feature is disabled
+
+ cmp dword ptr [rdi+000006b0],00
+ jne _MonUM02
+
+ mov eax,[rdi+00000ec0]
+ cmp eax,#8
+ jns _MonUM02
+
+ mov eax,[rdi+00000eb8]
+ or eax,00010101
+ mov [rdi+00000eb8],eax
+
+_MonUM02:
+ cmp dword ptr [iEnableMNW],0
+ je _ExitMUM                       // Jump if feature is disabled
+
+ cmp dword ptr [rdi+000006b0],00
+ je _ExitMUM
+
+ mov eax,#3
+ cmp [rdi+000006b0],eax
+ jns _ExitMUM
+
+ mov [rdi+000006b0],eax
+
+_ExitMUM:
+ pop rax
+ jmp _BackMUM                      // Back to main code
+
+//=========================================
+align 10,cc
+//========================================= 10038
+// During Battle
+_MonUnitDamage:
+ cmp dword ptr [iEnableGMD],0
+ je _ExitMUD                       // Jump if feature is disabled
+
+ movzx r8d,[rdi+40]
+ cmp r8d,[iPlayerID]
+ jne _ExitMUD
+
+ xor r8d,r8d
+ mov [rdi+00000528],r8d
+
+_ExitMUD:
+ mov r8d,[rdi+00000528]            // Original code (get Damage)
+ jmp _BackMUD                      // Back to main code
+
+//=========================================
+align 10,cc
+//========================================= 10038 new
+// During Battle
+_MonUnitDamage2:
+ cmp dword ptr [iEnableGMD],0
+ je _ExitUD2                       // Jump if feature is disabled
+
+ movzx ecx,[rdi+40]
+ cmp ecx,[iPlayerID]
+ jne _ExitUD2
+
+ xor ecx,ecx
+ mov [rdi+00000528],ecx
+ mov [rsp+40],ecx
+
+_ExitUD2:
+ lea rcx,[rdi+00000508]            // Original code (get pBaseDamage)
+ jmp _BackUD2                      // Back to main code
+
+//=========================================
+align 10,cc
+//========================================= 10038 new
+// During Battle (defender)
+_MonUnitDamage3:
+ cmp dword ptr [iEnableGMD],0
+ je _ExitUD3                       // Jump if feature is disabled
+
+ movzx ecx,[r13+40]
+ cmp ecx,[iPlayerID]
+ jne _ExitUD3
+
+ xor ecx,ecx
+ mov [r13+00000528],ecx
+ mov [rsp+44],ecx
+ mov r14d,ecx
+
+_ExitUD3:
+ add r14d,[r13+00000528]           // Original code (get Damage)
+ jmp _BackUD3                      // Back to main code
+
+//=========================================
+align 10,cc
+//========================================= 10038 new
+// During Battle (attacker)
+_MonUnitDamage4:
+ cmp dword ptr [iEnableGMD],0
+ je _ExitUD4                       // Jump if feature is disabled
+
+ movzx ecx,[r12+40]
+ cmp ecx,[iPlayerID]
+ jne _ExitUD4
+
+ xor eax,eax
+ mov [r12+00000528],eax
+ mov [rbp+000000B0],eax
+
+_ExitUD4:
+ mov rcx,r13                       // Recover RCX
+
+ add eax,[r12+00000528]            // Original code (get Damage)
+ jmp _BackUD4                      // Back to main code
+
+//=========================================
+align 10,cc
+//========================================= 10038
+// During Turn
+_MonPlayerResearch:
+ shl eax,08                        // Original code
+
+ movzx edx,[rdi+40]
+ cmp edx,[iPlayerID]
+ jne _ExitMPR
+
+ mov [pResearch],rdi
+
+ cmp dword ptr [iEnableMPR],0
+ je _ExitMPR                       // Jump if feature is disabled
+
+ mov rdx,[rdi+00000290]
+
+ cmp eax,[r14+rdx]
+ js _ExitMPR
+
+ mov [r14+rdx],eax
+
+_ExitMPR:
+ mov rdx,[rdi+00000290]            // Original code (get pArray)
+ jmp _BackMPR                      // Back to main code
+
+//=========================================
+align 10,cc
+//========================================= 10038
+// During Turn (All prods or Wonders Only)
+_MonPlayerProd:
+ shl r15d,08
+
+ mov rax,[rdi+000000c8]            // Get pCity
+ test rax,rax
+ jz _ExitMPP
+
+ movzx eax,[rax+40]
+ cmp eax,[iPlayerID]
+ jne _ExitMPP
+
+ cmp dword ptr [iEnableMPP],0
+ je _ExitMPP                       // Jump if feature is disabled
+
+ cmp dword ptr [iEnablePWO],0
+ je _MonPP00                       // Jump if feature is disabled
+
+ mov eax,[edi+20]
+ test eax,eax
+ js _ExitMPP
+
+_MonPP00:
+ mov rax,[rdi+000000F0]
+ lea rcx,[r14*4+00000000]
+
+ cmp r15d,[rcx+rax]
+ js _ExitMPP
+
+ mov [rcx+rax],r15d
+
+_ExitMPP:
+ shr r15d,08
+
+ mov rax,[rdi+000000F0]            // Original code (get pArray)
+ jmp _BackMPP                      // Back to main code
+
+//=========================================
+align 10,cc
+//========================================= 10038
+// When a city is selected
+_MonSelCity:
+ mov [pCity],rax
+
+ movzx ecx,[rax+40]
+ cmp ecx,[iPlayerID]
+ jne _ExitMSC
+
+ cmp dword ptr [iEnableCMP],0
+ je _ExitMSC                       // Jump if feature is disabled
+
+ mov ecx,#2
+ cmp [rax+000001E8],ecx
+ jns _ExitMSC
+
+ mov [rax+000001E8],ecx
+
+_ExitMSC:
+ mov ecx,[rax+000001E8]            // Original code (get Pop)
+ jmp _BackMSC                      // Back to main code
+
+//=========================================
+align 10,cc
+//========================================= 10038
+// During Turn
+_MonDistrictBuild:
+ shl r15d,08                       // Original code
+
+ mov rax,[rdi+000000c8]            // Get pCity
+ test rax,rax
+ jz _ExitMDB
+
+ movzx eax,[rax+40]
+ cmp eax,[iPlayerID]
+ jne _ExitMDB
+
+ cmp dword ptr [iEnableMDB],0
+ je _ExitMDB                       // Jump if feature is disabled
+
+ mov rax,[rdi+00000120]
+
+ cmp r15d,[rax+rbx*4]
+ js _ExitMDB
+
+ mov [rax+rbx*4],r15d
+
+_ExitMDB:
+ mov rax,[rdi+00000120]            // Original code (get pArray)
+ jmp _BackMDB                      // Back to main code
+
+//=========================================
+align 10,cc
+//========================================= 10038
+// During Turn
+_MonProjectBuild:
+ shl r15d,08
+
+ mov rax,[rdi+000000c8]            // Get pCity
+ test rax,rax
+ jz _ExitMPB
+
+ movzx eax,[rax+40]
+ cmp eax,[iPlayerID]
+ jne _ExitMPB
+
+ cmp dword ptr [iEnableMPB],0
+ je _ExitMPB                       // Jump if feature is disabled
+
+ mov rax,[rdi+00000138]
+ lea rcx,[rbx*4+00000000]
+
+ cmp r15d,[rcx+rax]
+ js _ExitMPB
+
+ mov [rcx+rax],r15d
+
+_ExitMPB:
+ shr r15d,08
+
+ mov rax,[rdi+00000138]            // Original code (get pArray)
+ jmp _BackMPB                      // Back to main code
+
+//=========================================
+align 10,cc
+//========================================= 10038 X
+// When changing damage (during Attack or recovering)
+_MonDistrictHP:
+ movzx eax,[rdi+40]
+ cmp eax,[iPlayerID]
+ jne _ExitMDH
+
+ cmp dword ptr [iEnableMDH],0
+ je _ExitMDH                       // Jump if feature is disabled
+
+ mov dword ptr [rdi+00000400],00
+
+ test esi,esi
+ js _ExitMDH
+
+ xor rsi,rsi
+ mov [rdi+00000400],esi
+
+_ExitMDH:
+ mov eax,[rdi+00000400]            // Original code (get damage)
+ jmp _BackMDH                      // Back to main code
+
+//=========================================
+align 10,cc
+//========================================= 10038
+// During Turn (Units)
+_MonUnitProd:
+ shl r15d,08
+
+ mov rax,[rdi+000000c8]            // Get pCity
+ test rax,rax
+ jz _ExitMUP
+
+ movzx eax,[rax+40]
+ cmp eax,[iPlayerID]
+ jne _ExitMUP
+
+ cmp dword ptr [iEnableMUP],0
+ je _ExitMUP                       // Jump if feature is disabled
+
+ mov rax,[rdi+00000108]
+
+ cmp [rax+r14*4],r15d
+ jns _ExitMUP
+
+ mov [rax+r14*4],r15d
+
+_ExitMUP:
+ shr r15d,08
+
+ mov rax,[rdi+00000108]            // Original code (get pArray)
+ jmp _BackMUP                      // Back to main code
+
+//=========================================
+align 10,'='
+ db '===============================&gt;'
+ db 'CE6.6 Script by Recifense 111916'
+//=========================================
+// Variables
+iEnableMPG:
+ dd 0
+iEnableMMP:
+ dd 0
+iEnableFCA:
+ dd 0
+iEnableGMD:
+ dd 0
+iEnableMPR:
+ dd 0
+iEnableMPP:
+ dd 0
+iEnableMNW:
+ dd 0
+iEnableMDB:
+ dd 0
+iEnableMPB:
+ dd 0
+iEnableMPF:
+ dd 0
+iEnablePWO:
+ dd 0
+iEnableQLU:
+ dd 0
+iEnableCMP:
+ dd 0
+iEnableMDH:
+ dd 0
+iEnableMUP:
+ dd 0
+iPlayerID:
+ dd 0
+pGold:
+ dq 0
+pPlayer:
+ dq 0
+pUnit:
+ dq 0
+pResearch:
+ dq 0
+pCity:
+ dq 0
+
+//=========================================
+// Hacking Points
+MOPG:
+ jmp _MonPlayerGold
+ nop
+_BackMPG:
+
+MUMP:
+ jmp _MonUnitMP
+ nop
+ nop
+_BackMUM:
+
+MUDE:
+ jmp _MonUnitDamage
+ nop
+ nop
+_BackMUD:
+
+MUD2:
+ jmp _MonUnitDamage2
+ nop
+ nop
+_BackUD2:
+
+MUD3:
+ jmp _MonUnitDamage3
+ nop
+ nop
+_BackUD3:
+
+MUD4:
+ jmp _MonUnitDamage4
+ nop
+ nop
+ nop
+_BackUD4:
+
+MOPR:
+ jmp _MonPlayerResearch
+ db 90 90 90 90 90
+_BackMPR:
+
+MOPP:
+ jmp _MonPlayerProd
+ nop
+ nop
+_BackMPP:
+
+MOSC:
+ jmp _MonSelCity
+ nop
+_BackMSC:
+
+MODB:
+ jmp _MonDistrictBuild
+ db 90 90 90 90 90 90
+_BackMDB:
+
+MOPB:
+ jmp _MonProjectBuild
+ nop
+ nop
+_BackMPB:
+
+MDHP:
+ jmp _MonDistrictHP
+ nop
+_BackMDH:
+
+MOUP:
+ jmp _MonUnitProd
+ nop
+ nop
+_BackMUP:
+
+//=========================================
+// Script for Restoring Original Codes
+[DISABLE]
+MOPG:
+// mov eax,[rcx+000000A0]
+ db 8b 81 a0 00 00 00
+
+MUMP:
+// mov r15,[rdi+00001278]
+ db 4c 8b bf 78 12 00 00
+
+MUDE:
+// mov r8d,[rdi+00000528]
+ db 44 8b 87 28 05 00 00
+
+MUD2:
+// lea rcx,[rdi+00000508]
+ db 48 8d 8f 08 05 00 00
+
+MUD3:
+// add r14d,[r13+00000528]
+ db 45 03 b5 28 05 00 00
+
+MUD4:
+// add eax,[r12+00000528]
+ db 41 03 84 24 28 05 00 00
+
+MOPR:
+// mov rdx,[rdi+00000290]
+// shl eax,08
+ db 48 8b 97 90 02 00 00 c1 e0 08
+
+MOPP:
+// mov rax,[rdi+000000F0]
+ db 48 8b 87 f0 00 00 00
+
+MOSC:
+// mov ecx,[rax+000001E8]
+ db 8b 88 e8 01 00 00
+
+MODB:
+// mov rax,[rdi+00000120]
+// shl r15d,08
+ db 48 8b 87 20 01 00 00 41 c1 e7 08
+
+MOPB:
+// mov rax,[rdi+00000138]
+ db 48 8b 87 38 01 00 00
+
+MDHP:
+// mov eax,[rdi+00000400]
+ db 8b 87 00 04 00 00
+
+MOUP:
+// mov rax,[rdi+00000108]
+ db 48 8b 87 08 01 00 00
+
+//=========================================
+// Unregistering Symbols
+unregistersymbol(MyCode)
+unregistersymbol(iEnableMPG)
+unregistersymbol(iEnableMMP)
+unregistersymbol(iEnableFCA)
+unregistersymbol(iEnableGMD)
+unregistersymbol(iEnableMPR)
+unregistersymbol(iEnableMPP)
+unregistersymbol(iEnableMNW)
+unregistersymbol(iEnableMDB)
+unregistersymbol(iEnableMPB)
+unregistersymbol(iEnableMPF)
+unregistersymbol(iEnablePWO)
+unregistersymbol(iEnableQLU)
+unregistersymbol(iEnableCMP)
+unregistersymbol(iEnableMDH)
+unregistersymbol(iEnableMUP)
+unregistersymbol(pGold)
+unregistersymbol(pPlayer)
+unregistersymbol(pUnit)
+unregistersymbol(pResearch)
+unregistersymbol(pCity)
+
+//=========================================
+dealloc(MyCode)
+//============= Scripts End ===============
+
+// ****************************************
+// NOTES
+// ****************************************
+{
+}
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>138</ID>
+          <Description>"[X] &lt;==Minimum Gold"</Description>
+          <LastState/>
+          <Color>C08000</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[enable]
+define(test,LUDO)
+
+{$LUA}
+writeInteger("iEnableMPG",1)
+getAddressList().getMemoryRecordByID(138).Color=0x00008000
+{$ASM}
+
+[disable]
+{$LUA}
+writeInteger("iEnableMPG",0)
+getAddressList().getMemoryRecordByID(138).Color=0x00c08000
+{$ASM}
+
+</AssemblerScript>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>139</ID>
+          <Description>"[X] &lt;==Move Unlimited Times (on selecting)"</Description>
+          <LastState/>
+          <Color>C08000</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[enable]
+define(test,LUDO)
+
+{$LUA}
+writeInteger("iEnableMMP",1)
+getAddressList().getMemoryRecordByID(139).Color=0x00008000
+{$ASM}
+
+[disable]
+{$LUA}
+writeInteger("iEnableMMP",0)
+getAddressList().getMemoryRecordByID(139).Color=0x00c08000
+{$ASM}
+
+</AssemblerScript>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>140</ID>
+          <Description>"[X] &lt;==Can Act Again (on selecting)"</Description>
+          <LastState/>
+          <Color>C08000</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[enable]
+define(test,LUDO)
+
+{$LUA}
+writeInteger("iEnableFCA",1)
+getAddressList().getMemoryRecordByID(140).Color=0x00008000
+{$ASM}
+
+[disable]
+{$LUA}
+writeInteger("iEnableFCA",0)
+getAddressList().getMemoryRecordByID(140).Color=0x00c08000
+{$ASM}
+
+</AssemblerScript>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>141</ID>
+          <Description>"[X] &lt;==God Mode"</Description>
+          <LastState/>
+          <Color>C08000</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[enable]
+define(test,LUDO)
+
+{$LUA}
+writeInteger("iEnableGMD",1)
+getAddressList().getMemoryRecordByID(141).Color=0x00008000
+{$ASM}
+
+[disable]
+{$LUA}
+writeInteger("iEnableGMD",0)
+getAddressList().getMemoryRecordByID(141).Color=0x00c08000
+{$ASM}
+
+</AssemblerScript>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>142</ID>
+          <Description>"[X] &lt;==Research in 1 Turn"</Description>
+          <LastState/>
+          <Color>C08000</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[enable]
+define(test,LUDO)
+
+{$LUA}
+writeInteger("iEnableMPR",1)
+getAddressList().getMemoryRecordByID(142).Color=0x00008000
+{$ASM}
+
+[disable]
+{$LUA}
+writeInteger("iEnableMPR",0)
+getAddressList().getMemoryRecordByID(142).Color=0x00c08000
+{$ASM}
+
+</AssemblerScript>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>143</ID>
+          <Description>"[X] &lt;==Construction in 1 Turn (city)"</Description>
+          <Options moHideChildren="1" moDeactivateChildrenAsWell="1"/>
+          <LastState/>
+          <Color>C08000</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[enable]
+define(test,LUDO)
+
+{$LUA}
+writeInteger("iEnableMPP",1)
+getAddressList().getMemoryRecordByID(143).Color=0x00008000
+{$ASM}
+
+[disable]
+{$LUA}
+writeInteger("iEnableMPP",0)
+getAddressList().getMemoryRecordByID(143).Color=0x00c08000
+{$ASM}
+
+</AssemblerScript>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>145</ID>
+              <Description>"[X] &lt;==Only Wonders"</Description>
+              <LastState/>
+              <Color>C08000</Color>
+              <VariableType>Auto Assembler Script</VariableType>
+              <AssemblerScript>[enable]
+define(test,LUDO)
+
+{$LUA}
+writeInteger("iEnablePWO",1)
+getAddressList().getMemoryRecordByID(145).Color=0x00008000
+{$ASM}
+
+[disable]
+{$LUA}
+writeInteger("iEnablePWO",0)
+getAddressList().getMemoryRecordByID(145).Color=0x00c08000
+{$ASM}
+
+</AssemblerScript>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>144</ID>
+          <Description>"[X] &lt;==Unlimited Constructions for Builders (on selecting)"</Description>
+          <LastState/>
+          <Color>C08000</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[enable]
+define(test,LUDO)
+
+{$LUA}
+writeInteger("iEnableMNW",1)
+getAddressList().getMemoryRecordByID(144).Color=0x00008000
+{$ASM}
+
+[disable]
+{$LUA}
+writeInteger("iEnableMNW",0)
+getAddressList().getMemoryRecordByID(144).Color=0x00c08000
+{$ASM}
+
+</AssemblerScript>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>146</ID>
+          <Description>"[X] &lt;==District in 1 Turn"</Description>
+          <LastState/>
+          <Color>C08000</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[enable]
+define(test,LUDO)
+
+{$LUA}
+writeInteger("iEnableMDB",1)
+getAddressList().getMemoryRecordByID(146).Color=0x00008000
+{$ASM}
+
+[disable]
+{$LUA}
+writeInteger("iEnableMDB",0)
+getAddressList().getMemoryRecordByID(146).Color=0x00c08000
+{$ASM}
+
+</AssemblerScript>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>147</ID>
+          <Description>"[X] &lt;==Project in 1 Turn"</Description>
+          <LastState/>
+          <Color>C08000</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[enable]
+define(test,LUDO)
+
+{$LUA}
+writeInteger("iEnableMPB",1)
+getAddressList().getMemoryRecordByID(147).Color=0x00008000
+{$ASM}
+
+[disable]
+{$LUA}
+writeInteger("iEnableMPB",0)
+getAddressList().getMemoryRecordByID(147).Color=0x00c08000
+{$ASM}
+
+</AssemblerScript>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>148</ID>
+          <Description>"[X] &lt;==Minimum Faith"</Description>
+          <LastState/>
+          <Color>C08000</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[enable]
+define(test,LUDO)
+
+{$LUA}
+writeInteger("iEnableMPF",1)
+getAddressList().getMemoryRecordByID(148).Color=0x00008000
+{$ASM}
+
+[disable]
+{$LUA}
+writeInteger("iEnableMPF",0)
+getAddressList().getMemoryRecordByID(148).Color=0x00c08000
+{$ASM}
+
+</AssemblerScript>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>149</ID>
+          <Description>"[X] &lt;==Units Quick Level Up (on selecting)"</Description>
+          <LastState/>
+          <Color>C08000</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[enable]
+define(test,LUDO)
+
+{$LUA}
+writeInteger("iEnableQLU",1)
+getAddressList().getMemoryRecordByID(149).Color=0x00008000
+{$ASM}
+
+[disable]
+{$LUA}
+writeInteger("iEnableQLU",0)
+getAddressList().getMemoryRecordByID(149).Color=0x00c08000
+{$ASM}
+
+</AssemblerScript>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>150</ID>
+          <Description>"[X] &lt;==City Minimum Population ((on selecting)"</Description>
+          <LastState/>
+          <Color>C08000</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[enable]
+define(test,LUDO)
+
+{$LUA}
+writeInteger("iEnableCMP",1)
+getAddressList().getMemoryRecordByID(150).Color=0x00008000
+{$ASM}
+
+[disable]
+{$LUA}
+writeInteger("iEnableCMP",0)
+getAddressList().getMemoryRecordByID(150).Color=0x00c08000
+{$ASM}
+
+</AssemblerScript>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>151</ID>
+          <Description>"[X] &lt;==God Mode for Garrison ( City)"</Description>
+          <LastState/>
+          <Color>C08000</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[enable]
+define(test,LUDO)
+
+{$LUA}
+writeInteger("iEnableMDH",1)
+getAddressList().getMemoryRecordByID(151).Color=0x00008000
+{$ASM}
+
+[disable]
+{$LUA}
+writeInteger("iEnableMDH",0)
+getAddressList().getMemoryRecordByID(151).Color=0x00c08000
+{$ASM}
+
+</AssemblerScript>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>152</ID>
+          <Description>"[X] &lt;==Unit Production in 1 Turn ( City)"</Description>
+          <LastState/>
+          <Color>C08000</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[enable]
+define(test,LUDO)
+
+{$LUA}
+writeInteger("iEnableMUP",1)
+getAddressList().getMemoryRecordByID(152).Color=0x00008000
+{$ASM}
+
+[disable]
+{$LUA}
+writeInteger("iEnableMUP",0)
+getAddressList().getMemoryRecordByID(152).Color=0x00c08000
+{$ASM}
+
+</AssemblerScript>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>228</ID>
+      <Description>"[X] &lt;== Table/Script Information"</Description>
+      <Options moHideChildren="1"/>
+      <LastState/>
+      <Color>0000FF</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>[enable]
+define(test,LUDO)
+
+{$LUA}
+getMainForm().CommentButton.doClick()
+{$ASM}
+
+[disable]
+
+</AssemblerScript>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols>
+    <SymbolEntry>
+      <Name>Recifense</Name>
+      <Address>20161119</Address>
+    </SymbolEntry>
+  </UserdefinedSymbols>
+  <Comments>===========================================
+ Game Title    : Civilization VI
+ Game Version  : 1.0.0.38 (235603)
+ Game Sponsor  : Fennix102
+ Process Name  : CivilizationVI.exe
+ Relevant Info : 64bits/TBS/New Engine
+ Script Version: 2.1
+ CE Version    : 6.6
+ Release date  : 19-Nov-2016
+ Author        : Recifense
+ History:
+ 22-Oct-2016: Preliminary Release 1 (7 features)
+ 24-Oct-2016: Preliminary Release 2 (6 more features)
+ 25-Oct-2016: First Release
+ 02-Nov-2016: Added unit prod in 1 turn (s2.0)
+ 19-Nov-2016: Release for version 1.0.0.38. (s2.1)
+ Features:
+ - Minimum Gold                  [1]
+ - Move unlimited Times          [2]
+ - Unic Can Act Again            [3]
+ - God Mode                      [4]
+ - Research in 1 turn            [5]
+ - Construction in 1 turn:       [6]
+   - Only Wonders                [7]
+ - Unlimited Works for Builders  [8]
+ - Build District in 1 turn      [9]
+ - Build Project in 1 turn       [A]
+ - City Minimum Pop              [B]
+ - Minimum Faith                 [C]
+ - City Garrison HP              [D]
+ - Unit Production in 1 turn(new)[E]
+ - Some Pointers                 [F]
+===========================================
+[1] It will not go under 6600;
+[2] Everytime you select a Unit, it will be ready to move;
+[3] Everytime you select a Unit, it will be ready to act;
+[4] That's it. A unit may dissapear, but it will be alive;
+[5] A research per turn;
+[6] For every city (player's);
+[7] Only wonders will be produced in 1 turn;
+[8] No limit for builders;
+[9] That's it;
+[A] That's it;
+[B] The minimum population is 2;
+[C] It will not go under 660;
+[D] God Mode for City;
+[E] For every city (player's);
+[F] To be used at the table;
+===========================================
+[USAGE]
+1) Run CE66;
+2) Run Game;
+3) Start a match from the beginning or loading it;
+4) Load the game process "CivilizationVI.exe" or "CivilizationVI_DX12.exe" in CE;
+5) Load this table and activate the main script;
+5) Now Activate the script of each cheat you want to use;
+6) Game On;
+===========================================
+HOTKEYS:
+ None defined
+===========================================
+[IMPORTANT]
+Save your game before unsing the cheats.
+===========================================
+[INFO]
+Tested on Win 10 64bits
+===========================================
+BIG THANKS to Fennix102 for providing the game.
+===========================================
+Have fun!
+</Comments>
+</CheatTable>

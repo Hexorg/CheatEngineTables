@@ -1,0 +1,576 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="16">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>24</ID>
+      <Description>"[X] &lt;== Company Of Heroes 2 v3.0.0.10416 Steam Script 1.3 AOB"</Description>
+      <Options moHideChildren="1"/>
+      <Color>FF0000</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>{
+===========================================
+ Game Title    : Company Of Heroes 2
+ Game Version  : 3.0.0.10416 (steam)
+ Game Sponsor  : Fennix102
+ Proces Name   : RelicCoH2.exe
+ Script Version: 1.3 (AOB)
+ CE Version    : 6.3
+ Release date  : 01-Sep-2013
+ Author        : Recifense
+ History:
+ 27-Jun-13: First Release
+ 28-Jun-13: Release for version 3.0.0.9704  (RLD)
+ 01-Jul-13: Release for version 3.0.0.9720  (STEAM)
+ 11-Jul-13: Release for version 3.0.0.9804  (STEAM)
+ 30-Jul-13: Changed approach of player identification
+ 30-Jul-13: Release for version 3.0.0.9945  (STEAM)
+ 21-Aug-13: Release for version 3.0.0.10242 (STEAM)
+ 22-Aug-13: Release for version 3.0.0.10317 (STEAM)
+ 29-Aug-13: Release for version 3.0.0.10416 (STEAM) (Improved GM)
+ 01-Sep-13: Release for version 3.0.0.10416 (STEAM) (AOB)
+ Features:
+ - Minimum Resources:
+   - Manpower
+   - Munition
+   - Fuel
+ - Quick Command Points
+ - God Mode
+===========================================
+}
+
+//=========================================
+// Definitions
+define(LUDO,"RelicCoH2.exe")
+
+//=========================================
+[ENABLE]
+//=========================================
+//LuaCall(CheckVersion())
+//=========================================
+// Check if script is compatible to this game version
+// If false the script will not be loaded
+
+AOBScan(aobMHPR,8b 81 a4 00 00 00 83 ec 08 85 c0 ?? ?? 8b 48 08 8b 50 0c 89 0c 24)
+AOBScan(aobGDMD,83 ec 08 0f 57 db 56 8b f1 f3 0f 10 86 80 00 00 00 0f 2f c3 f3 0f)
+AOBScan(aobGMD1,f3 0f 11 41 3c ?? ?? f3 0f 11 49 3c f3 0f 10 81 80 00 00 00 f3 0f)
+AOBScan(aobMPID,89 53 0c 89 43 10 8a 0d ?? ?? ?? ?? 8d 7b 0c 88 4b 14 8b 4b 04 8b)
+AOBScan(aobMGST,89 9d 6c 06 00 00 e8 ?? ?? ?? ?? 8d 8d a0 07 00 00 e8 ?? ?? ?? ??)
+AOBScan(aobGMD2,f3 0f 10 54 24 04 56 8b f1 f3 0f 10 46 40 f3 0f 10 4e 3c 0f 28 d8)
+AOBScan(aobGMD4,83 ec 18 56 8b f1 80 7e 7d 00 0f 85 ?? ?? ?? ?? 8b 4e 0c 6a 0b e8)
+AOBScan(aobMSUN,89 7e 14 8b f7 3b f3 ?? ?? 83 c6 10 38 5e 06 ?? ?? 38 1d ?? ?? ??)
+
+//=========================================
+alloc(MyCode,4096,LUDO)
+//=========================================
+// Declaration section
+label(_MonHumanPlayer)
+label(_MonHP00)
+label(_BackMHP)
+label(_ExitMHP)
+label(_GodMode)
+label(_BackGMD)
+label(_ExitGMD)
+label(_GodMode1)
+label(_BackGM1)
+label(_ExitGM1)
+label(_MonPlayerID)
+label(_BackMPI)
+label(_ExitMPI)
+label(_MonGameStart)
+label(_BackMGS)
+label(_ExitMGS)
+label(_GodMode2)
+label(_BackGM2)
+label(_ExitGM2)
+label(_GodMode4)
+label(_BackGM4)
+label(_ExitGM4)
+label(_MonSelUnit)
+label(_BackMSU)
+label(_ExitMSU)
+label(pUnit)
+label(pSel)
+label(pPlayer)
+label(iPlayerID)
+label(iEnableMPR)
+label(iEnableGMD)
+label(iEnableCPP)
+label(fValue)
+label(pLast)
+
+//=========================================
+// Registering Symbols
+registersymbol(MyCode)
+registersymbol(pUnit)
+registersymbol(pSel)
+registersymbol(pPlayer)
+registersymbol(iPlayerID)
+registersymbol(iEnableMPR)
+registersymbol(iEnableGMD)
+registersymbol(iEnableCPP)
+registersymbol(fValue)
+registersymbol(pLast)
+
+registersymbol(aobMHPR)
+registersymbol(aobGDMD)
+registersymbol(aobGMD1)
+registersymbol(aobMPID)
+registersymbol(aobMGST)
+registersymbol(aobGMD2)
+registersymbol(aobGMD4)
+registersymbol(aobMSUN)
+
+//=========================================
+MyCode:
+//=========================================
+_MonHumanPlayer:
+ mov eax,[ecx+000000A4]            // Original code
+ test eax,eax
+ jz _ExitMHP
+
+ mov ecx,[eax+08]
+ cmp ecx,[iPlayerID]
+ jne _ExitMHP
+
+ mov [pPlayer],eax
+
+ cmp dword ptr [iEnableMPR],0
+ je _MonHP00                       // Jump if feature is disabled
+
+ mov ecx,(float)6300.0
+
+ mov edx,[eax+00000080]            // Manpower
+ cmp ecx,edx
+ cmovg edx,ecx
+ mov [eax+00000080],edx
+
+ mov edx,[eax+00000084]            // Munition
+ cmp ecx,edx
+ cmovg edx,ecx
+ mov [eax+00000084],edx
+
+ mov edx,[eax+00000088]            // Fuel
+ cmp ecx,edx
+ cmovg edx,ecx
+ mov [eax+00000088],edx
+
+_MonHP00:
+ cmp dword ptr [iEnableCPP],0
+ je _ExitMHP                       // Jump if feature is disabled
+
+ mov ecx,(float)2000.0
+
+ cmp ecx,[eax+0000008C]            // Command Point Progress
+ jle _ExitMHP
+
+ mov [eax+0000008C],ecx
+
+_ExitMHP:
+ jmp _BackMHP                      // Back to main code
+
+//=========================================
+_GodMode:
+ mov dword ptr [pLast],'_GDM'
+
+ push eax
+
+ cmp dword ptr [iEnableGMD],0
+ je _ExitGMD                       // Jump if feature is disabled
+
+ mov eax,[ecx+0c]
+ test eax,eax
+ jz _ExitGMD
+
+ mov eax,[eax+000000a4]
+ cmp eax,[pPlayer]
+ jne _ExitGMD
+
+ pop eax
+ ret 0008
+//==
+_ExitGMD:
+ pop eax
+
+ sub esp,08                        // Original code
+ xorps xmm3,xmm3                   // Original code
+ jmp _BackGMD                      // Back to main code
+
+//=========================================
+_GodMode1:
+ mov dword ptr [pLast],'_GM1'
+
+ push eax
+
+ cmp dword ptr [iEnableGMD],0
+ je _ExitGM1                       // Jump if feature is disabled
+
+ mov eax,[ecx+0c]
+ test eax,eax
+ jz _ExitGM1
+
+ mov eax,[eax+000000a4]
+ cmp eax,[pPlayer]
+ jne _ExitGM1
+
+ movss xmm0,[ecx+40]
+
+_ExitGM1:
+ pop eax
+
+ comiss xmm0,xmm1                  // Original code
+ movss [ecx+3C],xmm0               // Original code
+ jmp _BackGM1                      // Back to main code
+
+//=========================================
+_MonPlayerID:
+ mov [iPlayerID],edx
+
+_ExitMPI:
+ mov [ebx+0C],edx                  // Original code
+ mov [ebx+10],eax                  // Original code
+ jmp _BackMPI                      // Back to main code
+
+//=========================================
+_MonGameStart:
+ mov dword ptr [iPlayerID],#9999
+
+_ExitMGS:
+ mov [ebp+0000066C],ebx            // Original code
+ jmp _BackMGS                      // Back to main code
+
+//=========================================
+_GodMode2:
+ mov dword ptr [pLast],'_GM2'
+
+ push eax
+
+ mov eax,[esp+08]
+ mov [fValue],eax
+
+ cmp dword ptr [iEnableGMD],0
+ je _ExitGM2                       // Jump if feature is disabled
+
+ mov eax,[ecx+0c]
+ test eax,eax
+ jz _ExitGM2
+
+ mov eax,[eax+000000a4]
+ cmp eax,[pPlayer]
+ jne _ExitGM2
+
+ pop eax
+
+ ret 0008
+//==
+_ExitGM2:
+ pop eax
+
+ movss xmm2,[esp+04]               // Original code
+ jmp _BackGM2                      // Back to main code
+
+//=========================================
+_GodMode4:
+ mov dword ptr [pLast],'_GM4'
+
+ push eax
+
+ cmp dword ptr [iEnableGMD],0
+ je _ExitGM4                       // Jump if feature is disabled
+
+ mov [pUnit],ecx                   // Save ptr for debugging
+
+ mov eax,[ecx+0c]                  // pUnit
+ test eax,eax
+ jz _ExitGM4
+
+ mov eax,[eax+000000a4]            // pPlayer
+ cmp eax,[pPlayer]
+ jne _ExitGM4
+
+ pop eax
+
+ ret 0018
+//==
+_ExitGM4:
+ pop eax
+
+ sub esp,18                        // Original code
+ push esi                          // Original code
+ mov esi,ecx                       // Original code
+ jmp _BackGM4                      // Back to main code
+
+//=========================================
+_MonSelUnit:
+ mov [pSel],edi
+
+_ExitMSU:
+ mov [esi+14],edi                  // Original code
+ mov esi,edi                       // Original code
+ jmp _BackMSU                      // Back to main code
+
+//=========================================
+ db '=================================&gt;'
+ db 'CE6.3 Script by Recifense 090113'
+//=========================================
+// Variables
+iEnableMPR:
+ dd 0
+iEnableGMD:
+ dd 0
+iEnableCPP:
+ dd 0
+pUnit:
+ dd 0
+pSel:
+ dd 0
+pPlayer:
+ dd MyCode
+iPlayerID:
+ dd #9999
+fValue:
+ dd 0
+pLast:
+ db 'CE63'
+
+//=========================================
+// Hacking Points
+aobMHPR:
+ jmp _MonHumanPlayer
+ nop
+_BackMHP:
+
+aobGDMD:
+ jmp _GodMode
+ nop
+_BackGMD:
+
+aobGMD1:
+ jmp _GodMode1
+_BackGM1:
+
+aobMPID:
+ jmp _MonPlayerID
+ nop
+_BackMPI:
+
+aobMGST:
+ jmp _MonGameStart
+ nop
+_BackMGS:
+
+aobGMD2:
+ jmp _GodMode2
+ nop
+_BackGM2:
+
+aobGMD4:
+ jmp _GodMode4
+ nop
+_BackGM4:
+
+aobMSUN:
+ jmp _MonSelUnit
+_BackMSU:
+
+//=========================================
+// Script for Restoring Original Codes
+[DISABLE]
+aobMHPR:
+// mov eax,[ecx+000000A4]
+ db 8b 81 a4 00 00 00
+
+aobGDMD:
+// sub esp,08
+// xorps xmm3,xmm3
+ db 83 ec 08 0f 57 db
+
+aobGMD1:
+// movss [ecx+3C],xmm0
+ db f3 0f 11 41 3c
+
+aobMPID:
+// mov [ebx+0C],edx
+// mov [ebx+10],eax
+ db 89 53 0c 89 43 10
+
+aobMGST:
+// mov [ebp+0000066C],ebx
+ db 89 9d 6c 06 00 00
+
+aobGMD2:
+// movss xmm2,[esp+04]
+ db f3 0f 10 54 24 04
+
+aobGMD4:
+// sub esp,18
+// push esi
+// mov esi,ecx
+ db 83 ec 18 56 8b f1
+
+aobMSUN:
+// mov [esi+14],edi
+// mov esi,edi
+ db 89 7e 14 8b f7
+
+//=========================================
+// Unregistering Symbols
+unregistersymbol(MyCode)
+unregistersymbol(pUnit)
+unregistersymbol(pSel)
+unregistersymbol(pPlayer)
+unregistersymbol(iPlayerID)
+unregistersymbol(iEnableMPR)
+unregistersymbol(iEnableGMD)
+unregistersymbol(iEnableCPP)
+unregistersymbol(fValue)
+unregistersymbol(pLast)
+
+unregistersymbol(aobMHPR)
+unregistersymbol(aobGDMD)
+unregistersymbol(aobGMD1)
+unregistersymbol(aobMPID)
+unregistersymbol(aobMGST)
+unregistersymbol(aobGMD2)
+unregistersymbol(aobGMD4)
+unregistersymbol(aobMSUN)
+
+//=========================================
+dealloc(MyCode)
+//============= Scripts End ===============
+
+// ****************************************
+// NOTES
+// ****************************************
+{
+
+}
+
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>10</ID>
+          <Description>"Enable/Disable Minimum Resources =&gt; (1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMPR</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>25</ID>
+          <Description>"Enable/Disable God Mode =&gt; (1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableGMD</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>26</ID>
+          <Description>"Enable/Disable Command Points Progress =&gt; (1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableCPP</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>33</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>34</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols/>
+  <Comments>===========================================
+ Game Title    : Company Of Heroes 2
+ Game Version  : 3.0.0.10416 (steam)
+ Game Sponsor  : Fennix102
+ Proces Name   : RelicCoH2.exe
+ Script Version: 1.3 (AOB)
+ CE Version    : 6.3
+ Release date  : 01-Sep-2013
+ Author        : Recifense
+ History:
+ 27-Jun-13: First Release
+ 28-Jun-13: Release for version 3.0.0.9704  (RLD)
+ 01-Jul-13: Release for version 3.0.0.9720  (STEAM)
+ 11-Jul-13: Release for version 3.0.0.9804  (STEAM)
+ 30-Jul-13: Changed approach of player identification
+ 30-Jul-13: Release for version 3.0.0.9945  (STEAM)
+ 21-Aug-13: Release for version 3.0.0.10242 (STEAM)
+ 22-Aug-13: Release for version 3.0.0.10317 (STEAM)
+ 29-Aug-13: Release for version 3.0.0.10416 (STEAM) (Improved GM)
+ 01-Sep-13: Release for version 3.0.0.10416 (STEAM) (AOB)
+ Features:
+ - Minimum Resources:     [1]
+   - Manpower
+   - Munition
+   - Fuel
+ - Quick Command Points   [2]
+ - God Mode               [3]
+===========================================
+[1] Resources will not go under minimum value (6300);
+[2] Quick CP acquisition;
+[3] That's it.
+===========================================
+HOTKEYS:
+CTRL+Home     = Enable  Resource/GM cheats;
+CTRL+End      = Disable Resource/GM cheats;
+----------
+CTRL+PageUp   = Enable  CP cheat;
+CTRL+PageDown = Disable CP cheat;
+===========================================
+Cheers!
+</Comments>
+</CheatTable>

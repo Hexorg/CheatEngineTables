@@ -1,0 +1,396 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="19">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>2</ID>
+      <Description>"MechCommander 2 AOB script"</Description>
+      <Options moHideChildren="1"/>
+      <LastState/>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>[ENABLE]
+aobscanmodule(aobSupportTester,Mc2Rel.exe,8B ?? ?? ?? ?? 00 8B 04 AD ?? ?? ?? ?? 3B 42 58 7E)
+aobscanmodule(aobWeightReader,Mc2Rel.exe,8B 50 08 8B 42 20 C3 B8)
+aobscanmodule(aobCBillReader,Mc2Rel.exe,8B 41 4C 8B 40 30 C3)
+aobscanmodule(aobDamageArmour,Mc2Rel.exe,D9 84 D5 4C 02 00 00 8D 8C D5 4C 02 00 00)
+aobscanmodule(aobAmmoUpdater,Mc2Rel.exe,8B 14 8E 8D 04 8E 2B)
+
+alloc(newmem,4096)
+
+label(aobSupportTester_r)
+label(aobSupportTester_i)
+registersymbol(aobSupportTester_r)
+registersymbol(aobSupportTester_i)
+
+label(lblSupportTester)
+label(lblSupportTesterSkip)
+label(lblSupportTesterRet)
+
+label(bEnableMinMissionResPoints)
+label(iMinMissionResPoints)
+registersymbol(bEnableMinMissionResPoints)
+registersymbol(iMinMissionResPoints)
+
+label(pMissionControl)
+registersymbol(pMissionControl)
+
+label(aobWeightReader_r)
+registersymbol(aobWeightReader_r)
+
+label(lblWeightReader)
+label(lblWeightReaderSkip)
+label(lblWeightReaderRet)
+
+label(bEnableTeamWeightLimitMod)
+label(fTeamWeightLimitMod)
+registersymbol(bEnableTeamWeightLimitMod)
+registersymbol(fTeamWeightLimitMod)
+
+label(fWeightTemp)
+registersymbol(fWeightTemp)
+
+label(aobCBillReader_r)
+registersymbol(aobCBillReader_r)
+
+label(lblCBillReader)
+label(lblCBillReaderSkip)
+label(lblCBillReaderRet)
+
+label(bEnableMinCBills)
+label(iMinCBills)
+registersymbol(bEnableMinCBills)
+registersymbol(iMinCBills)
+
+label(aobDamageArmour_r)
+registersymbol(aobDamageArmour_r)
+
+label(lblDamageArmour)
+label(lblDamageArmourSkip)
+label(lblDamageArmourRet)
+label(lblDamageArmourNonFriendly)
+
+label(bEnableFriendlyDamageMod)
+label(fFriendlyDamageMod)
+label(bEnableNonFriendlyDamageMod)
+label(fNonFriendlyDamageMod)
+registersymbol(bEnableFriendlyDamageMod)
+registersymbol(fFriendlyDamageMod)
+registersymbol(bEnableNonFriendlyDamageMod)
+registersymbol(fNonFriendlyDamageMod)
+
+label(aobAmmoUpdater_r)
+registersymbol(aobAmmoUpdater_r)
+
+label(lblAmmoUpdater)
+label(lblAmmoUpdaterSkip)
+label(lblAmmoUpdaterRet)
+
+label(bEnableInfiniteAmmo)
+registersymbol(bEnableInfiniteAmmo)
+
+newmem:
+bEnableMinCBills:
+dd 1
+iMinCBills:
+dd (int)100000
+bEnableTeamWeightLimitMod:
+dd 1
+fTeamWeightLimitMod:
+dd (float)1.5
+bEnableInfiniteAmmo:
+dd 1
+bEnableFriendlyDamageMod:
+dd 1
+fFriendlyDamageMod:
+dd (float)0.75
+bEnableNonFriendlyDamageMod:
+dd 1
+fNonFriendlyDamageMod:
+dd (float)1.25
+bEnableMinMissionResPoints:
+dd 1
+iMinMissionResPoints:
+dd (int)10000
+
+lblSupportTester:
+readmem(aobSupportTester,6)
+mov dword ptr [pMissionControl],edx
+cmp dword ptr [bEnableMinMissionResPoints],1
+jne short lblSupportTesterSkip
+mov eax,[iMinMissionResPoints]
+cmp dword ptr [edx+58],eax
+jge short lblSupportTesterSkip
+mov dword ptr [edx+58],eax
+lblSupportTesterSkip:
+jmp lblSupportTesterRet
+pMissionControl:
+dd 0
+aobSupportTester_i:
+readmem(aobSupportTester,6)
+
+lblWeightReader:
+db 8B 50 08 8B 42 20
+cmp dword ptr [bEnableTeamWeightLimitMod],1
+jne short lblWeightReaderSkip
+fild dword ptr [edx+20]
+fmul dword ptr [fTeamWeightLimitMod]
+fistp dword ptr [fWeightTemp]
+mov eax,[fWeightTemp]
+lblWeightReaderSkip:
+jmp lblWeightReaderRet
+fWeightTemp:
+dd 0
+
+lblCBillReader:
+db 8B 41 4C
+push ebx
+cmp dword ptr [bEnableMinCBills],1
+jne short lblCBillReaderSkip
+mov ebx,[iMinCBills]
+cmp dword ptr [eax+30],ebx
+jge short lblCBillReaderSkip
+mov dword ptr [eax+30],ebx
+lblCBillReaderSkip:
+pop ebx
+db 8B 40 30
+jmp lblCBillReaderRet
+
+lblDamageArmour:
+cmp byte ptr [ebp+00000937],0
+jne short lblDamageArmourNonFriendly
+cmp dword ptr [bEnableFriendlyDamageMod],1
+jne short lblDamageArmourSkip
+fld dword ptr [esi+08]
+fmul dword ptr [fFriendlyDamageMod]
+fstp dword ptr [esi+08]
+lblDamageArmourSkip:
+db D9 84 D5 4C 02 00 00
+jmp lblDamageArmourRet
+lblDamageArmourNonFriendly:
+cmp dword ptr [bEnableNonFriendlyDamageMod],1
+jne short lblDamageArmourSkip
+fld dword ptr [esi+08]
+fmul dword ptr [fNonFriendlyDamageMod]
+fstp dword ptr [esi+08]
+jmp short lblDamageArmourSkip
+
+lblAmmoUpdater:
+cmp byte ptr [esi+00000937],0
+jne short lblAmmoUpdaterSkip
+cmp dword ptr [bEnableInfiniteAmmo],1
+jne short lblAmmoUpdaterSkip
+mov edx,[esi+ecx*4+4]
+mov dword ptr [esi+ecx*4],edx
+xor ebx,ebx
+lblAmmoUpdaterSkip:
+db 8B 14 8E 8D 04 8E
+jmp lblAmmoUpdaterRet
+
+aobAmmoUpdater:
+aobAmmoUpdater_r:
+jmp lblAmmoUpdater
+nop
+lblAmmoUpdaterRet:
+
+aobDamageArmour:
+aobDamageArmour_r:
+jmp lblDamageArmour
+nop
+nop
+lblDamageArmourRet:
+
+aobCBillReader:
+aobCBillReader_r:
+jmp lblCBillReader
+nop
+lblCBillReaderRet:
+
+aobWeightReader:
+aobWeightReader_r:
+jmp lblWeightReader
+nop
+lblWeightReaderRet:
+
+aobSupportTester:
+aobSupportTester_r:
+jmp lblSupportTester
+nop
+lblSupportTesterRet:
+
+[DISABLE]
+aobSupportTester_r:
+readmem(aobSupportTester_i,6)
+
+unregistersymbol(aobSupportTester_r)
+unregistersymbol(aobSupportTester_i)
+
+unregistersymbol(bEnableMinMissionResPoints)
+unregistersymbol(iMinMissionResPoints)
+
+unregistersymbol(pMissionControl)
+
+aobWeightReader_r:
+db 8B 50 08 8B 42 20
+
+unregistersymbol(aobWeightReader_r)
+
+unregistersymbol(bEnableTeamWeightLimitMod)
+unregistersymbol(fTeamWeightLimitMod)
+
+unregistersymbol(fWeightTemp)
+
+aobCBillReader_r:
+db 8B 41 4C 8B 40 30
+
+unregistersymbol(aobCBillReader_r)
+
+unregistersymbol(bEnableMinCBills)
+unregistersymbol(iMinCBills)
+
+aobDamageArmour_r:
+db D9 84 D5 4C 02 00 00
+
+unregistersymbol(aobDamageArmour_r)
+
+unregistersymbol(bEnableFriendlyDamageMod)
+unregistersymbol(fFriendlyDamageMod)
+unregistersymbol(bEnableNonFriendlyDamageMod)
+unregistersymbol(fNonFriendlyDamageMod)
+
+aobAmmoUpdater_r:
+db 8B 14 8E 8D 04 8E
+
+unregistersymbol(aobAmmoUpdater_r)
+
+unregistersymbol(bEnableInfiniteAmmo)
+
+dealloc(newmem)
+
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>71</ID>
+          <Description>"Logistics"</Description>
+          <LastState Value="" RealAddress="00000000"/>
+          <Color>0080FF</Color>
+          <GroupHeader>1</GroupHeader>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>64</ID>
+              <Description>"bEnableMinCBills"</Description>
+              <DropDownList ReadOnly="1" DescriptionOnly="1" DisplayValueAsItem="1">0:Disabled
+1:Enabled
+</DropDownList>
+              <Color>008000</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>bEnableMinCBills</Address>
+              <CheatEntries>
+                <CheatEntry>
+                  <ID>65</ID>
+                  <Description>"iMinCBills"</Description>
+                  <Color>FF0000</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>iMinCBills</Address>
+                </CheatEntry>
+              </CheatEntries>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>62</ID>
+              <Description>"bEnableTeamWeightLimitMod"</Description>
+              <DropDownList ReadOnly="1" DescriptionOnly="1" DisplayValueAsItem="1">0:Disabled
+1:Enabled
+</DropDownList>
+              <Color>008000</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>bEnableTeamWeightLimitMod</Address>
+              <CheatEntries>
+                <CheatEntry>
+                  <ID>63</ID>
+                  <Description>"fTeamWeightLimitMod"</Description>
+                  <Color>FF0000</Color>
+                  <VariableType>Float</VariableType>
+                  <Address>fTeamWeightLimitMod</Address>
+                </CheatEntry>
+              </CheatEntries>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>72</ID>
+          <Description>"Combat"</Description>
+          <LastState Value="" RealAddress="00000000"/>
+          <Color>0080FF</Color>
+          <GroupHeader>1</GroupHeader>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>70</ID>
+              <Description>"bEnableInfiniteAmmo"</Description>
+              <DropDownList ReadOnly="1" DescriptionOnly="1" DisplayValueAsItem="1">0:Disabled
+1:Enabled
+</DropDownList>
+              <Color>008000</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>bEnableInfiniteAmmo</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>66</ID>
+              <Description>"bEnableFriendlyDamageMod"</Description>
+              <DropDownList ReadOnly="1" DescriptionOnly="1" DisplayValueAsItem="1">0:Disabled
+1:Enabled
+</DropDownList>
+              <Color>008000</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>bEnableFriendlyDamageMod</Address>
+              <CheatEntries>
+                <CheatEntry>
+                  <ID>67</ID>
+                  <Description>"fFriendlyDamageMod"</Description>
+                  <Color>FF0000</Color>
+                  <VariableType>Float</VariableType>
+                  <Address>fFriendlyDamageMod</Address>
+                </CheatEntry>
+              </CheatEntries>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>68</ID>
+              <Description>"bEnableNonFriendlyDamageMod"</Description>
+              <DropDownList ReadOnly="1" DescriptionOnly="1" DisplayValueAsItem="1">0:Disabled
+1:Enabled
+</DropDownList>
+              <Color>008000</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>bEnableNonFriendlyDamageMod</Address>
+              <CheatEntries>
+                <CheatEntry>
+                  <ID>69</ID>
+                  <Description>"fNonFriendlyDamageMod"</Description>
+                  <Color>FF0000</Color>
+                  <VariableType>Float</VariableType>
+                  <Address>fNonFriendlyDamageMod</Address>
+                </CheatEntry>
+              </CheatEntries>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>3</ID>
+              <Description>"bEnableMinMissionResPoints"</Description>
+              <DropDownList ReadOnly="1" DescriptionOnly="1" DisplayValueAsItem="1">0:Disabled
+1:Enabled
+</DropDownList>
+              <Color>008000</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>bEnableMinMissionResPoints</Address>
+              <CheatEntries>
+                <CheatEntry>
+                  <ID>4</ID>
+                  <Description>"iMinMissionResPoints"</Description>
+                  <Color>FF0000</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>iMinMissionResPoints</Address>
+                </CheatEntry>
+              </CheatEntries>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+  </CheatEntries>
+</CheatTable>

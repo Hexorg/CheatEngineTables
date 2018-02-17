@@ -1,0 +1,330 @@
+<?xml version="1.0"?>
+<CheatTable CheatEngineTableVersion="11">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>15</ID>
+      <Description>"[X] &lt;== COH_TOV v2500 Script 1.1"</Description>
+      <Options moHideChildren="1"/>
+      <Color>80000008</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>{
+===========================================
+ Game Title    : Company of Heroes - Tale of Valor
+ Game Version  : 2.5000
+ Process Name  : RelicHP.exe
+ Script Version: 1.1
+ CE Version    : 6.1
+ Release date  : 26-Dec-2011 (Rewritten)
+ Author        : Recifense
+ Features:
+ - God Mode
+ - Minimum Resources (manpower/Munition/Fuel)
+===========================================
+}
+
+[ENABLE]
+//=========================================
+// Check if script is compatible to this game version
+// If false the script will not be loaded
+
+assert(RelicCOH.exe+004beee4,8b 89 3c 08 00 00)
+assert(WW2Mod.dll+002fd4dd,e8 4e fc ff ff)
+assert(WW2Mod.dll+002fbb97,d9 47 3c da e9)
+assert(WW2Mod.dll+002fbbb1,d9 5f 38 d9 5f 3c)
+
+//=========================================
+alloc(MyCode,1024)
+//=========================================
+// Declaration section
+label(_MonPlayer)
+label(_MonP0)
+label(_MonP1)
+label(_BackMP)
+label(_ExitMP)
+label(_GodMode)
+label(_GodM0)
+label(_BackGM)
+label(_ExitGM)
+label(_MonUnits)
+label(_BackMU)
+label(_ExitMU)
+label(_MonUnits2)
+label(_BackMU2)
+label(_ExitMU2)
+label(pUnit)
+label(pPlayer)
+label(iEnableGM)
+label(iEnableMR)
+label(fMinRes)
+
+//=========================================
+// Registering Symbols
+registersymbol(MyCode)
+registersymbol(pUnit)
+registersymbol(pPlayer)
+registersymbol(iEnableGM)
+registersymbol(iEnableMR)
+registersymbol(fMinRes)
+
+//=========================================
+MyCode:
+//=========================================
+_MonPlayer:
+ push eax
+
+ mov ecx,[ecx+0000083c]            // Get ptr to player  (Original code)
+ or ecx,ecx                        // Null?
+ jz _ExitMP                        // Jump if true
+
+ mov [pPlayer],ecx                 // Save ptr for further use
+
+ cmp dword ptr [iEnableMR],0
+ je _ExitMP                        // Jump if feature is disabled
+
+ mov eax,[fMinRes]                 // Get minimum resource value
+ cmp eax,[ecx+00000214]            // Manpower &gt;= minimum ?
+ jle _MonP0                        // Jump if true
+
+ mov [ecx+00000214],eax            // Update Manpower
+
+_MonP0:
+ cmp eax,[ecx+00000218]            // Munitions &gt;= minimum?
+ jle _MonP1                        // Jump if true
+
+ mov [ecx+00000218],eax            // Update Munitions
+
+_MonP1:
+ cmp eax,[ecx+0000021c]            // Fuel &gt;= minimum ?
+ jle _ExitMP                       // Jump if true
+
+ mov [ecx+0000021c],eax            // Update Fuel
+
+_ExitMP:
+ pop eax
+ jmp _BackMP                       // Back to main code
+
+//=========================================
+_GodMode:
+ mov [pUnit],ecx                   // Save ptr for debugging
+
+ cmp dword ptr [iEnableGM],0
+ je _GodM0                         // Jump if feature is disabled
+
+ mov eax,[ecx+10]
+ test eax,eax
+ jz _GodM0
+
+ mov eax,[eax+34]
+ cmp eax,[pPlayer]
+ jne _GodM0
+
+ mov eax,(float)50000.0
+ mov [ecx+3c],eax
+ mov [ecx+38],eax
+
+ pop ecx
+ jmp _ExitGM
+
+_GodM0:
+ call WW2Mod.dll+2fd130            // Original code
+
+_ExitGM:
+ jmp _BackGM                       // Back to main code
+
+//=========================================
+_MonUnits:
+ mov eax,[edi+10]
+ test eax,eax
+ jz _ExitMU
+
+ mov eax,[eax+34]
+ cmp eax,[pPlayer]
+ jne _ExitMU
+
+ cmp dword ptr [iEnableGM],0
+ je _ExitMU                        // Jump if feature is disabled
+
+ mov eax,(float)50000.0
+ cmp eax,[edi+38]
+ jle _ExitMU
+
+ mov [edi+3C],eax
+ mov [edi+38],eax
+
+_ExitMU:
+ fld dword ptr [edi+3C]
+ fucompp
+ jmp _BackMU                       // Back to main code
+
+//=========================================
+_MonUnits2:
+ fstp dword ptr [edi+38]          // Original code
+ fstp dword ptr [edi+3C]          // Original code
+
+ mov ecx,[edi+10]
+ test ecx,ecx
+ jz _ExitMU2
+
+ mov ecx,[ecx+34]
+ cmp ecx,[pPlayer]
+ jne _ExitMU2
+
+ cmp dword ptr [iEnableGM],0
+ je _ExitMU2                       // Jump if feature is disabled
+
+ mov ecx,(float)50000.0
+ cmp ecx,[edi+38]
+ jle _ExitMU2
+
+ mov [edi+3C],ecx
+ mov [edi+38],ecx
+
+_ExitMU2:
+ jmp _BackMU2                      // Back to main code
+
+//=========================================
+ db '=========================&gt;'
+ db 'CE6.1 Script by Recifense 122611'
+//=========================================
+// Variables
+iEnableMR:
+ dd 1
+iEnableGM:
+ dd 1
+pUnit:
+ dd 0
+pPlayer:
+ dd 0
+fMinRes:
+ dd 447a0000
+
+//=========================================
+// Hacking Points
+RelicCOH.exe+004beee4:
+ jmp _MonPlayer
+ nop
+_BackMP:
+
+WW2Mod.dll+002fd4dd:
+ jmp _GodMode
+_BackGM:
+
+WW2Mod.dll+002fbb97:
+ jmp _MonUnits
+_BackMU:
+
+WW2Mod.dll+002fbbb1:
+ jmp _MonUnits2
+ nop
+_BackMU2:
+
+//=========================================
+// Script for Restoring Original Codes
+[DISABLE]
+RelicCOH.exe+004beee4:
+// mov ecx,[ecx+0000083C]
+ db 8b 89 3c 08 00 00
+
+WW2Mod.dll+002fd4dd:
+// call WW2Mod.dll+2fd130
+ db e8 4e fc ff ff
+
+WW2Mod.dll+002fbb97:
+// fld dword ptr [edi+3C]
+// fucompp
+ db d9 47 3c da e9
+
+WW2Mod.dll+002fbbb1:
+// fstp dword ptr [edi+38]
+// fstp dword ptr [edi+3C]
+ db d9 5f 38 d9 5f 3c
+
+//=========================================
+// Unregistering Symbols
+unregistersymbol(MyCode)
+unregistersymbol(pUnit)
+unregistersymbol(iEnableGM)
+unregistersymbol(iEnableMR)
+unregistersymbol(pPlayer)
+unregistersymbol(fMinRes)
+
+//=========================================
+dealloc(MyCode)
+//============= Scripts End ===============
+
+// ****************************************
+// NOTES
+// ****************************************
+{
+struct PLAYER:
+0000 = 0507182c
+0034 = iPlayerID (ex.: p = 1001, f= 1000)
+00e0 = iCmdPoints
+0214 = fmanpower
+0218 = fFuel
+0224 = fCmdPoints
+
+struct UNIT_HP:
+0000 = 05043720
+000c = pUnknown
+0010 = ppPlayer
+0038 = fcHP
+003c = fmHP (Sherman = 636.00) (HQ = 1500.00)
+
+struct ppPLAYER:
+0000 = 05571110
+0034 = pPlayer
+}
+
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>1</ID>
+          <Description>"Enable/Disable God Mode"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableGM</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>2</ID>
+          <Description>"Enable/Disable Unlimited Resources"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMR</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>3</ID>
+          <Description>"Minimum Resources Value"</Description>
+          <Color>80000008</Color>
+          <VariableType>Float</VariableType>
+          <Address>fMinRes</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>4</ID>
+          <Description>"Cmd Points"</Description>
+          <Color>80000008</Color>
+          <VariableType>Float</VariableType>
+          <Address>pPlayer</Address>
+          <Offsets>
+            <Offset>224</Offset>
+          </Offsets>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols/>
+  <Comments>===========================================
+ Game Title    : Company of Heroes - Tale of Valor
+ Game Version  : 2.5000
+ Process Name  : RelicHP.exe
+ Script Version: 1.1
+ CE Version    : 6.1
+ Release date  : 26-Dec-2011 (Rewritten)
+ Author        : Recifense
+ Features:
+ - God Mode [1]
+ - Minimum Resources (manpower/Munition/Fuel)
+===========================================
+[1] GM is not perfect. Some units can still die. But they are tougher.
+</Comments>
+</CheatTable>

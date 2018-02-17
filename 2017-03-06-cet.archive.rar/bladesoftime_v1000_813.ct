@@ -1,0 +1,330 @@
+<?xml version="1.0"?>
+<CheatTable CheatEngineTableVersion="11">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>26</ID>
+      <Description>"[X] &lt;== Blades of Time V1.000 Script"</Description>
+      <Options moHideChildren="1"/>
+      <Color>80000008</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>{
+===========================================
+ Game Title    : Blades of Time
+ Game Version  : 1.0.0.0
+ Process Name  : bladesoftime.exe
+ Script Version: 1.0
+ CE Version    : 6.1
+ Release date  : 18-Apr-2012
+ Author        : Recifense
+ Features:
+ - God Mode (on combat)
+ - Ammo
+===========================================
+}
+
+[ENABLE]
+//=========================================
+// Check if script is compatible to this game version
+// If false the script will not be loaded
+
+assert(bladesoftime.exe+000620fe,f3 0f 10 86 60 06 00 00)
+assert(bladesoftime.exe+002128e4,8b c7 f3 0f 11 03)
+assert(bladesoftime.exe+0021475a,8b 08 8b 50 04)
+assert(bladesoftime.exe+0020e806,8b 78 04 89 7e 04)
+
+//=========================================
+alloc(MyCode,1024)
+//=========================================
+// Declaration section
+label(_MonHeroin)
+label(_BackMH)
+label(_ExitMH)
+label(_GodMode)
+label(_BackGM)
+label(_ExitGM)
+label(_MonWeapon)
+label(_BackMW)
+label(_ExitMW)
+label(_MonAmmo)
+label(_BackMA)
+label(_ExitMA)
+label(pHero)
+label(pHP)
+label(pWeapon)
+label(pAmmo)
+label(iEnableGM)
+label(iEnableMA)
+
+//=========================================
+// Registering Symbols
+registersymbol(MyCode)
+registersymbol(pHero)
+registersymbol(pHP)
+registersymbol(pWeapon)
+registersymbol(pAmmo)
+registersymbol(iEnableGM)
+registersymbol(iEnableMA)
+
+//=========================================
+MyCode:
+//=========================================
+_MonHeroin:
+ push eax
+
+ lea eax,[esi+00000660]
+ mov [pHero],esi
+ mov [pHP],eax
+
+ cmp dword ptr [iEnableGM],0
+ je _ExitMH                        // Jump if feature is disabled
+
+ mov eax,[esi+00000688]
+ mov [esi+00000660],eax
+
+_ExitMH:
+ pop eax
+ jmp _BackMH                       // Back to main code
+
+//=========================================
+_GodMode:
+ cmp dword ptr [iEnableGM],0
+ je _ExitGM                        // Jump if feature is disabled
+
+ cmp ebx,[pHP]
+ jne _ExitGM
+
+ movss xmm0,[ebx+28]               // Get maximum HP
+
+_ExitGM:
+ mov eax,edi                       // Original code
+ movss [ebx],xmm0                  // Original code
+ jmp _BackGM                       // Back to main code
+
+//=========================================
+_MonWeapon:
+ mov ecx,[ebp+50]
+ cmp ecx,[ebp+58]
+ jne _ExitMW
+
+ cmp ecx,[pHero]
+ jne _ExitMW
+
+ mov edx,[eax+04]
+ mov ecx,[edx+000000a0]
+ test ecx,ecx
+ jz _ExitMW
+
+ mov ecx,[edx+04]
+ cmp ecx,1
+ jle _ExitMW
+
+ mov ecx,[edx+000000b8]
+ cmp ecx,#300
+ jne _ExitMW
+
+ mov [pWeapon],edx
+
+ lea ecx,[edx+000000a4]
+ mov [pAmmo],ecx
+
+ cmp dword ptr [iEnableMA],0
+ je _ExitMW                        // Jump if feature is disabled
+
+ mov ecx,[edx+000000a0]
+ mov [edx+000000a8],ecx
+
+_ExitMW:
+ mov ecx,[eax]                     // Original code
+ mov edx,[eax+04]                  // Original code
+ jmp _BackMW                       // Back to main code
+
+//=========================================
+_MonAmmo:
+ cmp dword ptr [iEnableMA],0
+ je _ExitMA                        // Jump if feature is disabled
+
+ cmp esi,[pAmmo]
+ jne _ExitMA
+
+ mov edi,[esi-04]
+ test edi,edi
+ jz _ExitMA
+
+ cmp edi,#100
+ jge _ExitMA
+
+ mov [eax+04],edi
+
+_ExitMA:
+ mov edi,[eax+04]                  // Original code
+ mov [esi+04],edi                  // Original code
+ jmp _BackMA                       // Back to main code
+
+//=========================================
+ db '=============================&gt;'
+ db 'CE6.1 Script by Recifense 041812'
+//=========================================
+// Variables
+iEnableGM:
+ dd 1
+iEnableMA:
+ dd 1
+pHero:
+ dd 0
+pHP:
+ dd MyCode
+pWeapon:
+ dd 0
+pAmmo:
+ dd MyCode
+
+//=========================================
+// Hacking Points
+bladesoftime.exe+000620fe:
+ jmp _MonHeroin
+ nop
+ nop
+ nop
+_BackMH:
+
+bladesoftime.exe+002128e4:
+ jmp _GodMode
+ nop
+_BackGM:
+
+bladesoftime.exe+0021475a:
+ jmp _MonWeapon
+_BackMW:
+
+bladesoftime.exe+0020e806:
+ jmp _MonAmmo
+ nop
+_BackMA:
+
+//=========================================
+// Script for Restoring Original Codes
+[DISABLE]
+bladesoftime.exe+000620fe:
+// movss xmm0,[esi+00000660]
+ db f3 0f 10 86 60 06 00 00
+
+bladesoftime.exe+002128e4:
+// mov eax,edi
+// movss [ebx],xmm0
+ db 8b c7 f3 0f 11 03
+
+bladesoftime.exe+0021475a:
+// mov ecx,[eax]
+// mov edx,[eax+04]
+ db 8b 08 8b 50 04
+
+bladesoftime.exe+0020e806:
+// mov edi,[eax+04]
+// mov [esi+04],edi
+ db 8b 78 04 89 7e 04
+
+//=========================================
+// Unregistering Symbols
+unregistersymbol(MyCode)
+unregistersymbol(pHero)
+unregistersymbol(pHP)
+unregistersymbol(pWeapon)
+unregistersymbol(pAmmo)
+unregistersymbol(iEnableGM)
+unregistersymbol(iEnableMA)
+
+//=========================================
+dealloc(MyCode)
+//============= Scripts End ===============
+
+// ****************************************
+// NOTES
+// ****************************************
+{
+}
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>7</ID>
+          <Description>"Enable/Disable God Mode =&gt; (1/0)"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableGM</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>1</Value>
+              <Description>Enable</Description>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>0</Value>
+              <Description>Disable</Description>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>27</ID>
+          <Description>"Enable/Disable No Reload=&gt; (1/0)"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMA</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>1</Value>
+              <Description>Enable</Description>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>0</Value>
+              <Description>Disable</Description>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols/>
+  <Comments>===========================================
+ Game Title    : Blades of Time
+ Game Version  : 1.0.0.0
+ Process Name  : bladesoftime.exe
+ Script Version: 1.0
+ CE Version    : 6.1
+ Release date  : 18-Apr-2012
+ Author        : Recifense
+ Features:
+ - God Mode (on combat) [1]
+ - Ammo [2]
+===========================================
+[1] Only during combat;
+[2] No Reaload needed.
+======================
+HOTKEYS:
+CTRL+Home: Enable Cheats;
+CTRL+End: Disable Cheats;
+======================
+[NOTE] Disable the cheats before going back to main menu.
+</Comments>
+</CheatTable>

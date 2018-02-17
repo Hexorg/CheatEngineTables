@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="18">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>70291</ID>
+      <Description>"&lt;Activate&gt; Enemy Stat Multiplier"</Description>
+      <LastState Activated="0"/>
+      <Color>FF8000</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>//Injects into the code that seems to handle loading
+//a unit's stats into battle
+
+[ENABLE]
+aobscanmodule(BattleStart,ffxiii2img.exe,F7 FF FF 89 84 B7 00 04 00 00)
+alloc(BattleStart_newmem,$1000)
+
+label(code)
+label(return)
+label(check_stat)
+label(modify_hp)
+label(modify_atk)
+label(modify_mag)
+label(skip_modification)
+
+BattleStart_newmem:
+
+code:
+  cmp edi,0 //Safety check so that we don't accidently crash the game if edi is null
+  je skip_modification
+  // Check if we are currently loading monster
+  cmp byte [edi+1708+8],#109
+  jne skip_modification
+
+check_stat:
+  cmp esi,00000001 //Check to see if HP is being loaded
+  je modify_hp
+  cmp esi,00000005 //Check to see if ATK is being loaded
+  je modify_atk
+  cmp esi,00000006 //Check to see if MAG is being loaded
+  je modify_mag
+  jmp skip_modification
+
+modify_hp:
+  cmp ebx,0 //If we don't skip HP multiplication when ebx = 0 then HP will get multipled a second time
+  je skip_modification
+  shl eax,2 //Multiply HP by 4x (1 = 2x, 2 = 4x, 3 = 8x)
+  mov [edi-40],eax //Current HP
+  mov [edi+4],eax //Base HP
+  mov [edi+19F0],eax //Health Bar Max
+  mov [edi+esi*4+00000400],eax //Max HP = edi+404
+  jmp return
+
+modify_atk:
+  shl eax,1 //Multiply ATK by 2x (1 = 2x, 2 = 4x, 3 = 8x)
+  mov [edi+esi*4+00000400],eax //Attack = edi+414
+  cmp ebx,0 //If ebx = 0, update Base ATK (Needed for properly calculating buffs)
+  jne skip_modification
+  mov [edi+14],eax //Base ATK
+  jmp return
+
+modify_mag:
+  shl eax,1 //Multiply MAG by 2x (1 = 2x, 2 = 4x, 3 = 8x)
+  mov [edi+esi*4+00000400],eax //Attack = edi+418
+  cmp ebx,0 //If ebx = 0, update Base MAG (Needed for properly calculating buffs)
+  jne skip_modification
+  mov [edi+18],eax //Base MAG
+  jmp return
+
+skip_modification: //Original Code
+  mov [edi+esi*4+00000400],eax
+  jmp return
+
+BattleStart+03:
+  jmp code
+  nop
+  nop
+return:
+registersymbol(BattleStart)
+
+[DISABLE]
+
+BattleStart+03:
+  db 89 84 B7 00 04 00 00
+
+unregistersymbol(BattleStart)
+dealloc(BattleStart_newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: "ffxiii2img.exe"+7A00E
+
+"ffxiii2img.exe"+79FFD: CC                       -  int 3 
+"ffxiii2img.exe"+79FFE: CC                       -  int 3 
+"ffxiii2img.exe"+79FFF: CC                       -  int 3 
+"ffxiii2img.exe"+7A000: 56                       -  push esi
+"ffxiii2img.exe"+7A001: 57                       -  push edi
+"ffxiii2img.exe"+7A002: 8B F9                    -  mov edi,ecx
+"ffxiii2img.exe"+7A004: 33 F6                    -  xor esi,esi
+"ffxiii2img.exe"+7A006: 56                       -  push esi
+"ffxiii2img.exe"+7A007: 8B CF                    -  mov ecx,edi
+"ffxiii2img.exe"+7A009: E8 E2 F7 FF FF           -  call ffxiii2img.exe+797F0
+// ---------- INJECTING HERE ----------
+"ffxiii2img.exe"+7A00E: 89 84 B7 00 04 00 00     -  mov [edi+esi*4+00000400],eax
+// ---------- DONE INJECTING  ----------
+"ffxiii2img.exe"+7A015: 83 FE 03                 -  cmp esi,03
+"ffxiii2img.exe"+7A018: 75 0F                    -  jne ffxiii2img.exe+7A029
+"ffxiii2img.exe"+7A01A: 8B 8F 98 06 00 00        -  mov ecx,[edi+00000698]
+"ffxiii2img.exe"+7A020: 85 C9                    -  test ecx,ecx
+"ffxiii2img.exe"+7A022: 74 05                    -  je ffxiii2img.exe+7A029
+"ffxiii2img.exe"+7A024: E8 E7 5F FC FF           -  call ffxiii2img.exe+40010
+"ffxiii2img.exe"+7A029: 46                       -  inc esi
+"ffxiii2img.exe"+7A02A: 83 FE 40                 -  cmp esi,40
+"ffxiii2img.exe"+7A02D: 7C D7                    -  jnge ffxiii2img.exe+7A006
+"ffxiii2img.exe"+7A02F: 5F                       -  pop edi
+}
+</AssemblerScript>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols>
+    <SymbolEntry>
+      <Name>BattleStart</Name>
+      <Address>0047A00B</Address>
+    </SymbolEntry>
+  </UserdefinedSymbols>
+</CheatTable>

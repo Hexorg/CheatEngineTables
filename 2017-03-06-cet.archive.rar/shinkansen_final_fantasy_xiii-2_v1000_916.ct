@@ -1,0 +1,299 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="18">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>68526</ID>
+      <Description>"Battle Stats Base Address Scan Initialization (Activate This First)"</Description>
+      <Options moHideChildren="1"/>
+      <LastState Activated="0"/>
+      <Color>800000</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>[ENABLE]
+//code from here to '[DISABLE]' will be used to enable the cheat
+
+registersymbol(battlestats_basepointer)
+registersymbol(battlestatsupdate_enable)
+registersymbol(battlestatspartyhpset_enable)
+registersymbol(battlestatspartyatbset_enable)
+registersymbol(battlestatsleaderatbset_enable)
+registersymbol(battlestatsenemyset_enable)
+
+alloc(battlestats_basepointer,4)
+alloc(battlestatsupdate_enable,4)
+alloc(battlestatspartyhpset_enable,4)
+alloc(battlestatspartyatbset_enable,4)
+alloc(battlestatsleaderatbset_enable,4)
+alloc(battlestatsenemyset_enable,4)
+
+
+[DISABLE]
+
+unregistersymbol(battlestats_basepointer)
+unregistersymbol(battlestatsupdate_enable)
+unregistersymbol(battlestatspartyhpset_enable)
+unregistersymbol(battlestatspartyatbset_enable)
+unregistersymbol(battlestatsleaderatbset_enable)
+unregistersymbol(battlestatsenemyset_enable)
+
+dealloc(battlestats_basepointer)
+dealloc(battlestatsupdate_enable)
+dealloc(battlestatspartyhpset_enable)
+dealloc(battlestatspartyatbset_enable)
+dealloc(battlestatsleaderatbset_enable)
+dealloc(battlestatsenemyset_enable)
+
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>69009</ID>
+          <Description>"Battle Stats Base Address Scan (To Update: Battle)"</Description>
+          <LastState Activated="0"/>
+          <Color>804000</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[ENABLE]
+//code from here to '[DISABLE]' will be used to enable the cheat
+label(battlestats_savedAOB)
+label(battlestats_returnhere)
+label(battlestats_originalcode)
+label(battlestats_exit)
+
+label(battlestatsupdate_exit)
+label(battlestatspartyset_entry)
+label(battlestatsenemyset_entry)
+label(battlestatspartyhpset_exit)
+label(battlestatsleaderatbset_exit)
+label(battlestatspartyatbset_exit)
+label(battlestatsset_exit)
+
+registersymbol(battlestats_savedAOB)
+
+aobscan(battlestats_searchedAOB,8B 8E E8 02 00 00 33 D2)
+
+alloc(battlestats_newmem,2048) //2kb should be enough
+alloc(battlestats_temp,4)
+
+
+battlestats_newmem:
+mov [battlestats_temp], ebx
+
+cmp dword ptr [battlestatsupdate_enable], #0
+je battlestatsupdate_exit
+mov [battlestats_basepointer], esi
+battlestatsupdate_exit:
+
+mov ebx, [esi+30c]
+// Check if pc00
+// Teams are pc100, pc010, pc002, pc003, pc004, pc005, pc006, pc007
+// Eidolons are s101, s201, s301, s401, s501, s601
+cmp word ptr [ebx+8], #25456
+je battlestatspartyset_entry
+// Check if m
+// Monsters are m
+cmp byte ptr [ebx+8], #109
+je battlestatsenemyset_entry
+jmp battlestatsset_exit
+
+// Party
+battlestatspartyset_entry:
+
+//cmp dword ptr [battlestatsupdate_enable], #0
+//je battlestatsupdate_exit
+//mov [battlestats_basepointer], esi
+//battlestatsupdate_exit:
+
+cmp dword ptr [battlestatspartyhpset_enable], #0
+je battlestatspartyhpset_exit
+mov ebx, [esi+314]
+mov [esi+2d0], ebx
+battlestatspartyhpset_exit:
+
+cmp dword ptr [battlestatspartyatbset_enable], #0
+je battlestatspartyatbset_exit
+mov ebx, [esi+31c]
+mov [esi+2e8], ebx
+battlestatspartyatbset_exit:
+
+cmp dword ptr [battlestatsleaderatbset_enable], #0
+je battlestatsleaderatbset_exit
+//mov [esi+2a0], #1
+//mov ebx, [esi+270]
+//shl ebx, 18
+//sar ebx, 1c
+//cmp ebx, #0
+//jne battlestatsleaderatbset_exit
+//mov ebx, [esi+2d0]
+//mov [esi+2a0], ebx
+battlestatsleaderatbset_exit:
+
+jmp battlestatsset_exit
+
+// Monster
+battlestatsenemyset_entry:
+cmp dword ptr [battlestatsenemyset_enable], #0
+je battlestatsset_exit
+mov [esi+2d0], #1
+mov [esi+2e8], #1
+//mov [esi+20b4], #90000
+//mov ebx, [esi+20c4]
+//add ebx, [esi+20c4]
+//mov [esi+20c0], ebx
+
+battlestatsset_exit:
+mov ebx, [battlestats_temp]
+
+
+battlestats_originalcode:
+db 8B 8E E8 02 00 00
+//mov ecx,[esi+000002E8]
+
+
+battlestats_exit:
+jmp battlestats_returnhere
+
+
+battlestats_searchedAOB:
+battlestats_savedAOB:
+jmp battlestats_newmem
+nop
+battlestats_returnhere:
+
+
+[DISABLE]
+battlestats_savedAOB:
+db 8B 8E E8 02 00 00
+//mov ecx,[esi+000002E8]
+
+unregistersymbol(battlestats_savedAOB)
+
+dealloc(battlestats_newmem)
+
+</AssemblerScript>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>68528</ID>
+          <Description>"Party Battle HP Set to Max?"</Description>
+          <DropDownList DisplayValueAsItem="1">0:No
+1:Yes
+</DropDownList>
+          <LastState Value="??" Activated="0" RealAddress="00000000"/>
+          <Color>FF8000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>battlestatspartyhpset_enable</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>69069</ID>
+          <Description>"Party Battle ATB Set to Max?"</Description>
+          <DropDownList DisplayValueAsItem="1">0:No
+1:Yes
+</DropDownList>
+          <LastState Value="??" Activated="0" RealAddress="00000000"/>
+          <Color>FF8000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>battlestatspartyatbset_enable</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>69124</ID>
+          <Description>"Enemy Battle Stats Set to Min?"</Description>
+          <DropDownList DisplayValueAsItem="1">0:No
+1:Yes
+</DropDownList>
+          <LastState Value="??" Activated="0" RealAddress="00000000"/>
+          <Color>FF8000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>battlestatsenemyset_enable</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>68530</ID>
+          <Description>"Battle Stats Update Base Address?"</Description>
+          <DropDownList DisplayValueAsItem="1">0:No
+1:Yes
+</DropDownList>
+          <LastState Value="??" Activated="0" RealAddress="00000000"/>
+          <Color>FF8000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>battlestatsupdate_enable</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>68532</ID>
+          <Description>"Battle Stats"</Description>
+          <Options moHideChildren="1"/>
+          <LastState Value="" Activated="0" RealAddress="00000000"/>
+          <Color>80000008</Color>
+          <GroupHeader>1</GroupHeader>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>68533</ID>
+              <Description>"Base Address"</Description>
+              <LastState Value="??" Activated="0" RealAddress="00000000"/>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>battlestats_basepointer</Address>
+              <Offsets>
+                <Offset>0</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>69169</ID>
+              <Description>"HP"</Description>
+              <LastState Value="??" Activated="0" RealAddress="00000000"/>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>battlestats_basepointer</Address>
+              <Offsets>
+                <Offset>2D0</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>68536</ID>
+              <Description>"ATB (* 1000)"</Description>
+              <LastState Value="??" Activated="0" RealAddress="00000000"/>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>battlestats_basepointer</Address>
+              <Offsets>
+                <Offset>2E8</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>68535</ID>
+              <Description>"Type Check"</Description>
+              <LastState Activated="0" RealAddress="00000000"/>
+              <Color>80000008</Color>
+              <VariableType>String</VariableType>
+              <Length>10</Length>
+              <Unicode>0</Unicode>
+              <ZeroTerminate>1</ZeroTerminate>
+              <Address>battlestats_basepointer</Address>
+              <Offsets>
+                <Offset>8</Offset>
+                <Offset>30C</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>68537</ID>
+              <Description>"Max HP"</Description>
+              <LastState Value="??" Activated="0" RealAddress="00000000"/>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>battlestats_basepointer</Address>
+              <Offsets>
+                <Offset>314</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>68633</ID>
+              <Description>"Max ATB (* 1000)"</Description>
+              <LastState Value="??" Activated="0" RealAddress="00000000"/>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>battlestats_basepointer</Address>
+              <Offsets>
+                <Offset>31C</Offset>
+              </Offsets>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+  </CheatEntries>
+</CheatTable>

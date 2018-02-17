@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="16">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>2</ID>
+      <Description>"Infinite Money"</Description>
+      <Color>80000008</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>//Infinite Money
+//Uplink 1.55 - 1.60 - 2.0.0.5 GOG
+//Steve Andrew's AOBScan version
+[enable]
+alloc(InfiniteMoney,1024)
+aobscan(MoneyAddress, 01 87 cc 00 00 00 68 ? ? ? ? e8 ? ? ? ? 83 c4 04 89 44 24)
+label(MoneyAddy)
+registersymbol(MoneyAddy)
+
+InfiniteMoney:
+push eax
+mov eax,#99999999
+mov [edi+cc],eax
+pop eax
+jmp MoneyAddy+6
+
+//uplink.exe+cc18: (v1.55)
+//uplink.exe+8276d: (v1.60)
+MoneyAddress:
+MoneyAddy:
+jmp InfiniteMoney
+nop
+
+[disable]
+
+MoneyAddy:
+add [edi+cc],eax
+
+dealloc(InfiniteMoney)
+unregistersymbol(MoneyAddy)
+</AssemblerScript>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>5</ID>
+      <Description>"Never Be Traced"</Description>
+      <Color>80000008</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>//Never be traced (Credit To: ColdFusion73)
+//this is a simplified version which recognizes that only 1 byte needs to be changed...
+//This one differs from the other in that, it alters the conditional jump making it unconditional
+//which is -2 bytes away from our 'mov byte [ebp+58],1' instruction that
+//actually causes the tracing timer to initiate and be in tracing mode (observed by trace tracker)
+//Updated and made AOBScan+simplified version by: Steve Andrew
+[enable]
+aobscan(TraceInitiatingAddress, 7e ? ? ? ? 01 ? ? ? 00 00 00 00 ? c3)
+label(ConditionalJumpChangeAddy)
+registersymbol(ConditionalJumpChangeAddy)
+
+TraceInitiatingAddress:
+ConditionalJumpChangeAddy:
+db eb
+//jmp *
+
+[disable]
+
+ConditionalJumpChangeAddy:
+db 7e
+//jle *
+
+unregistersymbol(ConditionalJumpChangeAddy)
+</AssemblerScript>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>10</ID>
+      <Description>"Never Be Traced"</Description>
+      <Color>80000008</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>//Never be traced (Credit To: ColdFusion73)
+//this is a simplified version which recognizes that only 1 byte needs to be changed...
+//Updated and made AOBScan+simplifiedV2 version by: Steve Andrew
+[enable]
+aobscan(TraceInitiatingAddress, 7e ? ? ? ? 01 ? ? ? 00 00 00 00 ? c3)
+label(TracerByteToChangeAddy)
+registersymbol(TracerByteToChangeAddy)
+
+TraceInitiatingAddress+5: //(+5 gets us to the last byte of the instruction of interest)
+TracerByteToChangeAddy:
+db 00
+//TraceInitiatingAddress+2: [changing the single byte of the instruction causes the instruction to change]
+//mov byte [ebp+58],0
+
+[disable]
+
+TracerByteToChangeAddy:
+db 01
+//TraceInitiatingAddress+2:
+//move byte [ebp+58],1
+
+unregistersymbol(TracerByteToChangeAddy)
+</AssemblerScript>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols>
+    <SymbolEntry>
+      <Name>MoneyAddy</Name>
+      <Address>0040CDB8</Address>
+    </SymbolEntry>
+  </UserdefinedSymbols>
+</CheatTable>

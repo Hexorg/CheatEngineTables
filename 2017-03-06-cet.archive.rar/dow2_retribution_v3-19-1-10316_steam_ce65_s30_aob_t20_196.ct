@@ -1,0 +1,721 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="19">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>0</ID>
+      <Description>"[X] &lt;== WH 40K DoW2 Retribution v3.19.1.10316 Steam Script 3.0 AOB"</Description>
+      <Options moHideChildren="1" moDeactivateChildrenAsWell="1"/>
+      <LastState/>
+      <Color>FF0000</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>{
+===========================================
+ Game Title    : Warhammer 40K - Dawn Of War II - Retribution
+ Game Version  : 3.19.1.10316
+ Game Sponsor  : Myself
+ Proces Name   : DOW2.exe
+ Script Version: 3.0 (AOB)
+ CE Version    : 6.5
+ Release date  : 10-Mar-2016
+ Author        : Recifense
+ History:
+ 08-Oct-13: First Release for 3.19.1.6123 (steam)
+ 12-Sep-14: Release for 3.19.1.10224 (steam)
+ 23-Sep-14: Release for 3.19.1.10226 (steam)
+ 05-Dec-14: Release for 3.19.1.10226 (steam) (including Skirmish) (s2.0)
+ 16-Dec-14: Fixed a bug at the "minimum resources" script (s2.1)
+ 13-Jan-15: Release for 3.19.1.10237 (steam)
+ 01-Aug-15: Release for 3.19.1.10257 (steam)(AOB)
+ 10-Mar-16: Release for 3.19.1.10316 (steam)
+ Features:
+ - God Mode
+ - Quick Kill
+ - Minimum Resource
+ - Energy Recovery
+ - Spent Squad Points
+ - Fast Production
+===========================================
+}
+
+//=========================================
+// Checking CE version
+{$lua}
+  if(getCEVersion() &lt; 6.5) then
+    ShowMessage('Sorry. CE version should be 6.5 or above')
+  end
+{$asm}
+
+//=========================================
+// Checking Selected Process
+{$lua}
+  if(process == nil) then
+    ShowMessage('No process was selected')
+  elseif (process ~= "DOW2.exe") then
+    ShowMessage('Error. Expected Process = DOW2.exe')
+  end
+{$asm}
+
+//=========================================
+// Definitions
+define(LUDO,"DOW2.exe")
+
+//=========================================
+[ENABLE]
+//=========================================
+// Check if script is compatible to this game version
+// If false the script will not be loaded
+
+AOBScanModule(GDMD,DOW2.exe,f3 0f 11 4b 44 e8 ?? ?? ?? ?? 8b 43 10 85 c0 ?? ?? 50 ff 15 ??)
+AOBScanModule(MPRE,DOW2.exe,f3 0f 11 43 04 f3 0f 11 43 08 f3 0f 11 43 0c 0f 84 ?? ?? ?? ??)
+AOBScanModule(MOEY,DOW2.exe,f3 0f 58 46 14 0f 57 c9 0f 2f c1 f3 0f 11 14 24 f3 0f 11 44 24)
+AOBScanModule(MOPI,DOW2.exe,8b 42 04 f6 00 0a ?? ?? 8b 0d ?? ?? ?? ?? 81 c1 94 01 00 00 ff)
+AOBScanModule(MOGE,DOW2.exe,3b fe 89 43 04 ?? ?? 57 e8 ?? ?? ?? ?? 57 e8 ?? ?? ?? ?? 83 c4)
+AOBScanModule(MOUP,DOW2.exe,f3 0f 10 4b 20 f3 0f 5c c8 f3 0f 11 4b 20 0f 57 c9 0f 2e c1 9f)
+
+//=========================================
+alloc(MyCode,4096,$process)
+//=========================================
+// Declaration section
+label(_GodMode)
+label(_GodMD00)
+label(_BackGMD)
+label(_ExitGMD)
+label(_MonPlayerResource)
+label(_MonPR00)
+label(_MonPR01)
+label(_BackMPR)
+label(_ExitMPR)
+label(_MonEnergy)
+label(_BackMEY)
+label(_ExitMEY)
+label(_MonPlayerID)
+label(_BackMPI)
+label(_ExitMPI)
+label(_MonGameEnd)
+label(_BackMGE)
+label(_ExitMGE)
+label(_MonUnitProd)
+label(_BackMUP)
+label(_ExitMUP)
+label(iEnableGMD)
+label(iEnableMPR)
+label(iEnableQKL)
+label(iEnableMEY)
+label(iEnableMSP)
+label(iEnableMUP)
+label(iID)
+label(fMinRes)
+label(fFoeHP)
+label(fFifty)
+label(pRes)
+label(pPlayer)
+
+//=========================================
+// Registering Symbols
+registersymbol(MyCode)
+registersymbol(iEnableGMD)
+registersymbol(iEnableMPR)
+registersymbol(iEnableQKL)
+registersymbol(iEnableMEY)
+registersymbol(iEnableMSP)
+registersymbol(iEnableMUP)
+registersymbol(iID)
+registersymbol(fMinRes)
+registersymbol(pRes)
+registersymbol(pPlayer)
+
+registersymbol(GDMD)
+registersymbol(MPRE)
+registersymbol(MOEY)
+registersymbol(MOPI)
+registersymbol(MOGE)
+registersymbol(MOUP)
+
+//=========================================
+MyCode:
+//=========================================
+// During Combat
+_GodMode:
+ push eax
+
+ cmp dword ptr [iEnableGMD],0
+ je _ExitGMD                 // Jump if feature is disabled
+
+ mov eax,[ebx+10]            // Get 1st level pointer
+ or eax,eax
+ jz _ExitGMD                 // Jump if Null pointer
+
+ mov eax,[eax+34]            // Get 2nd level pointer
+ or eax,eax
+ jz _ExitGMD                 // Jump if Null pointer
+
+ mov eax,[eax+08]
+ cmp eax,[iID]
+ jne _GodMD00                // Jump if it is not a playerÂ´s unit
+
+ movss xmm1,[ebx+00000090]   // Get Maximum HP
+ jmp _ExitGMD
+
+_GodMD00:
+ cmp dword ptr [iEnableQKL],0
+ je _ExitGMD                 // Jump if feature is disabled
+
+ comiss xmm1,[fFoeHP]
+ jc _ExitGMD                 // Jump if new value &lt; minimum
+
+ movss xmm1,[fFoeHP]         // Make new HP = 2.0
+
+_ExitGMD:
+ pop eax
+
+ movss [ebx+44],xmm1         // Original code
+ jmp _BackGMD                // Back to main code
+
+//=========================================
+// EDI = pRes
+_MonPlayerResource:
+ pushfd
+ push ebx
+
+ mov [pRes],edi
+
+ test edi,edi
+ jz _ExitMPR
+
+ mov ebx,[edi+08]
+ cmp ebx,[iID]
+ jne _ExitMPR                // Jump if it is the player's resources
+
+ mov [pPlayer],edi
+
+ cmp dword ptr [iEnableMPR],0
+ je _MonPR01                 // Jump if feature is disabled
+
+ mov ebx,[fMinRes]           // Get minimum value
+ cmp ebx,[edi+00000104]
+ jle _MonPR00                // Jump if current Requisition is greater
+
+ mov [edi+00000104],ebx      // Make current Requisition value = minimum value
+
+_MonPR00:
+ cmp ebx,[edi+00000108]
+ jle _MonPR01                // Jump if current Power is greater
+
+ mov [edi+00000108],ebx      // Make current Power value = minimum value
+
+_MonPR01:
+ cmp dword ptr [iEnableMSP],0
+ je _ExitMPR                 // Jump if feature is disabled
+
+ mov dword ptr [edi+000003bc],0 // Spent_Squad_points = 0
+
+_ExitMPR:
+ pop ebx
+ popfd
+
+ movss [ebx+04],xmm0         // Original code
+ jmp _BackMPR                // Back to main code
+
+//=========================================
+_MonEnergy:
+ cmp dword ptr [iEnableMEY],0
+ je _ExitMEY                 // Jump if feature is disabled
+
+ mov eax,[esi+10]            // Get 1st level pointer
+ or eax,eax
+ jz _ExitMEY                 // Jump if Null pointer
+
+ mov eax,[eax+4c]            // Get 2nd level pointer
+ or eax,eax
+ jz _ExitMEY                 // Jump if Null pointer
+
+ mov eax,[eax+08]
+ cmp eax,[iID]
+ jne _ExitMEY                // Jump if it is not a playerÂ´s unit
+
+ movss xmm0,[fFifty]
+
+_ExitMEY:
+ addss xmm0,[esi+14]         // Original code
+ jmp _BackMEY                // Back to main code
+
+//========================================= SKIRMISH
+_MonPlayerID:
+ push ebx
+ push ecx
+
+ mov ebx,[edx+04]             // Get pGameInfo
+ mov ecx,[ebx+00000320]
+ movzx eax,word ptr [ecx+04]
+
+ mov [iID],eax
+
+_ExitMPI:
+ pop ecx
+ pop ebx
+
+ mov eax,[edx+04]             // Original code (get pGameInfo)
+ test byte ptr [eax],0A       // Original code
+ jmp _BackMPI                 // Back to main code
+
+//========================================= SKIRMISH
+_MonGameEnd:
+ mov dword ptr [iID],#9999
+
+_ExitMGE:
+ cmp edi,esi                  // Original code
+ mov [ebx+04],eax             // Original code (GemeInfo)
+ jmp _BackMGE                 // Back to main code
+
+//=========================================
+_MonUnitProd:
+ cmp dword ptr [iEnableMUP],0
+ je _ExitMUP                 // Jump if feature is disabled
+
+ cmp edi,[pPlayer]
+ jne _ExitMUP
+
+ mov eax,(float)10.0
+ cmp eax,[ebx+24]
+ jns _ExitMUP
+
+ cmp eax,[ebx+20]
+ jns _ExitMUP
+
+ mov [ebx+20],eax
+
+_ExitMUP:
+ movss xmm1,[ebx+20]         // Original code
+ jmp _BackMUP                // Back to main code
+
+//=========================================
+ db '============================================&gt;'
+ db 'CE6.5 Script by Recifense 031016'
+//=========================================
+// Variables
+iEnableGMD:
+ dd 0
+iEnableQKL:
+ dd 0
+iEnableMPR:
+ dd 0
+iEnableMEY:
+ dd 0
+iEnableMSP:
+ dd 0
+iEnableMUP:
+ dd 0
+iID:
+ dd #9999
+fMinRes:
+ dd (float)6500.0
+fFoeHP:
+ dd (float)2.0
+fFifty:
+ dd (float)50.0
+pRes:
+ dd 0
+pPlayer:
+ dd MyCode
+
+//=========================================
+// Hacking Points
+GDMD:
+ jmp _GodMode
+_BackGMD:
+
+MPRE:
+ jmp _MonPlayerResource
+_BackMPR:
+
+MOEY:
+ jmp _MonEnergy
+_BackMEY:
+
+MOPI:
+ jmp _MonPlayerID
+ nop
+_BackMPI:
+
+MOGE:
+ jmp _MonGameEnd
+_BackMGE:
+
+MOUP:
+ jmp _MonUnitProd
+_BackMUP:
+
+//=========================================
+// Script for Restoring Original Codes
+[DISABLE]
+GDMD:
+// movss [ebx+44],xmm1
+ db f3 0f 11 4b 44
+
+MPRE:
+// movss [ebx+04],xmm0
+ db f3 0f 11 43 04
+
+MOEY:
+// addss xmm0,[esi+14]
+ db f3 0f 58 46 14
+
+MOPI:
+// mov eax,[edx+04]
+// test byte ptr [eax],0A
+ db 8b 42 04 f6 00 0a
+
+MOGE:
+// cmp edi,esi
+// mov [ebx+04],eax
+ db 3b fe 89 43 04
+
+MOUP:
+// movss xmm1,[ebx+20]
+ db f3 0f 10 4b 20
+
+//=========================================
+// Unregistering Symbols
+unregistersymbol(MyCode)
+unregistersymbol(iEnableGMD)
+unregistersymbol(iEnableMPR)
+unregistersymbol(iEnableQKL)
+unregistersymbol(iEnableMEY)
+unregistersymbol(iEnableMSP)
+unregistersymbol(iEnableMUP)
+unregistersymbol(iID)
+unregistersymbol(fMinRes)
+unregistersymbol(pRes)
+unregistersymbol(pPlayer)
+
+unregistersymbol(GDMD)
+unregistersymbol(MPRE)
+unregistersymbol(MOEY)
+unregistersymbol(MOPI)
+unregistersymbol(MOGE)
+unregistersymbol(MOUP)
+
+//=========================================
+dealloc(MyCode)
+//============= Scripts End ===============
+
+// ****************************************
+// NOTES
+// ****************************************
+{
+}
+
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>96</ID>
+          <Description>"[X] &lt;== God Mode --------------------------------------&gt; (HK: CTRL+Home / CTRL+End)"</Description>
+          <LastState/>
+          <Color>C08000</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[enable]
+define(test,LUDO)
+
+{$LUA}
+writeInteger("iEnableGMD",1)
+getAddressList().getMemoryRecordByID(96).Color=0x0008000
+{$ASM}
+
+[disable]
+{$LUA}
+writeInteger("iEnableGMD",0)
+getAddressList().getMemoryRecordByID(96).Color=0x0c08000
+{$ASM}
+
+</AssemblerScript>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Activate</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Deactivate</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>148</ID>
+          <Description>"[X] &lt;== Minimum Resources  ----------------------&gt; (HK: CTRL+Home / CTRL+End)"</Description>
+          <LastState/>
+          <Color>C08000</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[enable]
+define(test,LUDO)
+
+{$LUA}
+writeInteger("iEnableMPR",1)
+getAddressList().getMemoryRecordByID(148).Color=0x0008000
+{$ASM}
+
+[disable]
+{$LUA}
+writeInteger("iEnableMPR",0)
+getAddressList().getMemoryRecordByID(148).Color=0x0c08000
+{$ASM}
+
+</AssemblerScript>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Activate</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Deactivate</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>149</ID>
+          <Description>"[X] &lt;== Quick Energy Recovery -----------------&gt; (HK: CTRL+Home / CTRL+End)"</Description>
+          <LastState/>
+          <Color>C08000</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[enable]
+define(test,LUDO)
+
+{$LUA}
+writeInteger("iEnableMEY",1)
+getAddressList().getMemoryRecordByID(149).Color=0x0008000
+{$ASM}
+
+[disable]
+{$LUA}
+writeInteger("iEnableMEY",0)
+getAddressList().getMemoryRecordByID(149).Color=0x0c08000
+{$ASM}
+
+</AssemblerScript>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Activate</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Deactivate</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>139</ID>
+          <Description>"[X] &lt;== Weak Foe --------------------------------------&gt; (HK: CTRL+Page Up / CTRL+Page Down)"</Description>
+          <LastState/>
+          <Color>C08000</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[enable]
+define(test,LUDO)
+
+{$LUA}
+writeInteger("iEnableQKL",1)
+getAddressList().getMemoryRecordByID(139).Color=0x00008000
+{$ASM}
+
+[disable]
+{$LUA}
+writeInteger("iEnableQKL",0)
+getAddressList().getMemoryRecordByID(139).Color=0x00c08000
+{$ASM}
+
+</AssemblerScript>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Activate</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>33</Key>
+              </Keys>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Deactivate</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>34</Key>
+              </Keys>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>147</ID>
+          <Description>"[X] &lt;== Unlimited Squad Points ------------------&gt; (HK: CTRL+Insert / CTRL+Delete)"</Description>
+          <LastState/>
+          <Color>C08000</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[enable]
+define(test,LUDO)
+
+{$LUA}
+writeInteger("iEnableMSP",1)
+getAddressList().getMemoryRecordByID(147).Color=0x00008000
+{$ASM}
+
+[disable]
+{$LUA}
+writeInteger("iEnableMSP",0)
+getAddressList().getMemoryRecordByID(147).Color=0x00c08000
+{$ASM}
+
+</AssemblerScript>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Activate</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>45</Key>
+              </Keys>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Deactivate</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>46</Key>
+              </Keys>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>138</ID>
+          <Description>"[X] &lt;== Quick Production ---------------------------&gt; (HK: CTRL+numeric 1 / CTRL+numeric 0)"</Description>
+          <LastState/>
+          <Color>C08000</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[enable]
+define(test,LUDO)
+
+{$LUA}
+writeInteger("iEnableMUP",1)
+getAddressList().getMemoryRecordByID(138).Color=0x00008000
+{$ASM}
+
+[disable]
+{$LUA}
+writeInteger("iEnableMUP",0)
+getAddressList().getMemoryRecordByID(138).Color=0x00c08000
+{$ASM}
+
+</AssemblerScript>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Activate</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>97</Key>
+              </Keys>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Deactivate</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>96</Key>
+              </Keys>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols>
+    <SymbolEntry>
+      <Name>Recifense</Name>
+      <Address>20160310</Address>
+    </SymbolEntry>
+  </UserdefinedSymbols>
+  <Comments>===========================================
+ Game Title    : Warhammer 40K - Dawn Of War II - Retribution
+ Game Version  : 3.19.1.10316
+ Game Sponsor  : Myself
+ Proces Name   : DOW2.exe
+ Script Version: 3.0 (AOB)
+ CE Version    : 6.5
+ Release date  : 10-Mar-2016
+ Author        : Recifense
+ History:
+ 08-Oct-13: First Release for 3.19.1.6123 (steam)
+ 12-Sep-14: Release for 3.19.1.10224 (steam)
+ 23-Sep-14: Release for 3.19.1.10226 (steam)
+ 05-Dec-14: Release for 3.19.1.10226 (steam) (including Skirmish) (s2.0)
+ 16-Dec-14: Fixed a bug at the "minimum resources" script (s2.1)
+ 13-Jan-15: Release for 3.19.1.10237 (steam)
+ 01-Aug-15: Release for 3.19.1.10257 (steam)(AOB)
+ 10-Mar-16: Release for 3.19.1.10316 (steam)
+ Features:
+ - God Mode         [1]
+ - Quick Kill       [2]
+ - Minimum Resource [3]
+ - Energy Recovery  [4]
+ - Squad Points     [5]
+ - Fast Production  [6]
+===========================================
+[1] That's it;
+[2] The enemy will be easy to kill;
+[3] Resource will not go under minimum (6500);
+[4] That's it;
+[5] The spent points will be set to 0;
+[6] Unit will be produced almost instantly;
+===========================================
+[USAGE]
+1) Run CE65;
+2) Run Game;
+3) Load the game process "DOW2.exe" in CE;
+4) Load this table and activate the main script;
+5) Now Activate the script of each cheat you want to use;
+6) Game On;
+===========================================
+[HOTKEYS]
+CTRL+Home      = Enable  GM/MR/QER cheats;
+CTRL+End       = Disable GM/MR/QER cheats;
+-----------
+CTRL+PageUp    = Enable  WF cheat;
+CTRL+PageDown  = Disable WF cheat;
+-----------
+CTRL+Insert    = Enable  USP cheat;
+CTRL+Delete    = Disable USP cheat;
+-----------
+CTRL+numeric 1 = Enable  QP cheat;
+CTRL+numeric 0 = Disable QP cheat;
+===========================================
+[ADVICE]
+When you can,save the game before starting using table/cheat. So you can always come back in case you don't like the result.
+===========================================
+[INFO]
+Tested on Win 10 64bits
+===========================================
+Cheers!
+</Comments>
+</CheatTable>

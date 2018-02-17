@@ -1,0 +1,388 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="18">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>28</ID>
+      <Description>"TDM 2.02 AOB script"</Description>
+      <Options moHideChildren="1"/>
+      <LastState Activated="0"/>
+      <Color>80000008</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>[ENABLE]
+aobscanmodule(aobAmmoTicker,gamex86.dll,CC 8B 81 50 01 00 00 C3)
+aobscanmodule(aobItemReader,gamex86.dll,8B 82 8C 00 00 00 50 8B 86)
+aobscanmodule(aobMoveTicker,gamex86.dll,D9 99 28 01 00 00 D9 44 24 08)
+aobscanmodule(aobJumpTicker,gamex86.dll,D9 99 34 01 00 00 C2 04 00 CC CC CC 8B 44 24 04)
+aobscanmodule(aobLightSumTicker,gamex86.dll,50 8B CE 89 86 9C 21 00 00)
+aobscanmodule(aobAISoundAlert,gamex86.dll,F6 87 C4 00 00 00 01 0F 85 * * * * 8B 86 20 1F 00 00)
+
+alloc(newmem,4096)
+
+label(aobAmmoTicker_r)
+registersymbol(aobAmmoTicker_r)
+
+label(lblAmmoTicker)
+label(lblAmmoTickerSkip)
+label(lblAmmoTickerNone)
+label(lblAmmoTickerGive)
+label(lblAmmoTickerRet)
+
+label(bEnableAmmoHack)
+label(bGiveWhenNone)
+registersymbol(bEnableAmmoHack)
+registersymbol(bGiveWhenNone)
+
+label(aobItemReader_r)
+registersymbol(aobItemReader_r)
+
+label(lblItemReader)
+label(lblItemReaderSkip)
+label(lblItemReaderRet)
+
+label(bEnableItemHack)
+label(iDesiredItemCount)
+registersymbol(bEnableItemHack)
+registersymbol(iDesiredItemCount)
+
+label(aobMoveTicker_r)
+registersymbol(aobMoveTicker_r)
+
+label(lblMoveTicker)
+label(lblMoveTickerSkip)
+label(lblMoveTickerRet)
+
+label(bWalkSpeedHackEnabled)
+label(fWalkSpeedMultiplier)
+registersymbol(bWalkSpeedHackEnabled)
+registersymbol(fWalkSpeedMultiplier)
+
+label(aobJumpTicker_r)
+registersymbol(aobJumpTicker_r)
+
+label(lblJumpTicker)
+label(lblJumpTickerSkip)
+label(lblJumpTickerRet)
+
+label(bJumpHeightHackEnabled)
+label(fJumpHeightMultiplier)
+registersymbol(bJumpHeightHackEnabled)
+registersymbol(fJumpHeightMultiplier)
+
+label(aobLightSumTicker_r)
+registersymbol(aobLightSumTicker_r)
+
+label(lblLightSumTicker)
+label(lblLightSumTickerSkip)
+label(lblLightSumTickerRet)
+
+label(bEnableDarkness)
+registersymbol(bEnableDarkness)
+
+label(aobAISoundAlert_r)
+registersymbol(aobAISoundAlert_r)
+
+label(lblAISoundAlert)
+label(lblAISoundAlertSkip)
+label(lblAISoundAlertRet)
+
+label(bDisableAIHearing)
+registersymbol(bDisableAIHearing)
+
+newmem:
+bEnableDarkness:
+dd 0
+bDisableAIHearing:
+dd 0
+bEnableAmmoHack:
+dd 0
+bGiveWhenNone:
+dd 0
+bEnableItemHack:
+dd 0
+iDesiredItemCount:
+dd (int)25
+bWalkSpeedHackEnabled:
+dd 0
+fWalkSpeedMultiplier:
+dd (float)2.0
+bJumpHeightHackEnabled:
+dd 0
+fJumpHeightMultiplier:
+dd (float)1.5
+
+lblAmmoTicker:
+db 8B 81 50 01 00 00
+pushfd
+cmp dword ptr [ecx+12C],0
+je short lblAmmoTickerSkip
+cmp dword ptr [bEnableAmmoHack],1
+jne short lblAmmoTickerSkip
+test eax,eax
+jz short lblAmmoTickerNone
+jmp short lblAmmoTickerGive
+lblAmmoTickerNone:
+cmp dword ptr [bGiveWhenNone],1
+jne short lblAmmoTickerSkip
+lblAmmoTickerGive:
+mov eax,[ecx+14C]
+mov [ecx+150],eax
+lblAmmoTickerSkip:
+popfd
+jmp lblAmmoTickerRet
+
+lblMoveTicker:
+pushfd
+cmp dword ptr [bWalkSpeedHackEnabled],1
+jne short lblMoveTickerSkip
+fmul dword ptr [fWalkSpeedMultiplier]
+lblMoveTickerSkip:
+popfd
+db D9 99 28 01 00 00
+jmp lblMoveTickerRet
+
+lblJumpTicker:
+pushfd
+cmp dword ptr [bJumpHeightHackEnabled],1
+jne short lblJumpTickerSkip
+fmul dword ptr [fJumpHeightMultiplier]
+lblJumpTickerSkip:
+popfd
+db D9 99 34 01 00 00
+jmp lblJumpTickerRet
+
+lblLightSumTicker:
+cmp dword ptr [bEnableDarkness],1
+jne short lblLightSumTickerSkip
+xor eax,eax
+lblLightSumTickerSkip:
+db 50 8B CE 89 86 9C 21 00 00
+jmp lblLightSumTickerRet
+
+lblAISoundAlert:
+cmp dword ptr [bDisableAIHearing],1
+jne short lblAISoundAlertSkip
+xor eax,eax
+inc eax
+test eax,eax
+jmp lblAISoundAlertRet
+lblAISoundAlertSkip:
+db F6 87 C4 00 00 00 01
+jmp lblAISoundAlertRet
+
+lblItemReader:
+db 8B 82 8C 00 00 00
+
+pushfd
+cmp word ptr [edx+90],101
+jne short lblItemReaderSkip
+mov eax, [iDesiredItemCount]
+mov [edx+8C],eax
+lblItemReaderSkip:
+popfd
+jmp lblItemReaderRet
+
+aobItemReader:
+aobItemReader_r:
+jmp lblItemReader
+nop
+lblItemReaderRet:
+
+aobAISoundAlert:
+aobAISoundAlert_r:
+jmp lblAISoundAlert
+nop
+nop
+lblAISoundAlertRet:
+
+aobLightSumTicker:
+aobLightSumTicker_r:
+jmp lblLightSumTicker
+nop
+nop
+nop
+nop
+lblLightSumTickerRet:
+
+aobJumpTicker:
+aobJumpTicker_r:
+jmp lblJumpTicker
+nop
+lblJumpTickerRet:
+
+aobMoveTicker:
+aobMoveTicker_r:
+jmp lblMoveTicker
+nop
+lblMoveTickerRet:
+
+aobAmmoTicker+1:
+aobAmmoTicker_r:
+jmp lblAmmoTicker
+nop
+lblAmmoTickerRet:
+
+[DISABLE]
+aobAmmoTicker_r:
+db 8B 81 50 01 00 00
+
+unregistersymbol(aobAmmoTicker_r)
+
+unregistersymbol(bEnableAmmoHack)
+unregistersymbol(bGiveWhenNone)
+
+aobItemReader_r:
+db 8B 82 8C 00 00 00
+
+unregistersymbol(aobItemReader_r)
+
+unregistersymbol(bEnableItemHack)
+unregistersymbol(iDesiredItemCount)
+
+aobMoveTicker_r:
+db D9 99 28 01 00 00
+
+unregistersymbol(aobMoveTicker_r)
+
+unregistersymbol(bWalkSpeedHackEnabled)
+unregistersymbol(fWalkSpeedMultiplier)
+
+aobJumpTicker_r:
+db D9 99 34 01 00 00
+
+unregistersymbol(aobJumpTicker_r)
+
+unregistersymbol(bJumpHeightHackEnabled)
+unregistersymbol(fJumpHeightMultiplier)
+
+aobLightSumTicker_r:
+db 50 8B CE 89 86 9C 21 00 00
+
+unregistersymbol(aobLightSumTicker_r)
+
+unregistersymbol(bEnableDarkness)
+
+aobAISoundAlert_r:
+db F6 87 C4 00 00 00 01
+
+unregistersymbol(aobAISoundAlert_r)
+
+unregistersymbol(bDisableAIHearing)
+
+dealloc(newmem)
+
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>114</ID>
+          <Description>"bEnableDarkness"</Description>
+          <DropDownList ReadOnly="1" DescriptionOnly="1" DisplayValueAsItem="1">0:Disabled
+1:Enabled
+</DropDownList>
+          <LastState Value="??" Activated="0" RealAddress="00000000"/>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>bEnableDarkness</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>115</ID>
+          <Description>"bDisableAIHearing"</Description>
+          <DropDownList ReadOnly="1" DescriptionOnly="1" DisplayValueAsItem="1">0:Disabled
+1:Enabled
+</DropDownList>
+          <LastState Value="??" Activated="0" RealAddress="00000000"/>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>bDisableAIHearing</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>29</ID>
+          <Description>"bEnableAmmoHack"</Description>
+          <DropDownList ReadOnly="1" DescriptionOnly="1" DisplayValueAsItem="1">0:Disabled
+1:Enabled
+</DropDownList>
+          <LastState Value="??" Activated="0" RealAddress="00000000"/>
+          <Color>408000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>bEnableAmmoHack</Address>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>30</ID>
+              <Description>"bGiveWhenNone"</Description>
+		          <DropDownList ReadOnly="1" DescriptionOnly="1" DisplayValueAsItem="1">0:Disabled
+1:Enabled
+</DropDownList>
+              <LastState Value="??" Activated="0" RealAddress="00000000"/>
+              <Color>408000</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>bGiveWhenNone</Address>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>119</ID>
+          <Description>"bEnableItemHack"</Description>
+          <DropDownList ReadOnly="1" DescriptionOnly="1" DisplayValueAsItem="1">0:Disabled
+1:Enabled
+</DropDownList>
+          <LastState Value="??" Activated="0" RealAddress="00000000"/>
+          <Color>408000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>bEnableItemHack</Address>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>120</ID>
+              <Description>"iDesiredItemCount"</Description>
+              <LastState Value="??" Activated="0" RealAddress="00000000"/>
+              <Color>FF0000</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>iDesiredItemCount</Address>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>110</ID>
+          <Description>"bWalkSpeedHackEnabled"</Description>
+          <DropDownList ReadOnly="1" DescriptionOnly="1" DisplayValueAsItem="1">0:Disabled
+1:Enabled
+</DropDownList>
+          <LastState Value="??" Activated="0" RealAddress="00000000"/>
+          <Color>408000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>bWalkSpeedHackEnabled</Address>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>111</ID>
+              <Description>"fWalkSpeedMultiplier"</Description>
+              <LastState Value="??" Activated="0" RealAddress="00000000"/>
+              <Color>FF0000</Color>
+              <VariableType>Float</VariableType>
+              <Address>fWalkSpeedMultiplier</Address>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>112</ID>
+          <Description>"bJumpHeightHackEnabled"</Description>
+          <DropDownList ReadOnly="1" DescriptionOnly="1" DisplayValueAsItem="1">0:Disabled
+1:Enabled
+</DropDownList>
+          <LastState Value="??" Activated="0" RealAddress="00000000"/>
+          <Color>408000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>bJumpHeightHackEnabled</Address>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>113</ID>
+              <Description>"fJumpHeightMultiplier"</Description>
+              <LastState Value="??" Activated="0" RealAddress="00000000"/>
+              <Color>FF0000</Color>
+              <VariableType>Float</VariableType>
+              <Address>fJumpHeightMultiplier</Address>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols/>
+</CheatTable>

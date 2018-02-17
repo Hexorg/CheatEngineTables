@@ -1,0 +1,147 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="24">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>3474</ID>
+      <Description>"Time Step (Beta)"</Description>
+      <LastState/>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>{ Game   : Darksiders2.exe
+  Version: 
+  Date   : 2016-10-19
+  Author : Akuma
+
+  This script does effect actual TimeStep but alters the the step of the ingame pause
+  WHile allowing camera movement.
+}
+
+[ENABLE]
+
+aobscanmodule(Time_Stop_ret,Darksiders2.exe,8A D8 44 39 BF 88 01 00 00) // should be unique
+alloc(newmem,$1000,"Darksiders2.exe"+A01841)
+
+alloc(Step_Speed,16)
+registersymbol(Step_Speed)
+
+
+label(Allow_Movement)
+label(Stop_Movement)
+label(Reset_Count)
+
+label(code)
+label(return)
+
+
+Step_Speed:
+dd (float)1
+
+Step_Speed+8:
+dd (float)0.10 /// ten percent movement on char
+
+
+newmem:
+
+code:
+  mov bl,al
+ // cmp [rdi+00000188],r15d /// Moved to finish
+  //cmp [rdi+00000188],1   /// Game Pause Keep
+ // je return
+
+
+    /// Fake Timer Here
+  movss xmm15,[Step_Speed]
+  movss xmm14,[Step_Speed+8]
+  //addss xmm13,xmm14
+  comiss xmm13,xmm15  /// Compare for greater or equal to allow step
+  jae Allow_Movement
+  jb Stop_Movement
+
+
+
+Allow_Movement:
+ // mov r15d,1
+  mov [rdi+00000188],0
+  cmp [rdi+00000188],r15d
+  jmp Reset_Count  /// Clears when movement is allowed
+
+
+Stop_Movement:
+  addss xmm13,xmm14
+  movss [Step_Speed+C],Xmm13 //// List Indicator
+  //mov r15d,0
+  //mov [rdi+00000188],1 /// CXause's Quie a bit laggy movement it can be resolved
+  //cmp [rdi+00000188],r15d
+  jmp return
+  //jmp Reset_Count
+
+
+
+Reset_Count:
+  xorps xmm13,xmm13  /// cleears created timer
+  jmp return
+
+
+Time_Stop_ret:
+  jmp newmem
+  nop
+  nop
+  nop
+  nop
+return:
+registersymbol(Time_Stop_ret)
+
+[DISABLE]
+
+Time_Stop_ret:
+  db 8A D8 44 39 BF 88 01 00 00
+
+unregistersymbol(Time_Stop_ret)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: "Darksiders2.exe"+A01841
+
+"Darksiders2.exe"+A0181A: FF 90 80 00 00 00        -  call qword ptr [rax+00000080]
+"Darksiders2.exe"+A01820: 48 8B 4F 08              -  mov rcx,[rdi+08]
+"Darksiders2.exe"+A01824: 48 85 C9                 -  test rcx,rcx
+"Darksiders2.exe"+A01827: 74 1A                    -  je Darksiders2.exe+A01843
+"Darksiders2.exe"+A01829: 48 8B 01                 -  mov rax,[rcx]
+"Darksiders2.exe"+A0182C: F3 0F 10 4F 40           -  movss xmm1,[rdi+40]
+"Darksiders2.exe"+A01831: FF 50 78                 -  call qword ptr [rax+78]
+"Darksiders2.exe"+A01834: 48 8B 4F 08              -  mov rcx,[rdi+08]
+"Darksiders2.exe"+A01838: 48 8B 01                 -  mov rax,[rcx]
+"Darksiders2.exe"+A0183B: FF 90 B0 00 00 00        -  call qword ptr [rax+000000B0]
+// ---------- INJECTING HERE ----------
+"Darksiders2.exe"+A01841: 8A D8                    -  mov bl,al
+"Darksiders2.exe"+A01843: 44 39 BF 88 01 00 00     -  cmp [rdi+00000188],r15d
+// ---------- DONE INJECTING  ----------
+"Darksiders2.exe"+A0184A: 7F 3C                    -  jg Darksiders2.exe+A01888
+"Darksiders2.exe"+A0184C: 8B 4F 18                 -  mov ecx,[rdi+18]
+"Darksiders2.exe"+A0184F: C1 E9 03                 -  shr ecx,03
+"Darksiders2.exe"+A01852: 41 84 CC                 -  test r12l,cl
+"Darksiders2.exe"+A01855: 75 31                    -  jne Darksiders2.exe+A01888
+"Darksiders2.exe"+A01857: 48 8B 8F 28 01 00 00     -  mov rcx,[rdi+00000128]
+"Darksiders2.exe"+A0185E: 44 39 79 24              -  cmp [rcx+24],r15d
+"Darksiders2.exe"+A01862: 7F 24                    -  jg Darksiders2.exe+A01888
+"Darksiders2.exe"+A01864: 48 8B 47 20              -  mov rax,[rdi+20]
+"Darksiders2.exe"+A01868: 48 85 C0                 -  test rax,rax
+}
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>3472</ID>
+          <Description>"Step Speed Rate"</Description>
+          <VariableType>Float</VariableType>
+          <Address>Step_Speed+8</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>3475</ID>
+          <Description>"Step Speed Accumulation"</Description>
+          <VariableType>Float</VariableType>
+          <Address>Step_Speed+C</Address>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols/>
+</CheatTable>

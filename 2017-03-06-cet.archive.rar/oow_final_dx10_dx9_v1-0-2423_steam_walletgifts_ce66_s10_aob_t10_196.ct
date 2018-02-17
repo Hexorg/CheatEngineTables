@@ -1,0 +1,508 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="24">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>5</ID>
+      <Description>"[X] &lt;== Order of War DX09/DX10 v1.0.2423 Steam Script v1.0 AOB"</Description>
+      <Options moHideChildren="1" moDeactivateChildrenAsWell="1"/>
+      <LastState/>
+      <Color>FF0000</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>{
+===========================================
+ Game Title    : Order of War
+ Game Version  : 1.0.2423
+ Game Sponsor  : WalletGifts
+ Process Name  : oow_final_dx10.exe or oow_final_dx9.exe
+ Relevant Info : 32bits/WAR RTS
+ Script Version: 1.0 AOB
+ CE Version    : 6.6
+ Release date  : 16-Feb-2016
+ Author        : Recifense
+ History:
+ 15-Oct-2009: First Release (v1.0.1858)(dx9)(CE55)
+ 16-Feb-2016: First Release for DX10 (steam) (AOB)
+ Features:
+ - Minimum Resources
+ - God Mode
+ - Minimum Points
+ - Some Pointers
+===========================================
+}
+
+//=========================================
+// Checking CE version
+{$lua}
+  if(getCEVersion() &lt; 6.5) then
+    ShowMessage('Sorry. CE version should be 6.5 or above')
+  end
+{$asm}
+
+//=========================================
+// Checking Selected Process
+{$lua}
+  if(process == nil) then
+    ShowMessage('No process was selected')
+  elseif (string.sub(process,1,9) ~= "oow_final") then
+    ShowMessage('Error. Expected Process = oow_final_dx9.exe or oow_final_dx10.exe')
+  end
+{$asm}
+
+//=========================================
+// Definitions
+define(LUDO,$process)
+{
+define(MODV,oow_final_dx10.exe+002bc10c)
+define(MOPR,oow_final_dx10.exe+002c0970)
+define(MOUH,oow_final_dx10.exe+002be6a3)
+define(MOGI,oow_final_dx10.exe+001276cc)
+define(MOUP,oow_final_dx10.exe+00338422)
+}
+//=========================================
+// Constants used in the script (that can be changed)
+define(ctCE65,(float)6.6)
+
+//=========================================
+[ENABLE]
+//=========================================
+//LuaCall(CheckVersion())
+//=========================================
+// Check if script is compatible to this game version
+// If false the script will not be loaded
+{
+assert(MODV,d9 40 08 59 c2 04 00 d9 ee 59 c2 04 00 cc cc cc cc cc ?? ?? ??)
+assert(MOPR,d9 5b 08 8b 06 8b 4f 14 50 e8 ?? ?? ?? ?? d9 5b 04 8b ce e8 ??)
+assert(MOUH,03 69 10 3b c3 ?? ?? 89 6c 24 10 d9 46 20 db 44 24 10 da 74 24)
+assert(MOGI,89 9e e0 00 00 00 c7 86 e4 00 00 00 e8 03 00 00 89 9e e8 00 00)
+assert(MOUP,89 86 34 01 00 00 8b 42 18 68 ?? ?? ?? ?? ff d0 50 e8 ?? ?? ??)
+}
+AOBScanModule(MODV,$process,d9 40 08 59 c2 04 00 d9 ee 59 c2 04 00 cc cc cc cc cc ?? ?? ??)
+AOBScanModule(MOPR,$process,d9 5b 08 8b 06 8b 4f 14 50 e8 ?? ?? ?? ?? d9 5b 04 8b ce e8 ??)
+AOBScanModule(MOUH,$process,03 69 10 3b c3 ?? ?? 89 6c 24 10 d9 46 20 db 44 24 10 da 74 24)
+AOBScanModule(MOGI,$process,89 9e e0 00 00 00 c7 86 e4 00 00 00 e8 03 00 00 89 9e e8 00 00)
+AOBScanModule(MOUP,$process,89 86 34 01 00 00 8b 42 18 68 ?? ?? ?? ?? ff d0 50 e8 ?? ?? ??)
+
+//=========================================
+alloc(MyCode,4096,$process)
+//=========================================
+// Declaration section
+label(_MonDispValue)
+label(_BackMDV)
+label(_ExitMDV)
+label(_MonPlayerRes)
+label(_BackMPR)
+label(_ExitMPR)
+label(_MonUnitHP)
+label(_BackMUH)
+label(_ExitMUH)
+label(_MonGameIni)
+label(_BackMGI)
+label(_ExitMGI)
+label(_MonUpgradePoints)
+label(_BackMUP)
+label(_ExitMUP)
+
+label(iEnableMPR)
+label(iEnableMUH)
+label(iEnableMUP)
+label(iPlayerID)
+
+label(pDisp)
+
+//=========================================
+// Registering Symbols
+registersymbol(MyCode)
+registersymbol(iEnableMPR)
+registersymbol(iEnableMUH)
+registersymbol(iEnableMUP)
+registersymbol(iPlayerID)
+registersymbol(pDisp)
+
+registersymbol(MODV)
+registersymbol(MOPR)
+registersymbol(MOUH)
+registersymbol(MOGI)
+registersymbol(MOUP)
+
+//=========================================
+MyCode:
+//=========================================
+// At main game screen
+_MonDispValue:
+ mov [pDisp],eax
+
+_ExitMDV:
+ fld dword ptr [eax+08]            // Original code
+ pop ecx                           // Original code
+ ret 0004                          // Original code
+ jmp _BackMDV                      // Back to main code (for template sake)
+
+//=========================================
+// When updating resource
+_MonPlayerRes:
+ cmp ebx,[pDisp]
+ jne _ExitMPR
+
+ mov eax,[edx]
+ mov [iPlayerID],eax
+
+ cmp dword ptr [iEnableMPR],0
+ je _ExitMPR                       // Jump if feature is disabled
+
+ mov eax,(float)660.0
+ cmp [edx+04],eax
+ jns _ExitMPR
+
+ mov [edx+04],eax
+
+_ExitMPR:
+ fstp dword ptr [ebx+08]           // Original code
+ mov eax,[esi]                     // Original code
+ jmp _BackMPR                      // Back to main code
+
+//=========================================
+// At main game screen
+_MonUnitHP:
+ push ebx
+
+ cmp dword ptr [iEnableMUH],0
+ je _ExitMUH                       // Jump if feature is disabled
+
+ mov ebx,[esi+10]
+ cmp ebx,[iPlayerID]
+ jne _ExitMUH
+
+ mov ebx,#66000
+ cmp [ecx+10],ebx
+ jns _ExitMUH
+
+ mov [ecx+10],ebx
+
+_ExitMUH:
+ pop ebx
+
+ add ebp,[ecx+10]                  // Original code
+ cmp eax,ebx                       // Original code
+ jmp _BackMUH                      // Back to main code
+
+//=========================================
+// When starting a match
+_MonGameIni:
+ mov [pDisp],55555555
+ mov [iPlayerID],55555555
+
+_ExitMGI:
+ mov [esi+000000E0],ebx            // Original code
+ jmp _BackMGI                      // Back to main code (for template sake)
+
+//=========================================
+// When using points
+_MonUpgradePoints:
+ mov [esi+00000134],eax            // Original code
+
+ cmp dword ptr [iEnableMUP],0
+ je _ExitMUP                       // Jump if feature is disabled
+
+ mov eax,#6600
+ cmp [esi+00000134],eax
+ jns _ExitMUP
+
+ mov [esi+00000134],eax
+
+_ExitMUP:
+ jmp _BackMUP                      // Back to main code
+
+//=========================================
+ db '============================&gt;'
+ db 'CE6.6 Script by Recifense 021617'
+//=========================================
+// Variables
+iEnableMPR:
+ dd 0
+iEnableMUH:
+ dd 0
+iEnableMUP:
+ dd 0
+iPlayerID:
+ dd MyCode
+pDisp:
+ dd MyCode
+
+//=========================================
+// Hacking Points
+MODV:
+ jmp _MonDispValue
+ nop
+ nop
+_BackMDV:
+
+MOPR:
+ jmp _MonPlayerRes
+_BackMPR:
+
+MOUH:
+ jmp _MonUnitHP
+_BackMUH:
+
+MOGI:
+ jmp _MonGameIni
+ nop
+_BackMGI:
+
+MOUP:
+ jmp _MonUpgradePoints
+ nop
+_BackMUP:
+
+//=========================================
+// Script for Restoring Original Codes
+[DISABLE]
+MODV:
+// fld dword ptr [eax+08]
+// pop ecx
+// ret 0004
+ db d9 40 08 59 c2 04 00
+
+MOPR:
+// fstp dword ptr [ebx+08]
+// mov eax,[esi]
+ db d9 5b 08 8b 06
+
+MOUH:
+// add ebp,[ecx+10]
+// cmp eax,ebx
+ db 03 69 10 3b c3
+
+MOGI:
+// mov [esi+000000E0],ebx
+ db 89 9e e0 00 00 00
+
+MOUP:
+// mov [esi+00000134],eax
+ db 89 86 34 01 00 00
+
+//=========================================
+// Unregistering Symbols
+unregistersymbol(MyCode)
+unregistersymbol(iEnableMPR)
+unregistersymbol(iEnableMUH)
+unregistersymbol(iEnableMUP)
+unregistersymbol(iPlayerID)
+unregistersymbol(pDisp)
+
+unregistersymbol(MODV)
+unregistersymbol(MOPR)
+unregistersymbol(MOUH)
+unregistersymbol(MOGI)
+unregistersymbol(MOUP)
+
+//=========================================
+dealloc(MyCode)
+//============= Scripts End ===============
+
+// ****************************************
+// NOTES
+// ****************************************
+{
+}
+
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>229</ID>
+          <Description>"[X] &lt;== Minimum Resources -----------------------&gt; (HK: CTRL+Home / CTRL+End)"</Description>
+          <LastState/>
+          <Color>C08000</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[enable]
+define(test,LUDO)
+
+{$LUA}
+writeInteger("iEnableMPR",1)
+getAddressList().getMemoryRecordByID(229).Color=0x0008000
+{$ASM}
+
+[disable]
+{$LUA}
+writeInteger("iEnableMPR",0)
+getAddressList().getMemoryRecordByID(229).Color=0x0c08000
+{$ASM}
+
+</AssemblerScript>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Activate</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Deactivate</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>98</ID>
+          <Description>"[X] &lt;== God Mode ----------------------------------&gt; (HK: CTRL+Home / CTRL+End)"</Description>
+          <LastState/>
+          <Color>C08000</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[enable]
+define(test,LUDO)
+
+{$LUA}
+writeInteger("iEnableMUH",1)
+getAddressList().getMemoryRecordByID(98).Color=0x0008000
+{$ASM}
+
+[disable]
+{$LUA}
+writeInteger("iEnableMUH",0)
+getAddressList().getMemoryRecordByID(98).Color=0x0c08000
+{$ASM}
+
+</AssemblerScript>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Activate</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Deactivate</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>230</ID>
+          <Description>"[X] &lt;== Instant Construction -----------------------&gt; (HK: CTRL+Page Up / CTRL+Page Down)"</Description>
+          <LastState/>
+          <Color>C08000</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[enable]
+define(test,LUDO)
+
+{$LUA}
+writeInteger("iEnableMUP",1)
+getAddressList().getMemoryRecordByID(230).Color=0x0008000
+{$ASM}
+
+[disable]
+{$LUA}
+writeInteger("iEnableMUP",0)
+getAddressList().getMemoryRecordByID(230).Color=0x0c08000
+{$ASM}
+
+</AssemblerScript>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Activate</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>33</Key>
+              </Keys>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Deactivate</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>34</Key>
+              </Keys>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>228</ID>
+      <Description>"[X] &lt;== Table/Script Information"</Description>
+      <Options moHideChildren="1"/>
+      <LastState/>
+      <Color>0000FF</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>[enable]
+define(test,LUDO)
+
+{$LUA}
+getMainForm().CommentButton.doClick()
+{$ASM}
+
+[disable]
+
+</AssemblerScript>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols>
+    <SymbolEntry>
+      <Name>Recifense</Name>
+      <Address>20170216</Address>
+    </SymbolEntry>
+  </UserdefinedSymbols>
+  <Comments>===========================================
+ Game Title    : Order of War
+ Game Version  : 1.0.2423
+ Game Sponsor  : WalletGifts
+ Process Name  : oow_final_dx10.exe or oow_final_dx9.exe
+ Relevant Info : 32bits/WAR RTS
+ Script Version: 1.0 AOB
+ CE Version    : 6.6
+ Release date  : 16-Feb-2016
+ Author        : Recifense
+ History:
+ 15-Oct-2009: First Release (v1.0.1858)(dx9)(CE55)
+ 16-Feb-2016: First Release for DX10 (steam) (AOB)
+ Features:
+ - Minimum Resources  [1]
+ - God Mode           [2]
+ - Minimum Points     [3]
+ - Some Pointers
+===========================================
+[1] Minimum Resources = 6400 (human player only);;
+[2] For human player's units and buildings;
+[3] That's it (human player only);
+[4] That's it (human player only);
+[5] That's it (human player only);
+[*] The second script depends on the first script;
+===========================================
+[USAGE]
+ - Run CE 6.5 or greater;
+ - Run the GAME;
+ - Load game process "oow_final_dx10.exe" or "oow_final_dx9.exe" via CE;
+ - Load this Table;
+ - Activate the main script by clicking on its box [X];
+ - Now Activate the script of each cheat you want to use;
+ - Go back to the game and have fun.
+===========================================
+HOTKEYS:
+CTRL+Home     = Enable  Resource and GM cheats;
+CTRL+End      = Disable Resource and GM cheats;
+-----
+CTRL+PageUp   = Enable  UpgradePoints cheat;
+CTRL+PageDown = Disable UpgradePoints cheat;
+===========================================
+[WARNING]
+- This table is meant to be used in single player games.
+===========================================
+[INFO]
+Tested on Win10 64bits
+===========================================
+Cheers!
+</Comments>
+</CheatTable>

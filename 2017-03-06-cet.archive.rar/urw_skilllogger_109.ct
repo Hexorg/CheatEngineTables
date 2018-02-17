@@ -1,0 +1,174 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="14">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>7</ID>
+      <Description>"logger on hotkey"</Description>
+      <Color>80000008</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>define(WatchedAddress1,urw.exe+1C995E12) //dodge //those are the addresses of each skill
+define(WatchedAddress2,urw.exe+1C995E13) //agriculture
+define(WatchedAddress3,urw.exe+1C995E14) //shield
+define(WatchedAddress4,urw.exe+1C995E15) //dagger
+define(WatchedAddress5,urw.exe+1C995E16) //sword
+define(WatchedAddress6,urw.exe+1C995E17) //club
+define(WatchedAddress7,urw.exe+1C995E18) //axe
+define(WatchedAddress8,urw.exe+1C995E19) //flail
+define(WatchedAddress9,urw.exe+1C995E1a) //spear
+define(WatchedAddress10,urw.exe+1C995E1b) //bow
+define(WatchedAddress11,urw.exe+1C995E1c) //crossbow
+define(WatchedAddress12,urw.exe+1C995E1d) //unarmed
+define(WatchedAddress13,urw.exe+1C995E1e) //physician
+define(WatchedAddress14,urw.exe+1C995E1f) //climbing
+define(WatchedAddress15,urw.exe+1C995E20) //stealth
+define(WatchedAddress16,urw.exe+1C995E21) //cookery
+define(WatchedAddress17,urw.exe+1C995E22) //ritual
+define(WatchedAddress18,urw.exe+1C995E23) //skiing
+define(WatchedAddress19,urw.exe+1C995E24) //survival
+define(WatchedAddress20,urw.exe+1C995E25) //timbercraft
+define(WatchedAddress21,urw.exe+1C995E26) //swimming
+define(WatchedAddress22,urw.exe+1C995E27) //fishing
+define(WatchedAddress23,urw.exe+1C995E28) //weatherlore
+define(WatchedAddress24,urw.exe+1C995E29) //carpentry
+define(WatchedAddress25,urw.exe+1C995E2a) //herblore
+define(WatchedAddress26,urw.exe+1C995E2b) //hideworking
+define(WatchedAddress27,urw.exe+1C995E2c) //tracking
+define(WatchedAddress28,urw.exe+1C995E2d) //trapping
+define(WatchedAddress29,urw.exe+1C995E2e) //building
+
+[ENABLE]
+alloc(code,2048)
+//places
+label(LogAllSkills)
+//data
+label(FileName)
+label(LogFormat)
+label(LogLine)
+label(DummyVariable)
+//symbol registration
+registersymbol(LogAllSkills)
+code:
+LogAllSkills:
+  movzx eax, byte [WatchedAddress29] //one movzx+pus per WatchedAddress=skill
+  push eax
+  movzx eax, byte [WatchedAddress28]
+  push eax
+  movzx eax, byte [WatchedAddress27]
+  push eax
+  movzx eax, byte [WatchedAddress26]
+  push eax
+  movzx eax, byte [WatchedAddress25]
+  push eax
+  movzx eax, byte [WatchedAddress24]
+  push eax
+  movzx eax, byte [WatchedAddress23]
+  push eax
+  movzx eax, byte [WatchedAddress22]
+  push eax
+  movzx eax, byte [WatchedAddress21]
+  push eax
+  movzx eax, byte [WatchedAddress20]
+  push eax
+  movzx eax, byte [WatchedAddress19]
+  push eax
+  movzx eax, byte [WatchedAddress18]
+  push eax
+  movzx eax, byte [WatchedAddress17]
+  push eax
+  movzx eax, byte [WatchedAddress16]
+  push eax
+  movzx eax, byte [WatchedAddress15]
+  push eax
+  movzx eax, byte [WatchedAddress14]
+  push eax
+  movzx eax, byte [WatchedAddress13]
+  push eax
+  movzx eax, byte [WatchedAddress12]
+  push eax
+  movzx eax, byte [WatchedAddress11]
+  push eax
+  movzx eax, byte [WatchedAddress10]
+  push eax
+  movzx eax, byte [WatchedAddress9]
+  push eax
+  movzx eax, byte [WatchedAddress8]
+  push eax
+  movzx eax, byte [WatchedAddress7]
+  push eax
+  movzx eax, byte [WatchedAddress6]
+  push eax
+  movzx eax, byte [WatchedAddress5]
+  push eax
+  movzx eax, byte [WatchedAddress4]
+  push eax
+  movzx eax, byte [WatchedAddress3]
+  push eax
+  movzx eax, byte [WatchedAddress2]
+  push eax
+  movzx eax, byte [WatchedAddress1]
+  push eax
+  push LogFormat
+  push LogLine
+  call msvcrt.sprintf
+  mov ebx,eax //store the length of LogLine in ebx
+  add esp,7c //pop all sprintf's arguments ie: 7c=(number of skills to log+2)*4 in hex
+  //open SkillLog.xls
+  push 0
+  push 80 //FILE_ATTRIBUTE_NORMAL
+  push 4  //OPEN_ALWAYS
+  push 0
+  push 3 //FILE_SHARE_READ | FILE_SHARE_WRITE -&gt; allow other programs to read and write
+  push C //GENERIC_READ | GENERIC_WRITE
+  push FileName
+  call CreateFileA
+  //move to its end
+  push eax //save the file handle
+  push 2 //FILE_END
+  push 0
+  push 0
+  push eax
+  call SetFilePointer
+  mov eax,dword [esp] //restore the file handle
+  //log the new line
+  push 0
+  push DummyVariable //lpNumberOfBytesWritten
+  push ebx
+  push LogLine
+  push eax
+  call WriteFile
+  //pop eax //restore the file handle
+  //push eax
+  call CloseHandle
+retn
+
+
+DummyVariable:
+dd 0
+FileName:
+db 'SkillLog.xls',00
+LogFormat: //09='\t'=tab  There must be one "'%i',09" per skill to log.
+db '%i',09,'%i',09,'%i',09,'%i',09,'%i',09,'%i',09,'%i',09,'%i',09,'%i',09,'%i',09,'%i',09,'%i',09,'%i',09,'%i',09,'%i',09,'%i',09,'%i',09,'%i',09,'%i',09,'%i',09,'%i',09,'%i',09,'%i',09,'%i',09,'%i',09,'%i',09,'%i',09,'%i',09,'%i',0d 0a 00
+LogLine:
+
+[DISABLE]
+unregistersymbol(LogAllSkills)
+dealloc(code,2048)
+</AssemblerScript>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols/>
+  <LuaScript>errorOnLookupFailure(false) --don't show an error if we try to access an unregistered symbol (we'll handle that our way)
+--hotkey function
+function AskToLogSkills()
+
+  if (getAddress("LogAllSkills") == 0) then -- the logger wasn't activated
+    beep()
+    showMessage("You mist activate the skill logger first")
+  else
+    autoAssemble("CreateThread(LogAllSkills)")
+  end
+end
+
+createHotkey(AskToLogSkills,VK_F10)
+</LuaScript>
+</CheatTable>

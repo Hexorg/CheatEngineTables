@@ -1,0 +1,659 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="14">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>36</ID>
+      <Description>"[X] &lt;== SWKOTOR v1.0.3 Script"</Description>
+      <Options moHideChildren="1"/>
+      <Color>FF0000</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>{
+===========================================
+ Game Title    : Star Wars - Knights of the Old Republic
+ Game Version  : 1.0.3
+ Game Sponsor  : FIGHTCLUB (via internet)
+ Proces Name   : swkotor.exe
+ Script Version: 1.0
+ CE Version    : 6.2
+ Release date  : 11-Oct-2012
+ Author        : Recifense
+ History:
+ 07-Oct-12: First Release
+ Features:
+ - God Mode        [1]
+ - Minimum Credits [2]
+ - Minimum Items   [3]
+ - Unlimited Force [4]
+===========================================
+}
+
+//=========================================
+// Definitions
+define(LUDO,"swkotor.exe")
+
+//=========================================
+[ENABLE]
+//=========================================
+//LuaCall(CheckVersion())
+//=========================================
+// Check if script is compatible to this game version
+// If false the script will not be loaded
+
+assert(LUDO+000edd77,8b 80 fc 00 00 00) //_MC
+assert(LUDO+000ccf9e,89 86 dc 00 00 00) //_GM
+assert(LUDO+000cc28c,89 81 dc 00 00 00) //_MU
+assert(LUDO+0016e45d,8b 8f 8c 02 00 00) //_MI
+assert(LUDO+001a561c,66 01 8e 24 01 00 00) //_MF
+assert(LUDO+00248e81,66 ff 8f ae 00 00 00) //_MS
+assert(LUDO+00248e95,66 81 87 ae 00 00 00 fe ff) //_MS2
+
+//=========================================
+alloc(MyCode,4096,LUDO)
+//=========================================
+// Declaration section
+label(_MonCredits)
+label(_BackMC)
+label(_ExitMC)
+label(_GodMode)
+label(_GodM00)
+label(_BackGM)
+label(_ExitGM)
+label(_MonUnits)
+label(_BackMU)
+label(_ExitMU)
+label(_MonItems)
+label(_MonI00)
+label(_MonI01)
+label(_BackMI)
+label(_ExitMI)
+label(_MonForce)
+label(_BackMF)
+label(_ExitMF)
+label(_MonSkill)
+label(_BackMS)
+label(_ExitMS)
+label(_MonSkill2)
+label(_BackMS2)
+label(_ExitMS2)
+label(pHero)
+label(pHero1)
+label(pRes)
+label(iEnableGM)
+label(iEnableMC)
+label(iEnableMI)
+label(iEnableMF)
+label(iEnableMS)
+
+//=========================================
+// Registering Symbols
+registersymbol(MyCode)
+registersymbol(pHero)
+registersymbol(pHero1)
+registersymbol(pRes)
+registersymbol(iEnableGM)
+registersymbol(iEnableMC)
+registersymbol(iEnableMI)
+registersymbol(iEnableMF)
+registersymbol(iEnableMS)
+
+//=========================================
+MyCode:
+//=========================================
+// In main screeen
+_MonCredits:
+ push ebx
+
+ mov [pHero],esi
+ mov [pRes],eax
+
+ cmp dword ptr [iEnableMC],0
+ je _ExitMC                        // Jump if feature is disabled
+
+ mov ebx,#6200
+ cmp ebx,[eax+000000FC]
+ jle _ExitMC
+
+ mov [eax+000000FC],ebx
+
+_ExitMC:
+ pop ebx
+
+ mov eax,[eax+000000FC]            // Original code
+ jmp _BackMC                       // Back to main code
+
+//=========================================
+// During combat
+_GodMode:
+ pushfd
+
+ cmp dword ptr [iEnableGM],0
+ je _ExitGM                        // Jump if feature is disabled
+
+ cmp dword ptr [esi+00000a88],1
+ jne _ExitGM
+
+ cmp esi,[pHero]
+ je _GodM00
+
+ cmp esi,[pHero1]
+ je _GodM00
+
+_GodM00:
+ mov eax,#10000
+
+_ExitGM:
+ popfd
+
+ mov [esi+000000DC],eax            // Original code
+ jmp _BackGM                       // Back to main code
+
+//=========================================
+// Just for debugging
+_MonUnits:
+ pushfd
+
+ cmp ecx,[pHero]
+ je _ExitMU
+
+ mov [pHero1],ecx
+
+_ExitMU:
+ popfd
+
+ mov [ecx+000000DC],eax            // Original code
+ jmp _BackMU                       // Back to main code
+
+//=========================================
+// When using the item
+_MonItems:
+ mov ecx,[esp]
+ cmp ecx,[pHero]
+ jne _ExitMI
+
+ cmp dword ptr [iEnableMI],0
+ je _ExitMI                        // Jump if feature is disabled
+
+ mov ecx,[edi+0000025C]
+ mov [edi+00000258],ecx
+
+ cmp dword ptr [edi+0000028C],1
+ je _MonI00
+
+ mov ecx,#10
+ cmp ecx,[edi+0000028C]
+ jle _MonI00
+
+ mov [edi+0000028C],ecx
+
+_MonI00:
+ mov ecx,[edi+0c]
+ cmp ecx,#56
+ je _MonI01
+
+ cmp ecx,#60
+ jne _ExitMI
+
+_MonI01:
+ mov ecx,#62
+ cmp ecx,[edi+0000028C]
+ jle _ExitMI
+
+ mov [edi+0000028C],ecx
+
+_ExitMI:
+ mov ecx,[edi+0000028C]            // Original code (item qtty)
+ jmp _BackMI                       // Back to main code
+
+//=========================================
+// When using it
+_MonForce:
+ push ebx
+
+ cmp dword ptr [iEnableMF],0
+ je _ExitMF                        // Jump if feature is disabled
+
+ mov ebx,[esi+24]
+ test ebx,ebx
+ jz _ExitMF
+
+ cmp dword ptr [ebx+00000a88],1
+ jne _ExitMF
+
+ mov cx,#5000
+
+_ExitMF:
+ pop ebx
+
+ add [esi+00000124],cx             // Original code
+ jmp _BackMF                       // Back to main code
+
+//=========================================
+// When allocating the skill points
+_MonSkill:
+ cmp dword ptr [iEnableMS],0
+ je _ExitMS                        // Jump if feature is disabled
+
+ inc word ptr [edi+000000AE]       // Increase points
+
+_ExitMS:
+ dec word ptr [edi+000000AE]       // Original code
+ jmp _BackMS                       // Back to main code
+
+//=========================================
+// When allocating the skill points
+_MonSkill2:
+ cmp dword ptr [iEnableMS],0
+ je _ExitMS2                       // Jump if feature is disabled
+
+ add word ptr [edi+000000AE],2     // Increase points
+
+_ExitMS2:
+ add word ptr [edi+000000AE],FFFE  // Original code
+ jmp _BackMS2                      // Back to main code
+
+//=========================================
+ db '==================================&gt;'
+ db 'CE6.2 Script by Recifense 101112'
+//=========================================
+// Variables
+iEnableGM:
+ dd 0
+iEnableMC:
+ dd 0
+iEnableMI:
+ dd 0
+iEnableMF:
+ dd 0
+iEnableMS:
+ dd 0
+pHero:
+ dd 0
+pHero1:
+ dd 0
+pRes:
+ dd 0
+
+//=========================================
+// Hacking Points
+LUDO+000edd77:
+ jmp _MonCredits
+ nop
+_BackMC:
+
+LUDO+000ccf9e:
+ jmp _GodMode
+ nop
+_BackGM:
+
+LUDO+000cc28c:
+ jmp _MonUnits
+ nop
+_BackMU:
+
+//LUDO+002b6a10:
+//LUDO+0015de97:
+LUDO+0016e45d:
+ jmp _MonItems
+ nop
+_BackMI:
+
+LUDO+001a561c:
+ jmp _MonForce
+ nop
+ nop
+_BackMF:
+
+LUDO+00248e81:
+ jmp _MonSkill
+ nop
+ nop
+_BackMS:
+
+LUDO+00248e95:
+ jmp _MonSkill2
+ nop
+ nop
+ nop
+ nop
+_BackMS2:
+
+//=========================================
+// Script for Restoring Original Codes
+[DISABLE]
+LUDO+000edd77:
+// mov eax,[eax+000000FC]
+ db 8b 80 fc 00 00 00
+
+LUDO+000ccf9e:
+// mov [esi+000000DC],eax
+ db 89 86 dc 00 00 00
+
+LUDO+000cc28c:
+// mov [ecx+000000DC],eax
+ db 89 81 dc 00 00 00
+
+//LUDO+002b6a10:
+// mov edi,[ebx+0000028C]
+// db 8b bb 8c 02 00 00
+//LUDO+0015de97:
+// mov [edi+0000028C],eax
+// db 89 87 8c 02 00 00
+LUDO+0016e45d:
+// mov ecx,[edi+0000028C]
+ db 8b 8f 8c 02 00 00
+
+LUDO+001a561c:
+// add [esi+00000124],cx
+ db 66 01 8e 24 01 00 00
+
+LUDO+00248e81:
+// dec word ptr [edi+000000AE]
+ db 66 ff 8f ae 00 00 00
+
+LUDO+00248e95:
+// add word ptr [edi+000000AE],FFFE
+ db 66 81 87 ae 00 00 00 fe ff
+
+//=========================================
+// Unregistering Symbols
+unregistersymbol(MyCode)
+unregistersymbol(pHero)
+unregistersymbol(pHero1)
+unregistersymbol(pRes)
+unregistersymbol(iEnableGM)
+unregistersymbol(iEnableMC)
+unregistersymbol(iEnableMI)
+unregistersymbol(iEnableMF)
+unregistersymbol(iEnableMS)
+
+//=========================================
+dealloc(MyCode)
+//============= Scripts End ===============
+
+// ****************************************
+// NOTES
+// ****************************************
+{
+}
+
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>25</ID>
+          <Description>"Enable/Disable God Mode =&gt; (1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableGM</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>26</ID>
+          <Description>"Enable/Disable Minimum Credits =&gt; (1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMC</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>27</ID>
+          <Description>"Enable/Disable Minimum Items =&gt; (1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMI</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>45</ID>
+          <Description>"Enable/Disable Unlimited Force =&gt; (1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMF</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>46</ID>
+          <Description>"Enable/Disable Unlimited Skill Points =&gt; (1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMS</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>33</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>34</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>28</ID>
+          <Description>"=================================="</Description>
+          <ShowAsHex>1</ShowAsHex>
+          <Color>000080</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>pRes</Address>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>37</ID>
+              <Description>"Current Credits ==&gt;"</Description>
+              <Color>0000FF</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pRes</Address>
+              <Offsets>
+                <Offset>FC</Offset>
+              </Offsets>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>29</ID>
+          <Description>"========= Controlled Unit Info ========="</Description>
+          <ShowAsHex>1</ShowAsHex>
+          <Color>000080</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>pHero</Address>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>38</ID>
+              <Description>"Current XP ==&gt;"</Description>
+              <Color>0000FF</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pHero</Address>
+              <Offsets>
+                <Offset>68</Offset>
+                <Offset>A74</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>39</ID>
+              <Description>"Base Strength ==&gt;"</Description>
+              <Color>0000FF</Color>
+              <VariableType>Byte</VariableType>
+              <Address>pHero</Address>
+              <Offsets>
+                <Offset>E9</Offset>
+                <Offset>A74</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>40</ID>
+              <Description>"Base Dexterity ==&gt;"</Description>
+              <Color>0000FF</Color>
+              <VariableType>Byte</VariableType>
+              <Address>pHero</Address>
+              <Offsets>
+                <Offset>EB</Offset>
+                <Offset>A74</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>41</ID>
+              <Description>"Base Constitution ==&gt;"</Description>
+              <Color>0000FF</Color>
+              <VariableType>Byte</VariableType>
+              <Address>pHero</Address>
+              <Offsets>
+                <Offset>ED</Offset>
+                <Offset>A74</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>42</ID>
+              <Description>"Base Intelligence ==&gt;"</Description>
+              <Color>0000FF</Color>
+              <VariableType>Byte</VariableType>
+              <Address>pHero</Address>
+              <Offsets>
+                <Offset>EF</Offset>
+                <Offset>A74</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>43</ID>
+              <Description>"Base Wisdom ==&gt;"</Description>
+              <Color>0000FF</Color>
+              <VariableType>Byte</VariableType>
+              <Address>pHero</Address>
+              <Offsets>
+                <Offset>F1</Offset>
+                <Offset>A74</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>44</ID>
+              <Description>"Base Charisma ==&gt;"</Description>
+              <Color>0000FF</Color>
+              <VariableType>Byte</VariableType>
+              <Address>pHero</Address>
+              <Offsets>
+                <Offset>F3</Offset>
+                <Offset>A74</Offset>
+              </Offsets>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols/>
+  <Comments>===========================================
+ Game Title    : Star Wars - Knights of the Old Republic
+ Game Version  : 1.0.3
+ Game Sponsor  : FIGHTCLUB (via internet)
+ Proces Name   : swkotor.exe
+ Script Version: 1.0
+ CE Version    : 6.2
+ Release date  : 07-Oct-2012
+ Author        : Recifense
+ History:
+ 07-Oct-12: First Release
+ Features:
+ - God Mode        [1]
+ - Minimum Credits [2]
+ - Minimum Items   [3]
+ - Unlimited Force [4]
+ - Unlimited Skill Points [5]
+===========================================
+[1] For player and companions;
+[2] Minimum Value = 6200
+[3] Items with quantity greater the 1, will be set to a minimum value (10) and special items will have a minimum of 62. The items that have charges will be set to maximum. 
+[4] Force will not decrease
+[5] Enable it, then, allocate and deallocate skill points. Note that the available points will increase. When you have accumulated enough points, desable the cheat and finally allocate the points.
+===========================================
+HOTKEYS:
+CTRL+Home     = Enable  the cheats;
+CTRL+End      = Disable the cheats;
+CTRL+PageUP   = Enable  the Skill Points cheat;
+CTRL+PageDown = Disable the Skill Points cheat;
+===========================================
+Cheers!
+</Comments>
+</CheatTable>

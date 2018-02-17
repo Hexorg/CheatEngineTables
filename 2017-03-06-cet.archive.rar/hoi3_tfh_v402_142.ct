@@ -1,0 +1,1141 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="14">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>59</ID>
+      <Description>"[X] &lt;== Hearts of Iron III - Their Finest Hour v4.02 Script v3.0"</Description>
+      <Options moHideChildren="1"/>
+      <Color>FF0000</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>{
+===========================================
+ Game Title    : Hearts of Iron III - Their Finest Hour
+ Game Version  : 4.02 (ALAV)
+ Process Name  : hoi3_tfh.exe
+ Script Version: 3.0
+ CE Version    : 6.2
+ Release date  : 07-Nov-2012 (adapted from version 4.01)
+ Author        : Recifense
+ Features:
+ - Minimum Resources (500000)
+ - Production in 1 day
+ - Research in 1 day
+ - Province Improvement (resource production) (new)
+ - Province Quick Ownership (for just conquered province)
+ - God Mode
+ - Weak Foe (Quick Battle)
+ - Unit Improvement
+    - Max Strength
+    - Max Organization
+    - 100% Food
+    - 100% Fuel
+    - Morale (99%)
+    - Speed (90km/h)
+    - Toughness
+    - Soft Attack
+    - Hard Attack
+    - Piercing Attack (new)
+    - Hull
+    - Armor (new)
+ - Troop movement (1 hour to adjacent province)
+===========================================
+}
+
+//=========================================
+// Definitions
+define(LUDO,"hoi3_tfh.exe")
+
+//=========================================
+[ENABLE]
+//=========================================
+//LuaCall(CheckVersion())
+//=========================================
+// Check if script is compatible to this game version
+// If false the script will not be loaded
+
+assert(LUDO+002c9df7,81 7c b8 08 18 dd f5 05) // _MR
+assert(LUDO+0011a1bd,8b 43 34 39 43 38)       // _MProd
+assert(LUDO+00132f60,8b 86 28 02 00 00 8b 4c) // _MRsh
+assert(LUDO+000e0062,8b 91 10 03 00 00 8b 43) // _MC
+assert(LUDO+001abae4,29 7e 5c 29 5e 60 8b 06) // _GM (NHP)
+assert(LUDO+001ab70a,8b 83 b0 00 00 00 33 d2) // _MU
+assert(LUDO+001cab89,8b 4c 24 14 39 01 0f 8c) // _MM
+
+//=========================================
+alloc(MyCode,4048,LUDO)
+//=========================================
+// Declaration section
+label(_MonResource)
+label(_BackMRo)
+label(_ExitMRo)
+label(_MonProd)
+label(_BackMP)
+label(_ExitMP)
+label(_MonResearch)
+label(_BackMRe)
+label(_ExitMRe)
+label(_MonCity)
+label(_BackMC)
+label(_ExitMC)
+label(_MonC0)
+label(_MonC00)
+label(_MonC01)
+label(_MonC02)
+label(_MonC03)
+label(_MonC04)
+label(_GodMode)
+label(_BackGM)
+label(_ExitGM)
+label(_GodM0)
+label(_MonUnits)
+label(_BackMU)
+label(_ExitMU)
+label(_MonU0)
+label(_MonU1)
+label(_MonU2)
+label(_MonU3)
+label(_MonU30)
+label(_MonU4)
+label(_MonU5)
+label(_MonU6)
+label(_MonMovement)
+label(_BackMM)
+label(_ExitMM)
+label(iEnableMRo)
+label(iEnableMP)
+label(iEnableMRe)
+label(iEnableGM)
+label(iEnableWF)
+label(iEnableQO)
+label(iEnableMU)
+label(iEnableMM)
+label(iEnableIP)
+label(iEnableRR)
+label(pReso)
+label(pProd)
+label(pRese)
+label(pCity)
+label(pUnit)
+label(iPlayerID)
+label(aLastRot)
+
+//=========================================
+// Registering Symbols
+registersymbol(MyCode)
+registersymbol(pReso)
+registersymbol(pProd)
+registersymbol(pRese)
+registersymbol(pCity)
+registersymbol(pUnit)
+registersymbol(iEnableMRo)
+registersymbol(iEnableMP)
+registersymbol(iEnableMRe)
+registersymbol(iEnableGM)
+registersymbol(iEnableWF)
+registersymbol(iEnableQO)
+registersymbol(iEnableMU)
+registersymbol(iEnableMM)
+registersymbol(iEnableIP)
+registersymbol(iEnableRR)
+registersymbol(iPlayerID)
+registersymbol(aLastRot)
+
+//=========================================
+MyCode:
+//========================================= 402
+// Activated on strategic map
+_MonResource:
+ mov dword ptr [aLastRot],'Reso'
+
+ push ecx
+ mov ecx,[LUDO+168557C]       // Get ptr to Player Structure (OK)
+ mov ecx,[ecx+00002a8c]       // Get Player ID
+ mov [iPlayerID],ecx          // Save ID for further use
+ pop ecx
+
+ mov [pReso],eax              // Save ptr for debugging
+
+ cmp dword ptr [iEnableMRo],0
+ je _ExitMRo                  // Jump if feature is disabled
+
+ cmp [eax+edi*4+08],#50000000 // current value &gt;= 50000?
+ jge _ExitMRo                 // Jump if true
+
+ mov [eax+edi*4+08],#50000000 // current value = 50000
+
+_ExitMRo:
+ cmp [eax+edi*4+08],05F5DD18  // Original code (99999000)
+ jmp _BackMRo                 // Back to main code
+
+//========================================= 402
+// Activated when day changes
+_MonProd:
+ mov dword ptr [aLastRot],'Prod'
+
+ cmp dword ptr [iEnableMP],0
+ je _ExitMP                   // Jump if feature is disabled
+
+ mov eax,[ebx+4c]
+ cmp eax,[iPlayerID]
+ jne _ExitMP
+
+ mov [pProd],ebx              // Save ptr for debugging
+
+ mov eax,[ebx+34]             // Get total production time
+ mov [ebx+38],eax             // Update current production time
+
+_ExitMP:
+ mov eax,[ebx+34]             // Original code
+ cmp [ebx+38],eax             // Original code
+ jmp _BackMP                  // Back to main code
+
+//========================================= 402
+// Activated when day changes
+_MonResearch:
+ mov dword ptr [aLastRot],'Rese'
+
+ cmp dword ptr [iEnableMRe],0
+ je _ExitMRe                  // Jump if feature is disabled
+
+ mov eax,[esi+00000248]       // Get pOwner
+ mov eax,[eax+00000498]       // Get iID
+ cmp eax,[iPlayerID]
+ jne _ExitMRe
+
+ mov [pRese],esi              // Save ptr for debugging
+
+ mov ecx,[esi+00000228]       // Get ptr to array of level (ints)
+ mov ecx,[ecx+edi*4]          // Get current Level
+
+ mov edx,00008000
+ shl edx,cl
+
+ mov eax,[esi+00000228]       // Original code
+ mov [eax+ebx],edx            // needed value
+
+_ExitMRe:
+ mov eax,[esi+00000228]       // Original code
+ jmp _BackMRe                 // Back to main code
+
+//========================================= 402
+// Activated when a province is selected
+_MonCity:
+ mov dword ptr [aLastRot],'City'
+
+ mov [pCity],ecx              // Save ptr for debugging
+
+ mov eax,[ecx+00000330]       // Get City Owner ID (ok)
+ cmp eax,[iPlayerID]          // Player's city?
+ jne _MonC0                   // Jump if false
+
+ cmp dword ptr [iEnableIP],0
+ je _MonC03                   // Jump if feature is disabled
+
+ mov eax,#50000
+
+ cmp dword ptr [ecx+0000027c],0 // Crude Oil
+ jz _MonC00
+
+ cmp eax,[ecx+0000027c]
+ jle _MonC00
+
+ mov [ecx+0000027c],eax
+ mov [ecx+000002a0],eax
+
+_MonC00:
+ cmp dword ptr [ecx+00000280],0 // Metal
+ jz _MonC01
+
+ cmp eax,[ecx+00000280]
+ jle _MonC01
+
+ mov [ecx+00000280],eax
+ mov [ecx+000002a4],eax
+
+_MonC01:
+ cmp dword ptr [ecx+00000284],0 // Energy
+ jz _MonC02
+
+ cmp eax,[ecx+00000284]
+ jle _MonC02
+
+ mov [ecx+00000284],eax
+ mov [ecx+000002a8],eax
+
+_MonC02:
+ cmp dword ptr [ecx+00000288],0 // Rare Material
+ jz _MonC03
+
+ cmp eax,[ecx+00000288]
+ jle _MonC03
+
+ mov [ecx+00000288],eax
+ mov [ecx+000002ac],eax
+
+_MonC03:
+ cmp dword ptr [iEnableRR],0
+ je _MonC04                   // Jump if feature is disabled
+
+ mov eax,[ecx+00000114]
+ test eax,eax
+ jz _MonC04
+
+ mov dword ptr [eax],0        // Revolt Risk
+ mov dword ptr [eax+08],0     // Revolt Risk
+
+_MonC04:
+ jmp _ExitMC
+
+_MonC0:
+ cmp dword ptr [iEnableQO],0
+ je _ExitMC                   // Jump if feature is disabled
+
+ mov eax,[ecx+00000338]       // Get City Invader ID
+ cmp eax,[iPlayerID]          // Player's Invasion?
+ jne _ExitMC                  // Jump if false
+
+ mov [ecx+00000330],eax       // Update City owner
+ mov eax,[ecx+00000334]       // Get City Invader ID
+ mov [ecx+0000032c],eax       // Update City owner
+
+_ExitMC:
+ mov edx,[ecx+00000310]       // Original code (get pConstX)
+ jmp _BackMC                  // Back to main code
+
+//========================================= 402
+// During a battle
+_GodMode:
+ mov dword ptr [aLastRot],'GodM'
+
+ mov [pUnit],esi              // Save ptr for debugging
+
+ mov eax,[esi+00000098]       // Get Unit Owner ID
+ cmp eax,[iPlayerID]          // Player´s Unit?
+ je _GodM0                    // Jump if false
+
+ cmp dword ptr [iEnableWF],0
+ je _ExitGM                   // Jump if feature is disabled
+
+ mov edi,[esi+5c]             // Strength value to decrease = 0
+ mov ebx,[esi+60]             // Organization value to decrease = 0
+ jmp _ExitGM                  // Jump if false
+
+_GodM0:
+ cmp dword ptr [iEnableGM],0
+ je _ExitGM                   // Jump if feature is disabled
+
+ xor eax,eax
+ mov edi,eax                  // Strength value to decrease = 0
+ mov ebx,eax                  // Organization value to decrease = 0
+
+_ExitGM:
+ sub [esi+5C],edi             // Original code
+ sub [esi+60],ebx             // Original code
+ jmp _BackGM                  // Back to main code
+
+//========================================= 402
+// When selected
+_MonUnits:
+ mov dword ptr [aLastRot],'Unit'
+
+ push eax                     // Save context
+ push ebx
+ push ecx
+ push esi
+ push edi
+
+ mov edi,ebx
+
+ cmp dword ptr [iEnableMU],0
+ je _ExitMU                   // Jump if feature is disabled
+
+ mov ecx,[edi+000000B0]       // Get ptr to Army
+ test ecx,ecx
+ jz _ExitMU                   // Jump if null pointer
+
+ mov eax,[edi+00000098]       // Get Unit Owner ID
+ cmp eax,[iPlayerID]          // Player's Unit?
+ jne _ExitMU                  // Jump if false
+
+ mov esi,[ecx+000000c8]       // Get pArmyInfo **c0
+ test esi,esi
+ jz _ExitMU                   // Jump if null pointer
+
+ mov ebx,[edi+00000058]       // Get pTroopInfo
+ test ebx,ebx
+ jz _ExitMU                   // Jump if null pointer
+
+// EBX = TroopInfo, ECX = Army, EDI = Army_Troop, ESI = ArmyInfo
+//--&gt; Strength and Organization
+ mov eax,[ebx+000000ec]       // Get Max Strength **dc
+ mov [edi+0000005c],eax       // Make Currrent troop strength = max
+ mov eax,[ebx+000000f0]       // Get Max Organization **e0
+ mov [edi+00000060],eax       // Make Currrent troop Organization = max
+//--&gt; Food and Fuel
+ mov dword ptr [ecx+000000fc],#1000 // Food = 100% **f8
+ mov dword ptr [ecx+00000100],#1000 // Fuel = 100% **fc
+ mov dword ptr [ecx+000000e0],00    // Hours2NextAttack = 0 *dc
+//--&gt; Morale
+ mov eax,#990
+ mov [ebx+000000f4],eax       // Troop Morale = 99% **e4
+ mov [esi+000000f4],eax       // Army  Morale = 99% **e4
+//--&gt; Speed
+ mov eax,#90000
+ cmp eax,[esi+00000108]       // Current army speed &gt;= 90? **f4
+ jge _MonU0
+
+ mov eax,[esi+00000108]       // Get Army Speed **f4
+
+_MonU0:
+ cmp eax,[ebx+00000108]       // Current troop speed &gt;= 90 or Army? **f4
+ jge _MonU1
+
+ mov eax,[ebx+00000108]       // Get Troop Speed **f4
+
+_MonU1:
+ mov [ebx+00000108],eax       // Update Troop Speed **f4
+ mov [esi+00000108],eax       // Update Army  Speed **f4
+//--&gt; Toughness
+ cmp dword ptr [ebx+00000108],00 //**f4
+ je _MonU2                    // Jump if toughness is not applicable
+
+ mov eax,#10000
+ cmp eax,[ebx+00000120]       // Troop Toughness &gt;= 10? **10c
+ jle _MonU2                   // Jump if true
+
+ sub eax,[ebx+00000120]       // Make eax = 10 - current value **10c
+ add [ebx+00000120],eax       // Make current troop value = 10 **10c
+ add [esi+00000120],eax       // Update army toughness **10c
+//--&gt; Soft Attack
+_MonU2:
+ cmp dword ptr [ebx+00000134],00 //**11c
+ je _MonU3                    // Jump if Soft Attack is not applicable
+
+ mov eax,#10000
+ cmp eax,[ebx+00000134]       // Troop Soft Attack &gt;= 10? **11c
+ jle _MonU3                   // Jump if true
+
+ sub eax,[ebx+00000134]       // Make eax = 10 - current value **11c
+ add [ebx+00000134],eax       // Make current troop value = 10 **11c
+ add [esi+00000134],eax       // Update army Soft Attack  **11c
+//--&gt; Hard Attack
+_MonU3:
+ cmp dword ptr [ebx+00000138],00 //**120
+ je _MonU30                   // Jump if Hard Attack is not applicable
+
+ mov eax,#10000
+ cmp eax,[ebx+00000138]       // Troop Hard Attack &gt;= 10? **120
+ jle _MonU30                   // Jump if true
+
+ sub eax,[ebx+00000138]       // Make eax = 10 - current value **120
+ add [ebx+00000138],eax       // Make current troop value = 10 **120
+ add [esi+00000138],eax       // Update army Hard Attack   **120
+//--&gt; Piercing Attack (new)
+_MonU30:
+ cmp dword ptr [ebx+0000013C],00
+ je _MonU4                    // Jump if Hard Attack is not applicable
+
+ mov eax,#10000
+ cmp eax,[ebx+0000013C]       // Troop Piercing Attack &gt;= 10?
+ jle _MonU4                   // Jump if true
+
+ sub eax,[ebx+0000013C]       // Make eax = 10 - current value
+ add [ebx+0000013C],eax       // Make current troop value = 10
+ add [esi+0000013C],eax       // Update army Piercing Attack
+//--&gt; Hull
+_MonU4:
+ cmp dword ptr [ebx+00000178],00 //**15c
+ je _MonU5                    // Jump if Hull is not applicable
+
+ mov eax,#10000
+ cmp eax,[ebx+00000178]       // Troop Hull &gt;= 10? **15c
+ jle _MonU5                   // Jump if true
+
+ sub eax,[ebx+00000178]       // Make eax = 10 - current value **15c
+ add [ebx+00000178],eax       // Make current troop value = 10 **15c
+ add [esi+00000178],eax       // Update army Hull **15c
+//--&gt; Armor (new)
+_MonU5:
+ cmp dword ptr [ebx+0000012c],00
+ je _MonU6                    // Jump if Hull is not applicable
+
+ mov eax,#10000
+ cmp eax,[ebx+0000012c]       // Troop Hull &gt;= 10?
+ jle _MonU6                   // Jump if true
+
+ sub eax,[ebx+0000012c]       // Make eax = 10 - current value
+ add [ebx+0000012c],eax       // Make current troop value = 10
+ add [esi+0000012c],eax       // Update army Hull
+
+_MonU6:
+_ExitMU:
+ pop edi                      // Recover context
+ pop esi
+ pop ecx
+ pop ebx
+ pop eax
+
+ mov eax,[ebx+000000B0]       // Original code
+ jmp _BackMU                  // Back to main code
+
+//========================================= 402
+// Movement Progress
+// EBX = pArmy
+_MonMovement:
+ mov dword ptr [aLastRot],'Move'
+
+ test ebx,ebx
+ jz _ExitMM
+
+ cmp dword ptr [iEnableMM],0
+ je _ExitMM                   // Jump if feature is disabled
+
+ mov ecx,[ebx+00000128]       // Get Unit Owner ID **124
+ cmp ecx,[iPlayerID]          // Player's Unit?
+ jne _ExitMM                  // Jump if false
+
+ mov [ebx+0000014c],eax       // Update Movement Progress **148
+
+_ExitMM:
+ mov ecx,[esp+14]             // Original code
+ cmp [ecx],eax                // Original code
+ jmp _BackMM                  // Back to main code
+
+//=========================================
+ db '=============================&gt;'
+ db 'CE6.2 Script by Recifense 110712'
+//=========================================
+// Variables
+iEnableMRo:
+ dd 0
+iEnableMP:
+ dd 0
+iEnableMRe:
+ dd 0
+iEnableGM:
+ dd 0
+iEnableWF:
+ dd 0
+iEnableQO:
+ dd 0
+iEnableMU:
+ dd 0
+iEnableMM:
+ dd 0
+iEnableIP:
+ dd 0
+iEnableRR:
+ dd 0
+pReso:
+ dd 0
+pProd:
+ dd 0
+pRese:
+ dd 0
+pCity:
+ dd 0
+pUnit:
+ dd 0
+iPlayerID:
+ dd 55555555
+aLastRot:
+ dd 'last'
+
+//=========================================
+// Hacking Points
+//LUDO+002c91a7:
+LUDO+002c9df7:
+ jmp _MonResource
+ nop
+ nop
+ nop
+_BackMRo:
+
+//LUDO+0011984d:
+LUDO+0011a1bd:
+ jmp _MonProd
+ nop
+_BackMP:
+
+//LUDO+00131f30:
+LUDO+00132f60:
+ jmp _MonResearch
+ nop
+_BackMRe:
+
+//LUDO+000dc042:
+LUDO+000e0062:
+ jmp _MonCity
+ nop
+_BackMC:
+
+//LUDO+001acbf4:
+LUDO+001abae4:
+ jmp _GodMode
+ nop
+_BackGM:
+
+//LUDO+001ac86a:
+LUDO+001ab70a:
+ jmp _MonUnits
+ nop
+_BackMU:
+
+//LUDO+001cb08f:
+LUDO+001cab89:
+ jmp _MonMovement
+ nop
+_BackMM:
+
+//=========================================
+// Script for Restoring Original Codes
+[DISABLE]
+//LUDO+002c91a7:
+LUDO+002c9df7:
+// cmp [eax+edi*4+08],05F5DD18
+ db 81 7c b8 08 18 dd f5 05
+
+//LUDO+0011984d:
+LUDO+0011a1bd:
+// mov eax,[ebx+34]
+// cmp [ebx+38],eax
+ db 8b 43 34 39 43 38
+
+//LUDO+00131f30:
+LUDO+00132f60:
+// mov eax,[esi+00000228]
+ db 8b 86 28 02 00 00
+
+//LUDO+000dc042:
+LUDO+000e0062:
+// mov edx,[ecx+00000310]
+ db 8b 91 10 03 00 00
+
+//LUDO+001acbf4:
+LUDO+001abae4:
+// sub [esi+5C],edi
+// sub [esi+60],ebx
+ db 29 7e 5c 29 5e 60
+
+//LUDO+001ac86a:
+LUDO+001ab70a:
+// mov eax,[ebx+000000B0]
+ db 8b 83 b0 00 00 00
+
+//LUDO+001cb08f:
+LUDO+001cab89:
+// mov ecx,[esp+14]
+// cmp [ecx],eax
+ db 8b 4c 24 14 39 01
+
+//=========================================
+// Unregistering Symbols
+unregistersymbol(MyCode)
+unregistersymbol(pReso)
+unregistersymbol(pProd)
+unregistersymbol(pRese)
+unregistersymbol(pCity)
+unregistersymbol(pUnit)
+unregistersymbol(iEnableMRo)
+unregistersymbol(iEnableMP)
+unregistersymbol(iEnableMRe)
+unregistersymbol(iEnableGM)
+unregistersymbol(iEnableWF)
+unregistersymbol(iEnableQO)
+unregistersymbol(iEnableMU)
+unregistersymbol(iEnableMM)
+unregistersymbol(iEnableIP)
+unregistersymbol(iEnableRR)
+unregistersymbol(iPlayerID)
+unregistersymbol(aLastRot)
+
+//=========================================
+dealloc(MyCode)
+//============= Scripts End ===============
+
+// ****************************************
+// NOTES
+// ****************************************
+{
+}
+
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>60</ID>
+          <Description>"Enable/Disable Minimum Resources =&gt; (1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMRo</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>61</ID>
+          <Description>"Enable/Disable Production in 1 Day =&gt; (1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMP</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>62</ID>
+          <Description>"Enable/Disable Research in 1 Day =&gt; (1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMRe</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>64</ID>
+          <Description>"Enable/Disable God Mode =&gt; (1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableGM</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>65</ID>
+          <Description>"Enable/Disable Weak Foe =&gt; (1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableWF</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>45</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>67</ID>
+          <Description>"Enable/Disable Instant Ownership =&gt; (1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableQO</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>33</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>76</ID>
+          <Description>"Enable/Disable Upgrade Selected Units =&gt; (1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMU</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>68</ID>
+          <Description>"Enable/Disable Fast Movement =&gt; (1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMM</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>69</ID>
+          <Description>"Enable/Disable Minimum Item Production =&gt; (1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableIP</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>70</ID>
+          <Description>"Enable/Disable No Revolt Risk =&gt; (1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableRR</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>72</ID>
+          <Description>"======== Selected Province Information ======== "</Description>
+          <ShowAsHex>1</ShowAsHex>
+          <Color>404080</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>pCity</Address>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>77</ID>
+              <Description>"Supplies (x1000) ==&gt;"</Description>
+              <Color>0000FF</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pCity</Address>
+              <Offsets>
+                <Offset>164</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>78</ID>
+              <Description>"Fuel (x1000) ==&gt;"</Description>
+              <Color>0000FF</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pCity</Address>
+              <Offsets>
+                <Offset>168</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>87</ID>
+              <Description>"Manpower (x1000) ==&gt;"</Description>
+              <Color>0000FF</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pCity</Address>
+              <Offsets>
+                <Offset>320</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>88</ID>
+              <Description>"Leadership (x1000) ==&gt;"</Description>
+              <Color>0000FF</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pCity</Address>
+              <Offsets>
+                <Offset>324</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>79</ID>
+              <Description>"Crude Oil (1) (x1000) ==&gt;"</Description>
+              <Color>0000FF</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pCity</Address>
+              <Offsets>
+                <Offset>27C</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>80</ID>
+              <Description>"Crude Oil (2) (x1000) ==&gt;"</Description>
+              <Color>0000FF</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pCity</Address>
+              <Offsets>
+                <Offset>2A0</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>81</ID>
+              <Description>"Metal (1) (x1000) ==&gt;"</Description>
+              <Color>0000FF</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pCity</Address>
+              <Offsets>
+                <Offset>280</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>82</ID>
+              <Description>"Metal (2) (x1000) ==&gt;"</Description>
+              <Color>0000FF</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pCity</Address>
+              <Offsets>
+                <Offset>2A4</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>83</ID>
+              <Description>"Energy (1) (x1000) ==&gt;"</Description>
+              <Color>0000FF</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pCity</Address>
+              <Offsets>
+                <Offset>284</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>84</ID>
+              <Description>"Energy (2) (x1000) ==&gt;"</Description>
+              <Color>0000FF</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pCity</Address>
+              <Offsets>
+                <Offset>2A8</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>85</ID>
+              <Description>"Rare Material (1) (x1000) ==&gt;"</Description>
+              <Color>0000FF</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pCity</Address>
+              <Offsets>
+                <Offset>288</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>86</ID>
+              <Description>"Rare Material (2) (x1000) ==&gt;"</Description>
+              <Color>0000FF</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pCity</Address>
+              <Offsets>
+                <Offset>2AC</Offset>
+              </Offsets>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols>
+    <SymbolEntry>
+      <Name>iMinRP</Name>
+      <Address>0EF304D7</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>iEnableMC</Name>
+      <Address>0132050C</Address>
+    </SymbolEntry>
+  </UserdefinedSymbols>
+  <Comments>===========================================
+ Game Title    : Hearts of Iron III - Their Finest Hour
+ Game Version  : 4.02 (ALAV)
+ Process Name  : hoi3_tfh.exe
+ Script Version: 3.0
+ CE Version    : 6.2
+ Release date  : 07-Nov-2012 (adapted from version 4.01)
+ Author        : Recifense
+ Features:
+ - Minimum Resources (500000)
+ - Production in 1 day
+ - Research in 1 day
+ - Province Improvement (resource production) (new)
+ - Province Quick Ownership (for just conquered province)
+ - God Mode
+ - Weak Foe (Quick Battle)
+ - Unit Improvement
+    - Max Strength
+    - Max Organization
+    - 100% Food
+    - 100% Fuel
+    - Morale (99%)
+    - Speed (90km/h)
+    - Toughness
+    - Soft Attack
+    - Hard Attack
+    - Piercing Attack (new)
+    - Hull
+    - Armor (new)
+ - Troop movement (1 hour to adjacent province)
+ - Useful Pointer
+===========================================
+1)Enable/Disable Minimum Resources =&gt; (1/0):
+=&gt; All Resources Minimum Value = 50000;
+2)Enable/Disable Production in 1 Day =&gt; (1/0):
+=&gt; Unit production and some constructions will take 1 day only;
+3)Enable/Disable Research in 1 Day =&gt; (1/0):
+=&gt; The possible projects will be researched in 1 day only;
+4)Enable/Disable God Mode =&gt; (1/0):
+=&gt; Your units will not die or be destroyed during combat;
+5)Enable/Disable Weak Foe =&gt; (1/0):
+=&gt; Units that are not yours will quickly die or be destroyed;
+[NOTE] This will also affect your allies' units. So take care.
+6)Enable/Disable Instant Ownership =&gt; (1/0):
+=&gt; The selected conquered province will change ownership to you;
+7)Enable/Disable Upgrade Selected Units =&gt; (1/0):
+=&gt; The selected units will be upgraded to a minimum value. See list above;
+8)Enable/Disable Fast Movement =&gt; (1/0):
+=&gt; Your units will move to the adjacent province in 1 hour;
+9)Enable/Disable Minimum Item Production =&gt; (1/0):
+=&gt; The item production of a selected province will be set to a minimum value;
+a)Enable/Disable No Revolt Risk =&gt; (1/0):
+=&gt; The selected province revolt risk will be nullified;
+======== Selected Province Information ========
+- You can change those values. Just remember that each 1000 (in memory) = 1 (displayed), so 12350 = 12.35;
+===========================================
+HOTKEYS:
+CTRL+Home   = enables  all cheats (except Weak Foe and Instant Ownership);
+CTRL+End    = disables all cheats;
+CTRL+Insert = enables  Weak Foe;
+CTRL+PageUp = enables  Instant Ownership
+===========================================
+Cheers!
+</Comments>
+</CheatTable>

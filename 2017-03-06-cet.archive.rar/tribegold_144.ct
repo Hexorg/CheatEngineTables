@@ -1,0 +1,193 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="19">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>1</ID>
+      <Description>"Generate Pseudorandom Numbers"</Description>
+      <Options moHideChildren="1"/>
+      <LastState/>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>{ Author: ParkourPenguin
+  Date: 27 / 03 / 2016
+
+  This script generates a pseudorandom number between [lowerBound] and
+  [upperBound] (inclusive) every [interval] ms. Stored in myRandomNumber.
+
+  Please note that msvcrt.rand is only guaranteed to return a number from 0
+  to 32767.
+}
+[ENABLE]
+alloc(newmem,2048)
+label(asTimeGoesBy)
+label(lowerBound)
+label(upperBound)
+//label(interval)
+label(myRandomNumber)
+//label(shouldExit)
+label(begin)
+label(check)    //make sure the 4 random numbers are only generated once when this code is triggered 10 times
+label(freeMemory)
+label(getRandomNumber)
+label(setCheckToZero)
+
+registersymbol(lowerBound)
+registersymbol(upperBound)
+//registersymbol(interval)
+registersymbol(myRandomNumber)
+//registersymbol(shouldExit)
+registersymbol(check)
+
+createthread(newmem)
+
+newmem:
+  cmp [check],0            //if [check] != 0, do not generate random numbers, only do the comparison
+  je getRandomNumber
+  jmp compare
+
+getRandomNumber:
+  push eax      //save EAX
+  call kernel32.GetTickCount
+  push eax       //push EAX for "srand"
+  push ecx       //save ECX
+  push esi       //save ESI before adding value to the arry
+  xor esi,esi    //use ESI to caculate the offset in the array
+  call msvcrt.srand
+  add esp,4
+
+asTimeGoesBy:
+  call msvcrt.rand
+  xor edx,edx
+  mov ebx,[lowerBound]
+  mov ecx,[upperBound]
+  cmp ecx,ebx
+  cmovl ecx,ebx
+  inc ecx
+  sub ecx,ebx
+  idiv ecx
+  add edx,ebx
+  xor ecx,ecx   //set ECX to 0 for the next random number
+
+
+arrayRelated: //set an array and move random numbers into it
+  //push eax
+  mov eax,[myRandomNumber]  //setting up the array? I learn from somewhere, which I forgot the source
+begin:
+  mov [eax+esi*4],edx //move the value into the array. Is it *4 or *2? It's only one byte of value.
+  inc esi             //increase the index
+  cmp esi,#4          //max size of array
+  jl asTimeGoesBy     //get the next random number until there are 4 of them
+  inc [check]         //increase [check] by 1, so no more random number.
+  jmp compare         //Four random numbers have been generated, go to comparison
+
+compare:
+  xor edx,edx          // set EDX to 0
+  mov eax,[myRandomNumber]
+  xor esi,esi              //set ESI to 0
+  mov edx,[eax+esi*4]      //move the first value in the array into edx
+  cmp byte ptr [ebx+04],dl //compare the first value in the array with the ID of the tribes
+  je setGoldToZero         //if the random number equals the ID of the tribe then make the modification
+  inc esi                  //increase the index of the array
+  mov edx,[eax+esi*4]      //move the second value into edx
+  cmp byte ptr [ebx+04],dl //compare the second value in the array with the ID of the tribes
+  je setGoldToZero
+  inc esi                  //increase the index of the array
+  mov edx,[eax+esi*4]       //move the third value into edx
+  cmp byte ptr [ebx+04],dl //compare it with the ID of the tribes
+  je setGoldToZero
+  inc esi                  //increase the index of the array
+  mov edx,[eax+esi*4]      //move the fourth value into edx
+  cmp byte ptr [ebx+04],dl //compare it with the ID of the tribes
+  je setGoldToZero
+  jmp originalcode         //if not equal, then goes to the original code
+
+
+setGoldToZero:
+  mov [ebx+4C],0
+  mov esi,[esi]
+  cmp [check],10          //if the code has been executed 10 times, set [check] to 0.
+  je setCheckToZero
+
+
+originalcode:
+  mov [ebx+4C],eax
+  mov esi,[esi]
+  cmp [check],10
+  je setCheckToZero
+
+setCheckToZero:
+  mov [check],00
+
+freeMemory:
+  pop eax
+  push 8000
+  push 0
+  push newmem
+  push eax
+  jmp kernel32.VirtualFree
+  db CC CC CC CC CC CC
+
+exit:
+  jmp returnhere
+
+lowerBound:
+  dd #10
+upperBound:
+  dd #20
+//interval:
+  //dd #1000
+myRandomNumber:  //creating an array
+  dd 0 0 0 0
+shouldExit:
+  dd 0
+check:
+  db 0
+
+"San13_tc.exe"+11A138:
+jmp newmem
+returnhere:
+
+[DISABLE]
+dealloc(newmem)
+"San13_tc.exe"+11A138:
+mov [ebx+4C],eax
+mov esi,[esi]
+unregistersymbol(lowerBound)
+unregistersymbol(upperBound)
+//unregistersymbol(interval)
+unregistersymbol(myRandomNumber)
+//unregistersymbol(shouldExit)
+unregistersymbol(check)
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>2</ID>
+          <Description>"Lower Bound"</Description>
+          <ShowAsSigned>1</ShowAsSigned>
+          <VariableType>4 Bytes</VariableType>
+          <Address>lowerBound</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>3</ID>
+          <Description>"Upper Bound"</Description>
+          <ShowAsSigned>1</ShowAsSigned>
+          <VariableType>4 Bytes</VariableType>
+          <Address>upperBound</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>4</ID>
+          <Description>"Update Interval"</Description>
+          <VariableType>4 Bytes</VariableType>
+          <Address>interval</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>5</ID>
+          <Description>"Pseudorandom Number"</Description>
+          <ShowAsSigned>1</ShowAsSigned>
+          <VariableType>4 Bytes</VariableType>
+          <Address>myRandomNumber</Address>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols/>
+</CheatTable>

@@ -1,0 +1,1701 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="16">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>0</ID>
+      <Description>"[X] &lt;== SoTS 2 EoF v2.0.25092.5 Savings Script 1.6"</Description>
+      <Options moHideChildren="1"/>
+      <Color>FF0000</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>{
+===========================================
+ Game Title    : Sword of the Stars II - End of Flesh (32 bits)
+ Game Version  : 2.0.25092.5
+ Game Sponsor  : MySelf (steam)
+ Script Version: 1.6
+ CE Version    : 6.2
+ Release date  : 09-Jan-2014 (Considering Player Slot)
+ Author        : Recifense
+ Feature(s):
+ - Minimum Savings
+ - Quick Research
+===========================================
+}
+
+define(FPST,mars.exe+0001fd07)
+define(JFPS,mars.exe+000201e1)
+
+[ENABLE]
+//=========================================
+// Check if script is compatible to this game version
+// If false the script will not be loaded
+
+assert(sqlite3.dll+00026eb5,b8 01 00 00 00) //nhp
+assert(FPST,89 43 04 e9 ?? ?? ?? ?? 8b f5 e8 ?? ?? ?? ?? 85 c0 0f 94 c0)
+
+//=========================================
+alloc(MyCodeR,4096,sqlite3.dll)
+//=========================================
+// Declaration section
+label(_MonPlayer)
+label(_MonP2)
+label(_MonP20)
+label(_MonP21)
+label(_MonP22)
+label(_MonP3)
+label(_MonP30)
+label(_MonP31)
+label(_MonP40)
+label(_MonP50)
+label(_BackMP)
+label(_ExitMP)
+label(_MonResearchR)
+label(_MonRR00)
+label(_MonRR0S)
+label(_MonRR01)
+label(_ExitMRR)
+label(_CalcOffset)
+label(_CalcO0)
+label(_CalcO1)
+label(_FindPlayerSlot)
+label(_BackFPS)
+label(_ExitFPS)
+label(pRes)
+label(pPlayer)
+label(iEnableMR)
+label(iEnableMRR)
+label(iEnableMRS)
+label(iSavings)
+label(qSavings)
+label(iMinRes)
+label(qMinRes)
+label(iSize)
+label(qXMM0)
+label(aobSignature0)
+label(aobSignature1)
+label(iID)
+label(iSlot)
+label(pCommon)
+label(pResearch)
+label(pStatus)
+label(pNeedValue)
+label(iNeedSize)
+label(pCurFeas)
+label(iCurFeas)
+label(pMaxFeas)
+label(iMaxFeas)
+label(iFlagCR)
+
+//=========================================
+// Registering Symbols
+registersymbol(MyCodeR)
+registersymbol(pPlayer)
+registersymbol(iEnableMR)
+registersymbol(iEnableMRS)
+registersymbol(iEnableMRR)
+registersymbol(iSavings)
+registersymbol(qSavings)
+registersymbol(pResearch)
+registersymbol(pCommon)
+registersymbol(iSlot)
+
+//=========================================
+MyCodeR:
+//=========================================
+// ECX = pbSize (base + 2 or + 3)
+
+_MonPlayer:
+ push ecx
+ push edx
+ push edi
+ push esi
+
+ movsd [qXMM0],xmm0
+ mov eax,ecx                       // Adjust pointer
+
+ movzx edx,byte ptr [eax]          // Get size in bytes
+ cmp edx,#58                       // Is it Savings? **56
+ jne _MonP50                       // Jump if false
+
+ mov dl,[eax+06]
+ cmp dl,03
+ jge _ExitMP                       // Jump if false
+
+//==&gt; Savings
+ push ecx
+ push ebx
+ push eax
+
+ mov ecx,#06                       // Position of ID in the data bank
+ call _CalcOffset                  // EBX = offset
+
+ pop eax                           // recover address of info size
+ push eax                          // Save address of info size
+
+ movzx edx,byte ptr [eax]          // Convert byte to double_word (header size)
+
+ add edx,ebx                       // Adjust pointer
+ add edx,eax                       // RDX = pID
+
+ movzx edx,byte ptr [edx]
+ mov [iID],edx
+ cmp edx,[iSlot]                   // Is it the player's saving?
+ jne _MonP40                       // Jump if false
+
+ mov [pPlayer],eax                 // Save pointer for debugging
+
+ mov ecx,#09                       // Position of Savings in the data bank
+ call _CalcOffset                  // EBX = offset
+
+ pop eax                           // recover address of info size
+ push eax                          // Save address of info size
+
+ movzx edx,byte ptr [eax]          // Convert byte to double_word
+
+ add edx,ebx                       // Adjust pointer
+ add edx,eax                       // RDX = pCurrentSavings
+
+ mov [pRes],edx                    // Save pointer for debugging
+
+ movzx ecx,byte ptr [eax+0a]       // Get Savings Size
+
+// Changing from Big Endian to Little Endian
+
+ mov ebx,iSavings+2
+ cmp ecx,3                         // 3 bytes integer ?
+ je _MonP2                         // Jump if true
+
+ mov ebx,qSavings+7
+ cmp ecx,7                         // Double float ?
+ jne _MonP40                       // Jump if false
+
+ mov ecx,8                         // Adjust size
+
+_MonP2:                            // Copy value to local variable
+ mov [pRes],edx
+ mov [iSize],ecx
+
+_MonP20:
+ mov al,[edx]
+ mov [ebx],al
+ inc edx
+ dec ebx
+ loop _MonP20
+
+// End of changing
+
+ cmp dword ptr [iEnableMR],0
+ je _MonP40                        // Jump if feature is disabled
+
+ mov ecx,[iSize]
+ cmp ecx,8                         // Is it a double float value?
+ je _MonP3                         // Jump if true
+
+// 3 bytes Integer
+
+ mov edx,[iMinRes]                 // Get minimum integer value
+ mov bl,[iSavings+01]
+ test bl,bl
+ js _MonP21
+
+ cmp edx,[iSavings]
+ jle _MonP40                       // Jump if current value greater than minimum
+
+_MonP21:
+ mov [iSavings],edx                // Update to minimum value
+ jmp _MonP30                       // Go to copy_back_value
+
+// Double
+_MonP3:
+ mov edx,[qMinRes+04]              // Get minimum double float value
+ mov ebx,[qSavings+04]
+ test ebx,ebx
+ js _MonP22
+
+ cmp edx,ebx
+ jle _MonP40                       // Jump if current value greater than minimum
+
+_MonP22:
+ movsd xmm0,[qMinRes]
+ movsd [qSavings],xmm0             // Update to Minimum value
+
+// Copying back the value to the sqlite data bank (Little2Big Endian)
+
+_MonP30:
+ mov edx,[pRes]
+ mov ecx,[iSize]
+
+ mov ebx,qSavings+7
+ cmp ecx,8
+ je _MonP31
+
+ mov ebx,iSavings+2
+
+_MonP31:
+ mov al,[ebx]
+ mov [edx],al
+ inc edx
+ dec ebx
+ loop _MonP31
+
+_MonP40:
+ pop eax
+ pop ebx
+ pop ecx
+ jmp _ExitMP
+
+_MonP50:
+ call _MonResearchR
+
+_ExitMP:
+ pop esi
+ pop edi
+ pop edx
+ pop ecx
+ movsd xmm0,[qXMM0]
+
+ mov eax,00000001                  // Original code
+ jmp _BackMP                       // Back to main code
+
+//=========================================
+// Input:  EAX = points to size, ECX = Info Index
+// Output: EBX = offset
+_CalcOffset:
+ push edx
+
+ xor ebx,ebx                       // Offset = 0
+
+_CalcO0:
+ inc eax                           // Adjust pointer
+
+ mov dl,[eax]                      // Get this info size
+ cmp dl,0C                         // Is it a string ?
+ jle _CalcO1                       // Jump if false
+
+ sub dl,0d                         // Adjust in case of string
+ shr dl,1                          // the ",1" is forced because of CE
+
+_CalcO1:
+ movzx edx,dl                      // Convert byte to double_word
+ add ebx,edx                       // Add it to offset
+ loop _CalcO0                      // Continue until ECX = 0
+
+ pop edx
+ ret
+
+//=========================================
+// When setting/unsetting a research
+// EDI = pInfoSize
+_MonResearchR:
+ pushad
+
+ mov ebx,eax
+ lea esi,[eax+09]
+
+// Validating Format
+ movzx eax,byte ptr [ebx]
+ cmp eax,9
+ jne _ExitMRR
+
+ movzx eax,byte ptr [ebx+09]
+ cmp eax,[iSlot]
+ jne _ExitMRR
+
+ movzx eax,byte ptr [ebx+01]
+ cmp eax,1
+ jne _ExitMRR
+
+ add esi,eax  //01
+
+ movzx eax,byte ptr [ebx+02]
+ add esi,eax  //03
+
+ movzx eax,byte ptr [ebx+03]
+ cmp eax,1
+ jne _ExitMRR
+
+ mov [pStatus],esi
+ add esi,eax
+
+ movzx eax,byte ptr [ebx+04]
+ test eax,eax
+ jz _ExitMRR
+
+ cmp eax,4
+ jge _ExitMRR
+
+ add esi,eax
+
+ movzx eax,byte ptr [ebx+05]       // Get size of needed value
+ test eax,eax
+ jz _ExitMRR
+
+ cmp eax,4
+ jge _ExitMRR
+
+ mov [iNeedSize],eax
+ mov [pNeedValue],esi
+ add esi,eax
+
+ movzx ecx,byte ptr [ebx+06]
+ test ecx,ecx
+ jz _ExitMRR
+
+ cmp ecx,8
+ jge _ExitMRR
+
+ mov [iCurFeas],ecx
+ mov [pCurFeas],esi
+ add esi,ecx
+
+ movzx eax,byte ptr [ebx+07]
+ test eax,eax
+ jz _ExitMRR
+
+ cmp eax,8
+ jge _ExitMRR
+
+ mov [iMaxFeas],eax
+ mov [pMaxFeas],esi
+
+ mov [pResearch],ebx
+
+ cmp dword ptr [iEnableMRR],0
+ je _ExitMRR                       // Jump if feature is disabled
+
+//Preparing the magic (Choosing the ingredients)
+
+ mov [iFlagCR],ecx
+
+ cmp ecx,7
+ jne _MonRR00
+
+ inc dword ptr [pMaxFeas]
+
+// Doing the magic (Mixing the ingredients)
+_MonRR00:
+ cmp dword ptr [iEnableMRS],0
+ je _MonRR0S                       // Jump if feature is disabled
+
+ mov eax,[pStatus]
+ movzx eax,byte ptr [eax]      // get status
+ cmp eax,5
+ jne _ExitMRR
+
+_MonRR0S:
+ mov eax,[iFlagCR]
+ test eax,eax
+ jz _ExitMRR
+
+ xor eax,eax
+ mov [iFlagCR],eax
+
+ mov ecx,[pNeedValue]
+ mov eax,[iNeedSize]
+
+ mov byte ptr [ecx+00],03
+ mov byte ptr [ecx+01],e8
+
+ cmp eax,2
+ je _MonRR01
+
+ mov byte ptr [ecx+00],00
+ mov byte ptr [ecx+01],03
+ mov byte ptr [ecx+02],e8
+
+_MonRR01:
+ mov eax,[iMaxFeas]
+
+ cmp eax,1
+ je _ExitMRR
+
+ cmp eax,7
+ jne _ExitMRR
+
+ mov ecx,[pMaxFeas]
+
+ mov byte ptr [ecx+00],3f           // Maximum Feasability = 99%
+ mov byte ptr [ecx+01],ef
+
+ mov eax,[iCurFeas]
+
+ cmp eax,1
+ je _ExitMRR
+
+ cmp eax,7
+ jne _ExitMRR
+
+ mov ebx,[pCurFeas]
+
+ mov eax,[ecx]
+ mov [ebx],eax                      // Current Feasability = 99%
+ mov eax,[ecx+04]
+ mov [ebx+04],eax                   // Current Feasability = 99%
+
+_ExitMRR:
+ popad
+
+ ret
+
+//=========================================
+// When Starting/Loading a game
+_FindPlayerSlot:
+ test eax,eax
+ jz _ExitFPS
+
+ push [eax+48]
+ pop [iSlot]
+
+ mov [pCommon],eax
+
+_ExitFPS:
+ mov [ebx+04],eax                  // Original code
+ jmp JFPS                          // Original code
+ jmp _BackFPS                      // Back to main code
+
+//=========================================
+ db '================================&gt;'
+ db 'CE6.3 Script by Recifense 010914'
+//=========================================
+// Variables
+iEnableMR:
+ dd 1
+iEnableMRR:
+ dd 0
+iEnableMRS:
+ dd 0
+pCommon:
+ dd 55555555
+pPlayer:
+ dd 0
+pRes:
+ dd 0
+iSize:
+ dd 0
+qXMM0:
+ dq 0
+iMinRes:
+ dd #6200000
+qMinRes:
+ dq (double)62000000,0
+iSavings:
+ dd 0
+qSavings:
+ dq 0
+iID:
+ dd 0
+iSlot:
+ dd #99
+pResearch:
+ dd 0
+pStatus:
+ dd 0
+pNeedValue:
+ dd 0
+iNeedSize:
+ dd 0
+pCurFeas:
+ dd 0
+iCurFeas:
+ dd 0
+pMaxFeas:
+ dd 0
+iMaxFeas:
+ dd 0
+iFlagCR:
+ dd 0
+aobSignature0:
+// db 18 00 02 01 04 07 01 01 01 01 01 07 01 01 01 07
+ db 18 aa bb cc dd 07 01 01 01 01 01 07 01 01 01 07
+aobSignature1:
+// db 07 02 01 04 01 01 01
+ db 07 aa bb cc dd 01 01
+
+//=========================================
+// Hacking Points
+sqlite3.dll+00026eb5: //NHP
+ jmp _MonPlayer
+_BackMP:
+
+FPST:
+ jmp _FindPlayerSlot
+ nop
+ nop
+ nop
+_BackFPS:
+//=========================================
+// Script for Restoring Original Codes
+[DISABLE]
+sqlite3.dll+00026eb5: //NHP
+// mov eax,00000001
+ db b8 01 00 00 00
+
+FPST:
+// mov [ebx+04],eax
+// jmp mars.exe+201E1
+ db 89 43 04
+ jmp JFPS
+
+//=========================================
+// Unregistering Symbols
+unregistersymbol(MyCodeR)
+unregistersymbol(iEnableMR)
+unregistersymbol(iEnableMRS)
+unregistersymbol(iEnableMRR)
+unregistersymbol(pPlayer)
+unregistersymbol(iSavings)
+unregistersymbol(qSavings)
+unregistersymbol(pResearch)
+unregistersymbol(pCommon)
+unregistersymbol(iSlot)
+
+//=========================================
+dealloc(MyCodeR)
+//============= Scripts End ===============
+
+// ****************************************
+// NOTES
+// ****************************************
+{
+}
+
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>1</ID>
+          <Description>"Enable/Disable Minimum Savings =&gt;(1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMR</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>2</ID>
+          <Description>"Enable/Disable Fast Research =&gt;(1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMRR</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>18</ID>
+              <Description>"Enable/Disable Current Only =&gt;(1/0)"</Description>
+              <Color>008000</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>iEnableMRS</Address>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>3</ID>
+      <Description>"[X] &lt;== SoTS 2 EoF v2.0.25092.5 GM Script v3.1"</Description>
+      <Options moHideChildren="1"/>
+      <Color>FF0000</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>{
+===========================================
+ Game Title    : Sword of the Stars II - End of Flesh
+ Game Version  : 2.0.25092.5 (up36)
+ Game Sponsor  : MySelf (via Steam)
+ Script Version: 3.1
+ CE Version    : 6.3
+ Release date  : 09-Jan-2014
+ Author        : Recifense
+ History:
+ 23-Nov-2012: First Release (after stability)
+ 28-Nov-2012: Release for version 1.1.24110.1
+ 08-Dec-2012: Release for version 2.0.24494.2 (Added protection from boarding)
+ 11-Dec-2012: Release for version 2.0.24494.4
+ 12-Dec-2012: Release for version 2.0.24567.1
+ 21-Dec-2012: Release for version 2.0.24645.1
+ 22-Dec-2012: Release for version 2.0.24645.2
+ 19-Jan-2013: Release for version 2.0.24759.1
+ 19-Jan-2013: Release for version 2.0.24759.2
+ 23-Jan-2013: Release for version 2.0.24759.3
+ 29-Jan-2013: Release for version 2.0.24759.4/5/6
+ 10-Feb-2013: Release for version 2.0.24759.7/8
+ 06-Mar-2013: Release for version 2.0.24917.1/2
+ 08-Mar-2013: Release for version 2.0.24917.3
+ 14-Mar-2013: Release for version 2.0.24917.4/5
+ 27-Mar-2013: Release for version 2.0.24917.6/7/8
+ 05-Jun-2013: Release for version 2.0.25003.2/3/4/5/6/7/8
+ 29-Aug-2013: Release for version 2.0.25003.9
+ 03-Nov-2013: Release for version 2.0.25003.10
+ 06-Dec-2013: Release for version 2.0.25092.4
+ 09-Jan-2014: Release for version 2.0.25092.5 (Considering player slot)
+ Feature(s):
+ - God Mode
+ - Weak Foe
+ - God Mode for Colony (Planet)
+ - Protection from Boarding
+ - Colony minimum Population and 100% Infrastructure
+===========================================
+}
+
+//=========================================
+// Definitions
+define(MSEL,mars.exe+000b4e43)  //20.2##*=*===
+define(MSPA,mars.exe+00136e92)  //20.2##*=*===
+define(GMD2,mars.exe+00193981)  //20.2##*=*===
+define(MDA1,mars.exe+00282030)  //20.2##*=*===
+define(MPLI,mars.exe+0027f743)  //20.2##*=*===
+define(MPLP,mars.exe+0027f996)  //20.2##*=*===
+define(MCRW,mars.exe+0002f430)  //20.2##*=*===
+define(MDA2,mars.exe+00280d20)  //20.2##*=*===
+define(MPLB,mars.exe+00116c0f)  //20.2##*=*===
+define(MCR2,mars.exe+0027fbc0)  //20.2##*=*===
+define(GMD1,mars.exe+0027fa40)  //20.2##*=*===
+define(GMD3,mars.exe+002809e0)  //20.2##*=*===
+define(GMD4,mars.exe+000db2c0)  //20.2##*=*===
+
+define(FISH,mars.exe+003c3e78)  //20.2##*=*=*=
+define(MCWA,mars.exe+0031eb31)  //20.2##*=*===
+define(GM4A,mars.exe+00312068)  //20.2##*=*===
+
+//=========================================
+[ENABLE]
+//=========================================
+// Check if script is compatible to this game version
+// If false the script will not be loaded
+
+assert(MSEL,8b 8e 90 00 00 00 8b b6 94 00 00 00 33 c0 33 db 8b f8 89 5c 24 18)
+assert(MSPA,8b 89 94 08 00 00 85 c9 ?? ?? 39 41 38 ?? ?? 83 c2 04 3b d6 ?? ??)
+assert(GMD2,b0 01 d2 e0 08 06 8b 44 24 4c 40 45 89 44 24 4c 3b 44 24 10 ?? ??)
+assert(MDA1,83 ec 08 53 55 8b 6c 24 14 c7 44 24 14 01 00 00 00 85 f6 ?? ?? 33)
+assert(MPLI,d9 47 30 d8 64 24 40 8b f0 d9 ee d8 d1 df e0 f6 c4 05 ?? ?? dd d8)
+assert(MPLP,8b 4c 24 10 dd 01 de e2 d8 d1 df e0 f6 c4 05 ?? ?? dd d8 dd 19 ??)
+assert(MCRW,6a ff 68 ?? ?? ?? ?? 64 a1 00 00 00 00 50 81 ec 74 08 00 00 a1 ??)
+assert(MDA2,8b 44 24 04 53 8b 5c 24 0c 55 8b 6c 24 18 4d 57 8b 7c 24 18 83 fd)
+assert(MPLB,dd 40 28 2b 08 b8 67 66 66 66 f7 e9 c1 fa 04 8b c2 c1 e8 1f 03 c2)
+assert(MCR2,55 8b ec 83 e4 f8 81 ec 4c 01 00 00 a1 ?? ?? ?? ?? 33 c4 89 84 24)
+assert(GMD1,51 83 7c 24 10 00 53 8b 5c 24 1c 55 8b 6c 24 10 56 57 0f 84 ?? ??)
+assert(GMD3,55 8b ec 83 e4 f8 6a ff 68 ?? ?? ?? ?? 64 a1 00 00 00 00 50 83 ec 50 a1)
+assert(GMD4,6a ff 68 ?? ?? ?? ?? 64 a1 00 00 00 00 50 83 ec 24 53 55 56 a1)
+
+//=========================================
+alloc(MyCode,4096,mars.exe)
+//=========================================
+// Declaration section
+label(_MonSel)
+label(_BackMS)
+label(_ExitMS)
+label(_GodMode2)
+label(_BackGM2)
+label(_ExitGM2)
+label(_FindShip)
+label(_MonShipParts)
+label(_MonSP0)
+label(_BackMSP)
+label(_ExitMSP)
+label(_ClearArmor)
+label(_ClearA0)
+label(_ExitCA)
+label(_MonDamage1)
+label(_BackMD1)
+label(_ExitMD1)
+label(_MonPlanetInfra)
+label(_BackMPI)
+label(_ExitMPI)
+label(_MonPlanetPop)
+label(_BackMPP)
+label(_ExitMPP)
+label(_MonCrew)
+label(_BackMCW)
+label(_ExitMCW)
+label(_MonDamage2)
+label(_BackMD2)
+label(_ExitMD2)
+label(_MonPlanetBattle)
+label(_MonPB0)
+label(_BackMPB)
+label(_ExitMPB)
+label(_MonCrew2)
+label(_BackMCW2)
+label(_ExitMCW2)
+label(_GodMode1)
+label(_BackGM1)
+label(_ExitGM1)
+label(_GodMode3)
+label(_BackGM3)
+label(_ExitGM3)
+label(_GodMode4)
+label(_BackGM4)
+label(_ExitGM4)
+label(pUnit)
+label(pSel)
+label(pRes)
+label(iEnableGM)
+label(iEnableWF)
+label(iEnableGMP)
+label(iEnableMCW)
+label(iEnableMPB)
+label(iEAX)
+label(iECX)
+
+//=========================================
+// Registering Symbols
+registersymbol(MyCode)
+registersymbol(pUnit)
+registersymbol(pSel)
+registersymbol(iEnableGM)
+registersymbol(iEnableWF)
+registersymbol(iEnableGMP)
+registersymbol(iEnableMCW)
+registersymbol(iEnableMPB)
+
+//=========================================
+MyCode:
+//========================================= 20.2*
+// Activated during combat when a unit is selected
+_MonSel:
+ mov [pSel],esi
+
+ mov ecx,[esi+00000180] //0174 *
+// mov [pCommon],ecx
+
+_ExitMS:
+ mov ecx,[esi+00000090]            // Original code
+ jmp _BackMS                       // Back to main code
+
+//========================================= 20.2*
+// Activated during combat
+_MonShipParts:
+ push eax
+ push ecx
+
+ mov eax,ecx
+
+ mov ecx,[eax+30]
+ test ecx,ecx
+ jz _ExitMSP
+
+ mov ecx,[ecx+00000180] //0174 *
+ cmp ecx,[pCommon]
+ jne _MonSP0                       // Jump if it is not a player's ship
+
+ mov ecx,[eax+00000894]
+ test ecx,ecx
+ jz _ExitMSP
+
+ mov ecx,[eax+00000898]
+ test ecx,ecx
+ jz _ExitMSP
+
+ cmp dword ptr [iEnableGM],0
+ je _ExitMSP                         // Jump if feature is disabled
+
+// Constitution
+
+ push esi
+ push edi
+
+ mov esi,[eax+00000898]
+ mov edi,[eax+00000894]
+
+ push esi
+ push edi
+
+ mov ecx,#13
+ rep movsd
+
+ pop edi
+ pop esi
+
+ lea edi,[edi+00dc]
+
+ mov ecx,#13
+ rep movsd
+
+ pop edi
+ pop esi
+
+// Armor
+ push esi
+
+ lea esi,[eax+000005f0]            // Right Side
+ call _ClearArmor
+ lea esi,[esi+00000028]            // Top Side
+ call _ClearArmor
+ lea esi,[esi+00000028]            // Left Side
+ call _ClearArmor
+ lea esi,[esi+00000028]            // Botton Side
+ call _ClearArmor
+
+ pop esi
+ jmp _ExitMSP
+ //------
+_MonSP0:
+ cmp dword ptr [iEnableWF],0
+ je _ExitMSP                       // Jump if feature is disabled
+
+ mov ecx,[eax+00000894]            // Get pointer to current values
+ test ecx,ecx
+ jz _ExitMSP                       // Jump if it is null
+
+ mov eax,(float)10.0
+ cmp eax,[ecx]
+ jge _ExitMSP
+
+ mov [ecx],eax
+
+_ExitMSP:
+ pop ecx
+ pop eax
+
+ mov ecx,[ecx+00000894]            // Original code
+ jmp _BackMSP                      // Back to main code
+
+//========================================= 20.2=
+// Auxiliary Routine
+_ClearArmor:
+ push edi
+ push ebx
+
+ mov ecx,[esi+04]
+ test ecx,ecx
+ jz _ExitCA
+
+ mov edi,[esi+20]
+ test edi,edi
+ jz _ExitCA
+
+ xor ebx,ebx
+ mov [esi+18],ebx
+
+_ClearA0:
+ mov dword ptr [edi],ebx
+ lea edi,[edi+00000004]
+ loop _ClearA0
+
+_ExitCA:
+ pop ebx
+ pop edi
+ ret
+
+//========================================= 20.2*
+// Activated during combat (ARMOR)
+// EDX = Armor Base
+_GodMode2:
+ mov al,01
+ shl al,cl
+ or [esi],al
+
+ cmp dword ptr [iEnableGM],0
+ je _ExitGM2                        // Jump if feature is disabled
+
+ call _FindShip
+ jne _ExitGM2
+
+ mov eax,[eax+04]
+ test eax,eax
+ jz _ExitGM2
+
+ mov eax,[eax+00000180] //0174 *
+ cmp eax,[pCommon]
+ jne _ExitGM2
+
+ xor al,al
+ mov [esi],al
+
+_ExitGM2:
+ jmp _BackGM2                        // Back to main code
+
+//========================================= 20.2=
+// Find Part Owner
+// RDX = Starting Point
+// return = E =&gt; found
+_FindShip:
+ push ecx
+ push edx
+ push edi
+
+ pushf
+ std
+
+ mov ecx,00000700
+ mov eax,FISH
+ mov edi,edx
+ repne scasd
+
+ popf
+
+ lea edi,[edi+04]
+
+ mov edx,[edi]
+ cmp eax,edx
+ mov eax,edi
+
+ pop rdi
+ pop edx
+ pop ecx
+ ret
+
+//========================================= 20.2*
+// Activated during combat (DIRECT HIT)
+// EBX = ESI = pShip and EDI = pPart
+_MonDamage1:
+ mov [iEAX],eax
+
+ cmp dword ptr [iEnableGM],0
+ je _ExitMD1                         // Jump if feature is disabled
+
+ mov eax,[edi+30]
+ cmp eax,esi
+ jne _ExitMD1
+
+ mov eax,[esi+00000180] //0174 *
+ cmp eax,[pCommon]
+ jne _ExitMD1
+
+ mov eax,[iEAX]
+ ret 0014                           // Bypass routine
+//=======
+_ExitMD1:
+ mov eax,[iEAX]
+
+ sub esp,08                         // Original code
+ push ebx                           // Original code
+ push ebp                           // Original code
+ jmp _BackMD1                       // Back to main code
+
+//========================================= 20.2*
+// Activated during combat
+_MonPlanetInfra:
+ mov esi,eax
+
+ mov eax,esp
+
+ push ebx
+ push ecx
+ push edi
+ push esi
+
+ mov esi,edi
+
+ mov ebx,[esi-08]                  // Get pColony
+ test ebx,ebx
+ jz _ExitMPI                       // Jump if null pointer
+
+ mov ecx,[ebx+00000c58] //0c54 *
+ cmp ecx,[pCommon]
+ jne _ExitMPI                      // Jump if it is not a player's colony
+
+ mov esi,[ebx+00000c64]            // Max Values 0c60*
+ mov edi,[ebx+00000c60]            // Cur Values 0c5c*
+
+ cmp dword ptr [iEnableGMP],0
+ je _ExitMPI                       // Jump if feature is disabled
+
+ mov ecx,[esi+30]
+ mov [edi+30],ecx
+ mov [edi+78],ecx
+
+ xor ecx,ecx
+ mov [eax+40],ecx //44 *
+
+_ExitMPI:
+ pop esi
+ pop edi
+ pop ecx
+ pop ebx
+
+ mov eax,esi
+
+ fld dword ptr [edi+30]            // Original code (rds %Infra) ESI**
+ fsub dword ptr [esp+40]           // Original code 44**
+ jmp _BackMPI                      // Back to main code
+
+//========================================= 20.2*
+// Activated during combat
+_MonPlanetPop:
+ mov eax,esp
+
+ push ebx
+ push ecx
+ push edi
+ push esi
+
+ mov ebx,[ebx-08]                  // Get pColony
+ test ebx,ebx
+ jz _ExitMPP                       // Jump if null pointer
+
+ mov ecx,[ebx+00000c58] //0c54 *
+ cmp ecx,[pCommon]
+ jne _ExitMPP                      // Jump if it is not a player's colony
+
+ cmp dword ptr [iEnableGMP],0
+ je _ExitMPP                       // Jump if feature is disabled
+
+ mov esi,[ebx+00000c64]            // Max Values 0c60*
+ mov edi,[ebx+00000c60]            // Cur Values 0c5c*
+
+ mov ecx,[esi+28]
+ mov eax,[esi+2c]
+ mov [edi+28],ecx
+ mov [edi+2c],eax
+ mov [edi+70],ecx
+ mov [edi+74],eax
+
+ fst st(1)                         // value2decrease = 0 (0;v2d) st(1)=st(0)
+
+_ExitMPP:
+ pop esi
+ pop edi
+ pop ecx
+ pop ebx
+
+ mov ecx,[esp+10]                  // Original code
+ fld qword ptr [ecx]               // Original code
+ jmp _BackMPP                      // Back to main code (template)
+
+//========================================= 20.2*
+// Activated during combat
+_MonCrew:
+ cmp dword ptr [iEnableMCW],0
+ je _ExitMCW                       // Jump if feature is disabled
+
+ mov eax,[ecx+00000180] //0174 *
+ cmp eax,[pCommon]
+ jne _ExitMCW
+
+ ret                               // Avoid routine
+//-----
+_ExitMCW:
+// push FF                           // Original code
+ db 6a ff
+ push MCWA                         // Original code **
+ jmp _BackMCW                      // Back to main code (template)
+
+//========================================= 20.2*
+// Activated during combat (DIRECT HIT)
+// EDX = pPart
+_MonDamage2:
+ cmp dword ptr [iEnableGM],0
+ je _ExitMD2                         // Jump if feature is disabled
+
+ mov eax,[edx+30]
+ mov eax,[eax+00000180] //0174 *
+ cmp eax,[pCommon]
+ jne _ExitMD2
+
+ ret 0020                           // Bypass routine
+//=======
+_ExitMD2:
+ mov eax,[esp+04]                   // Original code
+ push ebx                           // Original code
+ jmp _BackMD2                       // Back to main code
+
+//========================================= 20.2*
+// Activated during combat
+// ESI = Planet
+_MonPlanetBattle:
+ push eax
+ push ebx
+ push ecx
+ push edi
+ push esi
+
+ cmp dword ptr [iEnableMPB],0
+ je _ExitMPB                       // Jump if feature is disabled
+
+ mov ebx,[eax-08]
+ test eax,eax
+ jz _ExitMPB
+
+ mov ecx,[ebx+00000c58] //0c54 *
+ cmp ecx,[pCommon]
+ jne _ExitMPB                      // Jump if it is not a player's colony
+
+ mov esi,[ebx+00000c64]            // Max Values 0c60*
+ mov edi,[ebx+00000c60]            // Cur Values 0c5c*
+
+// Infra
+ mov ecx,(float)100.0
+ mov [esi+30],ecx
+ mov [edi+30],ecx
+ mov [edi+78],ecx
+
+//Pop
+ mov ecx,40f86a00
+ cmp ecx,[esi+2c]
+ jle _MonPB0
+
+ mov [esi+2c],ecx
+
+_MonPB0:
+ mov ecx,[esi+28]
+ mov eax,[esi+2c]
+ mov [edi+28],ecx
+ mov [edi+2c],eax
+ mov [edi+70],ecx
+ mov [edi+74],eax
+
+_ExitMPB:
+ pop esi
+ pop edi
+ pop ecx
+ pop ebx
+ pop eax
+
+ fld qword ptr [eax+28]            // Original code
+ sub ecx,[eax]                     // Original code
+ jmp _BackMPB                      // Back to main code (template)
+
+//========================================= 20.2*
+// Activated during combat
+// EDX = Ship
+_MonCrew2:
+ cmp dword ptr [iEnableMCW],0
+ je _ExitMCW2                      // Jump if feature is disabled
+
+ mov eax,[edx+00000180] //0174 *
+ cmp eax,[pCommon]
+ jne _ExitMCW2
+
+ ret 0008                          // Avoid routine
+//-----
+_ExitMCW2:
+ push ebp                          // Original code
+ mov ebp,esp                       // Original code
+// and esp,F8                        // Original code
+ db 83 e4 f8
+ jmp _BackMCW2                     // Back to main code (template)
+
+//========================================= 20.2*
+// Activated during combat (HP)
+_GodMode1:
+ cmp dword ptr [iEnableGM],0
+ je _ExitGM1                        // Jump if feature is disabled
+
+ mov eax,[esp+0c]
+ test eax,eax
+ jz _ExitGM1
+
+ mov eax,[eax+00000180] //0174 *
+ cmp eax,[pCommon]
+ jne _ExitGM1
+
+ fldz
+ ret 0020
+//==
+_ExitGM1:
+ push ecx                            // Original code
+ cmp dword ptr [esp+10],00           // Original code
+ jmp _BackGM1                        // Back to main code
+
+//========================================= 20.2*
+// Activated during combat (HP)
+_GodMode3:
+ cmp dword ptr [iEnableGM],0
+ je _ExitGM3                        // Jump if feature is disabled
+
+ mov eax,[esp+08]
+ test eax,eax
+ jz _ExitGM3
+
+ mov eax,[eax+00000180] //0174 *
+ cmp eax,[pCommon]
+ jne _ExitGM3
+
+ ret 0024
+//==
+_ExitGM3:
+ push ebp                            // Original code
+ mov ebp,esp                         // Original code
+// and esp,F8                          // Original code
+ db 83 e4 f8
+ jmp _BackGM3                        // Back to main code
+
+//========================================= 20.2*
+// Activated during combat
+_GodMode4:
+ cmp dword ptr [iEnableGM],0
+ je _ExitGM4                        // Jump if feature is disabled
+
+ mov eax,[esp+0c]
+ mov eax,[eax+00000180] //0174 *
+ cmp eax,[pCommon]
+ jne _ExitGM4
+
+ ret 0004
+//==
+_ExitGM4:
+// push FF                            // Original code
+ db 6a ff
+ push GM4A                          // Original code **
+ jmp _BackGM4                       // Back to main code
+
+//=========================================
+ db '========================================&gt;'
+ db 'CE6.3 Script by Recifense 010914'
+//=========================================
+// Variables
+iEnableGM:
+ dd 0
+iEnableWF:
+ dd 0
+iEnableGMP:
+ dd 0
+iEnableMCW:
+ dd 0
+iEnableMPB:
+ dd 0
+pUnit:
+ dd 0
+pSel:
+ dd 0
+pRes:
+ dd 0
+iEAX:
+ dd 0
+iECX:
+ dd 0
+
+//=========================================
+// Hacking Points
+MSEL:
+ jmp _MonSel
+ nop
+_BackMS:
+
+MSPA:
+ jmp _MonShipParts
+ nop
+_BackMSP:
+
+GMD2:
+ jmp _GodMode2
+ nop
+_BackGM2:
+
+MDA1:
+ jmp _MonDamage1
+_BackMD1:
+
+MPLI:
+ jmp _MonPlanetInfra
+ nop
+ nop
+_BackMPI:
+
+MPLP:
+ jmp _MonPlanetPop
+ nop
+_BackMPP:
+
+MCRW:
+ jmp _MonCrew
+ nop
+ nop
+_BackMCW:
+
+MDA2:
+ jmp _MonDamage2
+_BackMD2:
+
+MPLB:
+ jmp _MonPlanetBattle
+_BackMPB:
+
+MCR2:
+ jmp _MonCrew2
+ nop
+_BackMCW2:
+
+GMD1:
+ jmp _GodMode1
+ nop
+_BackGM1:
+
+GMD3:
+ jmp _GodMode3
+ nop
+_BackGM3:
+
+GMD4:
+ jmp _GodMode4
+ nop
+ nop
+_BackGM4:
+
+//=========================================
+// Script for Restoring Original Codes
+[DISABLE]
+MSEL:
+// mov ecx,[esi+00000090]
+ db 8b 8e 90 00 00 00
+
+MSPA:
+// mov ecx,[ecx+00000894]
+ db 8b 89 94 08 00 00
+
+GMD2:
+// mov al,01
+// shl al,cl
+// or [esi],al
+ db b0 01 d2 e0 08 06
+
+MDA1:
+// sub esp,08
+// push ebx
+// push ebp
+ db 83 ec 08 53 55
+
+MPLI:
+// fld dword ptr [edi+30]
+// fsub dword ptr [esp+40]
+ db d9 47 30 d8 64 24 40
+
+MPLP:
+// mov ecx,[esp+10]
+// fld qword ptr [ecx]
+ db 8b 4c 24 10 dd 01
+
+MCRW:
+// push FF
+ db 6a ff
+ push MCWA
+
+MDA2:
+// mov eax,[esp+04]
+// push ebx
+ db 8b 44 24 04 53
+
+MPLB:
+// fld qword ptr [eax+28]
+// sub ecx,[eax]
+ db dd 40 28 2b 08
+
+MCR2:
+// push ebp
+// mov ebp,esp
+// and esp,F8
+ db 55 8b ec 83 e4 f8
+
+GMD1:
+// push ecx
+// cmp dword ptr [esp+10],00
+ db 51 83 7c 24 10 00
+
+GMD3:
+// push ebp
+// mov ebp,esp
+// and esp,F8
+ db 55 8b ec 83 e4 f8
+
+GMD4:
+// push FF
+ db 6a ff
+ push GM4A
+
+//=========================================
+// Unregistering Symbols
+unregistersymbol(MyCode)
+unregistersymbol(pUnit)
+unregistersymbol(iEnableGM)
+unregistersymbol(iEnableWF)
+unregistersymbol(iEnableGMP)
+unregistersymbol(iEnableMCW)
+unregistersymbol(iEnableMPB)
+unregistersymbol(pSel)
+
+//=========================================
+dealloc(MyCode)
+//============= Scripts End ===============
+
+// ****************************************
+// NOTES
+// ****************************************
+{
+2.0.25003.2 (up26):
+define(MSEL,mars.exe+000b4dc3)  //20.2##*=*
+define(MSPA,mars.exe+00136df2)  //20.2##*=*
+define(GMD2,mars.exe+001938e1)  //20.2##*=*
+define(MDA1,mars.exe+00281f40)  //20.2##*=*
+define(MPLI,mars.exe+0027f653)  //20.2##*=*
+define(MPLP,mars.exe+0027f8a6)  //20.2##*=*
+define(MCRW,mars.exe+0002f430)  //20.2##*=*
+define(MDA2,mars.exe+00280c30)  //20.2##*=*
+define(MPLB,mars.exe+00116b5f)  //20.2##*=*
+define(MCR2,mars.exe+0027fad0)  //20.2##*=*
+define(GMD1,mars.exe+0027f950)  //20.2##*=*
+define(GMD3,mars.exe+002808f0)  //20.2##*=*
+define(GMD4,mars.exe+000db260)  //20.2##*=*
+define(FISH,mars.exe+003c3e78)  //20.2##*=*
+define(MCWA,mars.exe+0031ea21)  //20.2##*=*
+define(GM4A,mars.exe+00311fe8)  //20.2##*=*
+
+2.0.24917.6 (up23)
+define(MSEL,mars.exe+000b4d53)  //20.2##*=
+define(MSPA,mars.exe+00136d92)  //20.2##*=
+define(GMD2,mars.exe+001938b1)  //20.2##*=
+define(MDA1,mars.exe+00281ee0)  //20.2##*=
+define(MPLI,mars.exe+0027f5f3)  //20.2##*=
+define(MPLP,mars.exe+0027f846)  //20.2##*=
+define(MCRW,mars.exe+0002f3e0)  //20.2##*=
+define(MDA2,mars.exe+00280bd0)  //20.2##*=
+define(MPLB,mars.exe+00116b0f)  //20.2##*=
+define(MCR2,mars.exe+0027fa70)  //20.2##*=
+define(GMD1,mars.exe+0027f8f0)  //20.2##*=
+define(GMD3,mars.exe+00280890)  //20.2##*=
+define(GMD4,mars.exe+000db1d0)  //20.2##*=
+define(FISH,mars.exe+003c3d00)  //20.2##*=
+define(MCWA,mars.exe+0031e9f1)  //20.2##*=
+define(GM4A,mars.exe+00311fa8)  //20.2##*=
+2.0.24917.3 (up20)
+define(MSEL,mars.exe+000b5053)  //20.2#*===*=*=*
+define(MSPA,mars.exe+00137312)  //20.2#*===*=*=*
+define(GMD2,mars.exe+00193ac1)  //20.2#*===*=*=*
+define(MDA1,mars.exe+00281b00)  //20.2#*===*=*=*
+define(MPLI,mars.exe+0027f213)  //20.2#*===*=*=*
+define(MPLP,mars.exe+0027f466)  //20.2#*===*=*=*
+define(MCRW,mars.exe+00030030)  //20.2#*===*=*=*
+define(MDA2,mars.exe+002807f0)  //20.2#*===*=*=*
+define(MPLB,mars.exe+0011741f)  //20.2#*===*=*==
+define(MCR2,mars.exe+0027f690)  //20.2#*===*=*=*
+define(GMD1,mars.exe+0027f510)  //20.2#*===*=*=*
+define(GMD3,mars.exe+002804b0)  //20.2#*===*=*=*
+define(GMD4,mars.exe+000dba40)  //20.2#*===*=*=*
+define(FISH,mars.exe+003c3cf8)  //20.2#*===*=*==
+define(MCWA,mars.exe+0031e6c1)  //20.2#*===*=*=*
+define(GM4A,mars.exe+0031ee28)  //20.2#*===*=*=*
+
+}
+
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>4</ID>
+          <Description>"Enable/Disable God Mode =&gt;(1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableGM</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>97</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>96</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>25</ID>
+          <Description>"Enable/Disable Weak Foe =&gt;(1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableWF</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>97</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>96</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>26</ID>
+          <Description>"Enable/Disable God Mode for Colony =&gt;(1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableGMP</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>97</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>96</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>27</ID>
+          <Description>"Enable/Disable No Change of Ownership =&gt;(1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMCW</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>97</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>96</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>28</ID>
+          <Description>"Enable/Disable Minimum Planet's Infra/Pop =&gt;(1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMPB</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>97</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>96</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols>
+    <SymbolEntry>
+      <Name>pBadge</Name>
+      <Address>030C0244</Address>
+    </SymbolEntry>
+  </UserdefinedSymbols>
+  <Comments>===========================================
+ Game Title    : Sword of the Stars II - End of Flesh
+ Game Version  : 2.0.25092.5 (up36)
+ Game Sponsor  : MySelf (via Steam)
+ Script Version: 3.1
+ CE Version    : 6.3
+ Release date  : 09-Jan-2014
+ Author        : Recifense
+ History:
+ 23-Nov-2012: First Release (after stability)
+ 28-Nov-2012: Release for version 1.1.24110.1
+ 08-Dec-2012: Release for version 2.0.24494.2 (Added protection from boarding)
+ 11-Dec-2012: Release for version 2.0.24494.4
+ 12-Dec-2012: Release for version 2.0.24567.1
+ 21-Dec-2012: Release for version 2.0.24645.1
+ 22-Dec-2012: Release for version 2.0.24645.2
+ 19-Jan-2013: Release for version 2.0.24759.1
+ 19-Jan-2013: Release for version 2.0.24759.2
+ 23-Jan-2013: Release for version 2.0.24759.3
+ 29-Jan-2013: Release for version 2.0.24759.4/5/6
+ 10-Feb-2013: Release for version 2.0.24759.7/8
+ 06-Mar-2013: Release for version 2.0.24917.1/2
+ 08-Mar-2013: Release for version 2.0.24917.3
+ 14-Mar-2013: Release for version 2.0.24917.4/5
+ 27-Mar-2013: Release for version 2.0.24917.6/7/8
+ 05-Jun-2013: Release for version 2.0.25003.2/3/4/5/6/7/8
+ 29-Aug-2013: Release for version 2.0.25003.9
+ 03-Nov-2013: Release for version 2.0.25003.10
+ 06-Dec-2013: Release for version 2.0.25092.4
+ 09-Jan-2014: Release for version 2.0.25092.5 (Considering player slot)
+ Feature(s):
+ - Minimum Savings              [1]
+ - Fast Research                [2]
+   - Current Reserach Only      [2a]
+ - God Mode                     [3]
+ - Weak Foe                     [4]
+ - God Mode for Colony (Planet) [5]
+ - Protection from Boarding     [6]
+ - Colony minimum Population and 100% Infrastructure [7]
+===========================================
+[1] Minimum savings = 6200000 and/or 62000000,0
+[2] Research/Feasability in 1-2 turns;
+[2a] If this is disabled, the cost of all currently selectable research will have minimum cost;
+[3] For player's ship and stations and plataforms;
+[4] Enemy will be easier to kill; 
+[5] Infrastructure and Population will not decrease;
+[6] This will protect your ships and plataforms from being boarded;
+[7] During battle your colonies will be set to 100% Infra and POP to a minimum value (1000000)
+===========================================
+[IMPORTANT] Load the first script before a game starts or is loaded.
+===========================================
+[Hot to use fast research]:
+- Select the item to be researched;
+- ENABLE the cheat (CTRL+home);
+- Click on RESEARCH or FEASABILITY;
+- DISABLE the cheat (CTRL+End);
+- Ajust the savings for research in 1 turn (this should be done once in a while as your empire increases);
+[NOTE] If "Enable/Disable Current Only =&gt;(1/0)" is off, the above procedure will affect other possible researches. This will avoid to use the procedure frequently. 
+===========================================
+HOTHEYS:
+CTRL+Home = Turn Fast Research ON  (value = 1)
+CTRL+End  = Turn Fast Research OFF (value = 0)
+----------------
+CTRL+Numeric 1 = Enable  all GM cheats;
+CTRL+Numeric 0 = Disable all GM cheats;
+---------
+[ADVICE] Create hotkeys for the other cheats.
+===========================================
+Cheers!
+</Comments>
+</CheatTable>

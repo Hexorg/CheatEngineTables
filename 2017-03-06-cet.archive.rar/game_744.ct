@@ -1,0 +1,398 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="16">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>3</ID>
+      <Description>"SCRIPT: CP Use"</Description>
+      <Color>80000008</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>{ Game   : game.exe
+  Version: Steam
+  Date   : 2013-11-28
+  Author : jgoemat
+
+  This is where CP are loaded and [EBP+0C] is subtracted from them.
+}
+
+[ENABLE]
+
+globalalloc(globals,$100000)
+// globals+0: pCPBase
+// globals+4: bNoCPUse
+
+aobscan(INJECT_CPUSE,8B 86 84 00 00 00 39) // should be unique
+alloc(newmem,$1000)
+
+label(code)
+label(skip)
+label(return)
+
+newmem:
+
+code:
+  mov [globals],esi
+  cmp dword ptr [globals+4],1
+  jne skip
+  mov dword ptr [ebp+c],00000000
+skip:
+  mov eax,[esi+00000084]
+  jmp return
+
+INJECT_CPUSE:
+  jmp code
+  nop
+return:
+registersymbol(INJECT_CPUSE)
+
+[DISABLE]
+
+INJECT_CPUSE:
+  db 8B 86 84 00 00 00
+
+unregistersymbol(INJECT_CPUSE)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: 1CE4E580
+
+1CE4E56C: C9                      - leave
+1CE4E56D: C3                      - ret
+1CE4E56E: 00 00                   - add [eax],al
+1CE4E570: 55                      - push ebp
+1CE4E571: 8B EC                   - mov ebp,esp
+1CE4E573: 56                      - push esi
+1CE4E574: 83 EC 04                - sub esp,04
+1CE4E577: 8B 75 08                - mov esi,[ebp+08]
+1CE4E57A: 83 7D 0C 00             - cmp dword ptr [ebp+0C],00
+1CE4E57E: 7E 2B                   - jle 1CE4E5AB
+// ---------- INJECTING HERE ----------
+1CE4E580: 8B 86 84000000          - mov eax,[esi+00000084]
+// ---------- DONE INJECTING  ----------
+1CE4E586: 39 45 0C                - cmp [ebp+0C],eax
+1CE4E589: 7E 0C                   - jle 1CE4E597
+1CE4E58B: C7 86 84000000 00000000 - mov [esi+00000084],00000000
+1CE4E595: EB 0F                   - jmp 1CE4E5A6
+1CE4E597: 8B 86 84000000          - mov eax,[esi+00000084]
+1CE4E59D: 2B 45 0C                - sub eax,[ebp+0C]
+1CE4E5A0: 89 86 84000000          - mov [esi+00000084],eax
+1CE4E5A6: E8 15000000             - call 1CE4E5C0
+1CE4E5AB: 8D 65 FC                - lea esp,[ebp-04]
+1CE4E5AE: 5E                      - pop esi
+}
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>4</ID>
+          <Description>"pCPBase"</Description>
+          <ShowAsHex>1</ShowAsHex>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>globals</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>5</ID>
+          <Description>"bNoCpUse"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>globals+4</Address>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>7</ID>
+      <Description>"SCRIPT: AP Use"</Description>
+      <Color>80000008</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>{ Game   : game.exe
+  Version:
+  Date   : 2013-11-29
+  Author : Jason
+
+  This script does blah blah blah
+}
+
+[ENABLE]
+
+globalalloc(globals,$100000)
+// globals+100: pAPBase
+// globals+104: bNoApUse
+
+aobscan(INJECT_APUSE,10 EB 13 8B 46 2C 2B C7) // should be unique
+alloc(newmem,$1000)
+
+label(code)
+label(skip)
+label(return)
+
+newmem:
+
+code:
+  mov [globals+100],esi
+  cmp dword ptr [globals+104],1
+  jne skip
+  mov eax,[esi+2C]
+  jmp return // no sub
+
+skip:
+  mov eax,[esi+2C]
+  sub eax,edi
+  jmp return
+
+INJECT_APUSE+03:
+  jmp code
+return:
+registersymbol(INJECT_APUSE)
+
+[DISABLE]
+
+INJECT_APUSE+03:
+  db 8B 46 2C 2B C7
+
+unregistersymbol(INJECT_APUSE)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: 1CE359D5
+1CE3597A - 8B 83 84000000        - mov eax,[ebx+00000084] // load CP?
+1CE35980 - 3B 45 F0              - cmp eax,[ebp-10] // compare with # to subtract?
+1CE35983 - 7D 15                 - jnl 1CE3599A : [game.NamedObject::VirtualRedirectTransfer+6F2C7]
+1CE35985 - 83 EC 0C              - sub esp,0C
+1CE35988 - 68 A0E8E011           - push 11E0E8A0 : [04B77904]
+1CE3598D - E8 5ED55CE8           - call 05402EF0
+1CE35992 - 83 C4 10              - add esp,10
+1CE35995 - E9 4E000000           - jmp 1CE359E8
+1CE3599A - C7 46 2C 00000000     - mov [esi+2C],00000000 // zero AP?
+1CE359A1 - 8B 35 541FB204        - mov esi,[04B21F54] : [35688640]
+1CE359A7 - 8B FE                 - mov edi,esi
+1CE359A9 - 85 F6                 - test esi,esi
+1CE359AB - 74 15                 - je 1CE359C2
+1CE359AD - 8B 06                 - mov eax,[esi]
+1CE359AF - 8B 00                 - mov eax,[eax]
+1CE359B1 - 8B 40 08              - mov eax,[eax+08]
+1CE359B4 - 8B 48 08              - mov ecx,[eax+08]
+
+1CE359B7: 33 C0              - xor eax,eax
+1CE359B9: 81 F9 80622910     - cmp ecx,10296280
+1CE359BF: 0F45 F8            - cmovne edi,eax
+1CE359C2: 83 EC 08           - sub esp,08
+1CE359C5: FF 75 F0           - push [ebp-10]
+1CE359C8: 57                 - push edi
+1CE359C9: 39 3F              - cmp [edi],edi
+1CE359CB: E8 A08B0100        - call 1CE4E570
+1CE359D0: 83 C4 10           - add esp,10
+1CE359D3: EB 13              - jmp 1CE359E8
+// ---------- INJECTING HERE ----------
+1CE359D5: 8B 46 2C           - mov eax,[esi+2C] // load old AP
+1CE359D8: 2B C7              - sub eax,edi      // subtract use
+// ---------- DONE INJECTING  ----------
+1CE359DA: 89 46 2C           - mov [esi+2C],eax
+1CE359DD: 85 C0              - test eax,eax
+1CE359DF: 7D 07              - jnl 1CE359E8
+1CE359E1: C7 46 2C 00000000  - mov [esi+2C],00000000
+1CE359E8: 8D 65 F4           - lea esp,[ebp-0C]
+1CE359EB: 5E                 - pop esi
+1CE359EC: 5F                 - pop edi
+1CE359ED: 5B                 - pop ebx
+1CE359EE: C9                 - leave
+1CE359EF: C3                 - ret
+}
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>8</ID>
+          <Description>"pAPBase"</Description>
+          <ShowAsHex>1</ShowAsHex>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>globals+100</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>9</ID>
+          <Description>"bNoApUse"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>globals+104</Address>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>10</ID>
+      <Description>"SCRIPT: Ammo Use"</Description>
+      <Color>80000008</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>{ Game   : game.exe
+  Version: Steam
+  Date   : 2013-11-29
+  Author : jgoemat
+
+  This is where ammo is subtracted
+}
+
+[ENABLE]
+
+globalalloc(globals,$100000)
+// globals+200: pAmmoBase
+// globals+204: bNoAmmoUse
+
+aobscan(INJECT_AMMOUSE,8B 47 28 85 C0 7E) // should be unique
+assert(INJECT_AMMOUSE+0E,8D 65 FC 5F C9 C3) // code we're doing for return
+alloc(newmem,$1000)
+
+label(code)
+label(skip)
+label(return)
+
+newmem:
+
+code:
+  mov [globals+200],edi
+  cmp dword ptr [globals+204],1
+  jne skip
+  // here we just do the return stuff (after loading ammo in EAX)
+  mov eax,[edi+28]
+  lea esp,[ebp-04]
+  pop edi
+  leave
+  ret
+
+skip:
+  mov eax,[edi+28]
+  test eax,eax
+  jmp return
+
+INJECT_AMMOUSE:
+  jmp code
+return:
+registersymbol(INJECT_AMMOUSE)
+
+[DISABLE]
+
+INJECT_AMMOUSE:
+  db 8B 47 28 85 C0
+
+unregistersymbol(INJECT_AMMOUSE)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: 1CE3712A
+
+1CE37111: 8B EC             - mov ebp,esp
+1CE37113: 57                - push edi
+1CE37114: 83 EC 04          - sub esp,04
+1CE37117: 8B 7D 08          - mov edi,[ebp+08]
+1CE3711A: 83 EC 0C          - sub esp,0C
+1CE3711D: 57                - push edi
+1CE3711E: E8 5DFC67E8       - call 054B6D80
+1CE37123: 83 C4 10          - add esp,10
+1CE37126: 85 C0             - test eax,eax
+1CE37128: 74 0E             - je 1CE37138
+// ---------- INJECTING HERE ----------
+1CE3712A: 8B 47 28          - mov eax,[edi+28]
+1CE3712D: 85 C0             - test eax,eax
+// ---------- DONE INJECTING  ----------
+1CE3712F: 7E 07             - jle 1CE37138
+1CE37131: 8B 47 28          - mov eax,[edi+28]
+1CE37134: 48                - dec eax
+1CE37135: 89 47 28          - mov [edi+28],eax
+1CE37138: 8D 65 FC          - lea esp,[ebp-04]
+1CE3713B: 5F                - pop edi
+1CE3713C: C9                - leave
+1CE3713D: C3                - ret
+1CE3713E: 00 00             - add [eax],al
+1CE37140: 55                - push ebp
+}
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>11</ID>
+          <Description>"pAmmoBase"</Description>
+          <ShowAsHex>1</ShowAsHex>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>globals+200</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>12</ID>
+          <Description>"bNoAmmoUse"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>globals+204</Address>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>13</ID>
+      <Description>"SCRIPT: Simple AP/CP avoid use"</Description>
+      <Color>80000008</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>{ Game   : game.exe
+  Version: Steam
+  Date   : 2013-11-29
+  Author : jgoemat
+
+  Here we can just replace the push ebp with ret and no CP or AP will be used
+}
+
+[ENABLE]
+
+aobscan(INJECT_SIMPLEAP,55 8B EC 53 57 56 83 EC 0C 8B 75 08 8B 7D 0C 39 36) // should be unique
+
+INJECT_SIMPLEAP:
+  ret
+registersymbol(INJECT_SIMPLEAP)
+
+[DISABLE]
+
+INJECT_SIMPLEAP:
+  db 55
+
+unregistersymbol(INJECT_SIMPLEAP)
+
+{
+// ORIGINAL CODE - INJECTION POINT: 1CE358E0
+
+1CE358C8: 10 E9           - adc cl,ch
+1CE358CA: 5A              - pop edx
+1CE358CB: A7              - cmpsd
+1CE358CC: D4 E7           - aam -19
+1CE358CE: 00 00           - add [eax],al
+1CE358D0: 68 40244710     - push 10472440
+1CE358D5: E9 4EA7D4E7     - jmp 04B80028
+1CE358DA: 00 00           - add [eax],al
+1CE358DC: 00 00           - add [eax],al
+1CE358DE: 00 00           - add [eax],al
+// ---------- INJECTING HERE ----------
+1CE358E0: 55              - push ebp    // just replacing with RET
+1CE358E1: 8B EC           - mov ebp,esp
+1CE358E3: 53              - push ebx
+1CE358E4: 57              - push edi
+// ---------- DONE INJECTING  ----------
+1CE358E5: 56              - push esi
+1CE358E6: 83 EC 0C        - sub esp,0C
+1CE358E9: 8B 75 08        - mov esi,[ebp+08]
+1CE358EC: 8B 7D 0C        - mov edi,[ebp+0C]
+1CE358EF: 39 36           - cmp [esi],esi
+1CE358F1: 8B 46 28        - mov eax,[esi+28]
+1CE358F4: 85 C0           - test eax,eax
+1CE358F6: 0F9F C0         - setg al
+1CE358F9: 0FB6 C0         - movzx eax,al
+1CE358FC: 85 C0           - test eax,eax
+}
+</AssemblerScript>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols>
+    <SymbolEntry>
+      <Name>globals</Name>
+      <Address>25BC0000</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>INJECT_SIMPLEAP</Name>
+      <Address> 1CE358E0</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>INJECT_AMMOUSE</Name>
+      <Address> 1CE3712A</Address>
+    </SymbolEntry>
+  </UserdefinedSymbols>
+</CheatTable>

@@ -1,0 +1,621 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="18">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>7</ID>
+      <Description>"Fable Anniversary Cheat Script v20140922_1454_835964_v1_0"</Description>
+      <Options moHideChildren="1"/>
+      <LastState Activated="0"/>
+      <Color>80000008</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>{
+  Game          : Fable Anniversary.exe
+  Version       : 20140922_1454_835964
+  Cheat Engine  : 6.4
+  Table version : v1.0
+  Date          : 2014-09-24
+  Author        : Reaper79
+
+  Changes       :
+
+  v0.1          Initial Release for Game Version (20140911_1134_830221)
+  v0.2          Bug Fix God Mode
+  v0.3          Added One Hit Kill
+  v0.4          Added Infinite Skill Points
+  v0.5          Fixed/Improved One Hit Kill (hopefully only "player targets" get onehitted)
+  v0.6          Silver Keys Temporary Pointer added (till i find the inventory structure pointer)
+  v0.7          Fixed / Added Silver-Keys usage
+  v0.8          updated to Game Version (20140915_2025_832816)
+  v0.9          fixed silver-keys (open chests everywhere, anytime, even in tutorial, even if you own 0 keys)
+  v1.0          updated to Game Version (20140922_1454_835964)
+                small bugfix in aobscan
+}
+
+DEFINE(iDefineMinGold,#999999) // minimum Gold you have
+DEFINE(iMinSkillPoints,#666666) // minimum Skill Points you have
+
+[ENABLE]
+
+aobscanmodule(aobPlayerPointer,Fable Anniversary.exe,04 7E 02 8B C7 8B 48 04 8B 11) // should be unique
+aobscanmodule(aobPlayerMana,Fable Anniversary.exe,01 07 8D 46 64) // should be unique
+aobscanmodule(aobPlayerGoldAccess,Fable Anniversary.exe,8B 58 44 8B 86 10 03 00 00) // should be unique
+aobscanmodule(aobPlayerGoldWriter,Fable Anniversary.exe,39 43 44 5F 5E) // should be unique
+aobscanmodule(aobPlayerHealth,Fable Anniversary.exe,F3 0F 11 86 D0 00 00 00 80 3D) // should be unique
+aobscanmodule(aobSkillPointsAcc,Fable Anniversary.exe,8B 78 14 38 5E 38) // should be unique
+aobscanmodule(aobSkillPointsWrite,Fable Anniversary.exe,01 51 14 C7 00 00 00 00 00 C2 08 00 CC CC CC 8B 51) // should be unique
+aobscanmodule(aobSkillPointsWriter,Fable Anniversary.exe,01 51 14 C7 00 00 00 00 00 C2 08 00 CC CC CC 8B 44) // should be unique
+aobscanmodule(aobInventory,Fable Anniversary.exe,8B 09 89 45 FC 8D 45) // should be unique
+
+alloc(newmem,2048)
+
+label(codePlayerPointer)
+label(retPlayerPointer)
+label(pPlayer)
+registersymbol(pPlayer)
+
+label(codePlayerMana)
+label(codePlayerMana2)
+label(retPlayerMana)
+
+label(codePlayerGoldAccess)
+label(codePlayerGoldAccess2)
+label(retPlayerGoldAccess)
+
+label(codePlayerGoldWriter)
+label(codePlayerGoldWriter2)
+label(retPlayerGoldWriter)
+
+label(codePlayerHealth)
+label(codePlayerHealth2)
+label(codePlayerHealth3)
+label(retPlayerHealth)
+
+label(codeSkillPointsAcc)
+label(codeSkillPointsAcc2)
+label(retSkillPointsAcc)
+
+label(codeSkillPointsWrite)
+label(codeSkillPointsWrite2)
+label(retSkillPointsWrite)
+
+label(codeSkillPointsWriter)
+label(codeSkillPointsWriter2)
+label(retSkillPointsWriter)
+
+label(codeInventory)
+label(codeInventory2)
+label(retInventory)
+
+label(pInventory)
+registersymbol(pInventory)
+
+label(iEnableGodMode)
+registersymbol(iEnableGodMode)
+label(iEnableInfiniteGold)
+registersymbol(iEnableInfiniteGold)
+label(iMinPlayerGold)
+registersymbol(iMinPlayerGold)
+label(iEnableOneHitKill)
+registersymbol(iEnableOneHitKill)
+label(iEnableInfiniteSkillPoints)
+registersymbol(iEnableInfiniteSkillPoints)
+
+label(iEnableNoNeedKeys)
+registersymbol(iEnableNoNeedKeys)
+
+// ========== [CAVE]
+newmem:
+iEnableGodMode:
+  dd 0
+iEnableInfiniteGold:
+  dd 0
+iEnableOneHitKill:
+  dd 0
+iEnableInfiniteSkillPoints:
+  dd 0
+iEnableNoNeedKeys:
+  dd 0
+iMinPlayerGold:
+  dd iDefineMinGold
+pPlayer:
+  dd 0
+pInventory:
+  dd 0
+
+codePlayerPointer:
+  mov ecx,[eax+04] // original
+  mov [pPlayer],ecx // save pointer to Player
+  mov edx,[ecx] // original
+  jmp retPlayerPointer
+
+codePlayerMana:
+  cmp [iEnableGodMode],0 // is disabled?
+  je codePlayerMana2     // if disabled, jmp original
+  cmp [pPlayer],esi      // is Player?
+  jne codePlayerMana2    // if not player, jmp original
+  lea edi,[esi+64]       // set player current Mana to his Max.
+  mov eax,0              // no sub / add to player Mana
+
+codePlayerMana2:
+  add [edi],eax //original
+  lea eax,[esi+64] //original
+  jmp retPlayerMana
+
+codePlayerGoldAccess:
+  cmp [iEnableInfiniteGold],0 // is disabled?
+  je codePlayerGoldAccess2        // if disabled, jmp original
+  cmp [pPlayer],eax         // is player?
+  jne codePlayerGoldAccess2       // if not player, jmp original
+  mov ebx,[iMinPlayerGold]  // mov minGold to temp register
+  cmp [eax+44],ebx          // is player gold equal or greater min. gold?
+  jge codePlayerGoldAccess2       // if player gold equals or is greater min. gold jmp original
+  mov [eax+44],ebx          // mov Min. Gold to Player Current Gold
+
+codePlayerGoldAccess2:
+  mov ebx,[eax+44] // original
+  mov eax,[esi+00000310] //original
+  jmp retPlayerGoldAccess
+
+codePlayerGoldWriter:
+  cmp [iEnableInfiniteGold],0 // is disabled?
+  je codePlayerGoldWriter2        // if disabled, jmp original
+  cmp ebx,[pPlayer]
+  jne codePlayerGoldWriter2
+  mov [ebx+44],iDefineMinGold
+
+codePlayerGoldWriter2:
+  cmp [ebx+44],eax
+  pop edi
+  pop esi
+  jmp retPlayerGoldWriter
+
+codePlayerHealth:
+  push eax
+  cmp [iEnableGodMode],0    // is disabled?
+  je codePlayerHealth2      // if disabled, jmp original
+  mov eax,[pPlayer]         // get player health pointer
+  mov eax,[eax+4]
+  cmp esi,eax               // is player?
+  jne codePlayerHealth2     // if not jmp original
+  movss xmm0,[esi+000000CC] // mov (float) max Health to current health
+
+codePlayerHealth2:
+  movss [esi+000000D0],xmm0 // original
+  cmp [iEnableOneHitKill],0 // is disabled?
+  je codePlayerHealth3      // if disabled, jmp original
+  mov eax,[pPlayer]         // get player health pointer
+  mov eax,[eax+4]
+  cmp esi,eax               // is player?
+  je codePlayerHealth3     // if jmp original
+  cmp eax,ebp              //does player hit the target?
+  jne codePlayerHealth3    //if not jmp
+  mov [esi+000000D0], (float)-1 // set Health to -1
+
+codePlayerHealth3:
+  pop eax
+  jmp retPlayerHealth
+
+codeSkillPointsAcc:
+  cmp [iEnableInfiniteSkillPoints],0 // is disabled?
+  je codeSkillPointsAcc2             // if disabled, jmp original
+  mov edi,[pPlayer]                  // load Player pointer in edi
+  mov edi,[edi+4]                    // find the right pointer
+  mov edi,[edi+44]                   // find the right pointer
+  mov edi,[edi+13C]                  // find the right pointer
+  cmp edi,eax                        // player SkillPoints ?
+  jne codeSkillPointsAcc2            // if not jmp original
+  mov [eax+10],iMinSkillPoints       // set minimum SkillPoints
+  mov [eax+14],iMinSkillPoints       // set minimum SkillPoints
+
+codeSkillPointsAcc2:
+  mov edi,[eax+14]                   // original
+  cmp [esi+38],bl                    // original
+  jmp retSkillPointsAcc
+
+codeSkillPointsWrite:
+  push eax
+  cmp [iEnableInfiniteSkillPoints],0 // is disabled?
+  je codeSkillPointsWrite2           // if disabled, jmp original
+  mov eax,[pPlayer]                  // load Player pointer in eax
+  mov eax,[eax+4]                    // find the right pointer
+  mov eax,[eax+44]                   // find the right pointer
+  mov eax,[eax+13C]                  // find the right pointer
+  cmp eax,ecx                        // player SkillPoints ?
+  jne codeSkillPointsWrite2          // if not jmp original
+  mov edx,0                          // no sub / add to Skillpoints
+  mov [ecx+10],iMinSkillPoints       // set minimum SkillPoints
+  mov [ecx+14],iMinSkillPoints       // set minimum SkillPoints
+
+codeSkillPointsWrite2:
+  pop eax
+  add [ecx+14],edx                   // original
+  mov [eax],00000000                 // original
+  jmp retSkillPointsWrite
+
+codeSkillPointsWriter:
+  push eax
+  cmp [iEnableInfiniteSkillPoints],0 // is disabled?
+  je codeSkillPointsWriter2          // if disabled, jmp original
+  mov eax,[pPlayer]                  // load Player pointer in eax
+  mov eax,[eax+4]                    // find the right pointer
+  mov eax,[eax+44]                   // find the right pointer
+  mov eax,[eax+13C]                  // find the right pointer
+  cmp eax,ecx                        // player SkillPoints ?
+  jne codeSkillPointsWriter2         // if not jmp original
+  mov edx,0                          // no sub / add to Skillpoints
+  mov [ecx+10],iMinSkillPoints       // set minimum SkillPoints
+  mov [ecx+14],iMinSkillPoints       // set minimum SkillPoints
+
+codeSkillPointsWriter2:
+  pop eax
+  add [ecx+14],edx                   // original
+  mov [eax],00000000                 // original
+  jmp retSkillPointsWriter
+
+codeInventory:
+  push eax
+  cmp [esi],1141     // wallet // purse // geldbÃ¶rse (1st thing, player got)
+  jne codeInventory2
+  mov [pInventory],esi  //save inventory base pointer
+  cmp [iEnableNoNeedKeys],0
+  je codeInventory2
+  mov eax,[pInventory]
+  mov [eax+14],1148 // inventory got kind silver keys now
+  mov [eax+18],#30  // inventory got #30 silver keys now
+
+codeInventory2:
+  pop eax
+  mov ecx,[ecx]       //original
+  mov [ebp-04],eax    //original
+  jmp retInventory
+
+// ========== [INJECTS]
+aobPlayerPointer+05:
+  jmp codePlayerPointer
+retPlayerPointer:
+registersymbol(aobPlayerPointer)
+
+aobPlayerMana:
+  jmp codePlayerMana
+retPlayerMana:
+registersymbol(aobPlayerMana)
+
+aobPlayerGoldAccess:
+  jmp codePlayerGoldAccess
+  db 90 90 90 90
+retPlayerGoldAccess:
+registersymbol(aobPlayerGoldAccess)
+
+aobPlayerGoldWriter:
+  jmp codePlayerGoldWriter
+retPlayerGoldWriter:
+registersymbol(aobPlayerGoldWriter)
+
+aobPlayerHealth:
+  jmp codePlayerHealth
+  db 90 90 90
+retPlayerHealth:
+registersymbol(aobPlayerHealth)
+
+aobSkillPointsAcc:
+  jmp codeSkillPointsAcc
+  db 90
+retSkillPointsAcc:
+registersymbol(aobSkillPointsAcc)
+
+aobSkillPointsWrite:
+  jmp codeSkillPointsWrite
+  db 90 90 90 90
+retSkillPointsWrite:
+registersymbol(aobSkillPointsWrite)
+
+aobSkillPointsWriter:
+  jmp codeSkillPointsWriter
+  db 90 90 90 90
+retSkillPointsWriter:
+registersymbol(aobSkillPointsWriter)
+
+aobInventory:
+  jmp codeInventory
+retInventory:
+registersymbol(aobInventory)
+
+[DISABLE]
+
+aobPlayerPointer+05:
+  db 8B 48 04 8B 11
+
+aobPlayerMana:
+  db 01 07 8D 46 64
+
+aobPlayerGoldAccess:
+  db 8B 58 44 8B 86 10 03 00 00
+
+aobPlayerGoldWriter:
+  db 39 43 44 5F 5E
+
+aobPlayerHealth:
+  db F3 0F 11 86 D0 00 00 00
+
+aobSkillPointsAcc:
+  db 8B 78 14 38 5E 38
+
+aobSkillPointsWrite:
+  db 01 51 14 C7 00 00 00 00 00
+
+aobSkillPointsWriter:
+  db 01 51 14 C7 00 00 00 00 00
+
+aobInventory:
+  db 8B 09 89 45 FC
+
+unregistersymbol(iEnableGodMode)
+unregistersymbol(iEnableInfiniteGold)
+unregistersymbol(iMinPlayerGoldAccess)
+unregistersymbol(iMinPlayerGold)
+unregistersymbol(iEnableOneHitKill)
+unregistersymbol(iEnableInfiniteSkillPoints)
+unregistersymbol(iEnableNoNeedKeys)
+unregistersymbol(pPlayer)
+unregistersymbol(aobPlayerPointer)
+unregistersymbol(aobPlayerMana)
+unregistersymbol(aobPlayerGoldAccess)
+unregistersymbol(aobPlayerGoldWriter)
+unregistersymbol(aobPlayerHealth)
+unregistersymbol(aobSkillPointsAcc)
+unregistersymbol(aobSkillPointsWrite)
+unregistersymbol(aobSkillPointsWriter)
+unregistersymbol(pInventory)
+unregistersymbol(aobInventory)
+
+dealloc(newmem)
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>12</ID>
+          <Description>"God Mode (Enable / Disable)"</Description>
+          <LastState Activated="0"/>
+          <Color>80000008</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[ENABLE]
+iEnableGodMode:
+  dd 1
+[DISABLE]
+iEnableGodMode:
+  dd 0
+</AssemblerScript>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>24</ID>
+          <Description>"One Hit Kill"</Description>
+          <LastState Activated="0"/>
+          <Color>80000008</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[ENABLE]
+iEnableOneHitKill:
+  dd 1
+[DISABLE]
+iEnableOneHitKill:
+  dd 0
+</AssemblerScript>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Toggle Activation</Action>
+              <Keys>
+                <Key>98</Key>
+              </Keys>
+              <ID>0</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>13</ID>
+          <Description>"Infinite Gold (Enable / Disable)"</Description>
+          <Options moHideChildren="1"/>
+          <LastState Activated="0"/>
+          <Color>80000008</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[ENABLE]
+iEnableInfiniteGold:
+  dd 1
+[DISABLE]
+iEnableInfiniteGold:
+  dd 0
+</AssemblerScript>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>14</ID>
+              <Description>"Minimum Player Gold"</Description>
+              <LastState Value="??" Activated="0" RealAddress="00000000"/>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>iMinPlayerGold</Address>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>33</ID>
+          <Description>"Infinite Skill Points (Enable / Disable)"</Description>
+          <LastState Activated="0"/>
+          <Color>80000008</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[ENABLE]
+iEnableInfiniteSkillPoints:
+  dd 1
+[DISABLE]
+iEnableInfiniteSkillPoints:
+  dd 1
+</AssemblerScript>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>38</ID>
+          <Description>"No Silver-Key needed (Enable / Disable)"</Description>
+          <LastState Activated="0"/>
+          <Color>80000008</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[ENABLE]
+iEnableNoNeedKeys:
+  dd 1
+[DISABLE]
+iEnableNoNeedKeys:
+  dd 0
+</AssemblerScript>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>35</ID>
+          <Description>"=============== [ HERO STATS ] =============="</Description>
+          <Options moHideChildren="1"/>
+          <LastState Value="" Activated="0" RealAddress="00000000"/>
+          <Color>FF00FF</Color>
+          <GroupHeader>1</GroupHeader>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>49</ID>
+              <Description>"Hero Age (Set Age, save game and reload)"</Description>
+              <LastState Value="??" Activated="0" RealAddress="00000000"/>
+              <Color>FF00FF</Color>
+              <VariableType>Float</VariableType>
+              <Address>pPlayer</Address>
+              <Offsets>
+                <Offset>38</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>48</ID>
+              <Description>"Hero Weigth (0 = Slim / 1 = Fat)"</Description>
+              <LastState Value="??" Activated="0" RealAddress="00000000"/>
+              <Color>FF00FF</Color>
+              <VariableType>Float</VariableType>
+              <Address>pPlayer</Address>
+              <Offsets>
+                <Offset>40</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>10</ID>
+              <Description>"Hero Gold"</Description>
+              <LastState Value="??" Activated="0" RealAddress="00000000"/>
+              <Color>FF00FF</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pPlayer</Address>
+              <Offsets>
+                <Offset>44</Offset>
+              </Offsets>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>9</ID>
+          <Description>"================== [ DEBUG ] ================"</Description>
+          <Options moHideChildren="1"/>
+          <LastState Value="" Activated="0" RealAddress="00000000"/>
+          <Color>008000</Color>
+          <GroupHeader>1</GroupHeader>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>8</ID>
+              <Description>"Player Pointer"</Description>
+              <LastState Value="??" Activated="0" RealAddress="00000000"/>
+              <ShowAsHex>1</ShowAsHex>
+              <Color>008000</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pPlayer</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>37</ID>
+              <Description>"Player Gold"</Description>
+              <LastState Value="??" Activated="0" RealAddress="00000000"/>
+              <Color>008000</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pPlayer</Address>
+              <Offsets>
+                <Offset>44</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>11</ID>
+              <Description>"Player Mana"</Description>
+              <LastState Value="??" Activated="0" RealAddress="00000000"/>
+              <Color>008000</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pPlayer</Address>
+              <Offsets>
+                <Offset>60</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>22</ID>
+              <Description>"Current Life"</Description>
+              <LastState Value="??" Activated="0" RealAddress="00000000"/>
+              <Color>008000</Color>
+              <VariableType>Float</VariableType>
+              <Address>pPlayer</Address>
+              <Offsets>
+                <Offset>D0</Offset>
+                <Offset>4</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>23</ID>
+              <Description>"Max Life"</Description>
+              <LastState Value="??" Activated="0" RealAddress="00000000"/>
+              <Color>008000</Color>
+              <VariableType>Float</VariableType>
+              <Address>pPlayer</Address>
+              <Offsets>
+                <Offset>CC</Offset>
+                <Offset>4</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>31</ID>
+              <Description>"Skillpoints"</Description>
+              <LastState Value="??" Activated="0" RealAddress="00000000"/>
+              <Color>008000</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pPlayer</Address>
+              <Offsets>
+                <Offset>14</Offset>
+                <Offset>13C</Offset>
+                <Offset>44</Offset>
+                <Offset>4</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>34</ID>
+              <Description>"Player Age"</Description>
+              <LastState Value="??" Activated="0" RealAddress="00000000"/>
+              <Color>008000</Color>
+              <VariableType>Float</VariableType>
+              <Address>pPlayer</Address>
+              <Offsets>
+                <Offset>38</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>46</ID>
+              <Description>"Player Inventory Base"</Description>
+              <LastState Value="??" Activated="0" RealAddress="00000000"/>
+              <ShowAsHex>1</ShowAsHex>
+              <Color>008000</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pInventory</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>39</ID>
+              <Description>"Player Silver Keys"</Description>
+              <LastState Value="??" Activated="0" RealAddress="00000000"/>
+              <Color>008000</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pInventory</Address>
+              <Offsets>
+                <Offset>18</Offset>
+              </Offsets>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols/>
+</CheatTable>

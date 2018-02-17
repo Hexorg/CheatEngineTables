@@ -1,0 +1,358 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="14">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>0</ID>
+      <Description>"Health, Energy, Food, Cooldowntimer"</Description>
+      <Color>80000008</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>/*
+lua51.lua_close+3F16 - 8B 2C EA              - mov ebp,[edx+ebp*8]
+lua51.lua_close+3F19 - 8B 4D 1C              - mov ecx,[ebp+1C]
+lua51.lua_close+3F1C - 23 48 08              - and ecx,[eax+08]
+lua51.lua_close+3F1F - 6B C9 18              - imul ecx,ecx,18
+lua51.lua_close+3F22 - 03 4D 14              - add ecx,[ebp+14]
+lua51.lua_close+3F25 - 83 79 0C FB           - cmp dword ptr [ecx+0C],FB // LUA_TSTRING ?
+lua51.lua_close+3F29 - 75 3A                 - jne lua51.lua_close+3F65
+lua51.lua_close+3F2B - 39 41 08              - cmp [ecx+08],eax          // &lt;---- hack point
+lua51.lua_close+3F2E - 75 35                 - jne lua51.lua_close+3F65
+lua51.lua_close+3F30 - 83 79 04 FF           - cmp dword ptr [ecx+04],FF
+lua51.lua_close+3F34 - 74 36                 - je lua51.lua_close+3F6C
+lua51.lua_close+3F36 - 0FB6 46 FD            - movzx eax,byte ptr [esi-03]
+lua51.lua_close+3F3A - 8B 29                 - mov ebp,[ecx]
+*/
+
+
+[ENABLE]
+aobscan(codeAOB,39 41 08 75 35 83 79 04 FF 74 36 0F B6 46 FD)
+label(code)
+registersymbol(code)
+
+alloc(newmem,2048)
+label(returnhere)
+label(originalcode)
+label(exit)
+label(storeEAX)
+label(changeHealth)
+label(changeEnergy)
+label(changeCoolDownTimer)
+label(SKIPchangeCoolDownTimer)
+
+//FOR STRING CHECK MECHANISM
+label(strRace)
+label(strStats)
+label(strHealth)
+label(strEnergy)
+label(strFood)
+label(strAssert)
+label(checkStrStats)
+label(checkStrHealth)
+label(checkStrEnergy)
+label(checkStrFood)
+label(checkStrAssert)
+
+//FOR STRING FINAL CHECK
+label(checkStrValue)
+label(checkStrCoolDownTimer)
+
+//RESET SEARCH MECHANISM
+label(reset)
+
+//enablers (switches)
+label(FreezeHealth)
+label(FreezeEnergy)
+label(FreezeCoolDownTimer)
+label(FreezeFood)
+registersymbol(FreezeHealth)
+registersymbol(FreezeEnergy)
+registersymbol(FreezeCoolDownTimer)
+registersymbol(FreezeFood)
+
+label(FoodValue)
+
+newmem:
+mov [storeEAX],eax //storeEAX
+pushfd
+
+// the pattern is:
+// - for health:        race -&gt; stats -&gt; health -&gt; assert -&gt; value
+// - for energy:        race -&gt; stats -&gt; energy -&gt; assert -&gt; value
+// - for coolDownTimer: race -&gt; stats -&gt; food -&gt; coolDownTimer
+//
+// explanation: assert string is accessed just before value(actual health),
+//              health string is accessed just before assert,
+//              stats string is accessed just before health,
+//              race string is accessed just before stats,
+//
+//
+// explanation: assert string is accessed just before value(actual energy),
+//              energy string is accessed just before assert,
+//              stats string is accessed just before energy,
+//              race string is accessed just before stats,
+//
+
+//STRING CHECK MECHANISM START
+mov eax,[ecx+08]
+
+cmp byte ptr [strAssert],1
+je checkStrValue
+
+cmp byte ptr [strHealth],1
+je checkStrAssert
+
+cmp byte ptr [strEnergy],1
+je checkStrAssert
+
+cmp byte ptr [strFood],1
+je checkStrCoolDownTimer
+
+cmp byte ptr [strStats],1
+je checkStrHealth
+
+cmp byte ptr [strRace],1
+je checkStrStats
+
+
+cmp dword ptr [eax+10],65636172 //'race'
+jne reset
+cmp byte ptr [eax+14],0
+jne reset
+mov byte ptr [strRace],1
+jmp originalcode
+
+
+checkStrStats:
+cmp dword ptr [eax+10],'stat'
+jne reset
+cmp word ptr [eax+14],0073      // 's',0
+jne reset
+mov byte ptr [strStats],1
+jmp originalcode
+
+
+checkStrHealth:
+cmp dword ptr [eax+10],'heal'
+jne checkStrEnergy
+cmp word ptr [eax+14],'th'
+jne checkStrEnergy
+mov byte ptr [strHealth],1
+jmp originalcode
+
+checkStrEnergy:
+cmp dword ptr [eax+10],'ener'
+jne checkStrFood
+cmp word ptr [eax+14],'gy'
+jne checkStrFood
+mov byte ptr [strEnergy],1
+jmp originalcode
+
+checkStrFood:
+cmp dword ptr [eax+10],'food'
+jne reset
+cmp byte ptr [eax+14],0
+jne reset
+mov byte ptr [strFood],1
+jmp originalcode
+
+
+checkStrAssert:
+cmp dword ptr [eax+10],'asse'
+jne reset
+cmp word ptr [eax+14],'rt'
+jne reset
+mov byte ptr [strAssert],1
+jmp originalcode
+//STRING CHECK MECHANISM END
+
+
+// overwrite health or energy value (final check)
+checkStrValue:
+cmp dword ptr [eax+10],'valu'
+jne reset
+cmp word ptr [eax+14],0065 // 'e',0
+jne reset
+// we found our health or energy
+cmp byte ptr [strEnergy],1
+je changeEnergy
+
+changeHealth: // update health
+cmp byte ptr [FreezeHealth],0 //enabled ?
+je reset
+mov eax,[ecx-44]
+mov [ecx+4],eax
+mov eax,[ecx-48]   // currentValue at [ecx], maximum at [ecx-48]
+mov [ecx],eax
+jmp reset // ok, now reset search mechanism
+
+changeEnergy: // update energy
+cmp byte ptr [FreezeEnergy],0 //enabled ?
+je reset
+mov eax,[ecx-44]
+mov [ecx+4],eax
+mov eax,[ecx-48]   // currentValue at [ecx], maximum at [ecx-48]
+mov [ecx],eax
+jmp reset // ok, now reset search mechanism
+
+
+
+
+// overwrite cooldowntimer value (final check)
+checkStrCoolDownTimer:
+cmp dword ptr [eax+10],'cool'
+jne reset
+cmp dword ptr [eax+14],'Down'
+jne reset
+cmp dword ptr [eax+18],'Time'
+jne reset
+
+
+//we found cooldowntimer
+changeCoolDownTimer:
+cmp byte ptr [FreezeCoolDownTimer],0 //enabled ?
+je SKIPchangeCoolDownTimer
+mov eax,0 // cooldowntimer set to 0.0 (double)
+mov [ecx+4],eax
+mov [ecx],eax
+
+
+
+SKIPchangeCoolDownTimer:
+
+// food at [ecx+30]
+// skillpoints at [ecx+78]
+// both are double
+
+//FOOD
+cmp byte ptr [FreezeFood],0 //enabled ?
+je reset
+mov eax,[FoodValue+4]
+mov [ecx+34],eax
+mov eax,[FoodValue]
+mov [ecx+30],eax
+
+
+
+
+reset:
+mov byte ptr [strRace],0
+mov byte ptr [strStats],0
+
+mov byte ptr [strHealth],0
+mov byte ptr [strEnergy],0
+mov byte ptr [strFood],0
+
+mov byte ptr [strAssert],0
+
+
+originalcode:
+popfd
+mov eax,[storeEAX] //restoreEAX
+cmp [ecx+08],eax
+jne codeAOB+3A
+
+exit:
+jmp returnhere
+
+storeEAX:
+dd 0
+
+strRace:
+db 0
+strStats:
+db 0
+strHealth:
+db 0
+strEnergy:
+db 0
+strFood:
+db 0
+strAssert:
+db 0
+
+// food
+FoodValue:
+dq (double)1000.0
+
+// enablers (switches)
+FreezeHealth:
+db 0
+FreezeEnergy:
+db 0
+FreezeCoolDownTimer:
+db 0
+FreezeFood:
+db 0
+
+codeAOB:
+code:
+jmp newmem
+returnhere:
+
+
+
+
+[DISABLE]
+code:
+//Alt: cmp [ecx+08],eax
+//Alt: jne lua51.lua_close+3F65
+db 39 41 08 75 35
+
+dealloc(newmem)
+
+//switches
+unregistersymbol(FreezeHealth)
+unregistersymbol(FreezeEnergy)
+unregistersymbol(FreezeCoolDownTimer)
+unregistersymbol(FreezeFood)
+unregistersymbol(code)
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>1</ID>
+          <Description>"Switches [to enable - set to 1]"</Description>
+          <Color>80000008</Color>
+          <GroupHeader>1</GroupHeader>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>2</ID>
+              <Description>"Freeze Health"</Description>
+              <Color>80000008</Color>
+              <VariableType>Byte</VariableType>
+              <Address>FreezeHealth</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>3</ID>
+              <Description>"Freeze Energy"</Description>
+              <Color>80000008</Color>
+              <VariableType>Byte</VariableType>
+              <Address>FreezeEnergy</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>4</ID>
+              <Description>"Freeze Food"</Description>
+              <Color>80000008</Color>
+              <VariableType>Byte</VariableType>
+              <Address>FreezeFood</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>5</ID>
+              <Description>"Freeze CoolDownTimer"</Description>
+              <Color>80000008</Color>
+              <VariableType>Byte</VariableType>
+              <Address>FreezeCoolDownTimer</Address>
+              <CheatEntries>
+                <CheatEntry>
+                  <ID>6</ID>
+                  <Description>"warning - this cheat is overpowered  :-)"</Description>
+                  <Color>80000008</Color>
+                  <GroupHeader>1</GroupHeader>
+                </CheatEntry>
+              </CheatEntries>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols/>
+</CheatTable>

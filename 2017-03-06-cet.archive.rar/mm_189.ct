@@ -1,0 +1,630 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="24">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>7</ID>
+      <Description>"Money Pointer AOB (after go to finances screen activate this)"</Description>
+      <Options moHideChildren="1"/>
+      <LastState/>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>{ Game   : Motorsport Manager
+  Version: 1.0
+  Date   : 2016-11-13
+  Author : Digital_Max
+
+  This script does find pointer in game
+}
+
+[ENABLE]
+
+aobscan(aobmon,48 8B 47 10 4C 8B 70 30) // should be unique
+
+alloc(monmem,$1000)
+
+label(mon_code)
+label(mon_ret)
+
+label(pmoney)
+
+monmem:
+
+mon_code:
+  mov rax,[rdi+10]
+  mov r14,[rax+30]
+  mov [pmoney],rax
+  jmp mon_ret
+
+pmoney:
+
+aobmon:
+  jmp mon_code
+  nop
+  nop
+  nop
+mon_ret:
+
+registersymbol(pmoney)
+registersymbol(aobmon)
+
+[DISABLE]
+
+aobmon:
+  db 48 8B 47 10 4C 8B 70 30
+
+unregistersymbol(pmoney)
+unregistersymbol(aobmon)
+dealloc(monmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: 2B6C33C2
+
+""+2B6C3395: 48 83 EC 10                    -  sub rsp,10
+""+2B6C3399: 48 8B 55 A8                    -  mov rdx,[rbp-58]
+""+2B6C339D: 48 89 14 24                    -  mov [rsp],rdx
+""+2B6C33A1: 48 8B 55 B0                    -  mov rdx,[rbp-50]
+""+2B6C33A5: 48 89 54 24 08                 -  mov [rsp+08],rdx
+""+2B6C33AA: 48 83 EC 20                    -  sub rsp,20
+""+2B6C33AE: 83 38 00                       -  cmp dword ptr [rax],00
+""+2B6C33B1: 49 BB C0 A6 AD 26 00 00 00 00  -  mov r11,0000000026ADA6C0
+""+2B6C33BB: 41 FF D3                       -  call r11
+""+2B6C33BE: 48 83 C4 30                    -  add rsp,30
+// ---------- INJECTING HERE ----------
+""+2B6C33C2: 48 8B 47 10                    -  mov rax,[rdi+10]
+""+2B6C33C6: 4C 8B 70 30                    -  mov r14,[rax+30]
+// ---------- DONE INJECTING  ----------
+""+2B6C33CA: 48 8B 04 25 B0 BD 48 02        -  mov rax,[0248BDB0]
+""+2B6C33D2: 48 8B 40 60                    -  mov rax,[rax+60]
+""+2B6C33D6: 48 8B 40 10                    -  mov rax,[rax+10]
+""+2B6C33DA: 48 8B C8                       -  mov rcx,rax
+""+2B6C33DD: 83 39 00                       -  cmp dword ptr [rcx],00
+""+2B6C33E0: 48 8B 40 38                    -  mov rax,[rax+38]
+""+2B6C33E4: 48 8B C8                       -  mov rcx,rax
+""+2B6C33E7: 48 83 EC 20                    -  sub rsp,20
+""+2B6C33EB: 48 8B 00                       -  mov rax,[rax]
+""+2B6C33EE: 90                             -  nop
+}
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>8</ID>
+          <Description>"Money Pointer"</Description>
+          <VariableType>4 Bytes</VariableType>
+          <Address>pmoney</Address>
+          <Offsets>
+            <Offset>30</Offset>
+          </Offsets>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>17</ID>
+      <Description>"Tire &amp; Fuel Cheat (after practice/race start activate this)"</Description>
+      <Options moHideChildren="1"/>
+      <LastState/>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>{ Game   : Motorsport Manager
+  Version: 1.0
+  Date   : 2016-11-13
+  Author : Digital_Max
+}
+
+[ENABLE]
+aobscan(aobtire,00 00 00 F3 0F 10 46 38 F3) // should be unique
+aobscan(aobfuel,40 F3 0F 10 46 38) // should be unique
+
+alloc(hackmem,$1000)
+
+label(fuel_code)
+label(fuel_ret)
+label(fuel_ex)
+label(tire_code)
+label(tire_ret)
+
+label(pplayer)
+
+label(afuel)
+label(atire)
+
+registersymbol(pplayer)
+registersymbol(afuel)
+registersymbol(atire)
+registersymbol(aobfuel)
+registersymbol(aobtire)
+
+
+hackmem:
+
+//Fuel Cheat ===================================================================
+fuel_code:
+
+  mov [pplayer],rbx // We need player ID Now to prevent AI get the same cheat
+
+  cmp [afuel],1 //Check if this cheat activated
+  jne fuel_ex
+
+  cmp [rsi+38],(float)10000 //Jump if greater
+  jg fuel_ex
+
+  mov [rsi+38],(float)10000 //Apply the cheat
+
+fuel_ex:
+  movss xmm0,[rsi+38]
+  jmp fuel_ret
+
+//Tire Cheat ===================================================================
+tire_code:
+  cmp [atire],1 //Check if this cheat activated
+  jne tire_ex
+
+  cmp [pplayer],rbx // Check if this is player or not
+  jne tire_ex
+
+  mov [rsi+38],(float)1 // Make tire never degrade
+
+tire_ex:
+  movss xmm0,[rsi+38]
+  jmp tire_ret
+
+afuel:
+dd 1
+atire:
+dd 1
+pplayer:
+dd 0
+dd 0
+
+aobfuel+1:
+  jmp fuel_code
+fuel_ret:
+
+aobtire+03:
+  jmp tire_code
+tire_ret:
+
+[DISABLE]
+aobfuel+1:
+  db F3 0F 10 46 38
+
+aobtire+03:
+  db F3 0F 10 46 38
+
+unregistersymbol(pplayer)
+unregistersymbol(afuel)
+unregistersymbol(atire)
+unregistersymbol(aobfuel)
+unregistersymbol(aobtire)
+dealloc(hackmem)
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>20</ID>
+          <Description>"Fuel Minimum Activate"</Description>
+          <DropDownList ReadOnly="1" DescriptionOnly="1" DisplayValueAsItem="1">0:Disable
+1:Enable
+</DropDownList>
+          <LastState Value="8386181" RealAddress="119A0073"/>
+          <VariableType>4 Bytes</VariableType>
+          <Address>afuel</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>19</ID>
+          <Description>"Tire No Degrade Activate"</Description>
+          <DropDownList ReadOnly="1" DescriptionOnly="1" DisplayValueAsItem="1">0:Disable
+1:Enable
+</DropDownList>
+          <LastState Value="0" RealAddress="119A0077"/>
+          <VariableType>4 Bytes</VariableType>
+          <Address>atire</Address>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>21</ID>
+      <Description>"Driver Stat Pointer - Go to driver screen to update values"</Description>
+      <Options moHideChildren="1"/>
+      <LastState Activated="1"/>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>{ Game   : Motorsport Manager
+  Version: 1.0
+  Date   : 2016-11-26
+  Author : Digital_Max
+  Credits to: thehane
+
+  This script scan for pointer that point to driver values.
+  Thank you thehane for how to find the driver values. :D
+}
+
+[ENABLE]
+
+aobscan(DriverStat,F3 0F 10 4E 10 F3 0F 5A C9 F2 0F 58) // should be unique
+aobscan(Designer,10 F3 0F 10 41 10 F3) // should be unique
+aobscan(Mechanic,18 FF FF FF F3 41 0F 10 44 24 10) // should be unique
+alloc(pmem,$1000,2A03829C)
+
+label(dstat)
+label(dstat_ex)
+label(destat)
+label(destat_ex)
+label(mecha)
+label(mecha_ex)
+
+label(pdrive)
+label(pdes)
+label(pmec)
+
+registersymbol(pdrive)
+registersymbol(pdes)
+registersymbol(pmec)
+registersymbol(DriverStat)
+registersymbol(Designer)
+registersymbol(Mechanic)
+
+pmem:
+
+dstat:
+  movss xmm1,[rsi+10]
+  mov [pdrive],rsi
+  jmp dstat_ex
+
+destat:
+  movss xmm0,[rcx+10]
+  mov [pdes],rcx
+  jmp destat_ex
+
+mecha:
+  movss xmm0,[r12+10]
+  mov [pmec],r12
+  jmp mecha_ex
+
+pdrive:
+dd 0
+dd 0
+
+pdes:
+dd 0
+dd 0
+
+pmec:
+dd 0
+dd 0
+
+DriverStat:
+  jmp dstat
+dstat_ex:
+
+Designer+01:
+  jmp destat
+destat_ex:
+
+Mechanic+04:
+  jmp mecha
+  nop
+  nop
+mecha_ex:
+
+[DISABLE]
+
+DriverStat:
+  db F3 0F 10 4E 10
+
+Designer+01:
+  db F3 0F 10 41 10
+
+Mechanic+04:
+  db F3 41 0F 10 44 24 10
+
+unregistersymbol(pdrive)
+unregistersymbol(pdes)
+unregistersymbol(pmec)
+unregistersymbol(DriverStat)
+unregistersymbol(Designer)
+unregistersymbol(Mechanic)
+dealloc(pmem)
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>31</ID>
+          <Description>"Driver Pointer"</Description>
+          <Options moHideChildren="1"/>
+          <LastState Value="" RealAddress="00000000"/>
+          <GroupHeader>1</GroupHeader>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>22</ID>
+              <Description>"Current Driver Braking"</Description>
+              <LastState Value="20" RealAddress="CDEBA910"/>
+              <VariableType>Float</VariableType>
+              <Address>pdrive</Address>
+              <Offsets>
+                <Offset>10</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>23</ID>
+              <Description>"Current Driver Cornering"</Description>
+              <LastState Value="20" RealAddress="CDEBA914"/>
+              <VariableType>Float</VariableType>
+              <Address>pdrive</Address>
+              <Offsets>
+                <Offset>14</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>24</ID>
+              <Description>"Current Driver Smoothness"</Description>
+              <LastState Value="20" RealAddress="CDEBA918"/>
+              <VariableType>Float</VariableType>
+              <Address>pdrive</Address>
+              <Offsets>
+                <Offset>18</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>25</ID>
+              <Description>"Current Driver Overtaking"</Description>
+              <LastState Value="20" RealAddress="CDEBA91C"/>
+              <VariableType>Float</VariableType>
+              <Address>pdrive</Address>
+              <Offsets>
+                <Offset>1C</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>26</ID>
+              <Description>"Current Driver Consistency"</Description>
+              <LastState Value="20" RealAddress="CDEBA920"/>
+              <VariableType>Float</VariableType>
+              <Address>pdrive</Address>
+              <Offsets>
+                <Offset>20</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>27</ID>
+              <Description>"Current Driver Adaptability"</Description>
+              <LastState Value="20" RealAddress="CDEBA924"/>
+              <VariableType>Float</VariableType>
+              <Address>pdrive</Address>
+              <Offsets>
+                <Offset>24</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>28</ID>
+              <Description>"Current Driver Fitness"</Description>
+              <LastState Value="20" RealAddress="CDEBA928"/>
+              <VariableType>Float</VariableType>
+              <Address>pdrive</Address>
+              <Offsets>
+                <Offset>28</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>29</ID>
+              <Description>"Current Driver Feedback"</Description>
+              <LastState Value="20" RealAddress="CDEBA92C"/>
+              <VariableType>Float</VariableType>
+              <Address>pdrive</Address>
+              <Offsets>
+                <Offset>2C</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>30</ID>
+              <Description>"Current Driver Focus"</Description>
+              <LastState Value="20" RealAddress="CDEBA930"/>
+              <VariableType>Float</VariableType>
+              <Address>pdrive</Address>
+              <Offsets>
+                <Offset>30</Offset>
+              </Offsets>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>32</ID>
+          <Description>"Designer Pointer"</Description>
+          <Options moHideChildren="1"/>
+          <LastState Value="" RealAddress="00000000"/>
+          <GroupHeader>1</GroupHeader>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>33</ID>
+              <Description>"Designer Stat Engine"</Description>
+              <LastState Value="106.3269501" RealAddress="7B6C1128"/>
+              <VariableType>Float</VariableType>
+              <Address>pdes</Address>
+              <Offsets>
+                <Offset>10</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>34</ID>
+              <Description>"Designer Stat Gearbox"</Description>
+              <LastState Value="7.972568512" RealAddress="7B6C112C"/>
+              <VariableType>Float</VariableType>
+              <Address>pdes</Address>
+              <Offsets>
+                <Offset>14</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>35</ID>
+              <Description>"Designer Stat Brakes"</Description>
+              <LastState Value="19.89318848" RealAddress="7B6C1130"/>
+              <VariableType>Float</VariableType>
+              <Address>pdes</Address>
+              <Offsets>
+                <Offset>18</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>36</ID>
+              <Description>"Designer Stat Front Wing"</Description>
+              <LastState Value="0.1666666716" RealAddress="7B6C1134"/>
+              <VariableType>Float</VariableType>
+              <Address>pdes</Address>
+              <Offsets>
+                <Offset>1C</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>37</ID>
+              <Description>"Designer Stat Suspension"</Description>
+              <LastState Value="0.1244444475" RealAddress="7B6C1138"/>
+              <VariableType>Float</VariableType>
+              <Address>pdes</Address>
+              <Offsets>
+                <Offset>20</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>38</ID>
+              <Description>"Designer Stat Rear Wing"</Description>
+              <LastState Value="0.1666666716" RealAddress="7B6C113C"/>
+              <VariableType>Float</VariableType>
+              <Address>pdes</Address>
+              <Offsets>
+                <Offset>24</Offset>
+              </Offsets>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>39</ID>
+          <Description>"Mechanic Pointer"</Description>
+          <Options moHideChildren="1"/>
+          <LastState Value="" RealAddress="00000000"/>
+          <GroupHeader>1</GroupHeader>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>45</ID>
+              <Description>"Engineer Stat Part Fixes"</Description>
+              <LastState Value="0" RealAddress="7B71E174"/>
+              <VariableType>Float</VariableType>
+              <Address>pmec</Address>
+              <Offsets>
+                <Offset>24</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>44</ID>
+              <Description>"Engineer Stat Pit Stops"</Description>
+              <LastState Value="9.183691147E-39" RealAddress="7B71E170"/>
+              <VariableType>Float</VariableType>
+              <Address>pmec</Address>
+              <Offsets>
+                <Offset>20</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>43</ID>
+              <Description>"Engineer Stat Chemistry"</Description>
+              <LastState Value="9.918370912E-39" RealAddress="7B71E16C"/>
+              <VariableType>Float</VariableType>
+              <Address>pmec</Address>
+              <Offsets>
+                <Offset>1C</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>42</ID>
+              <Description>"Engineer Stat Concentration"</Description>
+              <LastState Value="8.908204277E-39" RealAddress="7B71E168"/>
+              <VariableType>Float</VariableType>
+              <Address>pmec</Address>
+              <Offsets>
+                <Offset>18</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>41</ID>
+              <Description>"Engineer Stat Performance"</Description>
+              <LastState Value="9.642822385E-39" RealAddress="7B71E164"/>
+              <VariableType>Float</VariableType>
+              <Address>pmec</Address>
+              <Offsets>
+                <Offset>14</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>40</ID>
+              <Description>"Engineer Stat Reliability"</Description>
+              <LastState Value="1.121038771E-44" RealAddress="7B71E160"/>
+              <VariableType>Float</VariableType>
+              <Address>pmec</Address>
+              <Offsets>
+                <Offset>10</Offset>
+              </Offsets>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols>
+    <SymbolEntry>
+      <Name>ptire</Name>
+      <Address>0356006A</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>pmoney</Name>
+      <Address>036F0020</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>aobmon</Name>
+      <Address>11BFFC32</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>pplayer</Name>
+      <Address>119A007B</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>afuel</Name>
+      <Address>119A0073</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>atire</Name>
+      <Address>119A0077</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>aobfuel</Name>
+      <Address>2E53EA04</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>aobtire</Name>
+      <Address>2E52BA74</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>pdrive</Name>
+      <Address>2A210053</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>pdes</Name>
+      <Address>2A21005B</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>pmec</Name>
+      <Address>2A210063</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>DriverStat</Name>
+      <Address> 10DA445C</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>Designer</Name>
+      <Address> 10DE66D5</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>Mechanic</Name>
+      <Address> 10DE651F</Address>
+    </SymbolEntry>
+  </UserdefinedSymbols>
+  <Comments>CT version 1.2
+Features:
+Money AOB
+Tire &amp; Fuel Never Degrade
+Driver Stat AOB
+Credits to thehane for how to find Driver Stat
+</Comments>
+</CheatTable>

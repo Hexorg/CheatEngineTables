@@ -1,0 +1,1419 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="24">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>0</ID>
+      <Description>"&gt;&gt;&gt; ACTIVATE &lt;&lt;&lt;"</Description>
+      <Options moHideChildren="1" moDeactivateChildrenAsWell="1"/>
+      <LastState/>
+      <Color>008000</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>{$lua}
+-- check version/hash of process
+function VersionCheck(value)
+  file = enumModules()[1].PathToFile
+  return (md5file(file) == value)
+end
+if (VersionCheck("8e31520186bc1eb7406e862830ebbc46") == false) then
+  showMessage("Version does not match!")
+  error()
+end
+-- set record onactivate/ondeactivate
+local activate = function(memoryrecord, before, currentstate)
+  memoryrecord.Value = 1
+  return true
+end
+local deactivate = function(memoryrecord, before, currentstate)
+  memoryrecord.Value = 0
+  return true
+end
+local ids = {57, 58, 59, 60, 61, 62, 63, 64, 65, 66}
+for i = 1, #ids do
+  mr = getAddressList().getMemoryRecordByID(ids[i])
+  mr.OnActivate = activate
+  mr.OnDeactivate = deactivate
+end
+{$asm}
+
+
+[ENABLE]
+aobscanmodule(AOB_Base,"Game.exe",D9 81 AC 01 00 00 D8 B1 A8 01 00 00 D9 5D 08) // access health
+//aobscanmodule(AOB_Base,game.exe,C2 04 00 D9 82 48 01 00 00) // access stamina
+aobscanmodule(AOB_Invul,"Game.exe",3B CE 77 0D 80 7A 14 00)
+aobscanmodule(AOB_Health,"Game.exe",D9 1E 8B 57 7C)
+aobscanmodule(AOB_Stamina,"Game.exe",D9 91 48 01 00 00)
+aobscanmodule(AOB_Intenso_1,"Game.exe",D9 05 CC F5 91 00 C7)
+aobscanmodule(AOB_Intenso_2,"Game.exe",D9 05 B4 F5 91 00)
+aobscanmodule(AOB_Jump,"Game.exe",FF 86 5C 02 00 00 D9 86 44 02 00 00)
+aobscanmodule(AOB_Pesos,"Game.exe",03 C1 3D A0 86 01 00)
+aobscanmodule(AOB_Silver_1,"Game.exe",01 8E 68 01 00 00 5E)
+aobscanmodule(AOB_Silver_2,"Game.exe",01 86 68 01 00 00 5E)
+aobscanmodule(AOB_InfernoTimer,"Game.exe",D8 45 08 D9 9E 04 39 00 00)
+aobscanmodule(AOB_ChickenTimer,"Game.exe",D9 56 20 D8 D9)
+aobscanmodule(AOB_MapZoom_1,"Game.exe",D9 9E A0 01 00 00 8B 87 B0 00 00 00)
+aobscanmodule(AOB_MapZoom_2,"Game.exe",D9 9E A0 01 00 00 8B 87 80 00 00 00)
+
+
+alloc(newmem,$1000)
+
+globalalloc(pBase,4)
+globalalloc(pZoom,4)
+globalalloc(bInvuln,1)
+globalalloc(bHealth,1)
+globalalloc(bEnemy,1)
+globalalloc(bStamina,1)
+globalalloc(bIntenso,1)
+globalalloc(bJump,1)
+globalalloc(bPesos,1)
+globalalloc(bSilver,1)
+globalalloc(bInferno,1)
+globalalloc(bChicken,1)
+
+pBase:
+  dd 0
+pZoom:
+  dd 0
+bInvuln:
+  db 00
+bHealth:
+  db 00
+bEnemy:
+  db 00
+bStamina:
+  db 00
+bIntenso:
+  db 00
+bJump:
+  db 00
+bPesos:
+  db 00
+bSilver:
+  db 00
+bInferno:
+  db 00
+bChicken:
+  db 00
+
+
+label(newBase)
+label(codeBase)
+label(returnBase)
+
+label(newInvul)
+label(codeInvul)
+label(returnInvul)
+
+label(newHealth)
+label(enemyHealth)
+label(codeHealth)
+label(returnHealth)
+
+label(newStamina)
+label(codeStamina)
+label(returnStamina)
+
+label(newIntenso_1)
+label(codeIntenso_1)
+label(returnIntenso_1)
+label(newIntenso_2)
+label(codeIntenso_2)
+label(returnIntenso_2)
+
+label(newJump)
+label(codeJump)
+label(returnJump)
+
+label(newPesos)
+label(codePesos)
+label(returnPesos)
+
+label(newSilver_1)
+label(codeSilver_1)
+label(returnSilver_1)
+label(newSilver_2)
+label(codeSilver_2)
+label(returnSilver_2)
+
+label(newInfernoTimer)
+label(codeInfernoTimer)
+label(returnInfernoTimer)
+
+label(newChickenTimer)
+label(codeChickenTimer)
+label(returnChickenTimer)
+
+label(newMapZoom_1)
+label(codeMapZoom_1)
+label(returnMapZoom_1)
+
+label(newMapZoom_2)
+label(codeMapZoom_2)
+label(returnMapZoom_2)
+
+
+newmem:
+
+
+// pBase is required for Health cheats!!!
+newBase: // access health
+  mov [pBase],esi // read here
+  jmp codeBase
+codeBase:
+  fld dword ptr [ecx+000001AC]
+  jmp returnBase
+
+//newBase: // access stamina
+  //mov [pBase],edx // read here
+  //jmp codeBase
+//codeBase:
+  //fld dword ptr [edx+00000148]
+  //jmp returnBase
+
+
+newInvul:
+  cmp dword ptr [pBase],0 // check if pBase is loaded
+  jng codeInvul
+  push eax // player check...
+  mov eax,dword ptr [pBase]
+  mov eax,dword ptr [eax+10]
+  cmp dword ptr [ebp+0C],eax
+  pop eax // ...player check
+  jne codeInvul
+  cmp byte ptr [bInvuln],1 // cheat check
+  jne codeInvul
+  cmp byte ptr [edx+14],00 // cmp edx,edx // fake compare
+  jmp returnInvul
+codeInvul:
+  cmp ecx,esi
+  ja "Game.exe"+25B392
+  cmp byte ptr [edx+14],00
+  jmp returnInvul
+
+
+newHealth:
+  cmp dword ptr [pBase],0 // check if pBase is loaded
+  jng codeHealth
+  push eax // player check
+  mov eax,dword ptr [pBase]
+  mov eax,dword ptr [eax+10]
+  cmp edi,eax
+  pop eax // ...player check
+  jne enemyHealth
+  cmp byte ptr [bHealth],1 // cheat check
+  jne codeHealth
+  fstp dword ptr [esi]
+  fld dword ptr [edi+000001A8] // load max health
+  jmp codeHealth
+enemyHealth:
+  cmp byte ptr [bEnemy],1 // cheat check
+  jne codeHealth
+  cmp dword ptr [edi+000001AC],(float)1 // check if health &lt;= 1
+  jle codeHealth
+  fstp dword ptr [esi]
+  fld1 // load 1.0
+  jmp codeHealth
+codeHealth:
+  fstp dword ptr [esi]
+  mov edx,[edi+7C]
+  jmp returnHealth
+
+
+newStamina:
+  cmp byte ptr [bStamina],1 // cheat check
+  jne codeStamina
+  fstp dword ptr [ecx+00000148]
+  fld dword ptr [ecx+00000150] // load max stamina
+  jmp codeStamina
+codeStamina:
+  fst dword ptr [ecx+00000148] // store current stamina
+  jmp returnStamina
+
+
+newIntenso_1:
+  cmp byte ptr [bIntenso],1 // cheat check
+  jne codeIntenso_1
+  fldz // load zero
+  jmp returnIntenso_1
+codeIntenso_1:
+  fld dword ptr ["Game.exe"+51F5CC]
+  jmp returnIntenso_1
+
+newIntenso_2:
+  cmp byte ptr [bIntenso],1 // cheat check
+  jne codeIntenso_2
+  fldz // load zero
+  jmp returnIntenso_2
+codeIntenso_2:
+  fld dword ptr ["Game.exe"+51F5B4]
+  jmp returnIntenso_2
+
+
+newJump:
+  cmp byte ptr [bJump],1 // cheat check
+  jne codeJump
+  jmp returnJump // cheat
+codeJump:
+  inc [esi+0000025C]
+  jmp returnJump
+
+
+newPesos:
+  cmp byte ptr [bPesos],1 // cheat check
+  jne codePesos
+  imul eax,(int)100 // cheat // mov eax,000186A0
+  jmp codePesos
+codePesos:
+  add eax,ecx
+  cmp eax,000186A0
+  jmp returnPesos
+
+
+newSilver_1:
+  cmp byte ptr [bSilver],1 // cheat check
+  jne codeSilver_1
+  imul ecx,(int)10 // cheat // mov [esi+00000168],00002710
+  jmp codeSilver_1
+codeSilver_1:
+  add [esi+00000168],ecx
+  jmp returnSilver_1
+
+newSilver_2:
+  cmp byte ptr [bSilver],1 // cheat check
+  jne codeSilver_2
+  imul eax,(int)10 // cheat // mov [esi+00000168],00002710
+  jmp codeSilver_2
+codeSilver_2:
+  add [esi+00000168],eax
+  jmp returnSilver_2
+
+
+newInfernoTimer:
+  cmp byte ptr [bInferno],1 // cheat check
+  jne codeInfernoTimer
+  fstp dword ptr [esi+00003904]
+  jmp returnInfernoTimer
+codeInfernoTimer:
+  fadd dword ptr [ebp+08]
+  fstp dword ptr [esi+00003904]
+  jmp returnInfernoTimer
+
+
+newChickenTimer:
+  cmp byte ptr [bChicken],1 // cheat check
+  jne codeChickenTimer
+  fcomp st(0),st(1)
+  jmp returnChickenTimer
+codeChickenTimer:
+  fst dword ptr [esi+20]
+  fcomp st(0),st(1)
+  jmp returnChickenTimer
+
+
+newMapZoom_1:
+  mov [pZoom],esi // read here zoom in
+  jmp codeMapZoom_1
+codeMapZoom_1:
+  fstp dword ptr [esi+000001A0]
+  jmp returnMapZoom_1
+
+newMapZoom_2:
+  mov [pZoom],esi // read here zoom out
+  jmp codeMapZoom_2
+codeMapZoom_2:
+  fstp dword ptr [esi+000001A0]
+  jmp returnMapZoom_2
+
+
+AOB_Base: // access health
+  jmp newBase
+  nop
+returnBase:
+registersymbol(AOB_Base)
+
+//AOB_Base+03: // access stamina
+  //jmp newBase
+  //nop
+//returnBase:
+//registersymbol(AOB_Base)
+
+AOB_Invul:
+  jmp newInvul
+  nop
+  nop
+  nop
+returnInvul:
+registersymbol(AOB_Invul)
+
+AOB_Health:
+  jmp newHealth
+returnHealth:
+registersymbol(AOB_Health)
+
+AOB_Stamina:
+  jmp newStamina
+  nop
+returnStamina:
+registersymbol(AOB_Stamina)
+
+AOB_Intenso_1:
+  jmp newIntenso_1
+  nop
+returnIntenso_1:
+registersymbol(AOB_Intenso_1)
+
+AOB_Intenso_2:
+  jmp newIntenso_2
+  nop
+returnIntenso_2:
+registersymbol(AOB_Intenso_2)
+
+AOB_Jump:
+  jmp newJump
+  nop
+returnJump:
+registersymbol(AOB_Jump)
+
+AOB_Pesos:
+  jmp newPesos
+  nop
+  nop
+returnPesos:
+registersymbol(AOB_Pesos)
+
+AOB_Silver_1:
+  jmp newSilver_1
+  nop
+returnSilver_1:
+registersymbol(AOB_Silver_1)
+
+AOB_Silver_2:
+  jmp newSilver_2
+  nop
+returnSilver_2:
+registersymbol(AOB_Silver_2)
+
+AOB_InfernoTimer:
+  jmp newInfernoTimer
+  nop
+  nop
+  nop
+  nop
+returnInfernoTimer:
+registersymbol(AOB_InfernoTimer)
+
+AOB_ChickenTimer:
+  jmp newChickenTimer
+returnChickenTimer:
+registersymbol(AOB_ChickenTimer)
+
+AOB_MapZoom_1:
+  jmp newMapZoom_1
+  nop
+returnMapZoom_1:
+registersymbol(AOB_MapZoom_1)
+
+AOB_MapZoom_2:
+  jmp newMapZoom_2
+  nop
+returnMapZoom_2:
+registersymbol(AOB_MapZoom_2)
+
+
+{$lua}
+-- change record display
+local mr = getAddressList().getMemoryRecordByID(0)
+mr.Color = 0x008000 -- green
+mr.Description = "&gt;&gt;&gt; DEACTIVATE &lt;&lt;&lt;"
+-- play sound
+local ms = createMemoryStream()
+ms.loadFromFile("C:\\Windows\\Media\\ir_begin.wav")
+playSound(ms)
+ms.destroy()
+{$asm}
+
+
+[DISABLE]
+AOB_Base: // access health
+  db D9 81 AC 01 00 00
+
+//AOB_Base+03: // access stamina
+  //db D9 82 48 01 00 00
+
+AOB_Invul:
+  db 3B CE 77 0D 80 7A 14 00
+
+AOB_Health:
+  db D9 1E 8B 57 7C
+
+AOB_Stamina:
+  db D9 91 48 01 00 00
+
+AOB_Intenso_1:
+  db D9 05 CC F5 91 00
+
+AOB_Intenso_2:
+  db D9 05 B4 F5 91 00
+
+AOB_Jump:
+  db FF 86 5C 02 00 00
+
+AOB_Pesos:
+  db 03 C1 3D A0 86 01 00
+
+AOB_Silver_1:
+  db 01 8E 68 01 00 00
+
+AOB_Silver_2:
+  db 01 86 68 01 00 00
+
+AOB_InfernoTimer:
+  db D8 45 08 D9 9E 04 39 00 00
+
+AOB_ChickenTimer:
+  db D9 56 20 D8 D9
+
+AOB_MapZoom_1:
+  db D9 9E A0 01 00 00
+
+AOB_MapZoom_2:
+  db D9 9E A0 01 00 00
+
+
+unregistersymbol(AOB_Base)
+unregistersymbol(AOB_Invul)
+unregistersymbol(AOB_Health)
+unregistersymbol(AOB_Stamina)
+unregistersymbol(AOB_Intenso_1)
+unregistersymbol(AOB_Intenso_2)
+unregistersymbol(AOB_Jump)
+unregistersymbol(AOB_Pesos)
+unregistersymbol(AOB_Silver_1)
+unregistersymbol(AOB_Silver_2)
+unregistersymbol(AOB_InfernoTimer)
+unregistersymbol(AOB_ChickenTimer)
+unregistersymbol(AOB_MapZoom_1)
+unregistersymbol(AOB_MapZoom_2)
+
+unregistersymbol(pBase)
+unregistersymbol(pZoom)
+unregistersymbol(bInvuln)
+unregistersymbol(bHealth)
+unregistersymbol(bEnemy)
+unregistersymbol(bStamina)
+unregistersymbol(bIntenso)
+unregistersymbol(bJump)
+unregistersymbol(bPesos)
+unregistersymbol(bSilver)
+unregistersymbol(bInferno)
+unregistersymbol(bChicken)
+
+dealloc(pBase)
+dealloc(pZoom)
+dealloc(bInvuln)
+dealloc(bHealth)
+dealloc(bEnemy)
+dealloc(bStamina)
+dealloc(bIntenso)
+dealloc(bJump)
+dealloc(bPesos)
+dealloc(bSilver)
+dealloc(bInferno)
+dealloc(bChicken)
+
+dealloc(newmem)
+
+
+{$lua}
+-- change record display
+local mr = getAddressList().getMemoryRecordByID(0)
+mr.Color = 0x008000 -- green
+mr.Description = "&gt;&gt;&gt; ACTIVATE &lt;&lt;&lt;"
+-- play sound
+local ms = createMemoryStream()
+ms.loadFromFile("C:\\Windows\\Media\\ir_end.wav")
+playSound(ms)
+ms.destroy()
+{$asm}
+
+
+{ AOB_Base (health access)
+// ORIGINAL CODE - INJECTION POINT: "game.exe"+293243
+"game.exe"+293221: 74 67                 -  je game.exe+29328A
+"game.exe"+293223: D9 81 A8 01 00 00     -  fld dword ptr [ecx+000001A8]
+"game.exe"+293229: D9 EE                 -  fldz
+"game.exe"+29322B: DA E9                 -  fucompp
+"game.exe"+29322D: DF E0                 -  fnstsw ax
+"game.exe"+29322F: F6 C4 44              -  test ah,44
+"game.exe"+293232: 7B 56                 -  jnp game.exe+29328A
+"game.exe"+293234: 80 B9 87 00 00 00 00  -  cmp byte ptr [ecx+00000087],00
+"game.exe"+29323B: D9 05 2C 35 86 00     -  fld dword ptr [game.exe+46352C]
+"game.exe"+293241: 74 19                 -  je game.exe+29325C
+// ---------- INJECTING HERE ----------
+"game.exe"+293243: D9 81 AC 01 00 00     -  fld dword ptr [ecx+000001AC]
+// ---------- DONE INJECTING  ----------
+"game.exe"+293249: D8 B1 A8 01 00 00     -  fdiv dword ptr [ecx+000001A8]
+"game.exe"+29324F: D9 5D 08              -  fstp dword ptr [ebp+08]
+"game.exe"+293252: D8 55 08              -  fcom dword ptr [ebp+08]
+"game.exe"+293255: DF E0                 -  fnstsw ax
+"game.exe"+293257: F6 C4 41              -  test ah,41
+"game.exe"+29325A: 75 2C                 -  jne game.exe+293288
+"game.exe"+29325C: D9 05 EC 57 86 00     -  fld dword ptr [game.exe+4657EC]
+"game.exe"+293262: 8B 76 20              -  mov esi,[esi+20]
+"game.exe"+293265: 6A 01                 -  push 01
+"game.exe"+293267: 83 EC 08              -  sub esp,08
+}
+
+
+{ AOB_Base (stamina access)
+// ORIGINAL CODE - INJECTION POINT: "game.exe"+2942EB
+"game.exe"+2942D9: 74 10              -  je game.exe+2942EB
+"game.exe"+2942DB: 40                 -  inc eax
+"game.exe"+2942DC: 83 C1 04           -  add ecx,04
+"game.exe"+2942DF: 3B C6              -  cmp eax,esi
+"game.exe"+2942E1: 72 F1              -  jb game.exe+2942D4
+"game.exe"+2942E3: D9 EE              -  fldz
+"game.exe"+2942E5: 5F                 -  pop edi
+"game.exe"+2942E6: 5E                 -  pop esi
+"game.exe"+2942E7: 5D                 -  pop ebp
+"game.exe"+2942E8: C2 04 00           -  ret 0004
+// ---------- INJECTING HERE ----------
+"game.exe"+2942EB: D9 82 48 01 00 00  -  fld dword ptr [edx+00000148]
+// ---------- DONE INJECTING  ----------
+"game.exe"+2942F1: 5F                 -  pop edi
+"game.exe"+2942F2: 5E                 -  pop esi
+"game.exe"+2942F3: 5D                 -  pop ebp
+"game.exe"+2942F4: C2 04 00           -  ret 0004
+"game.exe"+2942F7: CC                 -  int 3
+"game.exe"+2942F8: CC                 -  int 3
+"game.exe"+2942F9: CC                 -  int 3
+"game.exe"+2942FA: CC                 -  int 3
+"game.exe"+2942FB: CC                 -  int 3
+"game.exe"+2942FC: CC                 -  int 3
+}
+
+
+{ AOB_Invul
+// ORIGINAL CODE - INJECTION POINT: "game.exe"+25B381
+"game.exe"+25B35F: D9 5D FC              -  fstp dword ptr [ebp-04]
+"game.exe"+25B362: 8B 45 FC              -  mov eax,[ebp-04]
+"game.exe"+25B365: 25 FF FF FF 7F        -  and eax,7FFFFFFF
+"game.exe"+25B36A: 81 CE 00 00 00 80     -  or esi,80000000
+"game.exe"+25B370: 33 F1                 -  xor esi,ecx
+"game.exe"+25B372: 8B C8                 -  mov ecx,eax
+"game.exe"+25B374: C1 E9 1F              -  shr ecx,1F
+"game.exe"+25B377: F7 D9                 -  neg ecx
+"game.exe"+25B379: 81 C9 00 00 00 80     -  or ecx,80000000
+"game.exe"+25B37F: 33 C8                 -  xor ecx,eax
+// ---------- INJECTING HERE ----------
+"game.exe"+25B381: 3B CE                 -  cmp ecx,esi
+"game.exe"+25B383: 77 0D                 -  ja game.exe+25B392
+"game.exe"+25B385: 80 7A 14 00           -  cmp byte ptr [edx+14],00
+// ---------- DONE INJECTING  ----------
+"game.exe"+25B389: 75 07                 -  jne game.exe+25B392
+"game.exe"+25B38B: 32 C0                 -  xor al,al
+"game.exe"+25B38D: 5E                    -  pop esi
+"game.exe"+25B38E: 8B E5                 -  mov esp,ebp
+"game.exe"+25B390: 5D                    -  pop ebp
+"game.exe"+25B391: C3                    -  ret
+"game.exe"+25B392: 57                    -  push edi
+"game.exe"+25B393: 8B 7D 0C              -  mov edi,[ebp+0C]
+"game.exe"+25B396: D9 87 AC 01 00 00     -  fld dword ptr [edi+000001AC]
+"game.exe"+25B39C: 8B F7                 -  mov esi,edi
+}
+
+
+{ AOB_Health
+// ORIGINAL CODE - INJECTION POINT: "game.exe"+25B4CF
+"game.exe"+25B4B1: F7 D0              -  not eax
+"game.exe"+25B4B3: 23 45 FC           -  and eax,[ebp-04]
+"game.exe"+25B4B6: 23 F2              -  and esi,edx
+"game.exe"+25B4B8: 0B C6              -  or eax,esi
+"game.exe"+25B4BA: 8D 8F A8 01 00 00  -  lea ecx,[edi+000001A8]
+"game.exe"+25B4C0: 8D B7 AC 01 00 00  -  lea esi,[edi+000001AC]
+"game.exe"+25B4C6: 51                 -  push ecx
+"game.exe"+25B4C7: 56                 -  push esi
+"game.exe"+25B4C8: 89 06              -  mov [esi],eax
+"game.exe"+25B4CA: E8 71 E2 EB FF     -  call game.exe+119740
+// ---------- INJECTING HERE ----------
+"game.exe"+25B4CF: D9 1E              -  fstp dword ptr [esi]
+"game.exe"+25B4D1: 8B 57 7C           -  mov edx,[edi+7C]
+// ---------- DONE INJECTING  ----------
+"game.exe"+25B4D4: 83 C4 08           -  add esp,08
+"game.exe"+25B4D7: C1 EA 12           -  shr edx,12
+"game.exe"+25B4DA: 5B                 -  pop ebx
+"game.exe"+25B4DB: F6 C2 01           -  test dl,01
+"game.exe"+25B4DE: 74 3F              -  je game.exe+25B51F
+"game.exe"+25B4E0: 6A 04              -  push 04
+"game.exe"+25B4E2: 57                 -  push edi
+"game.exe"+25B4E3: E8 78 F0 F0 FF     -  call game.exe+16A560
+"game.exe"+25B4E8: 8B C8              -  mov ecx,eax
+"game.exe"+25B4EA: E8 51 03 F1 FF     -  call game.exe+16B840
+}
+
+
+{ AOB_Stamina
+// ORIGINAL CODE - INJECTION POINT: "game.exe"+294587
+"game.exe"+29456B: 74 3F                 -  je game.exe+2945AC
+"game.exe"+29456D: D9 EE                 -  fldz
+"game.exe"+29456F: D9 45 0C              -  fld dword ptr [ebp+0C]
+"game.exe"+294572: D8 D1                 -  fcom st(0),st(1)
+"game.exe"+294574: DF E0                 -  fnstsw ax
+"game.exe"+294576: F6 C4 41              -  test ah,41
+"game.exe"+294579: 75 2D                 -  jne game.exe+2945A8
+"game.exe"+29457B: D8 A9 48 01 00 00     -  fsubr dword ptr [ecx+00000148]
+"game.exe"+294581: D9 5D 08              -  fstp dword ptr [ebp+08]
+"game.exe"+294584: D9 45 08              -  fld dword ptr [ebp+08]
+// ---------- INJECTING HERE ----------
+"game.exe"+294587: D9 91 48 01 00 00     -  fst dword ptr [ecx+00000148]
+// ---------- DONE INJECTING  ----------
+"game.exe"+29458D: D8 D9                 -  fcomp st(0),st(1)
+"game.exe"+29458F: DF E0                 -  fnstsw ax
+"game.exe"+294591: F6 C4 05              -  test ah,05
+"game.exe"+294594: 7A 14                 -  jp game.exe+2945AA
+"game.exe"+294596: 5F                    -  pop edi
+"game.exe"+294597: D9 91 4C 01 00 00     -  fst dword ptr [ecx+0000014C]
+"game.exe"+29459D: D9 99 48 01 00 00     -  fstp dword ptr [ecx+00000148]
+"game.exe"+2945A3: 5E                    -  pop esi
+"game.exe"+2945A4: 5D                    -  pop ebp
+"game.exe"+2945A5: C2 08 00              -  ret 0008
+}
+
+
+{ AOB_Intenso_1
+// ORIGINAL CODE - INJECTION POINT: "game.exe"+2975F3
+"game.exe"+2975C6: 80 B9 87 00 00 00 00     -  cmp byte ptr [ecx+00000087],00
+"game.exe"+2975CD: 0F 84 F4 00 00 00        -  je game.exe+2976C7
+"game.exe"+2975D3: 8B 45 F8                 -  mov eax,[ebp-08]
+"game.exe"+2975D6: 39 B0 B8 00 00 00        -  cmp [eax+000000B8],esi
+"game.exe"+2975DC: 0F 85 C5 00 00 00        -  jne game.exe+2976A7
+"game.exe"+2975E2: 8B 4F 20                 -  mov ecx,[edi+20]
+"game.exe"+2975E5: 83 F9 02                 -  cmp ecx,02
+"game.exe"+2975E8: 0F 85 99 00 00 00        -  jne game.exe+297687
+"game.exe"+2975EE: D9 07                    -  fld dword ptr [edi]
+"game.exe"+2975F0: 8B 4D F4                 -  mov ecx,[ebp-0C]
+// ---------- INJECTING HERE ----------
+"game.exe"+2975F3: D9 05 CC F5 91 00        -  fld dword ptr [game.exe+51F5CC]
+// ---------- DONE INJECTING  ----------
+"game.exe"+2975F9: C7 47 20 03 00 00 00     -  mov [edi+20],00000003
+"game.exe"+297600: DC 0D 48 22 89 00        -  fmul qword ptr [game.exe+492248]
+"game.exe"+297606: 89 B7 A0 00 00 00        -  mov [edi+000000A0],esi
+"game.exe"+29760C: 68 9C 16 91 00           -  push game.exe+51169C
+"game.exe"+297611: DE E9                    -  fsubp st(1),st(0)
+"game.exe"+297613: D9 1F                    -  fstp dword ptr [edi]
+"game.exe"+297615: C6 84 01 BC 00 00 00 01  -  mov byte ptr [ecx+eax+000000BC],01
+"game.exe"+29761D: 8B 4B 10                 -  mov ecx,[ebx+10]
+"game.exe"+297620: E8 7B 1B E0 FF           -  call game.exe+991A0
+"game.exe"+297625: 8B F0                    -  mov esi,eax
+}
+
+
+{ AOB_Intenso_2
+// ORIGINAL CODE - INJECTION POINT: "game.exe"+29771E
+"game.exe"+2976FF: 51                 -  push ecx
+"game.exe"+297700: E8 AB 58 E0 FF     -  call game.exe+9CFB0
+"game.exe"+297705: 8B C8              -  mov ecx,eax
+"game.exe"+297707: E8 94 A7 00 00     -  call game.exe+2A1EA0
+"game.exe"+29770C: 85 C0              -  test eax,eax
+"game.exe"+29770E: 74 0C              -  je game.exe+29771C
+"game.exe"+297710: D9 80 CC 01 00 00  -  fld dword ptr [eax+000001CC]
+"game.exe"+297716: D8 4D F0           -  fmul dword ptr [ebp-10]
+"game.exe"+297719: D9 5D F0           -  fstp dword ptr [ebp-10]
+"game.exe"+29771C: D9 07              -  fld dword ptr [edi]
+// ---------- INJECTING HERE ----------
+"game.exe"+29771E: D9 05 B4 F5 91 00  -  fld dword ptr [game.exe+51F5B4]
+// ---------- DONE INJECTING  ----------
+"game.exe"+297724: D8 4D 08           -  fmul dword ptr [ebp+08]
+"game.exe"+297727: D8 4D F0           -  fmul dword ptr [ebp-10]
+"game.exe"+29772A: DE E9              -  fsubp st(1),st(0)
+"game.exe"+29772C: D9 1F              -  fstp dword ptr [edi]
+"game.exe"+29772E: D9 EE              -  fldz
+"game.exe"+297730: D8 17              -  fcom dword ptr [edi]
+"game.exe"+297732: DF E0              -  fnstsw ax
+"game.exe"+297734: F6 C4 41           -  test ah,41
+"game.exe"+297737: 75 04              -  jne game.exe+29773D
+"game.exe"+297739: D9 17              -  fst dword ptr [edi]
+}
+
+
+{ AOB_Jump
+// ORIGINAL CODE - INJECTION POINT: "game.exe"+15DAA0
+"game.exe"+15DA7F: 84 C9                       -  test cl,cl
+"game.exe"+15DA81: 75 4D                       -  jne game.exe+15DAD0
+"game.exe"+15DA83: D9 86 CC 0C 00 00           -  fld dword ptr [esi+00000CCC]
+"game.exe"+15DA89: D9 05 90 16 91 00           -  fld dword ptr [game.exe+511690]
+"game.exe"+15DA8F: DE D9                       -  fcompp
+"game.exe"+15DA91: DF E0                       -  fnstsw ax
+"game.exe"+15DA93: F6 C4 01                    -  test ah,01
+"game.exe"+15DA96: 75 08                       -  jne game.exe+15DAA0
+"game.exe"+15DA98: 38 8E 68 07 00 00           -  cmp [esi+00000768],cl
+"game.exe"+15DA9E: 74 30                       -  je game.exe+15DAD0
+// ---------- INJECTING HERE ----------
+"game.exe"+15DAA0: FF 86 5C 02 00 00           -  inc [esi+0000025C]
+// ---------- DONE INJECTING  ----------
+"game.exe"+15DAA6: D9 86 44 02 00 00           -  fld dword ptr [esi+00000244]
+"game.exe"+15DAAC: D9 9E 98 06 00 00           -  fstp dword ptr [esi+00000698]
+"game.exe"+15DAB2: 6A 00                       -  push 00
+"game.exe"+15DAB4: D9 E8                       -  fld1
+"game.exe"+15DAB6: 51                          -  push ecx
+"game.exe"+15DAB7: D9 96 1C 07 00 00           -  fst dword ptr [esi+0000071C]
+"game.exe"+15DABD: 8B CE                       -  mov ecx,esi
+"game.exe"+15DABF: D9 1C 24                    -  fstp dword ptr [esp]
+"game.exe"+15DAC2: E8 99 19 F3 FF              -  call game.exe+8F460
+"game.exe"+15DAC7: 8B C8                       -  mov ecx,eax
+}
+
+
+{ AOB_Pesos
+// ORIGINAL CODE - INJECTION POINT: "game.exe"+29AA89
+"game.exe"+29AA6D: CC                    -  int 3
+"game.exe"+29AA6E: CC                    -  int 3
+"game.exe"+29AA6F: CC                    -  int 3
+"game.exe"+29AA70: 55                    -  push ebp
+"game.exe"+29AA71: 8B EC                 -  mov ebp,esp
+"game.exe"+29AA73: 83 EC 0C              -  sub esp,0C
+"game.exe"+29AA76: B9 40 F7 91 00        -  mov ecx,game.exe+51F740
+"game.exe"+29AA7B: E8 B0 A9 07 00        -  call game.exe+315430
+"game.exe"+29AA80: 8B 0D E8 F6 91 00     -  mov ecx,[game.exe+51F6E8]
+"game.exe"+29AA86: 8B 45 08              -  mov eax,[ebp+08]
+// ---------- INJECTING HERE ----------
+"game.exe"+29AA89: 03 C1                 -  add eax,ecx
+"game.exe"+29AA8B: 3D A0 86 01 00        -  cmp eax,000186A0
+// ---------- DONE INJECTING  ----------
+"game.exe"+29AA90: 77 04                 -  ja game.exe+29AA96
+"game.exe"+29AA92: 3B C1                 -  cmp eax,ecx
+"game.exe"+29AA94: 73 05                 -  jae game.exe+29AA9B
+"game.exe"+29AA96: B8 A0 86 01 00        -  mov eax,000186A0
+"game.exe"+29AA9B: 8D 4D F4              -  lea ecx,[ebp-0C]
+"game.exe"+29AA9E: 51                    -  push ecx
+"game.exe"+29AA9F: A3 E8 F6 91 00        -  mov [game.exe+51F6E8],eax
+"game.exe"+29AAA4: E8 D7 B6 FF FF        -  call game.exe+296180
+"game.exe"+29AAA9: 8B C8                 -  mov ecx,eax
+"game.exe"+29AAAB: E8 30 8A FF FF        -  call game.exe+2934E0
+}
+
+
+{ AOB_Silver_1
+// ORIGINAL CODE - INJECTION POINT: "game.exe"+267039
+"game.exe"+26701D: D9 6D FC              -  fldcw [ebp-04]
+"game.exe"+267020: DF 7D F8              -  fistp qword ptr [ebp-08]
+"game.exe"+267023: 8B 45 F8              -  mov eax,[ebp-08]
+"game.exe"+267026: 01 86 68 01 00 00     -  add [esi+00000168],eax
+"game.exe"+26702C: 5E                    -  pop esi
+"game.exe"+26702D: D9 6D 0A              -  fldcw [ebp+0A]
+"game.exe"+267030: 8B E5                 -  mov esp,ebp
+"game.exe"+267032: 5D                    -  pop ebp
+"game.exe"+267033: C2 04 00              -  ret 0004
+"game.exe"+267036: 8B 4D 08              -  mov ecx,[ebp+08]
+// ---------- INJECTING HERE ----------
+"game.exe"+267039: 01 8E 68 01 00 00     -  add [esi+00000168],ecx
+// ---------- DONE INJECTING  ----------
+"game.exe"+26703F: 5E                    -  pop esi
+"game.exe"+267040: 8B E5                 -  mov esp,ebp
+"game.exe"+267042: 5D                    -  pop ebp
+"game.exe"+267043: C2 04 00              -  ret 0004
+"game.exe"+267046: CC                    -  int 3
+"game.exe"+267047: CC                    -  int 3
+"game.exe"+267048: CC                    -  int 3
+"game.exe"+267049: CC                    -  int 3
+"game.exe"+26704A: CC                    -  int 3
+"game.exe"+26704B: CC                    -  int 3
+}
+
+
+{ AOB_Silver_2
+// ORIGINAL CODE - INJECTION POINT: "Game.exe"+267026
+"game.exe"+267005: D9 5D 08              -  fstp dword ptr [ebp+08]
+"game.exe"+267008: 83 C4 08              -  add esp,08
+"game.exe"+26700B: D9 45 08              -  fld dword ptr [ebp+08]
+"game.exe"+26700E: D9 7D 0A              -  fnstcw [ebp+0A]
+"game.exe"+267011: 0F B7 45 0A           -  movzx eax,word ptr [ebp+0A]
+"game.exe"+267015: 0D 00 0C 00 00        -  or eax,0C00
+"game.exe"+26701A: 89 45 FC              -  mov [ebp-04],eax
+"game.exe"+26701D: D9 6D FC              -  fldcw [ebp-04]
+"game.exe"+267020: DF 7D F8              -  fistp qword ptr [ebp-08]
+"game.exe"+267023: 8B 45 F8              -  mov eax,[ebp-08]
+// ---------- INJECTING HERE ----------
+"game.exe"+267026: 01 86 68 01 00 00     -  add [esi+00000168],eax
+// ---------- DONE INJECTING  ----------
+"game.exe"+26702C: 5E                    -  pop esi
+"game.exe"+26702D: D9 6D 0A              -  fldcw [ebp+0A]
+"game.exe"+267030: 8B E5                 -  mov esp,ebp
+"game.exe"+267032: 5D                    -  pop ebp
+"game.exe"+267033: C2 04 00              -  ret 0004
+"game.exe"+267036: 8B 4D 08              -  mov ecx,[ebp+08]
+"game.exe"+267039: 01 8E 68 01 00 00     -  add [esi+00000168],ecx
+"game.exe"+26703F: 5E                    -  pop esi
+"game.exe"+267040: 8B E5                 -  mov esp,ebp
+"game.exe"+267042: 5D                    -  pop ebp
+}
+
+
+{ AOB_InfernoTimer
+// ORIGINAL CODE - INJECTION POINT: "game.exe"+1BD954
+"game.exe"+1BD92F: 8D 8E 28 39 00 00     -  lea ecx,[esi+00003928]
+"game.exe"+1BD935: 51                    -  push ecx
+"game.exe"+1BD936: D9 5D F8              -  fstp dword ptr [ebp-08]
+"game.exe"+1BD939: 8D 55 F8              -  lea edx,[ebp-08]
+"game.exe"+1BD93C: 52                    -  push edx
+"game.exe"+1BD93D: E8 EE 10 E5 FF        -  call game.exe+EA30
+"game.exe"+1BD942: 83 C4 0C              -  add esp,0C
+"game.exe"+1BD945: 80 BE 08 39 00 00 00  -  cmp byte ptr [esi+00003908],00
+"game.exe"+1BD94C: 74 0F                 -  je game.exe+1BD95D
+"game.exe"+1BD94E: D9 86 04 39 00 00     -  fld dword ptr [esi+00003904]
+// ---------- INJECTING HERE ----------
+"game.exe"+1BD954: D8 45 08              -  fadd dword ptr [ebp+08]
+"game.exe"+1BD957: D9 9E 04 39 00 00     -  fstp dword ptr [esi+00003904]
+// ---------- DONE INJECTING  ----------
+"game.exe"+1BD95D: 83 BE 14 39 00 00 03  -  cmp dword ptr [esi+00003914],03
+"game.exe"+1BD964: 75 0E                 -  jne game.exe+1BD974
+"game.exe"+1BD966: E8 35 01 0B 00        -  call game.exe+26DAA0
+"game.exe"+1BD96B: D9 86 04 39 00 00     -  fld dword ptr [esi+00003904]
+"game.exe"+1BD971: D9 58 40              -  fstp dword ptr [eax+40]
+"game.exe"+1BD974: 83 BE A0 3A 00 00 00  -  cmp dword ptr [esi+00003AA0],00
+"game.exe"+1BD97B: 74 0E                 -  je game.exe+1BD98B
+"game.exe"+1BD97D: D9 45 08              -  fld dword ptr [ebp+08]
+"game.exe"+1BD980: 51                    -  push ecx
+"game.exe"+1BD981: 8B CE                 -  mov ecx,esi
+}
+
+
+{ AOB_ChickenTimer
+// ORIGINAL CODE - INJECTION POINT: "game.exe"+F8CE5
+"game.exe"+F8CC8: E9 1E 01 00 00           -  jmp game.exe+F8DEB
+"game.exe"+F8CCD: D9 EE                    -  fldz
+"game.exe"+F8CCF: D8 56 20                 -  fcom dword ptr [esi+20]
+"game.exe"+F8CD2: DF E0                    -  fnstsw ax
+"game.exe"+F8CD4: F6 C4 05                 -  test ah,05
+"game.exe"+F8CD7: 7A 35                    -  jp game.exe+F8D0E
+"game.exe"+F8CD9: D9 46 20                 -  fld dword ptr [esi+20]
+"game.exe"+F8CDC: D8 65 08                 -  fsub dword ptr [ebp+08]
+"game.exe"+F8CDF: D9 5D F0                 -  fstp dword ptr [ebp-10]
+"game.exe"+F8CE2: D9 45 F0                 -  fld dword ptr [ebp-10]
+// ---------- INJECTING HERE ----------
+"game.exe"+F8CE5: D9 56 20                 -  fst dword ptr [esi+20]
+"game.exe"+F8CE8: D8 D9                    -  fcomp st(0),st(1)
+// ---------- DONE INJECTING  ----------
+"game.exe"+F8CEA: DF E0                    -  fnstsw ax
+"game.exe"+F8CEC: F6 C4 05                 -  test ah,05
+"game.exe"+F8CEF: 7A 1D                    -  jp game.exe+F8D0E
+"game.exe"+F8CF1: D9 E8                    -  fld1
+"game.exe"+F8CF3: 8B 4D F8                 -  mov ecx,[ebp-08]
+"game.exe"+F8CF6: D9 5E 10                 -  fstp dword ptr [esi+10]
+"game.exe"+F8CF9: C6 84 0B 84 01 00 00 00  -  mov byte ptr [ebx+ecx+00000184],00
+"game.exe"+F8D01: C7 46 F0 00 00 00 00     -  mov [esi-10],00000000
+"game.exe"+F8D08: C7 06 3B 34 86 00        -  mov [esi],game.exe+46343B
+"game.exe"+F8D0E: D8 56 10                 -  fcom dword ptr [esi+10]
+}
+
+
+{ AOB_MapZoom_1
+// ORIGINAL CODE - INJECTION POINT: "game.exe"+EDBF9
+"game.exe"+EDBDA: 74 23              -  je game.exe+EDBFF
+"game.exe"+EDBDC: D9 40 10           -  fld dword ptr [eax+10]
+"game.exe"+EDBDF: D9 C1              -  fld st(1)
+"game.exe"+EDBE1: DA E9              -  fucompp
+"game.exe"+EDBE3: DF E0              -  fnstsw ax
+"game.exe"+EDBE5: F6 C4 44           -  test ah,44
+"game.exe"+EDBE8: 7B 15              -  jnp game.exe+EDBFF
+"game.exe"+EDBEA: D9 45 F8           -  fld dword ptr [ebp-08]
+"game.exe"+EDBED: DC 0D F8 2F 86 00  -  fmul qword ptr [game.exe+462FF8]
+"game.exe"+EDBF3: D8 86 A0 01 00 00  -  fadd dword ptr [esi+000001A0]
+// ---------- INJECTING HERE ----------
+"game.exe"+EDBF9: D9 9E A0 01 00 00  -  fstp dword ptr [esi+000001A0]
+// ---------- DONE INJECTING  ----------
+"game.exe"+EDBFF: 8B 87 B0 00 00 00  -  mov eax,[edi+000000B0]
+"game.exe"+EDC05: 85 C0              -  test eax,eax
+"game.exe"+EDC07: 74 25              -  je game.exe+EDC2E
+"game.exe"+EDC09: D9 40 10           -  fld dword ptr [eax+10]
+"game.exe"+EDC0C: D9 C1              -  fld st(1)
+"game.exe"+EDC0E: DA E9              -  fucompp
+"game.exe"+EDC10: DF E0              -  fnstsw ax
+"game.exe"+EDC12: F6 C4 44           -  test ah,44
+"game.exe"+EDC15: 7B 17              -  jnp game.exe+EDC2E
+"game.exe"+EDC17: D9 86 A0 01 00 00  -  fld dword ptr [esi+000001A0]
+}
+
+
+{ AOB_MapZoom_2
+// ORIGINAL CODE - INJECTION POINT: "game.exe"+EDC28
+"game.exe"+EDC09: D9 40 10              -  fld dword ptr [eax+10]
+"game.exe"+EDC0C: D9 C1                 -  fld st(1)
+"game.exe"+EDC0E: DA E9                 -  fucompp
+"game.exe"+EDC10: DF E0                 -  fnstsw ax
+"game.exe"+EDC12: F6 C4 44              -  test ah,44
+"game.exe"+EDC15: 7B 17                 -  jnp game.exe+EDC2E
+"game.exe"+EDC17: D9 86 A0 01 00 00     -  fld dword ptr [esi+000001A0]
+"game.exe"+EDC1D: D9 45 F8              -  fld dword ptr [ebp-08]
+"game.exe"+EDC20: DC 0D F8 2F 86 00     -  fmul qword ptr [game.exe+462FF8]
+"game.exe"+EDC26: DE E9                 -  fsubp st(1),st(0)
+// ---------- INJECTING HERE ----------
+"game.exe"+EDC28: D9 9E A0 01 00 00     -  fstp dword ptr [esi+000001A0]
+// ---------- DONE INJECTING  ----------
+"game.exe"+EDC2E: 8B 87 80 00 00 00     -  mov eax,[edi+00000080]
+"game.exe"+EDC34: 85 C0                 -  test eax,eax
+"game.exe"+EDC36: 74 12                 -  je game.exe+EDC4A
+"game.exe"+EDC38: D9 40 10              -  fld dword ptr [eax+10]
+"game.exe"+EDC3B: D9 C1                 -  fld st(1)
+"game.exe"+EDC3D: DA E9                 -  fucompp
+"game.exe"+EDC3F: DF E0                 -  fnstsw ax
+"game.exe"+EDC41: F6 C4 44              -  test ah,44
+"game.exe"+EDC44: 7B 04                 -  jnp game.exe+EDC4A
+"game.exe"+EDC46: 80 4D FF 01           -  or byte ptr [ebp-01],01
+}
+
+
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>18</ID>
+          <Description>"+ Globals"</Description>
+          <Options moHideChildren="1" moDeactivateChildrenAsWell="1"/>
+          <LastState Value="" RealAddress="00000000"/>
+          <Color>C0C0C0</Color>
+          <GroupHeader>1</GroupHeader>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>14</ID>
+              <Description>"pBase"</Description>
+              <LastState Value="264B2728" RealAddress="12D10000"/>
+              <ShowAsHex>1</ShowAsHex>
+              <Color>C0C0C0</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pBase</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>56</ID>
+              <Description>"pZoom"</Description>
+              <LastState Value="11B386B8" RealAddress="12D10010"/>
+              <ShowAsHex>1</ShowAsHex>
+              <Color>C0C0C0</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pZoom</Address>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>17</ID>
+          <Description>"+ Cheats"</Description>
+          <Options moHideChildren="1" moActivateChildrenAsWell="1"/>
+          <LastState Value="" RealAddress="00000000"/>
+          <Color>FF0000</Color>
+          <GroupHeader>1</GroupHeader>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>57</ID>
+              <Description>"Semi-Invulnerable"</Description>
+              <DropDownList ReadOnly="1" DescriptionOnly="1" DisplayValueAsItem="1">0:FALSE
+1:TRUE
+</DropDownList>
+              <LastState Value="1" Activated="1" RealAddress="12D10020"/>
+              <Color>FF00FF</Color>
+              <VariableType>Byte</VariableType>
+              <Address>bInvuln</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>58</ID>
+              <Description>"Unlimited Health"</Description>
+              <DropDownList ReadOnly="1" DescriptionOnly="1" DisplayValueAsItem="1">0:FALSE
+1:TRUE
+</DropDownList>
+              <LastState Value="1" Activated="1" RealAddress="12D10030"/>
+              <Color>FF00FF</Color>
+              <VariableType>Byte</VariableType>
+              <Address>bHealth</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>60</ID>
+              <Description>"Unlimited Stamina"</Description>
+              <DropDownList ReadOnly="1" DescriptionOnly="1" DisplayValueAsItem="1">0:FALSE
+1:TRUE
+</DropDownList>
+              <LastState Value="1" Activated="1" RealAddress="12D10050"/>
+              <Color>FF00FF</Color>
+              <VariableType>Byte</VariableType>
+              <Address>bStamina</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>61</ID>
+              <Description>"Unlimited Intenso"</Description>
+              <DropDownList ReadOnly="1" DescriptionOnly="1" DisplayValueAsItem="1">0:FALSE
+1:TRUE
+</DropDownList>
+              <LastState Value="1" Activated="1" RealAddress="12D10060"/>
+              <Color>FF00FF</Color>
+              <VariableType>Byte</VariableType>
+              <Address>bIntenso</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>62</ID>
+              <Description>"Unlimited Jump"</Description>
+              <DropDownList ReadOnly="1" DescriptionOnly="1" DisplayValueAsItem="1">0:FALSE
+1:TRUE
+</DropDownList>
+              <LastState Value="1" Activated="1" RealAddress="12D10070"/>
+              <Color>FF00FF</Color>
+              <VariableType>Byte</VariableType>
+              <Address>bJump</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>59</ID>
+              <Description>"Two-Hit Kills"</Description>
+              <DropDownList ReadOnly="1" DescriptionOnly="1" DisplayValueAsItem="1">0:FALSE
+1:TRUE
+</DropDownList>
+              <LastState Value="1" Activated="1" RealAddress="12D10040"/>
+              <Color>FF00FF</Color>
+              <VariableType>Byte</VariableType>
+              <Address>bEnemy</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>63</ID>
+              <Description>"Pesos Drops x100"</Description>
+              <DropDownList ReadOnly="1" DescriptionOnly="1" DisplayValueAsItem="1">0:FALSE
+1:TRUE
+</DropDownList>
+              <LastState Value="1" Activated="1" RealAddress="12D10080"/>
+              <Color>FF00FF</Color>
+              <VariableType>Byte</VariableType>
+              <Address>bPesos</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>64</ID>
+              <Description>"Silver Drops x10"</Description>
+              <DropDownList ReadOnly="1" DescriptionOnly="1" DisplayValueAsItem="1">0:FALSE
+1:TRUE
+</DropDownList>
+              <LastState Value="1" Activated="1" RealAddress="12D10090"/>
+              <Color>FF00FF</Color>
+              <VariableType>Byte</VariableType>
+              <Address>bSilver</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>65</ID>
+              <Description>"Freeze Inferno Timer"</Description>
+              <DropDownList ReadOnly="1" DescriptionOnly="1" DisplayValueAsItem="1">0:FALSE
+1:TRUE
+</DropDownList>
+              <LastState Value="1" Activated="1" RealAddress="12D100A0"/>
+              <Color>FF00FF</Color>
+              <VariableType>Byte</VariableType>
+              <Address>bInferno</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>66</ID>
+              <Description>"Freeze Chicken Timer"</Description>
+              <DropDownList ReadOnly="1" DescriptionOnly="1" DisplayValueAsItem="1">0:FALSE
+1:TRUE
+</DropDownList>
+              <LastState Value="1" Activated="1" RealAddress="12D100B0"/>
+              <Color>FF00FF</Color>
+              <VariableType>Byte</VariableType>
+              <Address>bChicken</Address>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>19</ID>
+          <Description>"+ Values"</Description>
+          <Options moHideChildren="1" moDeactivateChildrenAsWell="1"/>
+          <LastState Value="" RealAddress="00000000"/>
+          <Color>FF0000</Color>
+          <GroupHeader>1</GroupHeader>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>83</ID>
+              <Description>"+ Stats"</Description>
+              <Options moHideChildren="1" moDeactivateChildrenAsWell="1"/>
+              <LastState Value="" RealAddress="00000000"/>
+              <Color>FF0000</Color>
+              <GroupHeader>1</GroupHeader>
+              <CheatEntries>
+                <CheatEntry>
+                  <ID>67</ID>
+                  <Description>"Difficulty"</Description>
+                  <LastState Value="1" RealAddress="0091EB14"/>
+                  <Color>0000FF</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>"Game.exe"+51EB14</Address>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>68</ID>
+                  <Description>"Game Time"</Description>
+                  <LastState Value="12272.40039" RealAddress="0091EC50"/>
+                  <Color>0000FF</Color>
+                  <VariableType>Float</VariableType>
+                  <Address>game.exe+51EC50</Address>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>87</ID>
+                  <Description>"Play Time"</Description>
+                  <LastState Value="12427.00879" RealAddress="0091ED04"/>
+                  <Color>0000FF</Color>
+                  <VariableType>Float</VariableType>
+                  <Address>game.exe+51ED04</Address>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>21</ID>
+                  <Description>"Silver"</Description>
+                  <LastState Value="1440" RealAddress="0091EE30"/>
+                  <Color>0000FF</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>"Game.exe"+51EE30</Address>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>31</ID>
+                  <Description>"Combo Count"</Description>
+                  <LastState Value="0" RealAddress="0091F514"/>
+                  <Color>0000FF</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>"Game.exe"+51F514</Address>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>7</ID>
+                  <Description>"Pesos"</Description>
+                  <LastState Value="100000" RealAddress="0091F6E8"/>
+                  <Color>0000FF</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>"Game.exe"+51F6E8</Address>
+                </CheatEntry>
+              </CheatEntries>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>82</ID>
+              <Description>"+ Player"</Description>
+              <Options moHideChildren="1" moDeactivateChildrenAsWell="1"/>
+              <LastState Value="" RealAddress="00000000"/>
+              <Color>FF0000</Color>
+              <GroupHeader>1</GroupHeader>
+              <CheatEntries>
+                <CheatEntry>
+                  <ID>30</ID>
+                  <Description>"Intenso (max)"</Description>
+                  <LastState Value="70" RealAddress="0091F4A4"/>
+                  <Color>0000FF</Color>
+                  <VariableType>Float</VariableType>
+                  <Address>"Game.exe"+51F4A4</Address>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>24</ID>
+                  <Description>"Intenso (current)"</Description>
+                  <LastState Value="126.9319992" RealAddress="0091F4B4"/>
+                  <Color>0000FF</Color>
+                  <VariableType>Float</VariableType>
+                  <Address>"Game.exe"+51F4B4</Address>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>11</ID>
+                  <Description>"Stamina (current)"</Description>
+                  <LastState Value="12" RealAddress="264B2870"/>
+                  <Color>0000FF</Color>
+                  <VariableType>Float</VariableType>
+                  <Address>pBase</Address>
+                  <Offsets>
+                    <Offset>148</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>16</ID>
+                  <Description>"Stamina (max)"</Description>
+                  <LastState Value="12" RealAddress="264B2878"/>
+                  <Color>0000FF</Color>
+                  <VariableType>Float</VariableType>
+                  <Address>pBase</Address>
+                  <Offsets>
+                    <Offset>150</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>71</ID>
+                  <Description>"Position_X"</Description>
+                  <Color>0000FF</Color>
+                  <VariableType>Float</VariableType>
+                  <Address>pBase</Address>
+                  <Offsets>
+                    <Offset>1C</Offset>
+                    <Offset>10</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>72</ID>
+                  <Description>"Position_Y"</Description>
+                  <Color>0000FF</Color>
+                  <VariableType>Float</VariableType>
+                  <Address>pBase</Address>
+                  <Offsets>
+                    <Offset>20</Offset>
+                    <Offset>10</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>73</ID>
+                  <Description>"Position_Z"</Description>
+                  <Color>0000FF</Color>
+                  <VariableType>Float</VariableType>
+                  <Address>pBase</Address>
+                  <Offsets>
+                    <Offset>24</Offset>
+                    <Offset>10</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>1</ID>
+                  <Description>"Health (max)"</Description>
+                  <Color>0000FF</Color>
+                  <VariableType>Float</VariableType>
+                  <Address>pBase</Address>
+                  <Offsets>
+                    <Offset>1A8</Offset>
+                    <Offset>10</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>2</ID>
+                  <Description>"Health (current)"</Description>
+                  <Color>0000FF</Color>
+                  <VariableType>Float</VariableType>
+                  <Address>pBase</Address>
+                  <Offsets>
+                    <Offset>1AC</Offset>
+                    <Offset>10</Offset>
+                  </Offsets>
+                </CheatEntry>
+              </CheatEntries>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>81</ID>
+              <Description>"+ Map"</Description>
+              <Options moHideChildren="1" moDeactivateChildrenAsWell="1"/>
+              <LastState Value="" RealAddress="00000000"/>
+              <Color>FF0000</Color>
+              <GroupHeader>1</GroupHeader>
+              <CheatEntries>
+                <CheatEntry>
+                  <ID>79</ID>
+                  <Description>"Map Zoom (min)"</Description>
+                  <LastState Value="0.200000003" RealAddress="0087D300"/>
+                  <Color>0000FF</Color>
+                  <VariableType>Float</VariableType>
+                  <Address>game.exe+47D300</Address>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>80</ID>
+                  <Description>"Map Zoom (max)"</Description>
+                  <LastState Value="1.5" RealAddress="0087D304"/>
+                  <Color>0000FF</Color>
+                  <VariableType>Float</VariableType>
+                  <Address>game.exe+47D304</Address>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>55</ID>
+                  <Description>"Map Zoom (current)"</Description>
+                  <LastState Value="0.25" RealAddress="11B38858"/>
+                  <Color>0000FF</Color>
+                  <VariableType>Float</VariableType>
+                  <Address>pZoom</Address>
+                  <Offsets>
+                    <Offset>1A0</Offset>
+                  </Offsets>
+                </CheatEntry>
+              </CheatEntries>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>70</ID>
+              <Description>"+ Other"</Description>
+              <Options moHideChildren="1" moDeactivateChildrenAsWell="1"/>
+              <LastState Value="" RealAddress="00000000"/>
+              <Color>C0C0C0</Color>
+              <GroupHeader>1</GroupHeader>
+              <CheatEntries>
+                <CheatEntry>
+                  <ID>100</ID>
+                  <Description>"+ Strings"</Description>
+                  <Options moHideChildren="1" moDeactivateChildrenAsWell="1"/>
+                  <LastState Value="" RealAddress="00000000"/>
+                  <GroupHeader>1</GroupHeader>
+                  <CheatEntries>
+                    <CheatEntry>
+                      <ID>69</ID>
+                      <Description>""m_unhittable""</Description>
+                      <LastState RealAddress="0088897C"/>
+                      <VariableType>String</VariableType>
+                      <Length>12</Length>
+                      <Unicode>0</Unicode>
+                      <ZeroTerminate>1</ZeroTerminate>
+                      <Address>0088897C</Address>
+                    </CheatEntry>
+                    <CheatEntry>
+                      <ID>84</ID>
+                      <Description>""g_debugMenuEnabled""</Description>
+                      <LastState RealAddress="008A9A20"/>
+                      <VariableType>String</VariableType>
+                      <Length>18</Length>
+                      <Unicode>0</Unicode>
+                      <ZeroTerminate>1</ZeroTerminate>
+                      <Address>008A9A20</Address>
+                    </CheatEntry>
+                    <CheatEntry>
+                      <ID>85</ID>
+                      <Description>""g_infiniteMana""</Description>
+                      <LastState RealAddress="008A9A34"/>
+                      <VariableType>String</VariableType>
+                      <Length>14</Length>
+                      <Unicode>0</Unicode>
+                      <ZeroTerminate>1</ZeroTerminate>
+                      <Address>008A9A34</Address>
+                    </CheatEntry>
+                    <CheatEntry>
+                      <ID>86</ID>
+                      <Description>""g_playersInvincible""</Description>
+                      <LastState RealAddress="008A9A44"/>
+                      <VariableType>String</VariableType>
+                      <Length>19</Length>
+                      <Unicode>0</Unicode>
+                      <ZeroTerminate>1</ZeroTerminate>
+                      <Address>008A9A44</Address>
+                    </CheatEntry>
+                  </CheatEntries>
+                </CheatEntry>
+              </CheatEntries>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols/>
+  <Comments>********************************************************************************
+Game    : Guacamelee Super Turbo Championship Edition
+Version : (Steam 02-02-2017) / md5: 8e31520186bc1eb7406e862830ebbc46
+Date    : 02-02-2017
+Author  : JizzaBeez
+********************************************************************************
+Cheats:
+  * Semi-Invulnerable
+  * Unlimited Health
+  * Unlimited Stamina
+  * Unlimited Intenso
+  * Unlimited Jump
+  * Two-Hit Kills
+  * Pesos Drops x100
+  * Silver Drops x10
+  * Freeze Inferno Timer
+  * Freeze Chicken Timer
+  * Pointers, etc...
+********************************************************************************
+How to use the table:
+  1) Run program 'Game.exe'.
+  2) Open Cheat Engine 6.6+.
+  3) Select process 'Game.exe'.
+  4) Open table 'Guacamelee_STCE.ct'.
+  5) Click '&gt;&gt;&gt; ACTIVATE &lt;&lt;&lt;' to activate.
+  6) Select desired cheats, edit values...
+  7) Click '&gt;&gt;&gt; DEACTIVATE &lt;&lt;&lt;' before closing.
+********************************************************************************
+More info:
+  * Unlimited Stamina/Intenso/Jump only works if the ability has been acquired.
+  * The game uses static addresses for some variables, so this table may not work on different versions.
+********************************************************************************
+</Comments>
+</CheatTable>

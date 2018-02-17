@@ -1,0 +1,621 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="14">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>36</ID>
+      <Description>"[X] &lt;== SoaSE  Rebellion v1.01 Script "</Description>
+      <Options moHideChildren="1"/>
+      <Color>FF0000</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>{
+===========================================
+ Game Title    : Sins of a Solar Empire - Rebellion
+ Game Version  : 1.01.4176
+ Proces Name   : "Sins of a Solar Empire Rebellion".exe
+ Script Version: 1.1
+ CE Version    : 6.2
+ Release date  : 13-Jun-2012
+ Author        : Recifense
+ History:
+ 13-Jun-12: First Release
+ 13-Jun-12: Fix the cheats related to planets
+ Features:
+ - Minimum Resources
+ - God Mode
+   - Ships  (hull and shield)
+   - Planet (HP and Population)
+ - Quick Kill
+ - Full Antimatter,
+ - Quick Research
+===========================================
+}
+
+//=========================================
+// Definitions
+//define(LUDO,"game.exe")
+
+//=========================================
+[ENABLE]
+//=========================================
+//LuaCall(CheckVersion())
+//=========================================
+// Check if script is compatible to this game version
+// If false the script will not be loaded
+
+assert("Sins of a Solar Empire Rebellion".exe+00195533,d8 c1 d9 59 20)       //_MR
+assert("Sins of a Solar Empire Rebellion".exe+0012032e,8b 41 08 8b 4c 24 04) //_MU
+assert("Sins of a Solar Empire Rebellion".exe+000fdafb,d9 5b 0c d9 1c 24)    //_GM
+assert("Sins of a Solar Empire Rebellion".exe+000fda88,d9 5b 10 d9 1c 24)    //_MS
+assert("Sins of a Solar Empire Rebellion".exe+000de0e0,d9 41 08 d8 64 24 04) //_MA
+assert("Sins of a Solar Empire Rebellion".exe+00142480,d9 41 10 d8 64 24 04) //_PP
+assert("Sins of a Solar Empire Rebellion".exe+00123311,d9 44 24 14 d9 55 2c) //_QR
+assert("Sins of a Solar Empire Rebellion".exe+001194a4,d9 9d 8c 00 00 00)    //_GMP
+
+//=========================================
+alloc(MyCode,2048,"Sins of a Solar Empire Rebellion".exe)
+//=========================================
+// Declaration section
+label(_MonResources)
+label(_MonR0)
+label(_MonR1)
+label(_BackMR)
+label(_ExitMR)
+label(_MarkUnits)
+label(_BackMU)
+label(_ExitMU)
+label(_GodMode)
+label(_GodM0)
+label(_BackGM)
+label(_ExitGM)
+label(_MonShield)
+label(_BackMS)
+label(_ExitMS)
+label(_MonAM)
+label(_BackMA)
+label(_ExitMA)
+label(_PlanetPop)
+label(_BackPP)
+label(_ExitPP)
+label(_QuickResearch)
+label(_BackQR)
+label(_ExitQR)
+label(_GodModeP)
+label(_BackGMP)
+label(_ExitGMP)
+label(iEnableGM)
+label(iEnableMR)
+label(iEnableQR)
+label(iEnableMA)
+label(iEnableQK)
+
+//=========================================
+// Registering Symbols
+registersymbol(MyCode)
+registersymbol(iEnableGM)
+registersymbol(iEnableMR)
+registersymbol(iEnableQR)
+registersymbol(iEnableMA)
+registersymbol(iEnableQK)
+
+
+//=========================================
+MyCode:
+//=========================================
+_MonResources:
+ push eax
+
+ fadd st(0),st(1)               // Original code
+ fstp dword ptr [ecx+20]        // Original code
+
+ cmp dword ptr [iEnableMR],0
+ je _ExitMR                     // Jump if feature is disabled
+
+ mov eax,[ecx+04]               // Get ptr to owner
+ or eax,eax
+ jz _ExitMR                     // Jump if null pointer
+
+ cmp dword ptr [eax+0c],0       // Is it player's resource?
+ jne _ExitMR                    // Jump if false
+
+ mov eax,(float)9990
+
+ cmp eax,[ecx+08]               // Credits &gt;= 9900.0?
+ jle _MonR0                     // Jump if true
+
+ mov [ecx+08],eax               // Credits = 9900.0
+
+_MonR0:
+ cmp eax,[ecx+20]               // Metals &gt;= 9900.0?
+ jle _MonR1                     // Jump if true
+
+ mov [ecx+20],eax               // Metals = 9900.0
+
+_MonR1:
+ cmp eax,[ecx+38]               // Crystals &gt;= 9900.0?
+ jle _ExitMR                    // Jump if true
+
+ mov [ecx+38],eax               // Crystals = 9900.0
+
+_ExitMR:
+ pop eax
+ jmp _BackMR                    // Back to main code
+
+//=========================================
+_MarkUnits:
+ mov eax,[ecx+08]               // Original code (Rds ID)
+ or eax,eax                     // Is it a Player's Unit?
+ jnz _ExitMU                    // Jump if false
+
+ cmp dword ptr [iEnableGM],0
+ je _ExitMU                     // Jump if feature is disabled
+
+ mov eax,[ecx+04]               // Get ptr to Unit_Base
+ or eax,eax                     // Valid pointer?
+ jz _ExitMU                     // Jump if false
+
+ or byte ptr [eax+0f],01        // Mark it as player's unit
+
+_ExitMU:
+ mov eax,[ecx+08]               // Original code (Rds ID)
+ mov ecx,[esp+04]               // Original code
+ jmp _BackMU                    // Back to main code
+
+//=========================================
+_GodMode:
+ push eax
+
+ mov eax,[ebx+04]               // Get pointer to Unit_Base
+ or eax,eax                     // Valid pointer?
+ jz _ExitGM                     // Jump if false
+
+ and byte ptr [eax+0f],01       // Is it a player's unit?
+ jz _GodM0                      // Jump if false
+
+ cmp dword ptr [iEnableGM],0
+ je _ExitGM                     // Jump if feature is disabled
+
+ fstp st(0)                     // Discard value
+ fld  dword ptr [ebx+0c]        // Get current HP
+ jmp _ExitGM
+
+_GodM0:
+ cmp dword ptr [iEnableQK],0
+ je _ExitGM                     // Jump if feature is disabled
+
+ fstp st(0)                     // Discard value
+ fldz                           // Make new HP = 0
+
+_ExitGM:
+ pop eax
+
+ fstp dword ptr [ebx+0c]        // Original code
+ fstp dword ptr [esp]           // Original code
+ jmp _BackGM                    // Back to main code
+
+//=========================================
+_MonShield:
+ push eax
+
+ cmp dword ptr [iEnableGM],0
+ je _ExitMS                     // Jump if feature is disabled
+
+ mov eax,[ebx+04]               // Get pointer to Unit_Base
+ or eax,eax                     // Valid pointer?
+ jz _ExitMS                     // Jump if false
+
+ and byte ptr [eax+0f],01       // Is it a player's unit?
+ jz _ExitMS                     // Jump if false
+
+ fstp st(0)                     // Discard value
+ fld  dword ptr [ebx+10]        // Get current Shield Value
+
+_ExitMS:
+ pop eax
+
+ fstp dword ptr [ebx+10]        // Original code
+ fstp dword ptr [esp]           // Original code
+ jmp _BackMS                    // Back to main code
+
+//=========================================
+//  This does not let the AntiMatter decrease
+_MonAM:
+ cmp dword ptr [iEnableMA],0
+ je _ExitMA                     // Jump if feature is disabled
+
+ push eax
+ mov eax,[ecx+04]               // Get ptr to owner
+ and byte ptr [eax+0f],01       // Is it a player's unit?...
+ pop eax
+ jz _ExitMA                     // ...Jump if false
+
+ mov dword ptr [esp+04],0       // Make value2decrease = 0
+
+_ExitMA:
+ fld dword ptr [ecx+08]         // Original code
+ fsub dword ptr [esp+04]        // Original code
+ jmp _BackMA                    // Back to main code
+
+//=========================================
+//  This does not let the pop decrease
+_PlanetPop:
+ cmp dword ptr [iEnableGM],0
+ je _ExitPP                     // Jump if feature is disabled
+
+ push eax
+ mov eax,[ecx+04]               // Get ptr to owner
+ cmp dword ptr [eax+00000624],1 // Is it a player's planet?...
+ pop eax
+ jne _ExitPP                    // ...Jump if false
+
+ mov dword ptr [esp+04],0       // Make value2decrease = 0
+
+_ExitPP:
+ fld dword ptr [ecx+10]         // Original code
+ fsub dword ptr [esp+04]        // Original code
+ jmp _BackPP                    // Back to main code
+
+//=========================================
+ _QuickResearch:
+ fld dword ptr [esp+14]         // Original code
+ fst dword ptr [ebp+2c]         // Original code
+
+ push eax
+
+ mov eax,[ebp+04]               // Get ptr ResearchOwner
+ cmp dword ptr [eax+28],0       // Is it a player's research ?
+ jne _ExitQR                    // Jump if false
+
+ cmp dword ptr [iEnableQR],0
+ je _ExitQR                     // Jump if feature is disabled
+
+ mov eax,(float)0.9
+ cmp eax,[ebp+2c]               // Current research &gt;= 90%?
+ jle _ExitQR                    // Jump if true
+
+ mov [ebp+2c],eax               // Current research = 90%
+
+_ExitQR:
+ pop eax
+ jmp _BackQR                    // Back to main code
+
+//=========================================
+// God Mode for Planet
+_GodModeP:
+ push eax
+
+ cmp dword ptr [iEnableGM],0
+ je _ExitGMP                    // Jump if feature is disabled
+
+ mov eax,[ebp+08]               // Get ptr to owner
+
+ cmp dword ptr [eax+00000624],1 // Is it a player's planet?
+ jne _ExitGMP                   // Jump if false
+
+ fstp st(0)                     // Discard value
+ fld  dword ptr [ebp+0000008C]  // Get current HP
+
+_ExitGMP:
+ pop eax
+
+ fstp dword ptr [ebp+0000008C]  // Original code
+ jmp _BackGMP                   // Back to main code
+
+//=========================================
+ db '=========================&gt;'
+ db 'CE6.2 Script by Recifense 061312'
+//=========================================
+// Variables
+iEnableGM:
+ dd 0
+iEnableMR:
+ dd 0
+iEnableQR:
+ dd 0
+iEnableMA:
+ dd 0
+iEnableQK:
+ dd 0
+
+//=========================================
+// Hacking Points
+"Sins of a Solar Empire Rebellion".exe+00195533:
+ jmp _MonResources
+_BackMR:
+
+"Sins of a Solar Empire Rebellion".exe+0012032e:
+ jmp _MarkUnits
+ nop
+ nop
+_BackMU:
+
+"Sins of a Solar Empire Rebellion".exe+000fdafb:
+ jmp _GodMode
+ nop
+_BackGM:
+
+"Sins of a Solar Empire Rebellion".exe+000fda88:
+ jmp _MonShield
+ nop
+_BackMS:
+
+"Sins of a Solar Empire Rebellion".exe+000de0e0:
+ jmp _MonAM
+ nop
+ nop
+_BackMA:
+
+"Sins of a Solar Empire Rebellion".exe+00142480:
+ jmp _PlanetPop
+ nop
+ nop
+_BackPP:
+
+"Sins of a Solar Empire Rebellion".exe+00123311:
+ jmp _QuickResearch
+ nop
+ nop
+ nop
+_BackQR:
+
+"Sins of a Solar Empire Rebellion".exe+001194a4:
+ jmp _GodModeP
+ nop
+_BackGMP:
+
+//=========================================
+// Script for Restoring Original Codes
+[DISABLE]
+"Sins of a Solar Empire Rebellion".exe+00195533:
+// fadd st(0),st(1)
+// fstp dword ptr [ecx+20]
+ db d8 c1 d9 59 20
+
+"Sins of a Solar Empire Rebellion".exe+0012032e:
+// mov eax,[ecx+08]
+// mov ecx,[esp+04]
+ db 8b 41 08 8b 4c 24 04
+
+"Sins of a Solar Empire Rebellion".exe+000fdafb:
+// fstp dword ptr [ebx+0C]
+// fstp dword ptr [esp]
+ db d9 5b 0c d9 1c 24
+
+"Sins of a Solar Empire Rebellion".exe+000fda88:
+// fstp dword ptr [ebx+10]
+// fstp dword ptr [esp]
+ db d9 5b 10 d9 1c 24
+
+"Sins of a Solar Empire Rebellion".exe+000de0e0:
+// fld dword ptr [ecx+08]
+// fsub dword ptr [esp+04]
+ db d9 41 08 d8 64 24 04
+
+"Sins of a Solar Empire Rebellion".exe+00142480:
+// fld dword ptr [ecx+10]
+// fsub dword ptr [esp+04]
+ db d9 41 10 d8 64 24 04
+
+"Sins of a Solar Empire Rebellion".exe+00123311:
+// fld dword ptr [esp+14]
+// fst dword ptr [ebp+2C]
+ db d9 44 24 14 d9 55 2c
+
+"Sins of a Solar Empire Rebellion".exe+001194a4:
+// fstp dword ptr [ebp+0000008C]
+ db d9 9d 8c 00 00 00
+
+//=========================================
+// Unregistering Symbols
+unregistersymbol(MyCode)
+unregistersymbol(iEnableGM)
+unregistersymbol(iEnableMR)
+unregistersymbol(iEnableQR)
+unregistersymbol(iEnableMA)
+unregistersymbol(iEnableQK)
+
+//=========================================
+dealloc(MyCode)
+//============= Scripts End ===============
+
+// ****************************************
+// NOTES
+// ****************************************
+{
+}
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>1</ID>
+          <Description>"Enable/Disable God Mode =&gt; (1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableGM</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>3</ID>
+          <Description>"Enable/Disable Minimum Resources =&gt; (1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMR</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>4</ID>
+          <Description>"Enable/Disable Quick Research =&gt; (1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableQR</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>2</ID>
+          <Description>"Enable/Disable Unlimited AntiMatter =&gt; (1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMA</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>5</ID>
+          <Description>"Enable/Disable Quick Kill =&gt; (1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableQK</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>33</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>34</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols>
+    <SymbolEntry>
+      <Name>iEnableGM</Name>
+      <Address>070E0210</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>iEnableMR</Name>
+      <Address>070E0214</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>iEnableQR</Name>
+      <Address>070E0218</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>iEnableMA</Name>
+      <Address>070E021C</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>iEnableQK</Name>
+      <Address>070E0220</Address>
+    </SymbolEntry>
+  </UserdefinedSymbols>
+  <Comments>===========================================
+ Game Title    : Sins of a Solar Empire - Rebellion
+ Game Version  : 1.01.4176
+ Proces Name   : "Sins of a Solar Empire Rebellion".exe
+ Script Version: 1.1
+ CE Version    : 6.2
+ Release date  : 13-Jun-2012
+ Author        : Recifense
+ History:
+ 13-Jun-12: First Release
+ 13-Jun-12: Fix the cheats related to planets
+ Features:
+ - Minimum Resources [1]
+ - God Mode [2]
+   - Ships  (hull and shield)
+   - Planet (HP and Population)
+ - Quick Kill [3]
+ - Full Antimatter, [4]
+ - Quick Research [5]
+===========================================
+[1] Minimum resources = 9999
+[2] Ships and planets
+[3] It is, in fact, one hit kill. Use it wisely, because you are the only one protected. 
+[4] No need to wait to jump again or colonize
+[5] The research will start with 90% progress.
+===========================================
+HOTKEYS:
+CTRL+Home = ENABLES  all cheats (expecpt for Quick Kill);
+CTRL+End  = DISABLES all cheats (expecpt for Quick Kill);
+CTRL+PGUP = ENABLES  "Quick Kill"
+CTRL+PGDN = DISABLES "Quick Kill"
+===========================================
+Cheers!
+</Comments>
+</CheatTable>

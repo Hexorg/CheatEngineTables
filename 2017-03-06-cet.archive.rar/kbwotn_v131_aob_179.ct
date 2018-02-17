@@ -1,0 +1,721 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="14">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>16</ID>
+      <Description>"[X] &lt;== KB Warriors of the North v131 Script AOB"</Description>
+      <Options moHideChildren="1"/>
+      <Color>FF0000</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>{
+===========================================
+ Game Title    : Kings Bounty Warriors of the North
+ Game Version  : 1.3.1 (Build 6245)
+ Game Sponsor  : FLT (via Internet)
+ Proces Name   : KBWotN.exe
+ Script Version: 1.0
+ CE Version    : 6.2
+ Release date  : 03-Nov-2012
+ Author        : Recifense
+ History:
+ 26-Oct-12: First Release
+ 03-Nov-12: AOB version of the script
+ Features:
+ - Minimum Gold
+ - Minimum Runes
+ - Minimum Leadership
+ - Quick Level Up (XP)
+ - Full Troop           TBS
+ - Free Movement Points TBS
+ - God Mode             TBS
+===========================================
+}
+
+//=========================================
+// Definitions
+define(LUDO,"KBWotN.exe")
+
+//=========================================
+[ENABLE]
+//=========================================
+//LuaCall(CheckVersion())
+//=========================================
+alloc(MyCode,4096,LUDO)
+//=========================================
+
+AOBScan(aob_MonResources,8b 4f 0c 8b 34 81 89 74 24 18)    //_MR
+AOBScan(aob_ActionPoints,29 41 14 83 79 14 00 ?? ?? 8b)    //_AP
+AOBScan(aob_TroopHP,89 51 0c 8b 07 8b 57 14 8b 48 70 89)   //_AP
+AOBScan(aob_TroopSize,89 51 10 8b 57 20 f6 c2 08 ?? ?? a1) //_AP
+
+//=========================================
+// Declaration section
+label(p_MonResources)
+label(p_ActionPoints)
+label(p_TroopHP)
+label(p_TroopSize)
+
+label(_MonResources)
+label(_MonR0)
+label(_MonR1)
+label(_MonR2)
+label(_MonR3)
+label(_BackMR)
+label(_ExitMR)
+label(_ActionPoints)
+label(_ActionP0)
+label(_ActionP1)
+label(_BackAP)
+label(_ExitAP)
+label(_TroopHP)
+label(_BackTH)
+label(_ExitTH)
+label(_TroopSize)
+label(_BackTS)
+label(_ExitTS)
+label(iXP)
+label(iEnableAP)
+label(iEnableGM)
+label(iEnableMR)
+label(iEnableMM)
+label(iEnableML)
+label(iEnableMX)
+label(iEnableMxT)
+label(iMinimumLS)
+label(iMinMoney)
+label(iCurLS)
+
+//=========================================
+// Registering Symbols
+registersymbol(MyCode)
+registersymbol(iXP)
+registersymbol(iEnableAP)
+registersymbol(iEnableGM)
+registersymbol(iEnableMR)
+registersymbol(iEnableMM)
+registersymbol(iEnableML)
+registersymbol(iEnableMX)
+registersymbol(iEnableMxT)
+registersymbol(iMinimumLS)
+registersymbol(iMinMoney)
+registersymbol(iCurLS)
+
+registersymbol(p_MonResources)
+registersymbol(p_ActionPoints)
+registersymbol(p_TroopHP)
+registersymbol(p_TroopSize)
+
+//=========================================
+MyCode:
+//=========================================
+// It monitors Money, Runes and Leadership on hero's status screen
+_MonResources:
+ push eax
+
+ mov ecx,[edi+0c]            // Original code (get ptr to item)
+ mov esi,[ecx+eax*4]         // Original code (get ptr to value structure)
+
+ mov eax,[edi+04]            // Get ptr to item name
+ mov eax,[eax+0c]            // Get name
+
+ cmp dword ptr [iEnableMM],0
+ je _MonR0                   // Jump if feature is disabled
+
+ cmp eax,'mone'              // Money?
+ jne _MonR0                  // Jump if false
+
+ mov eax,[iMinMoney]         // Get minimum value
+ cmp eax,[esi+08]
+ jle _ExitMR
+
+ mov [esi+08],eax
+ jmp _ExitMR
+
+_MonR0:
+ cmp dword ptr [iEnableMR],0
+ je _MonR1                   // Jump if feature is disabled
+
+ cmp eax,'rune'
+ jne _MonR1
+
+ mov eax,#20
+ cmp eax,[esi+08]
+ jle _ExitMR
+
+ mov [esi+08],eax
+ jmp _ExitMR
+
+_MonR1:
+ cmp eax,'lead'
+ jne _MonR2
+
+ mov eax,[esi+08]
+ mov [iCurLS],eax            // Save Current Leardership value for further use
+
+ cmp dword ptr [iEnableML],0
+ je _ExitMR                  // Jump if feature is disabled
+
+ mov eax,[iMinimumLS]
+ cmp eax,[esi+08]
+ jle _ExitMR
+
+ mov [esi+08],eax
+ jmp _ExitMR
+
+_MonR2:
+ cmp dword ptr [iEnableMX],0
+ je _ExitMR                  // Jump if feature is disabled
+
+ cmp eax,'expe'
+ jne _ExitMR
+
+ mov eax,[esi+04]
+ mov eax,[eax+0c]
+ cmp eax,'coun'
+ jne _MonR3
+
+ mov eax,[iXP]               // Get maximum XP
+ or eax,eax
+ jz _ExitMR
+
+ dec eax                     // Decrease it by 1
+ mov [esi+08],eax            // Save it as current XP
+ jmp _ExitMR
+
+_MonR3:                      // 08-Dec-2009
+ cmp eax,'limi'
+ jne _ExitMR
+
+ mov eax,[esi+08]
+ mov [iXP],eax
+
+_ExitMR:
+ pop eax
+ jmp _BackMR                 // Back to main code
+
+//=========================================
+// It does not let AP decrease during movement
+_ActionPoints:
+ push edx
+
+ cmp dword ptr [ecx+000001dc],1 // PlayerÂ´s troop?
+ jne _ExitAP                 // Jump if false
+
+ cmp dword ptr [iEnableGM],0 // Is it disabled?
+ je _ActionP0                // Jump if true
+
+ push eax
+ mov eax,[ecx+24]            // EAX = Original HP
+ add eax,#1000
+ mov [ecx+0c],eax            // HP = Original HP + 1000
+ pop eax
+
+_ActionP0:
+ cmp dword ptr [iEnableMxT],0// Is it disabled?
+ je _ActionP1                // Jump if true
+
+ push eax
+ xor edx,edx
+ mov eax,[iCurLS]           // Get current HeroÂ´s Leadership
+ div dword ptr [ecx+118]    // Devide it by unitÂ´s LS cost
+ mov edx,eax
+ pop eax
+
+ or edx,edx
+ jz _ActionP1
+
+ mov [ecx+10],edx           // Cur Size
+ mov [ecx+00000114],edx     // Max Size
+
+_ActionP1:
+ cmp dword ptr [iEnableAP],0// Is it disabled?
+ je _ExitAP                 // Jump if true
+
+ xor eax,eax                // Make AP to decrease = 0
+
+_ExitAP:
+ pop edx
+
+ sub [ecx+14],eax           // Original code
+ cmp dword ptr [ecx+14],00  // Original code
+ jmp _BackAP                // Back to main code
+
+//========================================= ok
+// It does not let the troop HP decrease during combat
+_TroopHP:
+ cmp dword ptr [iEnableGM],0 // Is it disabled?
+ je _ExitTH                  // Jump if true
+
+ cmp dword ptr [ecx+000001dc],1 // PlayerÂ´s troop?
+ jne _ExitTH                // Jump if false
+
+ mov edx,[ecx+24]           // EDX = Original HP
+ add edx,#5000              // New HP = Original HP + 5000
+
+_ExitTH:
+ mov [ecx+0c],edx           // Original code
+ mov eax,[edi]              // Original code
+ jmp _BackTH                // Back to main code
+
+//========================================= ok
+// It does not let the troop size decrease during combat
+_TroopSize:
+ cmp dword ptr [iEnableGM],0 // Is it disabled?
+ je _ExitTS                  // Jump if true
+
+ cmp dword ptr [ecx+000001dc],1 // PlayerÂ´s troop?
+ jne _ExitTS                // Jump if false
+
+ mov edx,[ecx+00000114]     // Troop Size = Original Size
+
+_ExitTS:
+ mov [ecx+10],edx           // Original code
+ mov edx,[edi+20]           // Original code
+ jmp _BackTS                // Back to main code
+
+//=========================================
+ db '===========================&gt;'
+ db 'CE6.2 Script by Recifense 110312'
+//=========================================
+// Variables
+iEnableAP:
+ dd 0
+iEnableGM:
+ dd 0
+iEnableMR:
+ dd 0
+iEnableMM:
+ dd 0
+iEnableML:
+ dd 0
+iEnableMX:
+ dd 0
+iEnableMxT:
+ dd 0
+iMinimumLS:
+ dd #6200
+iMinMoney:
+ dd #62000
+iXP:
+ dd 0
+iCurLS:
+ dd 0
+
+//=========================================
+// Hacking Points
+//LUDO+00051df2:
+aob_MonResources:
+p_MonResources:
+ jmp _MonResources
+ nop
+_BackMR:
+
+//LUDO+0006eded:
+aob_ActionPoints:
+p_ActionPoints:
+ jmp _ActionPoints
+ nop
+ nop
+_BackAP:
+
+//LUDO+000698ca:
+aob_TroopHP:
+p_TroopHP:
+ jmp _TroopHP
+_BackTH:
+
+//LUDO+000698d5:
+aob_TroopSize:
+p_TroopSize:
+ jmp _TroopSize
+ nop
+_BackTS:
+
+//=========================================
+// Script for Restoring Original Codes
+[DISABLE]
+//LUDO+00051df2:
+p_MonResources:
+// mov ecx,[edi+0C]
+// mov esi,[ecx+eax*4]
+ db 8b 4f 0c 8b 34 81
+
+//LUDO+0006eded:
+p_ActionPoints:
+// sub [ecx+14],eax
+// cmp dword ptr [ecx+14],00
+ db 29 41 14 83 79 14 00
+
+//LUDO+000698ca:
+p_TroopHP:
+// mov [ecx+0C],edx
+// mov eax,[edi]
+ db 89 51 0c 8b 07
+
+//LUDO+000698d5:
+p_TroopSize:
+// mov [ecx+10],edx
+// mov edx,[edi+20]
+ db 89 51 10 8b 57 20
+
+//=========================================
+// Unregistering Symbols
+unregistersymbol(MyCode)
+unregistersymbol(iXP)
+unregistersymbol(iEnableAP)
+unregistersymbol(iEnableGM)
+unregistersymbol(iEnableMR)
+unregistersymbol(iEnableMM)
+unregistersymbol(iEnableML)
+unregistersymbol(iEnableMX)
+unregistersymbol(iEnableMxT)
+unregistersymbol(iMinimumLS)
+unregistersymbol(iMinMoney)
+unregistersymbol(iCurLS)
+
+unregistersymbol(p_MonResources)
+unregistersymbol(p_ActionPoints)
+unregistersymbol(p_TroopHP)
+unregistersymbol(p_TroopSize)
+
+//=========================================
+dealloc(MyCode)
+//============= Scripts End ===============
+
+// ****************************************
+// NOTES
+// ****************************************
+{
+}
+
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>3</ID>
+          <Description>"Enable/Disable Unlimited move AP =&gt; (1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableAP</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>2</ID>
+          <Description>"Enable/Disable God Mode =&gt; (1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableGM</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>4</ID>
+          <Description>"Enable/Disable Unlimited Runes =&gt; (1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMR</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>6</ID>
+          <Description>"Enable/Disable Minimum Money =&gt; (1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMM</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>8</ID>
+              <Description>"Minimum Money Value ==&gt;"</Description>
+              <Color>0080FF</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>iMinMoney</Address>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>7</ID>
+          <Description>"Enable/Disable Minimum Leadership =&gt; (1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableML</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>9</ID>
+              <Description>"Minimum Leadership Value ==&gt;"</Description>
+              <Color>0080FF</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>iMinimumLS</Address>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>5</ID>
+          <Description>"Enable/Disable Quick XP =&gt; (1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMX</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>18</ID>
+          <Description>"Enable/Disable Troop Max Size =&gt; (1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMxT</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols>
+    <SymbolEntry>
+      <Name>pActionPoints</Name>
+      <Address>0046D8AC</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>pTroopSize</Name>
+      <Address>00468489</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>pTroopHP</Name>
+      <Address>0046847E</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>pMonResources</Name>
+      <Address>00451122</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>LUDO</Name>
+      <Address>KBWotN.exe</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>iXP</Name>
+      <Address>04960224</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>iEnableAP</Name>
+      <Address>04960200</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>iEnableGM</Name>
+      <Address>04960204</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>iEnableMR</Name>
+      <Address>04960208</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>iEnableMM</Name>
+      <Address>0496020C</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>iEnableML</Name>
+      <Address>04960210</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>iEnableMX</Name>
+      <Address>04960214</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>iEnableMxT</Name>
+      <Address>04960218</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>iMinimumLS</Name>
+      <Address>0496021C</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>iMinMoney</Name>
+      <Address>04960220</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>iCurLS</Name>
+      <Address>04960228</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>p_MonResources</Name>
+      <Address>00451DF2</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>p_ActionPoints</Name>
+      <Address>0046EDED</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>p_TroopHP</Name>
+      <Address>004698CA</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>p_TroopSize</Name>
+      <Address>004698D5</Address>
+    </SymbolEntry>
+  </UserdefinedSymbols>
+  <Comments>===========================================
+ Game Title    : Kings Bounty Warriors of the North
+ Game Version  : 1.3.1 (Build 6245)
+ Game Sponsor  : FLT (via Internet)
+ Proces Name   : KBWotN.exe
+ Script Version: 1.0
+ CE Version    : 6.2
+ Release date  : 03-Nov-2012
+ Author        : Recifense
+ History:
+ 26-Oct-12: First Release
+ 03-Nov-12: AOB version of the script
+ Features:
+ - Minimum Gold         RTS [1] (62000)
+ - Minimum Runes        RTS [2] (20)
+ - Minimum Leadership   RTS [3] (6200)
+ - Quick Level Up (XP)  RTS [4]
+ - Full Troop           TBS [5]
+ - Free Movement Points TBS [6]
+ - God Mode             TBS [7]
+===========================================
+[1] Minimum Gold value can be defined by user;
+[2] Minimum Runes is set 20;
+[3] Minimum Leader value can be defined by user;
+[4] XP will be set for needed (value - 1);
+[5] Troop Size will be set to maximum value depending on Leadership value (During combat move your troop in order to take effect);
+[6] Free Movement until combat;
+[7] Full HP + a bonus value during combat;
+[NOTE] Move your troop at least once during a battle.
+===========================================
+HOTKEYS:
+CTRL + Home = Enable  all cheats;
+CTRL + End  = Disable all cheats;
+===========================================
+Cheers!
+</Comments>
+</CheatTable>

@@ -1,0 +1,779 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="14">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>16</ID>
+      <Description>"[X] &lt;== Hearts Of Iron III - ML V3.062 beta  Script 3.0"</Description>
+      <Options moHideChildren="1"/>
+      <Color>FF0000</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>{
+===========================================
+ Game Title    : Hearts of Iron III - For The Motherland
+ Game Version  : 3.062 (ACZM) beta
+ Process Name  : hoi3game.exe
+ Script Version: 3.0
+ CE Version    : 6.2
+ Release date  : 12-Jul-2012 (adapted from version 3.062)
+ Author        : Recifense
+ Features:
+ - Minimum Resources (500000)
+ - Production in 1 day
+ - Research in 1 day
+ - Province Improvement (resource production) (new)
+ - Province Quick Ownership (for just conquered province)
+ - God Mode
+ - Weak Foe (Quick Battle)
+ - Unit Improvement
+    - Max Strength
+    - Max Organization
+    - 100% Food
+    - 100% Fuel
+    - Morale (99%)
+    - Speed (90km/h)
+    - Toughness
+    - Soft Attack
+    - Hard Attack
+    - Hull
+ - Troop movement (1 hour to adjacent province)
+===========================================
+}
+
+[ENABLE]
+//=========================================
+// Check if script is compatible to this game version
+// If false the script will not be loaded
+
+assert(hoi3game.exe+0027fdb7,81 7c b8 08 18 dd f5 05) //_MR
+assert(hoi3game.exe+000d8d96,8b 43 34 39 43 38 7d 09) //_MProd
+assert(hoi3game.exe+000efee6,8b 93 fc 01 00 00 8b 4d) //_MRch
+assert(hoi3game.exe+0009ef02,8b 91 10 03 00 00 8b 43) //_MC
+assert(hoi3game.exe+00169b61,39 86 a8 00 00 00 7e 06) //_GM
+assert(hoi3game.exe+001697fa,8b 83 b0 00 00 00 33 d2) //_MU
+assert(hoi3game.exe+0018617a,8b 7c 24 24 39 38 0f 8c) //_MM
+
+//=========================================
+alloc(MyCode,2048,hoi3game.exe)
+//=========================================
+// Declaration section
+label(_MonResource)
+label(_BackMRo)
+label(_ExitMRo)
+label(_MonProd)
+label(_BackMP)
+label(_ExitMP)
+label(_MonResearch)
+label(_BackMRe)
+label(_ExitMRe)
+label(_MonCity)
+label(_BackMC)
+label(_ExitMC)
+label(_MonC0)
+label(_MonC00)
+label(_MonC01)
+label(_MonC02)
+label(_MonC03)
+label(_MonC04)
+label(_GodMode)
+label(_BackGM)
+label(_ExitGM)
+label(_GodM0)
+label(_MonUnits)
+label(_BackMU)
+label(_ExitMU)
+label(_MonU0)
+label(_MonU1)
+label(_MonU2)
+label(_MonU3)
+label(_MonU4)
+label(_MonU5)
+label(_MonMovement)
+label(_BackMM)
+label(_ExitMM)
+label(iEnableMRo)
+label(iEnableMP)
+label(iEnableMRe)
+label(iEnableMC)
+label(iEnableGM)
+label(iEnableWF)
+label(iEnableQO)
+label(iEnableMU)
+label(iEnableMM)
+label(iEnableIP)
+label(iEnableRR)
+label(pReso)
+label(pProd)
+label(pRese)
+label(pCity)
+label(pUnit)
+label(iMinRP)
+label(iPlayerID)
+label(aLastRot)
+
+//=========================================
+// Registering Symbols
+registersymbol(MyCode)
+registersymbol(pReso)
+registersymbol(pProd)
+registersymbol(pRese)
+registersymbol(pCity)
+registersymbol(pUnit)
+registersymbol(iEnableMRo)
+registersymbol(iEnableMP)
+registersymbol(iEnableMRe)
+registersymbol(iEnableMC)
+registersymbol(iEnableGM)
+registersymbol(iEnableWF)
+registersymbol(iEnableQO)
+registersymbol(iEnableMU)
+registersymbol(iEnableMM)
+registersymbol(iEnableIP)
+registersymbol(iEnableRR)
+registersymbol(iMinRP)
+registersymbol(iPlayerID)
+registersymbol(aLastRot)
+
+//=========================================
+MyCode:
+//========================================= v3.062
+// Activated on strategic map
+_MonResource:
+ mov dword ptr [aLastRot],'Reso'
+
+ push ecx
+ mov ecx,[hoi3game.exe+0150da2c] // Get ptr to Player Structure (OK)
+ mov ecx,[ecx+00002a94]       // Get Player ID
+ mov [iPlayerID],ecx          // Save ID for further use
+ pop ecx
+
+ cmp dword ptr [iEnableMRo],0
+ je _ExitMRo                  // Jump if feature is disabled
+
+ mov [pReso],eax              // Save ptr for debugging
+
+ cmp [eax+edi*4+08],#50000000 // current value &gt;= 50000?
+ jge _ExitMRo                 // Jump if true
+
+ mov [eax+edi*4+08],#50000000 // current value = 50000
+
+_ExitMRo:
+ cmp [eax+edi*4+08],05F5DD18  // Original code (99999000)
+ jmp _BackMRo                 // Back to main code
+
+//========================================= v3.062 (New Approach)
+// Activated when day changes
+_MonProd:
+ mov dword ptr [aLastRot],'Prod'
+
+ cmp dword ptr [iEnableMP],0
+ je _ExitMP                   // Jump if feature is disabled
+
+ mov eax,[ebx+4c]
+ cmp eax,[iPlayerID]
+ jne _ExitMP
+
+ mov [pProd],ebx              // Save ptr for debugging
+
+ mov eax,[ebx+34]             // Get total production time
+ mov [ebx+38],eax             // Update current production time
+
+_ExitMP:
+ mov eax,[ebx+34]             // Original code
+ cmp [ebx+38],eax             // Original code
+ jmp _BackMP                  // Back to main code
+
+//========================================= v3.062 (New Approach)
+// Activated when day changes
+_MonResearch:
+ push eax
+
+ mov dword ptr [aLastRot],'Rese'
+
+ mov [pRese],ebx              // Save ptr for debugging
+
+ mov edx,[ebx+000001FC]       // Original code
+ mov eax,[ebx+0000020c]       // Get pOwner
+
+ mov eax,[eax+00000330]       // Get iID
+ cmp eax,[iPlayerID]
+ jne _ExitMRe
+
+ cmp dword ptr [iEnableMRe],0
+ je _ExitMRe                  // Jump if feature is disabled
+
+ mov eax,[ebp-18]
+ mov [esi+edx],eax            // Make current value = minimum
+
+_ExitMRe:
+ pop eax
+ jmp _BackMRe                 // Back to main code
+
+//========================================= v3.05 (changed)
+// Activated when a province is selected
+_MonCity:
+ mov dword ptr [aLastRot],'City'
+
+ mov [pCity],ecx              // Save ptr for debugging
+
+ mov eax,[ecx+00000330]       // Get City Owner ID (ok)
+ cmp eax,[iPlayerID]          // Player's city?
+ jne _MonC0                   // Jump if false
+
+ cmp dword ptr [iEnableIP],0
+ je _MonC03                   // Jump if feature is disabled
+
+ mov eax,#50000
+
+ cmp dword ptr [ecx+0000027c],0 // Crude Oil
+ jz _MonC00
+
+ cmp eax,[ecx+0000027c]
+ jle _MonC00
+
+ mov [ecx+0000027c],eax
+ mov [ecx+000002a0],eax
+
+_MonC00:
+ cmp dword ptr [ecx+00000280],0 // Metal
+ jz _MonC01
+
+ cmp eax,[ecx+00000280]
+ jle _MonC01
+
+ mov [ecx+00000280],eax
+ mov [ecx+000002a4],eax
+
+_MonC01:
+ cmp dword ptr [ecx+00000284],0 // Energy
+ jz _MonC02
+
+ cmp eax,[ecx+00000284]
+ jle _MonC02
+
+ mov [ecx+00000284],eax
+ mov [ecx+000002a8],eax
+
+_MonC02:
+ cmp dword ptr [ecx+00000288],0 // Rare Material
+ jz _MonC03
+
+ cmp eax,[ecx+00000288]
+ jle _MonC03
+
+ mov [ecx+00000288],eax
+ mov [ecx+000002ac],eax
+
+_MonC03:
+ cmp dword ptr [iEnableRR],0
+ je _MonC04                   // Jump if feature is disabled
+
+ mov eax,[ecx+0000012c]
+ test eax,eax
+ jz _MonC04
+
+ mov eax,[eax]
+ test eax,eax
+ jz _MonC04
+
+ mov eax,[eax]
+ test eax,eax
+ jz _MonC04
+
+ mov dword ptr [eax],0        // Revolt Risk
+ mov dword ptr [eax+08],0     // Revolt Risk
+
+_MonC04:
+ jmp _ExitMC
+
+_MonC0:
+ cmp dword ptr [iEnableQO],0
+ je _ExitMC                   // Jump if feature is disabled
+
+ mov eax,[ecx+00000338]       // Get City Invader ID
+ cmp eax,[iPlayerID]          // Player's Invasion?
+ jne _ExitMC                  // Jump if false
+
+ mov [ecx+00000330],eax       // Update City owner
+ mov eax,[ecx+00000334]       // Get City Invader ID
+ mov [ecx+0000032c],eax       // Update City owner
+
+_ExitMC:
+ mov edx,[ecx+00000310]       // Original code (get pConstX)
+ jmp _BackMC                  // Back to main code
+
+//========================================= v3.05
+_GodMode:
+ mov dword ptr [aLastRot],'GodM'
+
+ mov [pUnit],esi              // Save ptr for debugging
+
+ mov eax,[esi+00000098]       // Get Unit Owner ID
+ cmp eax,[iPlayerID]          // Player´s Unit?
+ je _GodM0                    // Jump if false
+
+ cmp dword ptr [iEnableWF],0
+ je _ExitGM                   // Jump if feature is disabled
+
+ mov eax,[esi+0000005c]
+ mov [esi+000000a8],eax       // Strength value to decrease = 0
+ mov eax,[esi+00000060]
+ mov [esi+000000ac],eax       // Organization value to decrease = 0
+ jmp _ExitGM                  // Jump if false
+
+_GodM0:
+ cmp dword ptr [iEnableGM],0
+ je _ExitGM                   // Jump if feature is disabled
+
+ xor eax,eax
+ mov [esi+000000a8],eax       // Strength value to decrease = 0
+ mov [esi+000000ac],eax       // Organization value to decrease = 0
+
+_ExitGM:
+ mov eax,[esi+5c]             // Original code
+ cmp [esi+000000a8],eax       // Original code
+ jmp _BackGM                  // Back to main code
+
+//========================================= v3.05
+_MonUnits:
+ mov dword ptr [aLastRot],'Unit'
+
+ push eax                     // Save context
+ push ebx
+ push ecx
+ push esi
+ push edi
+
+ mov edi,ebx
+
+ cmp dword ptr [iEnableMU],0
+ je _ExitMU                   // Jump if feature is disabled
+
+ mov ecx,[edi+000000B0]       // Get ptr to Army
+ test ecx,ecx
+ jz _ExitMU                   // Jump if null pointer
+
+ mov eax,[edi+00000098]       // Get Unit Owner ID
+ cmp eax,[iPlayerID]          // Player´s Unit?
+ jne _ExitMU                  // Jump if false
+
+ mov esi,[ecx+000000c0]       // Get pArmyInfo
+ test esi,esi
+ jz _ExitMU                   // Jump if null pointer
+
+ mov ebx,[edi+00000058]       // Get pTroopInfo
+ test ebx,ebx
+ jz _ExitMU                   // Jump if null pointer
+
+// EBX = TroopInfo, ECX = Army, EDI = Army_Troop, ESI = ArmyInfo
+//--&gt; Strength and Organization
+ mov eax,[ebx+000000dc]       // Get Max Strength
+ mov [edi+0000005c],eax       // Make Currrent troop strength = max
+ mov eax,[ebx+000000e0]       // Get Max Organization
+ mov [edi+00000060],eax       // Make Currrent troop Organization = max
+//--&gt; Food and Fuel
+ mov dword ptr [ecx+000000e8],#1000 // Food = 100%
+ mov dword ptr [ecx+000000ec],#1000 // Fuel = 100%
+ mov dword ptr [ecx+000000cc],00    // Hours2NextAttack = 0
+//--&gt; Morale
+ mov eax,#990
+ mov [ebx+000000e4],eax       // Troop Morale = 99%
+ mov [esi+000000e4],eax       // Army  Morale = 99%
+//--&gt; Speed
+ mov eax,#90000
+ cmp eax,[esi+000000f4]       // Current army speed &gt;= 90?
+ jge _MonU0
+
+ mov eax,[esi+000000f4]       // Get Army Speed
+
+_MonU0:
+ cmp eax,[ebx+000000f4]       // Current troop speed &gt;= 90 or Army?
+ jge _MonU1
+
+ mov eax,[ebx+000000f4]       // Get Troop Speed
+
+_MonU1:
+ mov [ebx+000000f4],eax       // Update Troop Speed
+ mov [esi+000000f4],eax       // Update Army  Speed
+//--&gt; Toughness
+ cmp dword ptr [ebx+000000f4],00
+ je _MonU2                    // Jump if toughness is not applicable
+
+ mov eax,#10000
+ cmp eax,[ebx+0000010c]       // Troop Toughness &gt;= 10?
+ jle _MonU2                   // Jump if true
+
+ sub eax,[ebx+0000010c]       // Make eax = 10 - current value
+ add [ebx+0000010c],eax       // Make current troop value = 10
+ add [esi+0000010c],eax       // Update army toughness
+//--&gt; Soft Attack
+_MonU2:
+ cmp dword ptr [ebx+0000011c],00
+ je _MonU3                    // Jump if Soft Attack is not applicable
+
+ mov eax,#10000
+ cmp eax,[ebx+0000011c]       // Troop Soft Attack &gt;= 10?
+ jle _MonU3                   // Jump if true
+
+ sub eax,[ebx+0000011c]       // Make eax = 10 - current value
+ add [ebx+0000011c],eax       // Make current troop value = 10
+ add [esi+0000011c],eax       // Update army Soft Attack
+//--&gt; Hard Attack
+_MonU3:
+ cmp dword ptr [ebx+00000120],00
+ je _MonU4                    // Jump if Hard Attack is not applicable
+
+ mov eax,#10000
+ cmp eax,[ebx+00000120]       // Troop Hard Attack &gt;= 10?
+ jle _MonU4                   // Jump if true
+
+ sub eax,[ebx+00000120]       // Make eax = 10 - current value
+ add [ebx+00000120],eax       // Make current troop value = 10
+ add [esi+00000120],eax       // Update army Hard Attack
+//--&gt; Hull
+_MonU4:
+ cmp dword ptr [ebx+0000015c],00
+ je _MonU5                    // Jump if Hull is not applicable
+
+ mov eax,#10000
+ cmp eax,[ebx+0000015c]       // Troop Hull &gt;= 10?
+ jle _MonU5                   // Jump if true
+
+ sub eax,[ebx+0000015c]       // Make eax = 10 - current value
+ add [ebx+0000015c],eax       // Make current troop value = 10
+ add [esi+0000015c],eax       // Update army Hull
+
+_MonU5:
+_ExitMU:
+ pop edi                      // Recover context
+ pop esi
+ pop ecx
+ pop ebx
+ pop eax
+
+ mov eax,[ebx+000000B0]       // Original code
+ jmp _BackMU                  // Back to main code
+
+//========================================= v3.062
+// Movement Progress
+_MonMovement:
+ mov dword ptr [aLastRot],'Move'
+
+ test esi,esi
+ jz _ExitMM
+
+ cmp dword ptr [iEnableMM],0
+ je _ExitMM                   // Jump if feature is disabled
+
+ mov edi,[ebx+00000114]       // Get Unit Owner ID
+ cmp edi,[iPlayerID]          // Player's Unit?
+ jne _ExitMM                  // Jump if false
+
+ mov edi,[esp+24]             // Original code
+ mov [ebx+00000138],edi       // Update Movement Progress
+
+_ExitMM:
+ mov edi,[esp+24]             // Original code
+ cmp [eax],edi                // Original code
+ jmp _BackMM                  // Back to main code
+
+//=========================================
+ db '===============================&gt;'
+ db 'CE6.2 Script by Recifense 071212'
+//=========================================
+// Variables
+iEnableMRo:
+ dd 1
+iEnableMP:
+ dd 1
+iEnableMRe:
+ dd 1
+iEnableMC:
+ dd 1
+iEnableGM:
+ dd 1
+iEnableWF:
+ dd 1
+iEnableQO:
+ dd 1
+iEnableMU:
+ dd 1
+iEnableMM:
+ dd 1
+iEnableIP:
+ dd 1
+iEnableRR:
+ dd 0
+pReso:
+ dd 0
+pProd:
+ dd 0
+pRese:
+ dd 0
+pCity:
+ dd 0
+pUnit:
+ dd 0
+iMinRP:
+ dd #400000
+iPlayerID:
+ dd MyCode
+aLastRot:
+ dd 'last'
+
+//=========================================
+// Hacking Points
+//hoi3game.exe+28b026:  // v3.02
+//hoi3game.exe+252cb0:  // v3.04
+//hoi3game.exe+256490:  // v3.05
+hoi3game.exe+0027fdb7: // v3.062
+ jmp _MonResource
+ nop
+ nop
+ nop
+_BackMRo:
+
+//hoi3game.exe+059e34:  // v3.02
+//hoi3game.exe+02bd97:  // v3.04
+///hoi3game.exe+02ff37:  // v3.05
+hoi3game.exe+000d8d96: //v3.062 NHP
+ jmp _MonProd
+ nop
+_BackMP:
+
+//hoi3game.exe+1088cc:  // v3.02
+//hoi3game.exe+372bc1:  // v3.04
+//hoi3game.exe+379e81:  // v3.05
+hoi3game.exe+000efee6:  //v3.062 NHP
+ jmp _MonResearch
+ nop
+_BackMRe:
+
+//hoi3game.exe+06af09:  // v3.02
+//hoi3game.exe+049099:  // v3.04
+//hoi3game.exe+088553:  // v3.05
+hoi3game.exe+0009ef02: //v3.062
+ jmp _MonCity
+ nop
+_BackMC:
+
+//hoi3game.exe+175a22:  // v3.02
+//hoi3game.exe+149b41:  // v3.04
+//hoi3game.exe+14a961:  // v3.05
+hoi3game.exe+00169b61: //v3.062
+ jmp _GodMode
+ nop
+_BackGM:
+
+//hoi3game.exe+179009:  // v3.02
+//hoi3game.exe+14981a:  // v3.04
+//hoi3game.exe+14a5fa:  // v3.05
+hoi3game.exe+001697fa: //v3.062
+ jmp _MonUnits
+ nop
+_BackMU:
+
+//hoi3game.exe+19fb3a:  // v3.02
+//hoi3game.exe+16508a:  // v3.04
+//hoi3game.exe+1663ea:  // v3.05
+hoi3game.exe+0018617a: //v3.062
+ jmp _MonMovement
+ nop
+_BackMM:
+
+//=========================================
+// Script for Restoring Original Codes
+[DISABLE]
+//hoi3game.exe+28b026:  // v3.02
+//hoi3game.exe+252cb0:  // v3.04
+//hoi3game.exe+256490:  // v3.05
+hoi3game.exe+0027fdb7: // v3.062
+// cmp [eax+edi*4+08],05F5DD18
+ db 81 7c b8 08 18 dd f5 05
+
+//hoi3game.exe+059e34:  // v3.02
+// mov edx,[ecx+38]
+// push esi
+// mov esi,[ecx+3c]
+//hoi3game.exe+02bd97:  // v3.04
+//hoi3game.exe+02ff37:  // v3.05
+hoi3game.exe+000d8d96: //v3.062 NHP
+// mov eax,[ebx+34]
+// cmp [ebx+38],eax
+ db 8b 43 34 39 43 38
+
+//hoi3game.exe+1088cc:  // v3.02
+// mov eax,[ecx+000001fc]
+//hoi3game.exe+372bc1:  // v3.04
+//hoi3game.exe+379e81:  // v3.05
+hoi3game.exe+000efee6:  //v3.062 NHP
+// mov edx,[ebx+000001FC]
+ db 8b 93 fc 01 00 00
+
+//hoi3game.exe+06af09:  // v3.02
+//hoi3game.exe+049099:  // v3.04
+// mov eax,[ecx+00000310]
+//hoi3game.exe+088553:  // v3.05
+hoi3game.exe+0009ef02: //v3.062
+// mov edx,[ecx+00000310]
+ db 8b 91 10 03 00 00
+
+//hoi3game.exe+175a22:  // v3.02
+//hoi3game.exe+149b41:  // v3.04
+//hoi3game.exe+14a961:  // v3.05
+hoi3game.exe+00169b61: //v3.062
+// cmp [esi+000000a8],eax
+ db 39 86 a8 00 00 00
+
+//hoi3game.exe+179009:  // v3.02
+// mov edi,[ebx+000000b0]
+//hoi3game.exe+14981a:  // v3.04
+//hoi3game.exe+14a5fa:  // v3.05
+hoi3game.exe+001697fa: //v3.062
+// mov eax,[ebx+000000B0]
+ db 8b 83 b0 00 00 00
+
+//hoi3game.exe+19fb3a:  // v3.02
+// mov eax,[ebp-14]
+// cmp [eax],ebx
+//hoi3game.exe+16508a:  // v3.04
+//hoi3game.exe+1663ea:  // v3.05
+// mov edi,[esp+30]
+// cmp [ecx],edi
+hoi3game.exe+0018617a: //v3.062
+// mov edi,[esp+24]
+// cmp [eax],edi
+ db 8b 7c 24 24 39 38
+
+//=========================================
+// Unregistering Symbols
+unregistersymbol(MyCode)
+unregistersymbol(pReso)
+unregistersymbol(pProd)
+unregistersymbol(pRese)
+unregistersymbol(pCity)
+unregistersymbol(pUnit)
+unregistersymbol(iEnableMRo)
+unregistersymbol(iEnableMP)
+unregistersymbol(iEnableMRe)
+unregistersymbol(iEnableMC)
+unregistersymbol(iEnableGM)
+unregistersymbol(iEnableWF)
+unregistersymbol(iEnableQO)
+unregistersymbol(iEnableMU)
+unregistersymbol(iEnableMM)
+unregistersymbol(iEnableIP)
+unregistersymbol(iEnableRR)
+unregistersymbol(iMinRP)
+unregistersymbol(iPlayerID)
+unregistersymbol(aLastRot)
+
+//=========================================
+dealloc(MyCode)
+//============= Scripts End ===============
+
+// ****************************************
+// NOTES
+// ****************************************
+{
+}
+
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>2</ID>
+          <Description>"Enable/Disable Minimum Resource"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMRo</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>3</ID>
+          <Description>"Enable/Disable One Day Production"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMP</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>5</ID>
+          <Description>"Enable/Disable Province Improvement"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableIP</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>6</ID>
+          <Description>"Enable/Disable Quick Province Ownership"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableQO</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>7</ID>
+          <Description>"Enable/Disable God Mode"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableGM</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>8</ID>
+          <Description>"Enable/Disable Weak Foe"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableWF</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>9</ID>
+          <Description>"Enable/Disable Unit Improvement"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMU</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>17</ID>
+          <Description>"Enable/Disable Quick Movement"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMM</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>4</ID>
+          <Description>"Enable/Disable Fast Research"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMRe</Address>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols/>
+  <Comments>===========================================
+ Game Title    : Hearts of Iron III - For The Motherland
+ Game Version  : 3.062 (ACZM) beta
+ Process Name  : hoi3game.exe
+ Script Version: 3.0
+ CE Version    : 6.2
+ Release date  : 12-Jul-2012 (adapted from version 3.062)
+ Author        : Recifense
+ Features:
+ - Minimum Resources (500000)
+ - Production in 1 day
+ - Research in 1 day
+ - Province Improvement (resource production) (new)
+ - Province Quick Ownership (for just conquered province)
+ - God Mode
+ - Weak Foe (Quick Battle)
+ - Unit Improvement
+    - Max Strength
+    - Max Organization
+    - 100% Food
+    - 100% Fuel
+    - Morale (99%)
+    - Speed (90km/h)
+    - Toughness
+    - Soft Attack
+    - Hard Attack
+    - Hull
+ - Troop movement (1 hour to adjacent province)
+===========================================
+</Comments>
+</CheatTable>

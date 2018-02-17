@@ -1,0 +1,914 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="16">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>23</ID>
+      <Description>"[X] &lt;== Age of Wonders II tWT v1.20.0.3100 Steam Script v1.0"</Description>
+      <Options moHideChildren="1"/>
+      <Color>FF0000</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>{
+===========================================
+ Game Title    : Age of Wonders II - The Wizard's Throne
+ Game Version  : 1.20.0.3100
+ Game Sponsor  : Fennix102
+ Process Name  : aow2.exe
+ Script Version: 1.0
+ CE Version    : 6.3
+ Release date  : 07-Mar-2014
+ Author        : Recifense
+ History:
+ 07-Mar-14: First Release
+ Features:
+ - Minimum Gold
+ - Minimum Crystal (mana)
+ - Unlimited Movement Points
+ - God Mode
+ - Research in 1 Turn
+ - Unlimited Casting Points
+ - Minimum Population
+ - Pointer to Hero (not main hero)
+===========================================
+}
+
+//=========================================
+// Definitions
+define(LUDO,"aow2.exe")
+define(MHPR,aow2.exe+001f3db0)
+define(MOPG,aow2.exe+000b5e3f)
+define(MOPC,aow2.exe+000b5e67)
+define(MOMP,aow2.exe+000a332a)
+define(GDMD,aow2.exe+000a3356)
+define(MORP,aow2.exe+000bb002)
+define(MOCP,aow2.exe+000be74c)
+define(MOTP,aow2.exe+00126ee6)
+define(MTPN,aow2.exe+000cb3ba)
+define(MTUE,aow2.exe+000cb3bf)
+define(MSHO,aow2.exe+000bfc94)
+
+define(COCP,aow2.exe+000b5e64)
+define(JTPN,aow2.exe+000cb3ca)
+define(JTUE,aow2.exe+000cb3ca)
+
+//=========================================
+// Constants used in the script (that can be changed)
+define(ctMMON,#6300)   // Minimum Money
+define(ctMMCL,#630)    // Minimum Crystal
+define(ctMMPP,#1630)   // Minimum Population
+
+//=========================================
+[ENABLE]
+//=========================================
+//LuaCall(CheckVersion())
+//=========================================
+// Check if script is compatible to this game version
+// If false the script will not be loaded
+
+assert(MHPR,8b 87 44 01 00 00 e8 ?? ?? ?? ?? 8b 55 fc 8b 83 e4 00 00 00 e8)
+assert(MOPG,89 93 44 01 00 00 83 7b 0c 00 ?? ?? 8b d3 8b 43 60 e8 ?? ?? ??)
+assert(MOPC,89 93 bc 00 00 00 83 7b 0c 00 ?? ?? 8b d3 8b 43 10 e8 ?? ?? ??)
+assert(MOMP,88 5e 44 5e 5b c3 53 56 8b da 8b f0 8b c6 8b 10 ff 92 90 00 00)
+assert(GDMD,88 5e 45 8b c6 e8 ?? ?? ?? ?? 5e 5b c3 90 53 56 57 51 8b d9 8b)
+assert(MORP,8b 8b c0 00 00 00 85 c9 0f 8f ?? ?? ?? ?? 8b c1 99 33 c2 2b c2)
+assert(MOCP,e8 ?? ?? ?? ?? 29 7b 78 89 1c 24 89 74 24 04 8b d4 a1 ?? ?? ??)
+assert(MOTP,8b c7 2b 43 54 5a 8b ca 99 f7 f9 8b f0 8b c3 e8 ?? ?? ?? ?? 50)
+assert(MTPN,01 43 3c ?? ?? ff 43 3c ?? ?? 8b 43 28 89 43 3c 5f 5e 5b c3 8b)
+assert(MTUE,ff 43 3c ?? ?? 8b 43 28 89 43 3c 5f 5e 5b c3 8b c0 55 8b ec 53)
+assert(MSHO,8b 80 9c 00 00 00 c3 90 53 8b d8 89 93 9c 00 00 00 8b c3 e8 ??)
+
+//=========================================
+alloc(MyCode,4096,LUDO)
+//=========================================
+// Declaration section
+label(_MonHumanPlayer)
+label(_MonHP00)
+label(_BackMHP)
+label(_ExitMHP)
+label(_MonPlayerGold)
+label(_BackMPG)
+label(_ExitMPG)
+label(_MonPlayerCrystal)
+label(_BackMPC)
+label(_ExitMPC)
+label(_MonMovePoints)
+label(_BackMMP)
+label(_ExitMMP)
+label(_GodMode)
+label(_BackGMD)
+label(_ExitGMD)
+label(_MonResearchProgress)
+label(_BackMRP)
+label(_ExitMRP)
+label(_MonCastingPoints)
+label(_BackMCP)
+label(_ExitMCP)
+label(_MonTownPop)
+label(_BackMTP)
+label(_ExitMTP)
+label(_MonTownProduction)
+label(_BackTPN)
+label(_ExitTPN)
+label(_MonTownUpgrade)
+label(_BackTUE)
+label(_ExitTUE)
+label(_MonSelHero)
+label(_BackMSH)
+label(_ExitMSH)
+label(iEnableMGD)
+label(iEnableMCL)
+label(iEnableMMP)
+label(iEnableGMD)
+label(iEnableMRP)
+label(iEnableMCP)
+label(iEnableMTP)
+label(iEnableTPN)
+label(iEnableTUE)
+label(iID)
+label(pGold)
+label(pArmy)
+label(pTown)
+label(pHero)
+
+//=========================================
+// Registering Symbols
+registersymbol(MyCode)
+registersymbol(iEnableMGD)
+registersymbol(iEnableMCL)
+registersymbol(iEnableMMP)
+registersymbol(iEnableGMD)
+registersymbol(iEnableMRP)
+registersymbol(iEnableMCP)
+registersymbol(iEnableMTP)
+registersymbol(iEnableTPN)
+registersymbol(iEnableTUE)
+registersymbol(iID)
+registersymbol(pGold)
+registersymbol(pArmy)
+registersymbol(pTown)
+registersymbol(pHero)
+
+//=========================================
+MyCode:
+//=========================================
+// When Realm Option is selected (Crown Button)
+_MonHumanPlayer:
+ mov [pGold],edi
+
+ movzx eax,byte ptr [edi+00000123]
+ mov [iID],eax
+
+ cmp dword ptr [iEnableMGD],0
+ je _MonHP00                       // Jump if feature is disabled
+
+ mov eax,ctMMON
+ cmp eax,[edi+00000144]
+ js _MonHP00
+
+ mov [edi+00000144],eax
+
+_MonHP00:
+ cmp dword ptr [iEnableMCL],0
+ je _ExitMHP                       // Jump if feature is disabled
+
+ mov eax,ctMMCL
+ cmp eax,[edi+000000bc]
+ js _ExitMHP
+
+ mov [edi+000000bc],eax
+
+_ExitMHP:
+ mov eax,[edi+00000144]            // Original code (rds Gold)
+ jmp _BackMHP                      // Back to main code
+
+//=========================================
+// When changing
+_MonPlayerGold:
+ push eax
+
+ cmp ebx,[pGold]
+ jne _ExitMPG
+
+ cmp dword ptr [iEnableMGD],0
+ je _ExitMPG                       // Jump if feature is disabled
+
+ mov eax,ctMMON
+ cmp eax,edx
+ js _ExitMPG
+
+ mov edx,eax
+
+_ExitMPG:
+ pop eax
+
+ mov [ebx+00000144],edx            // Original code (upd Gold)
+ jmp _BackMPG                      // Back to main code
+
+//=========================================
+// When changing (Mana)
+_MonPlayerCrystal:
+ push eax
+
+ cmp ebx,[pGold]
+ jne _ExitMPC
+
+ cmp dword ptr [iEnableMCL],0
+ je _ExitMPC                       // Jump if feature is disabled
+
+ mov eax,ctMMCL
+ cmp eax,edx
+ js _ExitMPC
+
+ mov edx,eax
+
+_ExitMPC:
+ pop eax
+
+ mov [ebx+000000BC],edx            // Original code (upd Gold)
+ jmp _BackMPC                      // Back to main code
+
+//=========================================
+// When army is moving
+_MonMovePoints:
+ push eax
+
+ mov eax,[esi+20]                  // get pArmy
+ mov [pArmy],eax
+
+ cmp dword ptr [iEnableMMP],0
+ je _ExitMMP                       // Jump if feature is disabled
+
+ mov eax,[esi+20]                  // get pArmy
+ test eax,eax
+ jz _ExitMMP
+
+ mov eax,[eax+1c]                  // Get ID
+ cmp eax,[iID]
+ jne _ExitMMP
+
+ mov bl,[esi+44]                   // Get current MP
+
+_ExitMMP:
+ pop eax
+
+ mov [esi+44],bl                   // Original code (upd MP)
+ pop esi                           // Original code
+ pop ebx                           // Original code
+ jmp _BackMMP                      // Back to main code
+
+//=========================================
+// When in combat
+_GodMode:
+ cmp dword ptr [iEnableGMD],0
+ je _ExitGMD                       // Jump if feature is disabled
+
+ mov eax,[esi+20]                  // get pArmy
+ test eax,eax
+ jz _ExitGMD
+
+ mov eax,[eax+1c]                  // Get ID
+ cmp eax,[iID]
+ jne _ExitGMD
+
+ mov bl,[esi+45]                   // Get current HP
+
+_ExitGMD:
+ mov [esi+45],bl                   // Original code (upd HP)
+ mov eax,esi                       // Original code
+ jmp _BackGMD                      // Back to main code
+
+//=========================================
+// During turn (after updating progress)
+_MonResearchProgress:
+ cmp dword ptr [iEnableMRP],0
+ je _ExitMRP                       // Jump if feature is disabled
+
+ mov ecx,[ebx+20]                  // get pArmy
+ test ecx,ecx
+ jz _ExitMRP
+
+ mov ecx,[ecx+1c]                  // Get ID
+ cmp ecx,[iID]
+ jne _ExitMRP
+
+ xor ecx,ecx
+ mov [ebx+000000C0],ecx            // Complete Research
+
+_ExitMRP:
+ mov ecx,[ebx+000000C0]            // Original code (rd RP)
+ jmp _BackMRP                      // Back to main code
+
+//=========================================
+// When using magic in combat
+_MonCastingPoints:
+ call COCP
+
+ cmp dword ptr [iEnableMCP],0
+ je _ExitMCP                       // Jump if feature is disabled
+
+ mov eax,[ebx+20]                  // get pArmy
+ test eax,eax
+ jz _ExitMCP
+
+ mov eax,[eax+1c]                  // Get ID
+ cmp eax,[iID]
+ jne _ExitMCP
+
+ xor edi,edi                       // value2decrease = 0
+
+_ExitMCP:
+ jmp _BackMCP                      // Back to main code
+
+//=========================================
+// When selecting a town
+_MonTownPop:
+ mov [pTown],ebx
+
+ cmp dword ptr [iEnableMTP],0
+ je _ExitMTP                       // Jump if feature is disabled
+
+ movzx eax,byte ptr [ebx+44]       // Get ID
+
+ cmp eax,[iID]
+ jne _ExitMTP
+
+ mov eax,ctMMPP
+ cmp eax,[ebx+54]
+ js _ExitMTP
+
+ mov [ebx+54],eax                  // update population
+
+_ExitMTP:
+ mov eax,edi                       // Original code
+ sub eax,[ebx+54]                  // Original code (rd POP)
+ jmp _BackMTP                      // Back to main code
+
+//=========================================
+// When producing units or buildings
+_MonTownProduction:
+ push ecx
+
+ add [ebx+3C],eax                  // Original code (upd prog)
+
+ cmp dword ptr [iEnableTPN],0
+ je _ExitTPN                       // Jump if feature is disabled
+
+ mov ecx,[ebx+10]                  // Get ppppTown
+ mov ecx,[ecx+0c]                  // Get pppTown
+ mov ecx,[ecx+1c]                  // Get ppTown
+ mov ecx,[ecx+30]                  // Get pTown
+
+ movzx ecx,byte ptr [ecx+44]       // Get ID
+
+ cmp ecx,[iID]
+ jne _ExitTPN
+
+ mov ecx,[ebx+28]
+ mov [ebx+3C],ecx                  // complete production
+
+_ExitTPN:
+ pop ecx
+
+ jmp JTPN                          // Original code (rd POP)
+ jmp _BackTPN                      // Back to main code (template)
+
+//=========================================
+// When producing Other things
+_MonTownUpgrade:
+ push ecx
+
+ inc [ebx+3C]                      // Original code (upd prog)
+
+ cmp dword ptr [iEnableTUE],0
+ je _ExitTUE                       // Jump if feature is disabled
+
+ mov ecx,[ebx+10]                  // Get ppppTown
+ mov ecx,[ecx+0c]                  // Get pppTown
+ mov ecx,[ecx+1c]                  // Get ppTown
+ mov ecx,[ecx+30]                  // Get pTown
+
+ movzx ecx,byte ptr [ecx+44]       // Get ID
+
+ cmp ecx,[iID]
+ jne _ExitTUE
+
+ mov ecx,[ebx+28]
+ mov [ebx+3C],ecx                  // complete production
+
+_ExitTUE:
+ pop ecx
+
+ jmp JTUE                          // Original code (rd POP)
+ jmp _BackTUE                      // Back to main code (template)
+
+//=========================================
+// When in detailed info
+_MonSelHero:
+ mov [pHero],eax
+
+_ExitMSH:
+ mov eax,[eax+0000009C]            // Original code (rd XP)
+ jmp _BackMSH                      // Back to main code
+
+//=========================================
+ db '====================================&gt;'
+ db 'CE6.3 Script by Recifense 030714'
+//=========================================
+// Variables
+iEnableMGD:
+ dd 0
+iEnableMCL:
+ dd 0
+iEnableMMP:
+ dd 0
+iEnableGMD:
+ dd 0
+iEnableMRP:
+ dd 0
+iEnableMCP:
+ dd 0
+iEnableMTP:
+ dd 0
+iEnableTPN:
+ dd 0
+iEnableTUE:
+ dd 0
+iID:
+ dd #99
+pGold:
+ dd MyCode
+pArmy:
+ dd 0
+pTown:
+ dd 0
+pHero:
+ dd 0
+
+//=========================================
+// Hacking Points
+MHPR:
+ jmp _MonHumanPlayer
+ nop
+_BackMHP:
+
+MOPG:
+ jmp _MonPlayerGold
+ nop
+_BackMPG:
+
+MOPC:
+ jmp _MonPlayerCrystal
+ nop
+_BackMPC:
+
+MOMP:
+ jmp _MonMovePoints
+_BackMMP:
+
+GDMD:
+ jmp _GodMode
+_BackGMD:
+
+MORP:
+ jmp _MonResearchProgress
+ nop
+_BackMRP:
+
+MOCP:
+ jmp _MonCastingPoints
+_BackMCP:
+
+MOTP:
+ jmp _MonTownPop
+_BackMTP:
+
+MTPN:
+ jmp _MonTownProduction
+_BackTPN:
+
+MTUE:
+ jmp _MonTownUpgrade
+_BackTUE:
+
+MSHO:
+ jmp _MonSelHero
+ nop
+_BackMSH:
+
+//=========================================
+// Script for Restoring Original Codes
+[DISABLE]
+MHPR:
+// mov eax,[edi+00000144]
+ db 8b 87 44 01 00 00
+
+MOPG:
+// mov [ebx+00000144],edx
+ db 89 93 44 01 00 00
+
+MOPC:
+// mov [ebx+000000bc],edx
+ db 89 93 bc 00 00 00
+
+MOMP:
+// mov [esi+44],bl
+// pop esi
+// pop ebx
+ db 88 5e 44 5e 5b
+
+GDMD:
+// mov [esi+45],bl
+// mov eax,esi
+ db 88 5e 45 8b c6
+
+MORP:
+// mov ecx,[ebx+000000C0]
+ db 8b 8b c0 00 00 00
+
+MOCP:
+// call aow2.exe+B5E64
+ call COCP
+
+MOTP:
+// mov eax,edi
+// sub eax,[ebx+54]
+ db 8b c7 2b 43 54
+
+MTPN:
+// add [ebx+3C],eax
+// jmp aow2.exe+CB3CA
+ db 01 43 3c eb 0b
+
+MTUE:
+// inc [ebx+3C]
+// jmp aow2.exe+CB3CA
+ db ff 43 3c eb 06
+
+MSHO:
+// mov eax,[eax+0000009C]
+ db 8b 80 9c 00 00 00
+
+//=========================================
+// Unregistering Symbols
+unregistersymbol(MyCode)
+unregistersymbol(iEnableMGD)
+unregistersymbol(iEnableMCL)
+unregistersymbol(iEnableMMP)
+unregistersymbol(iEnableGMD)
+unregistersymbol(iEnableMRP)
+unregistersymbol(iEnableMCP)
+unregistersymbol(iEnableMTP)
+unregistersymbol(iEnableTPN)
+unregistersymbol(iEnableTUE)
+unregistersymbol(iID)
+unregistersymbol(pGold)
+unregistersymbol(pArmy)
+unregistersymbol(pTown)
+unregistersymbol(pHero)
+
+//=========================================
+dealloc(MyCode)
+//============= Scripts End ===============
+
+// ****************************************
+// NOTES
+// ****************************************
+{
+}
+
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>5</ID>
+          <Description>"Enable/Disable Minimum Gold =&gt; (1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMGD</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>6</ID>
+          <Description>"Enable/Disable Minimum Crystal (Mana) =&gt; (1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMCL</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>7</ID>
+          <Description>"Enable/Disable Unlimited Movement =&gt; (1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMMP</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>8</ID>
+          <Description>"Enable/Disable God Mode =&gt; (1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableGMD</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>9</ID>
+          <Description>"Enable/Disable Research in 1 Turn =&gt; (1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMRP</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>33</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>34</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>15</ID>
+          <Description>"Enable/Disable Unlimited Casting Points =&gt; (1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMCP</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>24</ID>
+          <Description>"Enable/Disable Minimum Population =&gt; (1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMTP</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>45</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>46</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>33</ID>
+          <Description>"Enable/Disable Production in 1 Turn =&gt; (1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableTPN</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>33</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>34</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>34</ID>
+          <Description>"Enable/Disable Town Upgrade in 1 Turn =&gt; (1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableTUE</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>33</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>34</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>26</ID>
+          <Description>"============= Last Selected Hero ============"</Description>
+          <Color>000080</Color>
+          <VariableType>String</VariableType>
+          <Length>16</Length>
+          <Unicode>0</Unicode>
+          <ZeroTerminate>1</ZeroTerminate>
+          <Address>pHero</Address>
+          <Offsets>
+            <Offset>0</Offset>
+            <Offset>48</Offset>
+          </Offsets>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>27</ID>
+              <Description>"Current XP =&gt;"</Description>
+              <Color>0000FF</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pHero</Address>
+              <Offsets>
+                <Offset>9C</Offset>
+              </Offsets>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols/>
+  <Comments>===========================================
+ Game Title    : Age of Wonders II - The Wizard's Throne
+ Game Version  : 1.20.0.3100
+ Game Sponsor  : Fennix102
+ Process Name  : aow2.exe
+ Script Version: 1.0
+ CE Version    : 6.3
+ Release date  : 07-Mar-2014
+ Author        : Recifense
+ History:
+ 07-Mar-14: First Release
+ Features:
+ - Minimum Gold              [1]
+ - Minimum Crystal (mana)    [2]
+ - Unlimited Movement Points [3]
+ - God Mode                  [4]
+ - Research in 1 Turn        [5]
+ - Unlimited Casting Points  [6]
+ - Minimum Population        [7]
+ - Production in 1 Turn      [8]
+ - Upgrade in 1 Turn         [9]
+ - Pointer to Selected hero  [A]
+===========================================
+[1] Gold will not go under minimum value (6300);
+[2] Mana will not go under minimum value (630);
+[3] Player' armies can move freely on the strategic map;
+[4] For player's units;
+[5] That's it;
+[6] Player's unit can cast spell every combat turn;
+[7] Town will have a minimum population (1630);
+[8] Town Production (building/Units) in 1 day;
+[9] Town Upgrade in 1 day;
+[A] Valid when a hero detail is selected;
+===========================================
+[USAGE]
+1) Run CE63;
+2) Run Game;
+3) Load the game process in CE;
+4) Change the value to 1 of each cheat you want to use;
+5) Game On;
+[NOTE]
+- Select the button "Realm Options" (the one with a crown) in order to identify the player (when you start or load a game).
+===========================================
+[HOTKEYS]
+CTRL+Home  = Enable  MG/MC/UM/GM/UCP cheats;
+CTRL+End   = Disable MG/MC/UM/GM/UCP cheats;
+-----------
+CTRL+PageUp   = Enable  R1T/P1T/TU1T cheats;
+CTRL+PageDown = Disable R1T/P1T/TU1T cheats;
+-----------
+CTRL+Insert = Enable  MP cheat;
+CTRL+Delete = Disable MP cheat;
+===========================================
+[ADVICE]
+When you can,save the game before starting using table/cheat. So you can always come back in case you don't like the result.
+===========================================
+[INFO]
+Tested on Win 7 64bits
+===========================================
+Cheers!
+</Comments>
+</CheatTable>

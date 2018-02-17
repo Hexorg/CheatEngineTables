@@ -1,0 +1,255 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="16">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>14</ID>
+      <Description>"Script - extend fired beams"</Description>
+      <Color>80000008</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>{
+================================================================================
+= New structure found (RANGE)  (struct WEAP_TIME)
+================================================================================
+= // note: times are in seconds game has been active since start (I think)
+= 0148: Struct
+=		//0264: Ship pointer (but different than Beam1 struct)
+=		0264: Pointer back to parent
+= 03D4: ?Check for 00000000?
+= 0C5C: ?Struct?
+=		0135 - compares byte with 0 and exits if not?
+= 0C64: ?Struct passed to
+= 0C6C: ?Compare to 0?
+= 0C78: ?Flag?  If not 0, skip some stuff
+= 0C80: Struct with stats?  This+030C is added to value at CA4 to be set in CAC at start of firing - 0 for my beams though
+=		0204: ?struct?
+=		0208: ?float? TIMES 4
+=		0218: ?float? TIMES 4
+=		030C: Added to fire time in CA4 to set CAC
+= 0C90: Visual magnitude (starts at 15 for focal emitters, changing to 50 makes bigger)
+= 0C94: ?Struct?
+= 0C98: RANGE!!!  1600.0 is past screen end
+= 0CA4: Fired time (when firing)
+= 0CA8: Last time firing finished (set when done firing, before able to fire again, remains last value when not firing)
+= 0CAC: Last time fired (same as 0CA4, but remains when not firing)
+= 0CB8: Set to FFFFFFFF?
+}
+
+[ENABLE]
+aobscan(aobBeamRange,D9 9B A8 0C 00 00)
+
+//code from here to '[DISABLE]' will be used to enable the cheat
+alloc(newmem,$1000)
+label(return)
+label(code)
+label(scriptBeamRange)
+
+globalalloc(globals,$100000)
+// globals+0004 - pointer to last beam weapon this was called for
+
+newmem:
+
+code:
+  mov [globals+04],ebx // store last weapon ptr
+  mov [ebx+00000C98],(float)2000.0 // good range
+  mov [ebx+00000C90],(float)75.0   // make beams wide (15 standard for focal emitter)
+
+  fstp dword ptr [ebx+00000CA8] // original code
+  jmp return
+
+//"SpazGame.exe"+3D13:
+aobBeamRange:
+scriptBeamRange:
+  jmp code
+  nop
+return:
+
+registersymbol(scriptBeamRange)
+
+[DISABLE]
+//code from here till the end of the code will be used to disable the cheat
+dealloc(newmem)
+//"SpazGame.exe"+3D13:
+scriptBeamRange:
+  fstp dword ptr [ebx+00000CA8]
+//Alt: db D9 9B A8 0C 00 00
+
+unregistersymbol(scriptBeamRange)
+{
+SpazGame.exe+3B40 - 55                    - push ebp
+SpazGame.exe+3B41 - 8B EC                 - mov ebp,esp
+SpazGame.exe+3B43 - 83 E4 F8              - and esp,-08
+SpazGame.exe+3B46 - 83 EC 0C              - sub esp,0C
+SpazGame.exe+3B49 - 53                    - push ebx
+SpazGame.exe+3B4A - 8B 5D 08              - mov ebx,[ebp+08]
+SpazGame.exe+3B4D - 8A 83 34010000        - mov al,[ebx+00000134]
+SpazGame.exe+3B53 - 56                    - push esi
+SpazGame.exe+3B54 - 57                    - push edi
+SpazGame.exe+3B55 - 88 8B 880C0000        - mov [ebx+00000C88],cl
+SpazGame.exe+3B5B - 84 C0                 - test al,al
+SpazGame.exe+3B5D - 0F85 F8010000         - jne SpazGame.exe+3D5B
+SpazGame.exe+3B63 - 8B 83 5C0C0000        - mov eax,[ebx+00000C5C]
+SpazGame.exe+3B69 - 80 B8 34010000 00     - cmp byte ptr [eax+00000134],00
+SpazGame.exe+3B70 - 0F85 E5010000         - jne SpazGame.exe+3D5B
+SpazGame.exe+3B76 - 84 C9                 - test cl,cl
+SpazGame.exe+3B78 - 0F84 6F010000         - je SpazGame.exe+3CED
+SpazGame.exe+3B7E - 83 BB 640C0000 00     - cmp dword ptr [ebx+00000C64],00
+SpazGame.exe+3B85 - 0F84 84000000         - je SpazGame.exe+3C0F
+SpazGame.exe+3B8B - 80 BB 780C0000 00     - cmp byte ptr [ebx+00000C78],00 // address to check out
+SpazGame.exe+3B92 - 75 6E                 - jne SpazGame.exe+3C02
+SpazGame.exe+3B94 - 8B 8B 800C0000        - mov ecx,[ebx+00000C80]
+SpazGame.exe+3B9A - D9 81 18020000        - fld dword ptr [ecx+00000218]
+SpazGame.exe+3BA0 - 81 C1 18020000        - add ecx,00000218
+SpazGame.exe+3BA6 - 83 EC 10              - sub esp,10
+SpazGame.exe+3BA9 - 8B D4                 - mov edx,esp
+SpazGame.exe+3BAB - D9 1A                 - fstp dword ptr [edx]
+SpazGame.exe+3BAD - 83 EC 10              - sub esp,10
+SpazGame.exe+3BB0 - D9 41 04              - fld dword ptr [ecx+04]
+SpazGame.exe+3BB3 - 33 C0                 - xor eax,eax
+SpazGame.exe+3BB5 - D9 5A 04              - fstp dword ptr [edx+04]
+SpazGame.exe+3BB8 - D9 41 08              - fld dword ptr [ecx+08]
+SpazGame.exe+3BBB - D9 5A 08              - fstp dword ptr [edx+08]
+SpazGame.exe+3BBE - D9 41 0C              - fld dword ptr [ecx+0C]
+SpazGame.exe+3BC1 - D9 5A 0C              - fstp dword ptr [edx+0C]
+SpazGame.exe+3BC4 - 8B 8B 800C0000        - mov ecx,[ebx+00000C80]
+SpazGame.exe+3BCA - D9 81 08020000        - fld dword ptr [ecx+00000208] // stat to check out
+SpazGame.exe+3BD0 - 81 C1 08020000        - add ecx,00000208
+SpazGame.exe+3BD6 - 8B D4                 - mov edx,esp
+SpazGame.exe+3BD8 - D9 1A                 - fstp dword ptr [edx]
+SpazGame.exe+3BDA - D9 41 04              - fld dword ptr [ecx+04]
+SpazGame.exe+3BDD - D9 5A 04              - fstp dword ptr [edx+04]
+SpazGame.exe+3BE0 - D9 41 08              - fld dword ptr [ecx+08]
+SpazGame.exe+3BE3 - D9 5A 08              - fstp dword ptr [edx+08]
+SpazGame.exe+3BE6 - D9 41 0C              - fld dword ptr [ecx+0C]
+SpazGame.exe+3BE9 - D9 5A 0C              - fstp dword ptr [edx+0C]
+SpazGame.exe+3BEC - 8B 8B 640C0000        - mov ecx,[ebx+00000C64] // address to check out - pointer to struct that gets modified
+SpazGame.exe+3BF2 - 51                    - push ecx
+SpazGame.exe+3BF3 - E8 78CF0000           - call SpazGame.exe+10B70
+SpazGame.exe+3BF8 - 83 C4 24              - add esp,24
+SpazGame.exe+3BFB - C6 83 780C0000 01     - mov byte ptr [ebx+00000C78],01 // address to check out (firing?)
+SpazGame.exe+3C02 - 8B B3 640C0000        - mov esi,[ebx+00000C64] // address to check out
+SpazGame.exe+3C08 - 6A 01                 - push 01
+SpazGame.exe+3C0A - E8 11440400           - call SpazGame.exe+48020
+SpazGame.exe+3C0F - 8B B3 940C0000        - mov esi,[ebx+00000C94] // address to check out
+SpazGame.exe+3C15 - 8B 83 5C0C0000        - mov eax,[ebx+00000C5C] // address to check out
+SpazGame.exe+3C1B - E8 00280700           - call SpazGame.exe+76420
+SpazGame.exe+3C20 - D9EE                  - fldz
+SpazGame.exe+3C22 - D9 54 24 10           - fst dword ptr [esp+10]
+SpazGame.exe+3C26 - D9 5C 24 14           - fstp dword ptr [esp+14]
+SpazGame.exe+3C2A - 85 C0                 - test eax,eax
+SpazGame.exe+3C2C - 74 0E                 - je SpazGame.exe+3C3C
+SpazGame.exe+3C2E - 8B 50 10              - mov edx,[eax+10]
+SpazGame.exe+3C31 - 8B 40 14              - mov eax,[eax+14]
+SpazGame.exe+3C34 - 89 54 24 10           - mov [esp+10],edx
+SpazGame.exe+3C38 - 89 44 24 14           - mov [esp+14],eax
+SpazGame.exe+3C3C - 8B 8B 800C0000        - mov ecx,[ebx+00000C80] // stats?
+SpazGame.exe+3C42 - 8B 91 04020000        - mov edx,[ecx+00000204] // something to check out
+SpazGame.exe+3C48 - 6A 00                 - push 00
+SpazGame.exe+3C4A - 68 4CA07B00           - push SpazGame.exe+3BA04C
+SpazGame.exe+3C4F - 68 EC9D7B00           - push SpazGame.exe+3B9DEC
+SpazGame.exe+3C54 - 6A 00                 - push 00
+SpazGame.exe+3C56 - 52                    - push edx
+SpazGame.exe+3C57 - E8 94C60C00           - call SpazGame.exe+D02F0
+SpazGame.exe+3C5C - 83 C4 04              - add esp,04
+SpazGame.exe+3C5F - 50                    - push eax
+SpazGame.exe+3C60 - E8 B0221F00           - call SpazGame.exe+1F5F15
+SpazGame.exe+3C65 - 83 C4 14              - add esp,14
+SpazGame.exe+3C68 - 85 C0                 - test eax,eax
+SpazGame.exe+3C6A - 74 27                 - je SpazGame.exe+3C93
+SpazGame.exe+3C6C - D9 44 24 10           - fld dword ptr [esp+10]
+SpazGame.exe+3C70 - 83 EC 08              - sub esp,08
+SpazGame.exe+3C73 - 8B CC                 - mov ecx,esp
+SpazGame.exe+3C75 - D9 19                 - fstp dword ptr [ecx]
+SpazGame.exe+3C77 - 6A 00                 - push 00
+SpazGame.exe+3C79 - D9 44 24 20           - fld dword ptr [esp+20]
+SpazGame.exe+3C7D - 51                    - push ecx
+SpazGame.exe+3C7E - D9 59 04              - fstp dword ptr [ecx+04]
+SpazGame.exe+3C81 - 8B D8                 - mov ebx,eax
+SpazGame.exe+3C83 - D9E8                  - fld1
+SpazGame.exe+3C85 - D9 1C 24              - fstp dword ptr [esp]
+SpazGame.exe+3C88 - E8 C33E0300           - call SpazGame.exe+37B50
+SpazGame.exe+3C8D - 8B 5D 08              - mov ebx,[ebp+08]
+SpazGame.exe+3C90 - 83 C4 10              - add esp,10
+SpazGame.exe+3C93 - D9EE                  - fldz
+SpazGame.exe+3C95 - C7 83 B80C0000 FFFFFFFF - mov [ebx+00000CB8],FFFFFFFF // set this to -1?
+SpazGame.exe+3C9F - D8 93 A40C0000        - fcom dword ptr [ebx+00000CA4] // compare?  Check this out
+SpazGame.exe+3CA5 - DFE0                  - fnstsw ax
+SpazGame.exe+3CA7 - F6 C4 44              - test ah,44
+SpazGame.exe+3CAA - 0F8A A9000000         - jp SpazGame.exe+3D59
+SpazGame.exe+3CB0 - 83 BB D4030000 00     - cmp dword ptr [ebx+000003D4],00 // compare?  Check this out
+SpazGame.exe+3CB7 - 74 0B                 - je SpazGame.exe+3CC4
+SpazGame.exe+3CB9 - 8B 83 D4030000        - mov eax,[ebx+000003D4]
+SpazGame.exe+3CBF - DDD8                  - fstp st(0)
+SpazGame.exe+3CC1 - D9 40 6C              - fld dword ptr [eax+6C]
+SpazGame.exe+3CC4 - 8B 8B 800C0000        - mov ecx,[ebx+00000C80] // ship stats?
+SpazGame.exe+3CCA - D9 5C 24 10           - fstp dword ptr [esp+10]
+SpazGame.exe+3CCE - D9 44 24 10           - fld dword ptr [esp+10]
+SpazGame.exe+3CD2 - D9 93 A40C0000        - fst dword ptr [ebx+00000CA4] // current time fired (set to 0 when done firing)
+SpazGame.exe+3CD8 - D8 81 0C030000        - fadd dword ptr [ecx+0000030C] // add 0.0 to current time fired
+SpazGame.exe+3CDE - D9 9B AC0C0000        - fstp dword ptr [ebx+00000CAC] // most recent time fired
+SpazGame.exe+3CE4 - 5F                    - pop edi
+SpazGame.exe+3CE5 - 5E                    - pop esi
+SpazGame.exe+3CE6 - 5B                    - pop ebx
+SpazGame.exe+3CE7 - 8B E5                 - mov esp,ebp
+SpazGame.exe+3CE9 - 5D                    - pop ebp
+SpazGame.exe+3CEA - C2 0400               - ret 0004
+SpazGame.exe+3CED - D9EE                  - fldz
+SpazGame.exe+3CEF - D9 93 A40C0000        - fst dword ptr [ebx+00000CA4]
+SpazGame.exe+3CF5 - 83 BB D4030000 00     - cmp dword ptr [ebx+000003D4],00
+SpazGame.exe+3CFC - 74 0B                 - je SpazGame.exe+3D09
+SpazGame.exe+3CFE - 8B 93 D4030000        - mov edx,[ebx+000003D4]
+SpazGame.exe+3D04 - DDD8                  - fstp st(0)
+SpazGame.exe+3D06 - D9 42 6C              - fld dword ptr [edx+6C]
+SpazGame.exe+3D09 - D9 5C 24 10           - fstp dword ptr [esp+10]
+SpazGame.exe+3D0D - 8B FB                 - mov edi,ebx
+SpazGame.exe+3D0F - D9 44 24 10           - fld dword ptr [esp+10]
+SpazGame.exe+3D13 - D9 9B A80C0000        - fstp dword ptr [ebx+00000CA8] //---------- INJECT
+SpazGame.exe+3D19 - D9 83 9C0C0000        - fld dword ptr [ebx+00000C9C]
+SpazGame.exe+3D1F - D9 9B A00C0000        - fstp dword ptr [ebx+00000CA0]
+SpazGame.exe+3D25 - E8 A6000000           - call SpazGame.exe+3DD0
+SpazGame.exe+3D2A - 8B BB 640C0000        - mov edi,[ebx+00000C64]
+SpazGame.exe+3D30 - 85 FF                 - test edi,edi
+SpazGame.exe+3D32 - 74 05                 - je SpazGame.exe+3D39
+SpazGame.exe+3D34 - E8 E7430400           - call SpazGame.exe+48120
+SpazGame.exe+3D39 - 83 BB 6C0C0000 00     - cmp dword ptr [ebx+00000C6C],00
+SpazGame.exe+3D40 - 74 06                 - je SpazGame.exe+3D48
+SpazGame.exe+3D42 - 53                    - push ebx
+SpazGame.exe+3D43 - E8 680E0000           - call SpazGame.exe+4BB0
+SpazGame.exe+3D48 - 6A 00                 - push 00
+SpazGame.exe+3D4A - 53                    - push ebx
+SpazGame.exe+3D4B - E8 80140000           - call SpazGame.exe+51D0
+SpazGame.exe+3D50 - 5F                    - pop edi
+SpazGame.exe+3D51 - 5E                    - pop esi
+SpazGame.exe+3D52 - 5B                    - pop ebx
+SpazGame.exe+3D53 - 8B E5                 - mov esp,ebp
+SpazGame.exe+3D55 - 5D                    - pop ebp
+SpazGame.exe+3D56 - C2 0400               - ret 0004
+SpazGame.exe+3D59 - DDD8                  - fstp st(0)
+SpazGame.exe+3D5B - 5F                    - pop edi
+SpazGame.exe+3D5C - 5E                    - pop esi
+SpazGame.exe+3D5D - 5B                    - pop ebx
+SpazGame.exe+3D5E - 8B E5                 - mov esp,ebp
+SpazGame.exe+3D60 - 5D                    - pop ebp
+SpazGame.exe+3D61 - C2 0400               - ret 0004
+}
+</AssemblerScript>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>15</ID>
+      <Description>"Pointer-&gt;Last Beam Fired"</Description>
+      <ShowAsHex>1</ShowAsHex>
+      <Color>80000008</Color>
+      <VariableType>4 Bytes</VariableType>
+      <Address>globals+4</Address>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols>
+    <SymbolEntry>
+      <Name>globals</Name>
+      <Address>08C90000</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>scriptBeamRange</Name>
+      <Address>00403D13</Address>
+    </SymbolEntry>
+  </UserdefinedSymbols>
+</CheatTable>

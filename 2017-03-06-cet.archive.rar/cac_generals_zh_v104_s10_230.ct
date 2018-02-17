@@ -1,0 +1,495 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="14">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>39</ID>
+      <Description>"[X] &lt;== CnC Generals ZH v1.04 Script"</Description>
+      <Options moHideChildren="1"/>
+      <Color>FF0000</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>{
+===========================================
+ Game Title    : Command and Conquer - Generals Zero Hour (Cracked)
+ Game Version  : 1.04
+ Proces Name   : game.dat
+ Script Version: 1.0
+ CE Version    : 6.2
+ Release date  : 09-Jul-2012
+ Author        : Recifense
+ History:
+ 09-Jul-12: First Release
+ Features:
+ - Minimum Resources
+ - Minimum XP
+ - God Mode
+ - Unlimited Energy
+===========================================
+}
+
+//=========================================
+// Definitions
+define(LUDO,"game.dat")
+
+//=========================================
+[ENABLE]
+//=========================================
+//LuaCall(CheckVersion())
+//=========================================
+// Check if script is compatible to this game version
+// If false the script will not be loaded
+
+assert(LUDO+0010a65d,8b 58 38 39 1d 68 69 9e 00) //_MR
+assert(LUDO+00284163,d9 56 08 8b 4e 10 89 4c 24) //_GM
+assert(LUDO+0014e802,8b b9 6c 01 00 00 8b 07 85) //_MI
+
+//=========================================
+alloc(MyCode,2048,LUDO)
+//=========================================
+// Declaration section
+label(_MonRes)
+label(_MonR0)
+label(_MonR1)
+label(_MonR2)
+label(_BackMR)
+label(_ExitMR)
+label(_GodMode)
+label(_GodM00)
+label(_GodM01)
+label(_BackGM)
+label(_ExitGM)
+label(_MonID)
+label(_BackMI)
+label(_ExitMI)
+label(pUnit)
+label(pRes)
+label(pCommon)
+label(iEnableGM)
+label(iEnableGM1)
+label(iEnableMR)
+label(iEnableMX)
+label(iEnableME)
+label(iMinRes)
+label(fGarbage)
+
+//=========================================
+// Registering Symbols
+registersymbol(MyCode)
+registersymbol(pUnit)
+registersymbol(pRes)
+registersymbol(pCommon)
+registersymbol(iEnableGM)
+registersymbol(iEnableGM1)
+registersymbol(iEnableMR)
+registersymbol(iEnableMX)
+registersymbol(iEnableME)
+registersymbol(iMinRes)
+
+//=========================================
+MyCode:
+//=========================================
+_MonRes:
+ mov [pRes],eax                 // Save pointer for debugging
+
+ mov ebx,[eax+00000160]
+ mov [pCommon],ebx
+
+ cmp dword ptr [iEnableMR],0
+ je _MonR0                      // Jump if feature is disabled
+
+ mov ebx,[iMinRes]              // Get minimum resource value
+ cmp ebx,[eax+38]               // Current resource &gt;= minimum?
+ jle _MonR0                     // Jump if true
+
+ mov [eax+38],ebx               // Update current resource
+
+_MonR0:
+ cmp dword ptr [iEnableMX],0
+ je _MonR2                      // Jump if feature is disabled
+
+ cmp dword ptr [eax+00000190],3
+ jge _MonR1
+
+ mov dword ptr [eax+00000190],3
+
+_MonR1:
+ cmp dword ptr [eax+00000194],#5000
+ jg _MonR2
+
+ mov ebx,[eax+00000194]
+ dec ebx
+ mov [eax+0000018c],ebx
+
+_MonR2:
+ cmp dword ptr [iEnableME],0
+ je _ExitMR                     // Jump if feature is disabled
+
+ xor ebx,ebx
+ mov [eax+88],ebx               // Spent_Energy = 0
+
+_ExitMR:
+ mov ebx,[eax+38]               // Original code
+ cmp [LUDO+005e68e0],ebx        // Original code
+ jmp _BackMR                    // Back to main code
+
+//=========================================
+_GodMode:
+ fst dword ptr [fGarbage]
+ mov ecx,[fGarbage]
+ test ecx,ecx
+ js _GodM00
+
+ cmp ecx,[esi+08]
+ jge _ExitGM
+
+ mov ecx,[esi+10]
+ cmp ecx,47c34f80
+ je _ExitGM
+
+_GodM00:
+ cmp dword ptr [iEnableGM],0
+ je _ExitGM                     // Jump if feature is disabled
+
+ mov ecx,[esi-08]               // Get ptr to Unit/Building
+ or ecx,ecx
+ jz _ExitGM                     // Jump if the pointer is Null
+
+ mov eax,[ecx+000001b0]         // Get pCommon
+ cmp eax,[pCommon]
+ jne _ExitGM
+
+ mov al,[ecx+00000274]
+ movzx eax,al
+ or eax,[ecx+0000025c]
+ jz _ExitGM
+
+ cmp dword ptr [iEnableGM1],0
+ je _GodM01                     // Jump if feature is disabled
+
+ cmp byte ptr [ecx+000001f4],01 // Is it a car bomb or similar?
+ je _ExitGM                     // Jump if true
+
+_GodM01:
+ fstp st(0)                     // Discard value
+ fld dword ptr [esi+10]         // Get max HP
+
+_ExitGM:
+ fst dword ptr [esi+08]         // Original code
+ mov ecx,[esi+10]               // Original code
+ jmp _BackGM                    // Back to main code
+
+//=========================================
+_MonID:
+ mov [pUnit],ecx
+
+_ExitMI:
+ mov edi,[ecx+0000016C]         // Original code
+ jmp _BackMI                    // Back to main code
+
+//=========================================
+ db '====================================&gt;'
+ db 'CE6.2 Script by Recifense 070912'
+//=========================================
+// Variables
+iEnableMR:
+ dd 0
+iEnableMX:
+ dd 0
+iEnableGM:
+ dd 0
+iEnableGM1:
+ dd 0
+iEnableME:
+ dd 0
+iMinRes:
+ dd #50000
+pRes:
+ dd 0
+pUnit:
+ dd 0
+pCommon:
+ dd MyCode
+fGarbage:
+ dd 0
+
+//=========================================
+// Hacking Points
+LUDO+0010a65d:
+ jmp _MonRes
+ nop
+ nop
+ nop
+ nop
+_BackMR:
+
+LUDO+00284163:
+ jmp _GodMode
+ nop
+_BackGM:
+
+LUDO+0014e802:
+ jmp _MonID
+ nop
+_BackMI:
+
+//=========================================
+// Script for Restoring Original Codes
+[DISABLE]
+LUDO+0010a65d:
+// mov ebx,[eax+38]
+// cmp [game.dat+005e6968],ebx
+ db 8b 58 38 39 1d 68 69 9e 00
+
+LUDO+00284163:
+// fst dword ptr [esi+08]
+// mov ecx,[esi+10]
+ db d9 56 08 8b 4e 10
+
+LUDO+0014e802:
+// mov edi,[ecx+0000016C]
+ db 8b b9 6c 01 00 00
+
+//=========================================
+// Unregistering Symbols
+unregistersymbol(MyCode)
+unregistersymbol(pHero)
+unregistersymbol(pRes)
+unregistersymbol(pCommon)
+unregistersymbol(iEnableGM)
+unregistersymbol(iEnableGM1)
+unregistersymbol(iEnableMR)
+unregistersymbol(iEnableMX)
+unregistersymbol(iEnableME)
+unregistersymbol(iMinRes)
+
+//=========================================
+dealloc(MyCode)
+//============= Scripts End ===============
+
+// ****************************************
+// NOTES
+// ****************************************
+{
+}
+
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>8</ID>
+          <Description>"Enable/Disable Minimum Money =&gt; (1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMR</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>6</ID>
+              <Description>"Minimum Money Value ==&gt;"</Description>
+              <Color>0080FF</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>iMinRes</Address>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>2</ID>
+          <Description>"Enable/Disable Generals Quick level Up =&gt; (1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMX</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>3</ID>
+          <Description>"Enable/Disable God Mode =&gt; (1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableGM</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>40</ID>
+              <Description>"Enable/Disable Exclude Explosive Units =&gt; (1/0)"</Description>
+              <Color>808000</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>iEnableGM1</Address>
+              <Hotkeys>
+                <Hotkey>
+                  <Action>Set Value</Action>
+                  <Keys>
+                    <Key>17</Key>
+                    <Key>36</Key>
+                  </Keys>
+                  <Value>1</Value>
+                  <ID>0</ID>
+                </Hotkey>
+                <Hotkey>
+                  <Action>Set Value</Action>
+                  <Keys>
+                    <Key>17</Key>
+                    <Key>35</Key>
+                  </Keys>
+                  <Value>0</Value>
+                  <ID>1</ID>
+                </Hotkey>
+              </Hotkeys>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>9</ID>
+          <Description>"Enable/Disable Unlimited Energy =&gt; (1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableME</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols>
+    <SymbolEntry>
+      <Name>pUnit</Name>
+      <Address>06BC01AC</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>pRes</Name>
+      <Address>06BC01A8</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>pCommon</Name>
+      <Address>06BC01B0</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>iEnableGM</Name>
+      <Address>06BC0198</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>iEnableGM1</Name>
+      <Address>06BC019C</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>iEnableMR</Name>
+      <Address>06BC0190</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>iEnableMX</Name>
+      <Address>06BC0194</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>iEnableME</Name>
+      <Address>06BC01A0</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>iMinRes</Name>
+      <Address>06BC01A4</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>generals.exe</Name>
+      <Address>00400000</Address>
+    </SymbolEntry>
+  </UserdefinedSymbols>
+  <Comments>===========================================
+ Game Title    : Command and Conquer - Generals Zero Hour (Cracked)
+ Game Version  : 1.04
+ Proces Name   : game.dat
+ Script Version: 1.0
+ CE Version    : 6.2
+ Release date  : 09-Jul-2012
+ Author        : Recifense
+ History:
+ 09-Jul-12: First Release
+ Features:
+ - Minimum Resources [1]
+ - Minimum XP [2]
+ - God Mode [3]
+ - Unlimited Energy [4]
+===========================================
+[1] Money will not go under "Minimum Money Value";
+[2] Quick level up;
+[3] God Mode for buildings and Units;
+[3.1] Exclude Explosive Units;
+[4] Make Spent_Energy = 0
+===========================================
+HOTKEYS:
+CTRL+Home = ENABLE  cheats;
+CTRL+End  = DISABLE cheats;
+===========================================
+Cheers!
+</Comments>
+</CheatTable>

@@ -1,0 +1,660 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="18">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>18</ID>
+      <Description>"[X] &lt;== Dragon Age Origins v1.05.13263.0 Origin-EA Script v1.0"</Description>
+      <Options moHideChildren="1"/>
+      <LastState Activated="0"/>
+      <Color>FF0000</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>{
+===========================================
+ Game Title    : Dragon Age Origins
+ Game Version  : 1.05.13263.0
+ Game Sponsor  : Myself
+ Process Name  : DAOrigins.exe
+ Script Version: 1.0
+ CE Version    : 6.4
+ Release date  : 20-Jun-2014
+ Author        : Recifense
+ History:
+ 19-Jun-14: First Release for Steam
+ 20-Jun-14: First Release for Origins-EA
+ Features:
+ - God Mode/Full Mana
+ - Minimum Money
+ - Cooldown
+ - Some Pointers
+===========================================
+}
+
+//=========================================
+// Definitions
+define(LUDO,"DAOrigins.exe")
+define(MSHO,DAOrigins.exe+0019de38)
+define(GDMD,DAOrigins.exe+0026df94)
+define(MPMY,DAOrigins.exe+002b12f4)
+define(MPCD,DAOrigins.exe+000ca060)
+
+define(RPCD,DAOrigins.exe+0021b7be)
+
+//=========================================
+// Constants used in the script (that can be changed)
+define(ctCE64,(float)6.4)
+define(ctMMON,#64000)  // Minimum Money
+define(ctMATT,#10)     // Minimum Attributes
+
+//=========================================
+[ENABLE]
+//=========================================
+//LuaCall(CheckVersion())
+//=========================================
+// Check if script is compatible to this game version
+// If false the script will not be loaded
+
+assert(MSHO,8b 88 94 01 00 00 85 c9 8d b0 90 01 00 00 ?? ?? 8b 46 08 2b c1)
+assert(GDMD,d9 5e 5c 8b 76 44 83 c4 0c 85 f6 ?? ?? c6 46 20 01 5e c2 04 00)
+assert(MPMY,8b 9e 90 00 00 00 57 8d be 90 00 00 00 8b cf e8 ?? ?? ?? ?? 03)
+assert(MPCD,56 8b f1 d9 46 0c d9 44 24 08 d9 c0 dd ea df e0 dd d9 f6 c4 44)
+
+//=========================================
+alloc(MyCode,4096,LUDO)
+//=========================================
+// Declaration section
+label(_MonSelHero)
+label(_BackMSH)
+label(_ExitMSH)
+label(_GodMode)
+label(_BackGMD)
+label(_ExitGMD)
+label(_MonPlayerMoney)
+label(_BackMPM)
+label(_ExitMPM)
+label(_MonPlayerCooldown)
+label(_BackMPC)
+label(_ExitMPC)
+label(iEnableGMD)
+label(iEnableMPM)
+label(iEnableMPC)
+label(iMinMoney)
+label(fValue)
+label(pHero)
+label(pUnit)
+label(pMoney)
+
+//=========================================
+// Registering Symbols
+registersymbol(MyCode)
+registersymbol(iEnableGMD)
+registersymbol(iEnableMPM)
+registersymbol(iEnableMPC)
+registersymbol(iMinMoney)
+registersymbol(pHero)
+registersymbol(pUnit)
+registersymbol(pMoney)
+
+//=========================================
+MyCode:
+//=========================================
+// When browsing Character Screen
+_MonSelHero:
+ mov [pUnit],eax
+
+_ExitMSH:
+ mov ecx,[eax+00000194]            // Original code (rd pAttribs)
+ jmp _BackMSH                      // Back to main code
+
+//=========================================
+// Health and Mana (When updating)
+_GodMode:
+ push eax
+
+ cmp dword ptr [iEnableGMD],0
+ je _ExitGMD                       // Jump if feature is disabled
+
+ mov eax,[esi+44]                  // Get pointer to base+0190
+ test eax,eax
+ jz _ExitGMD
+
+ lea eax,[eax-0190]                // Point to unit structure
+ mov [pHero],eax                   // Save it for debugging
+
+ cmp word ptr [eax+34],#14         // PlayerÂ´s unit?
+ jne _ExitGMD
+
+ fst dword ptr [fValue]
+ mov eax,[fValue]                  // Get next value
+ cmp eax,[esi+5c]                  // Greater than current value?
+ jns _ExitGMD                      // Jump if true
+
+ fstp st(0)
+
+ fld dword ptr [esi+5c]
+
+_ExitGMD:
+ pop eax
+
+ fstp dword ptr [esi+5c]           // Original code
+ mov esi,[esi+44]                  // Original code
+ jmp _BackGMD                      // Back to main code
+
+//=========================================
+// When looking in the inventory
+_MonPlayerMoney:
+ mov [pMoney],ecx
+
+ cmp dword ptr [iEnableMPM],0
+ je _ExitMPM                       // Jump if feature is disabled
+
+ mov ebx,[iMinMoney]               // Get minimum value
+ cmp ebx,[esi+0000009c]            // Current value &gt; minimum?
+ jle _ExitMPM                      // Jump if true
+
+ mov [esi+0000009c],ebx            // Money = minimum
+
+_ExitMPM:
+ mov ebx,[esi+00000090]            // Original code
+ jmp _BackMPM                      // Back to main code
+
+//=========================================
+// When cooling down
+_MonPlayerCooldown:
+ cmp dword ptr [iEnableMPC],0
+ je _ExitMPC                       // Jump if feature is disabled
+
+ mov eax,[esp]
+ cmp eax,RPCD
+ jne _ExitMPC
+
+ test edi,edi
+ jz _ExitMPC
+
+ mov eax,[edi+20]                  // Get pUnit
+ test eax,eax
+ jz _ExitMPC
+
+ movzx eax,word ptr [eax+34]
+ cmp eax,#14
+ jne _ExitMPC
+
+ xor eax,eax
+ mov [ecx+0c],eax
+ mov [esp+04],eax
+
+_ExitMPC:
+ push esi                          // Original code
+ mov esi,ecx                       // Original code
+ fld dword ptr [esi+0C]            // Original code
+ jmp _BackMPC                      // Back to main code
+
+//=========================================
+ db '====================================&gt;'
+ db 'CE6.4 Script by Recifense 062014'
+//=========================================
+// Variables
+iEnableGMD:
+ dd 0
+iEnableMPM:
+ dd 0
+iEnableMPC:
+ dd 0
+iMinMoney:
+ dd #640000
+fValue:
+ dd 0
+pUnit:
+ dd 0
+pHero:
+ dd 0
+pMoney:
+ dd 0
+
+//=========================================
+// Hacking Points
+MSHO:
+ jmp _MonSelHero
+ nop
+_BackMSH:
+
+GDMD:
+ jmp _GodMode
+ nop
+_BackGMD:
+
+MPMY:
+ jmp _MonPlayerMoney
+ nop
+_BackMPM:
+
+MPCD:
+ jmp _MonPlayerCooldown
+ nop
+_BackMPC:
+
+//=========================================
+// Script for Restoring Original Codes
+[DISABLE]
+MSHO:
+// mov ecx,[eax+00000194]
+ db 8b 88 94 01 00 00
+
+GDMD:
+// fstp dword ptr [esi+5C]
+// mov esi,[esi+44]
+ db d9 5e 5c 8b 76 44
+
+MPMY:
+// mov ebx,[esi+00000090]
+ db 8b 9e 90 00 00 00
+
+MPCD:
+// push esi
+// mov esi,ecx
+// fld dword ptr [esi+0C]
+ db 56 8b f1 d9 46 0c
+
+//=========================================
+// Unregistering Symbols
+unregistersymbol(MyCode)
+unregistersymbol(iEnableGMD)
+unregistersymbol(iEnableMPM)
+unregistersymbol(iEnableMPC)
+unregistersymbol(iMinMoney)
+unregistersymbol(pUnit)
+unregistersymbol(pHero)
+unregistersymbol(pMoney)
+
+//=========================================
+dealloc(MyCode)
+//============= Scripts End ===============
+
+// ****************************************
+// NOTES
+// ****************************************
+{
+Steam:
+define(MSHO,DAOrigins.exe+002acc08)
+define(GDMD,DAOrigins.exe+0039c8f4)
+define(MPMY,DAOrigins.exe+003c9fe4)
+define(MPCD,DAOrigins.exe+001ddbc0)
+
+define(RPCD,DAOrigins.exe+0031d68e)
+}
+
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>1</ID>
+          <Description>"Enable/Disable God Mode  ================&gt;"</Description>
+          <DropDownList DescriptionOnly="1" DisplayValueAsItem="1">0:Disabled
+1:Enabled
+</DropDownList>
+          <LastState Value="??" Activated="0" RealAddress="0D7D0130"/>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableGMD</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>2</ID>
+          <Description>"Enable/Disable Minimum Money ============&gt;"</Description>
+          <DropDownList DescriptionOnly="1" DisplayValueAsItem="1">0:Disabled
+1:Enabled
+</DropDownList>
+          <LastState Value="??" Activated="0" RealAddress="0D7D0134"/>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMPM</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>33</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>34</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>3</ID>
+              <Description>"Minimum Money Value"</Description>
+              <LastState Value="??" Activated="0" RealAddress="0D7D013C"/>
+              <Color>0080FF</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>iMinMoney</Address>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>19</ID>
+          <Description>"Enable/Disable Fast Cooldown =============&gt;"</Description>
+          <DropDownList DescriptionOnly="1" DisplayValueAsItem="1">0:Disabled
+1:Enabled
+</DropDownList>
+          <LastState Value="??" Activated="0" RealAddress="0D7D0138"/>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMPC</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>45</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>46</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>20</ID>
+          <Description>"========= Last Selected Character ========="</Description>
+          <LastState Activated="0" RealAddress="00000000"/>
+          <Color>000080</Color>
+          <VariableType>String</VariableType>
+          <Length>32</Length>
+          <Unicode>1</Unicode>
+          <ZeroTerminate>1</ZeroTerminate>
+          <Address>pUnit</Address>
+          <Offsets>
+            <Offset>EC</Offset>
+            <Offset>5C</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>21</ID>
+          <Description>"========= Last Selected Character ========="</Description>
+          <LastState Activated="0" RealAddress="00000000"/>
+          <Color>000080</Color>
+          <VariableType>String</VariableType>
+          <Length>32</Length>
+          <Unicode>1</Unicode>
+          <ZeroTerminate>1</ZeroTerminate>
+          <Address>pUnit</Address>
+          <Offsets>
+            <Offset>0</Offset>
+            <Offset>EC</Offset>
+            <Offset>5C</Offset>
+          </Offsets>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>4</ID>
+              <Description>"Selected Unit Attribute Points"</Description>
+              <LastState Value="??" Activated="0" RealAddress="00000000"/>
+              <Color>0000FF</Color>
+              <VariableType>Float</VariableType>
+              <Address>pUnit</Address>
+              <Offsets>
+                <Offset>4C</Offset>
+                <Offset>88</Offset>
+                <Offset>194</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>5</ID>
+              <Description>"Selected Unit Skill Points"</Description>
+              <LastState Value="??" Activated="0" RealAddress="00000000"/>
+              <Color>0000FF</Color>
+              <VariableType>Float</VariableType>
+              <Address>pUnit</Address>
+              <Offsets>
+                <Offset>4C</Offset>
+                <Offset>8C</Offset>
+                <Offset>194</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>6</ID>
+              <Description>"Selected Unit Specialization Points"</Description>
+              <LastState Value="??" Activated="0" RealAddress="00000000"/>
+              <Color>0000FF</Color>
+              <VariableType>Float</VariableType>
+              <Address>pUnit</Address>
+              <Offsets>
+                <Offset>4C</Offset>
+                <Offset>98</Offset>
+                <Offset>194</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>7</ID>
+              <Description>"Selected Unit Talent Spell Points"</Description>
+              <LastState Value="??" Activated="0" RealAddress="00000000"/>
+              <Color>0000FF</Color>
+              <VariableType>Float</VariableType>
+              <Address>pUnit</Address>
+              <Offsets>
+                <Offset>4C</Offset>
+                <Offset>90</Offset>
+                <Offset>194</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>8</ID>
+              <Description>"Selected Unit Constitution"</Description>
+              <LastState Value="??" Activated="0" RealAddress="00000000"/>
+              <Color>0000FF</Color>
+              <VariableType>Float</VariableType>
+              <Address>pUnit</Address>
+              <Offsets>
+                <Offset>4C</Offset>
+                <Offset>18</Offset>
+                <Offset>194</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>9</ID>
+              <Description>"Selected Unit Cunning"</Description>
+              <LastState Value="??" Activated="0" RealAddress="00000000"/>
+              <Color>0000FF</Color>
+              <VariableType>Float</VariableType>
+              <Address>pUnit</Address>
+              <Offsets>
+                <Offset>4C</Offset>
+                <Offset>14</Offset>
+                <Offset>194</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>10</ID>
+              <Description>"Selected Unit Dexterity"</Description>
+              <LastState Value="??" Activated="0" RealAddress="00000000"/>
+              <Color>0000FF</Color>
+              <VariableType>Float</VariableType>
+              <Address>pUnit</Address>
+              <Offsets>
+                <Offset>4C</Offset>
+                <Offset>8</Offset>
+                <Offset>194</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>11</ID>
+              <Description>"Selected Unit HP"</Description>
+              <LastState Value="??" Activated="0" RealAddress="00000000"/>
+              <Color>0000FF</Color>
+              <VariableType>Float</VariableType>
+              <Address>pUnit</Address>
+              <Offsets>
+                <Offset>5C</Offset>
+                <Offset>1C</Offset>
+                <Offset>194</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>12</ID>
+              <Description>"Selected Unit Magic"</Description>
+              <LastState Value="??" Activated="0" RealAddress="00000000"/>
+              <Color>0000FF</Color>
+              <VariableType>Float</VariableType>
+              <Address>pUnit</Address>
+              <Offsets>
+                <Offset>4C</Offset>
+                <Offset>10</Offset>
+                <Offset>194</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>13</ID>
+              <Description>"Selected Unit Mana/Stamina"</Description>
+              <LastState Value="??" Activated="0" RealAddress="00000000"/>
+              <Color>0000FF</Color>
+              <VariableType>Float</VariableType>
+              <Address>pUnit</Address>
+              <Offsets>
+                <Offset>5C</Offset>
+                <Offset>20</Offset>
+                <Offset>194</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>14</ID>
+              <Description>"Selected Unit Spell Power"</Description>
+              <LastState Value="??" Activated="0" RealAddress="00000000"/>
+              <Color>0000FF</Color>
+              <VariableType>Float</VariableType>
+              <Address>pUnit</Address>
+              <Offsets>
+                <Offset>4C</Offset>
+                <Offset>34</Offset>
+                <Offset>194</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>15</ID>
+              <Description>"Selected Unit Strength"</Description>
+              <LastState Value="??" Activated="0" RealAddress="00000000"/>
+              <Color>0000FF</Color>
+              <VariableType>Float</VariableType>
+              <Address>pUnit</Address>
+              <Offsets>
+                <Offset>4C</Offset>
+                <Offset>4</Offset>
+                <Offset>194</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>16</ID>
+              <Description>"Selected Unit Total XP"</Description>
+              <LastState Value="??" Activated="0" RealAddress="00000000"/>
+              <Color>0000FF</Color>
+              <VariableType>Float</VariableType>
+              <Address>pUnit</Address>
+              <Offsets>
+                <Offset>4C</Offset>
+                <Offset>4C</Offset>
+                <Offset>194</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>17</ID>
+              <Description>"Selected Unit Will Power"</Description>
+              <LastState Value="??" Activated="0" RealAddress="00000000"/>
+              <Color>0000FF</Color>
+              <VariableType>Float</VariableType>
+              <Address>pUnit</Address>
+              <Offsets>
+                <Offset>4C</Offset>
+                <Offset>C</Offset>
+                <Offset>194</Offset>
+              </Offsets>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols/>
+  <Comments>===========================================
+ Game Title    : Dragon Age Origins
+ Game Version  : 1.05.13263.0
+ Game Sponsor  : Myself
+ Process Name  : DAOrigins.exe
+ Script Version: 1.0
+ CE Version    : 6.4
+ Release date  : 20-Jun-2014
+ Author        : Recifense
+ History:
+ 19-Jun-14: First Release for Steam
+ 20-Jun-14: First Release for Origins-EA
+ Features:
+ - God Mode/Full Mana [1]
+ - Minimum Money      [2]
+ - Cooldown           [3]
+ - Some Pointers      [4]
+===========================================
+[1] For Human player's heroes;
+[2] For Human player only;
+[3] For Human player's heroes;
+[4] Used in the table;
+===========================================
+[USAGE]
+1) Run CE64;
+2) Run Game;
+3) Load the game process "daorigins.exe" in CE;
+4) Load this table and activate it;
+5) Change the value to "Enabled" of each cheat you want to use;
+6) Game On;
+-------------------------------------------
+[HEROES INFO]
+- You can change those values (be prudent).
+===========================================
+[HOTKEYS]
+CTRL+Home      = Enable  GM cheat;
+CTRL+End       = Disable GM cheat;
+-----------
+CTRL+PageUp    = Enable  MM cheat;
+CTRL+PageDown  = Disable MM cheat;
+-----------
+CTRL+Insert    = Enable  FC cheat;
+CTRL+Delete    = Disable FC cheat;
+===========================================
+[ADVICE]
+When you can,save the game before starting using table/cheat. So you can always come back in case you don't like the result.
+===========================================
+[INFO]
+Tested on Win 7 64bits
+===========================================
+Cheers!</Comments>
+</CheatTable>

@@ -1,0 +1,1156 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="19">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>1</ID>
+      <Description>"ShadowRun (tested DF/HK)"</Description>
+      <Options moHideChildren="1" moAllowManualCollapseAndExpand="1"/>
+      <LastState Activated="1"/>
+      <Color>80000008</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>{$lua}
+
+-- getmonostruct fix
+function monoAA_GETMONOSTRUCT(parameters, syntaxcheckonly)
+  --called whenever an auto assembler script encounters the GETMONOSTRUCT() line
+
+  --parameters: classname or classname,namespace:classname  (or classname,classname)
+
+  --turns into a struct define
+
+  local c,name,classname,namespace
+
+  c=string.find(parameters,",")
+  if c==nil then
+    --just find this class
+	name=parameters
+	classname=parameters
+	namespace=''
+	--print("Format 1")
+	--print("name="..name)
+	--print("classname="..classname)
+	--print("namespace="..namespace)
+
+  else
+    --this is a name,namespace:classname notation
+	print("Format 2")
+
+	name=string.sub(parameters, 1, c-1)
+	parameters=string.sub(parameters, c+1, #parameters)
+
+
+	c=string.find(parameters,":")
+    if (c~=nil) then
+      namespace=string.sub(parameters, 1,c-1)
+
+	  classname=string.sub(parameters, c+1, #parameters)
+    else
+      namespace='';
+	  classname=parameters
+    end
+
+	--print("name="..name)
+	--print("classname="..classname)
+	--print("namespace="..namespace)
+
+  end
+
+  name=name:match "^%s*(.-)%s*$"
+  classname=classname:match "^%s*(.-)%s*$"
+  namespace=namespace:match "^%s*(.-)%s*$"
+
+  local class=mono_findClass(namespace, classname)
+  if (class==0) then
+    return nil,"The class "..namespace..":"..classname.." could not be found"
+  end
+
+  local fields=mono_class_enumFields(class)
+  if (fields==nil) or (#fields==0) then
+    return nil,namespace..":"..classname.." has no fields"
+  end
+
+
+  local offsets={}
+  local i
+  for i=1, #fields do
+    if fields[i].offset~=0 then
+      offsets[fields[i].offset]=fields[i].name
+    end
+  end
+
+  local sortedindex={}
+  for c in pairs(offsets) do
+    table.insert(sortedindex, c)
+  end
+  table.sort(sortedindex)
+
+  local result="struct "..name.."\n"
+  local fieldsize
+
+  if #sortedindex&gt;0 then
+    fieldsize=sortedindex[1]-0;
+
+    result=result.."vtable: resb "..fieldsize
+  end
+
+  result=result.."\n"
+
+
+  for i=1, #sortedindex do
+    local offset=sortedindex[i]
+
+
+
+	local name=offsets[offset]
+	result=result..name..": "
+	if sortedindex[i+1]~=nil then
+	  fieldsize=sortedindex[i+1]-offset
+	else
+	  --print("last one")
+	  fieldsize=1 --last one
+	end
+
+	result=result.." resb "..fieldsize.."\n"
+
+
+
+  end
+
+
+  result=result.."ends\n"
+
+  --showMessage(result)
+
+  return result
+end
+unregisterAutoAssemblerCommand("GETMONOSTRUCT")
+registerAutoAssemblerCommand("GETMONOSTRUCT", monoAA_GETMONOSTRUCT)
+
+function bitness(s)
+  if s=="TEST" then return '' end
+  if getOpenedProcessID()&lt;=0 then return nil end
+  return targetIs64Bit() and 'db 64' or 'db 32'
+end
+
+if autoAssemble("bitness(TEST)") then unregisterAutoAssemblerCommand("bitness") end
+registerAutoAssemblerCommand("bitness",bitness)
+
+
+
+-- getmonostruct fix
+
+
+{$asm}
+usemono()
+[ENABLE]
+globalalloc(__,$4000)
+__:
+dq __
+__+08:
+BitNess()
+
+[DISABLE]
+
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>5</ID>
+          <Description>"32-bit"</Description>
+          <Options moHideChildren="1" moAllowManualCollapseAndExpand="1"/>
+          <LastState Activated="1"/>
+          <Color>80000008</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>assert(__+08,32)
+[ENABLE]
+
+[DISABLE]
+
+</AssemblerScript>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>20</ID>
+              <Description>"setup ally check ?"</Description>
+              <Options moHideChildren="1" moManualExpandCollapse="1" moAllowManualCollapseAndExpand="1"/>
+              <LastState Activated="1"/>
+              <Color>80000008</Color>
+              <VariableType>Auto Assembler Script</VariableType>
+              <AssemblerScript>
+usemono()
+getmonostruct(TurnDirector)
+getmonostruct(Player)
+define(capt,"TurnDirector:get_ActivePlayer")
+//define(turn,"TurnDirector:OnPlayerTurnChanged")
+define(ally,"Player:IsPlayerAlly")
+define(ofsUnit,"Player.unitTag")
+define(ofsTeam,"Player.thisTeam")
+
+//define(AllyWorking,__+1c)
+
+struct setupData
+  pad00: resb $1000
+  allyCaptain: dd ? // 1000
+  allyUnitTag: dd ?
+  allyTeam: dd ?
+  lastActor: dd ?
+  lastUnitTag: dd ? // 1010
+  lastIsAlly: dd ?
+  AllyWorking: dd ?
+  ApPoolAdd: dd ?
+endstruct
+struct globalFunc
+  pad01: resb $1400
+  IsAlly: resb $200
+endstruct
+
+[ENABLE]
+
+__+IsAlly:// eax&lt;-actor base -&gt; eax is ally of captain
+push ebx
+push ecx
+push edx
+push eax
+mov  edx,[__+allyCaptain]
+test edx,edx
+jne  @f
+sub  esp,10
+call capt
+add  esp,10
+mov  edx,eax
+@@:
+test edx,edx
+je   @f
+mov  [__+allyCaptain],edx
+mov  eax,[edx+ofsUnit]
+mov  [__+allyUnitTag],eax
+mov  eax,[edx+ofsTeam]
+mov  [__+allyTeam],eax
+@@:
+pop  eax
+test eax,eax
+je   @f
+cmp  dword ptr [__+allyCaptain],0
+je   @f
+mov  [__+lastActor],eax
+mov  edx,[eax+ofsUnit]
+mov  [__+lastUnitTag],edx
+sub  esp,8
+push eax
+push [__+allyCaptain]
+call ally
+add  esp,10
+// eax is now result of check ally
+mov  [__+lastIsAlly],eax
+inc  dword ptr [__+lastIsAlly]
+@@:
+pop  edx
+pop  ecx
+pop  ebx
+ret
+label(testally)
+testally:
+mov  dword ptr [__+AllyWorking],2
+pusha
+sub  esp,10
+call capt
+add  esp,10
+call __+IsAlly
+popa
+mov  dword ptr [__+AllyWorking],1
+ret
+
+createthread(testally)
+[DISABLE]
+__+allyCaptain:
+dd 0
+__+AllyWorking:
+dd 0
+</AssemblerScript>
+              <CheatEntries>
+                <CheatEntry>
+                  <ID>27</ID>
+                  <Description>"????VALID????"</Description>
+                  <DropDownList ReadOnly="1" DescriptionOnly="1" DisplayValueAsItem="1">0:not yet
+2:not valid, activate inside map!
+1:Valid
+</DropDownList>
+                  <LastState Value="1" Activated="0" RealAddress="032E1018"/>
+                  <Color>80000008</Color>
+                  <VariableType>Byte</VariableType>
+                  <Address>__</Address>
+                  <Offsets>
+                    <Offset>1018</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>35</ID>
+                  <Description>"captain ptr"</Description>
+                  <LastState Value="1AA56C28" Activated="0" RealAddress="302E0660"/>
+                  <ShowAsHex>1</ShowAsHex>
+                  <Color>80000008</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>__</Address>
+                  <Offsets>
+                    <Offset>0</Offset>
+                    <Offset>1000</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>22</ID>
+                  <Description>"captain unitTag"</Description>
+                  <LastState Activated="0" RealAddress="26962DBC"/>
+                  <Color>80000008</Color>
+                  <VariableType>String</VariableType>
+                  <Length>12</Length>
+                  <Unicode>1</Unicode>
+                  <ZeroTerminate>1</ZeroTerminate>
+                  <Address>__</Address>
+                  <Offsets>
+                    <Offset>C</Offset>
+                    <Offset>1004</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>24</ID>
+                  <Description>"last checked actor ptr"</Description>
+                  <DropDownList ReadOnly="1" DescriptionOnly="1" DisplayValueAsItem="1">0:not yet
+1:not ally
+2:is ally
+</DropDownList>
+                  <LastState Value="1AA56C28" Activated="0" RealAddress="2F595CC0"/>
+                  <ShowAsHex>1</ShowAsHex>
+                  <Color>80000008</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>__</Address>
+                  <Offsets>
+                    <Offset>0</Offset>
+                    <Offset>100C</Offset>
+                  </Offsets>
+                  <CheatEntries>
+                    <CheatEntry>
+                      <ID>23</ID>
+                      <Description>"last check result: is ally?"</Description>
+                      <DropDownList ReadOnly="1" DescriptionOnly="1" DisplayValueAsItem="1">0:not yet
+1:not ally
+2:is ally
+</DropDownList>
+                      <LastState Value="2" Activated="0" RealAddress="032E1014"/>
+                      <Color>80000008</Color>
+                      <VariableType>Byte</VariableType>
+                      <Address>__</Address>
+                      <Offsets>
+                        <Offset>1014</Offset>
+                      </Offsets>
+                    </CheatEntry>
+                    <CheatEntry>
+                      <ID>26</ID>
+                      <Description>"last check unitTag"</Description>
+                      <LastState Activated="0" RealAddress="3E410E7C"/>
+                      <Color>80000008</Color>
+                      <VariableType>String</VariableType>
+                      <Length>12</Length>
+                      <Unicode>1</Unicode>
+                      <ZeroTerminate>1</ZeroTerminate>
+                      <Address>__</Address>
+                      <Offsets>
+                        <Offset>C</Offset>
+                        <Offset>1010</Offset>
+                      </Offsets>
+                    </CheatEntry>
+                  </CheatEntries>
+                </CheatEntry>
+              </CheatEntries>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>32</ID>
+              <Description>"statMod &lt;&lt;DragonFall&gt;&gt; v2"</Description>
+              <Options moHideChildren="1" moAllowManualCollapseAndExpand="1"/>
+              <LastState Activated="0"/>
+              <Color>80000008</Color>
+              <VariableType>Auto Assembler Script</VariableType>
+              <AssemblerScript>usemono()
+getmonostruct(StatsUtil)
+define(smod,"StatsUtil:GetActorStatMod")
+define(amax,"StatsUtil:GetAttributeMax")
+
+define(kmax,"StatsUtil:GetSkillMax")
+define(smax,"StatsUtil:GetSpecializationMax")
+
+define(k2a,"StatsUtil:GetSkillAttribute")
+define(s2k,"StatsUtil:GetSpecializationSkill")
+
+
+//StatsUtil:GetActorStatMod
+
+//define(AllyWorking,__+1c)
+
+struct setupData
+  pad00: resb $1000
+  allyCaptain: dd ? // 1000
+  allyUnitTag: dd ?
+  allyTeam: dd ?
+  lastActor: dd ?
+  lastUnitTag: dd ? // 1010
+  lastIsAlly: dd ?
+  AllyWorking: dd ?
+  ApPoolAdd: dd ?
+  MoveAdd: dd ?
+endstruct
+struct globalFunc
+  pad01: resb $1400
+  IsAlly: resb $200
+endstruct
+
+
+[ENABLE]
+assert(__+AllyWorking,01)
+assert(smod+09,33 ff 8b 45 08)
+alloc(_smod,$100,smod)
+
+__+ApPoolAdd:
+dd 3
+__+MoveAdd:
+dd #10
+
+_smod:
+dq _smod
+dq smod
+dd (float)0.5
+
+//label(addmax)
+label(domod)
+label(kchk)
+label(schk)
+
+label(kret)
+label(sret)
+label(doadd)
+_smod+20:// free eax ecx
+xor   edi,edi
+mov   eax,[ebp+08]
+push  eax
+//cmp   [__+AllyWorking],1
+//jne   _done
+call  __+IsAlly
+test  eax,eax
+je    _done
+movzx eax,word ptr[ebp+0c] // attribute
+cmp   eax,0
+jle   kchk
+kret:
+cmp   eax,0
+jle   _done
+cmp   eax,#12
+jne   @f
+mov   eax,[__+ApPoolAdd]
+jmp   doadd
+@@:
+cmp   eax,#15
+jne   @f
+mov   eax,[__+MoveAdd]
+jmp   doadd
+@@:
+cmp   eax,#56
+je    @f
+cmp   eax,#21
+jg    _done
+
+
+@@:
+sub   esp,0c
+push  eax
+call  amax
+add   esp,10
+jmp   domod
+
+kchk:
+movzx eax,word ptr[ebp+10] // skill
+cmp   eax,0
+jle   schk
+sret:
+cmp   eax,0
+jle   _done
+sub   esp,0c
+push  eax
+call  k2a
+add   esp,10
+jmp   kret
+
+schk:
+movzx eax,word ptr[ebp+14] // specialization
+cmp  eax,0
+jle  _done
+sub   esp,0c
+push  eax
+call  s2k
+add   esp,10
+jmp   sret
+
+domod:
+mov   [_smod+14],eax
+push  eax
+fild  dword ptr[esp]
+fmul  dword ptr[_smod+10]
+fist  dword ptr[esp]
+pop   eax
+doadd:
+mov   [_smod+18],eax
+add   edi,eax
+cmp   edi,[_smod+14]
+jle   @f
+cmp   dword ptr [ebp+0c],#12
+je    @f
+cmp   dword ptr [ebp+0c],#15
+je    @f
+mov   edi,[_smod+14]
+_done:
+pop  eax
+jmp  smod+0e
+
+
+smod+09:
+jmp _smod+20
+
+registersymbol(_smod)
+
+[DISABLE]
+[_smod+08]+09:
+db 33 ff 8b 45 08
+
+dealloc(_smod)
+unregistersymbol(_smod)
+
+
+</AssemblerScript>
+              <CheatEntries>
+                <CheatEntry>
+                  <ID>37</ID>
+                  <Description>"????VALID????"</Description>
+                  <DropDownList ReadOnly="1" DescriptionOnly="1" DisplayValueAsItem="1">0:not yet
+2:not valid, activate inside map!
+1:Valid
+</DropDownList>
+                  <LastState Value="1" Activated="0" RealAddress="032E1018"/>
+                  <Color>80000008</Color>
+                  <VariableType>Byte</VariableType>
+                  <Address>__</Address>
+                  <Offsets>
+                    <Offset>1018</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>33</ID>
+                  <Description>"adder (0.5=+50% max attr)"</Description>
+                  <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                  <Color>80000008</Color>
+                  <VariableType>Float</VariableType>
+                  <Address>_smod</Address>
+                  <Offsets>
+                    <Offset>10</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>36</ID>
+                  <Description>"ApPoolAdd"</Description>
+                  <LastState Value="3" Activated="0" RealAddress="032E101C"/>
+                  <Color>80000008</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>__</Address>
+                  <Offsets>
+                    <Offset>101C</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>42</ID>
+                  <Description>"MoveAdd"</Description>
+                  <LastState Value="10" Activated="0" RealAddress="032E1020"/>
+                  <Color>80000008</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>__</Address>
+                  <Offsets>
+                    <Offset>1020</Offset>
+                  </Offsets>
+                </CheatEntry>
+              </CheatEntries>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>38</ID>
+              <Description>"statMod &lt;&lt;HongKong&gt;&gt; v2"</Description>
+              <Options moHideChildren="1" moAllowManualCollapseAndExpand="1"/>
+              <LastState Activated="0"/>
+              <Color>80000008</Color>
+              <VariableType>Auto Assembler Script</VariableType>
+              <AssemblerScript>usemono()
+getmonostruct(StatsUtil)
+define(smod,"StatsUtil:GetActorStatMod")
+define(amax,"StatsUtil:GetAttributeMax")
+
+define(kmax,"StatsUtil:GetSkillMax")
+define(smax,"StatsUtil:GetSpecializationMax")
+
+define(k2a,"StatsUtil:GetSkillAttribute")
+define(s2k,"StatsUtil:GetSpecializationSkill")
+
+
+//StatsUtil:GetActorStatMod
+
+//define(AllyWorking,__+1c)
+
+struct setupData
+  pad00: resb $1000
+  allyCaptain: dd ? // 1000
+  allyUnitTag: dd ?
+  allyTeam: dd ?
+  lastActor: dd ?
+  lastUnitTag: dd ? // 1010
+  lastIsAlly: dd ?
+  AllyWorking: dd ?
+  ApPoolAdd: dd ?
+  MoveAdd: dd ?
+endstruct
+struct globalFunc
+  pad01: resb $1400
+  IsAlly: resb $200
+endstruct
+
+
+[ENABLE]
+assert(__+AllyWorking,01)
+assert(smod+13,33 ff 8b 45 08)
+alloc(_smod,$100,smod)
+
+__+ApPoolAdd:
+dd 3
+__+MoveAdd:
+dd #10
+
+_smod:
+dq _smod
+dq smod
+dd (float)0.5
+
+//label(addmax)
+label(domod)
+label(kchk)
+label(schk)
+
+label(kret)
+label(sret)
+label(doadd)
+_smod+20:// free eax ecx
+xor   edi,edi
+mov   eax,[ebp+08]
+push  eax
+//cmp   [__+AllyWorking],1
+//jne   _done
+call  __+IsAlly
+test  eax,eax
+je    _done
+movzx eax,word ptr[ebp+0c] // attribute
+cmp   eax,0
+jle   kchk
+kret:
+cmp   eax,0
+jle   _done
+cmp   eax,#12
+jne   @f
+mov   eax,[__+ApPoolAdd]
+jmp   doadd
+@@:
+cmp   eax,#15
+jne   @f
+mov   eax,[__+MoveAdd]
+jmp   doadd
+@@:
+cmp   eax,#56
+je    @f
+cmp   eax,#21
+jg    _done
+
+
+@@:
+sub   esp,0c
+push  eax
+call  amax
+add   esp,10
+jmp   domod
+
+kchk:
+movzx eax,word ptr[ebp+10] // skill
+cmp   eax,0
+jle   schk
+sret:
+cmp   eax,0
+jle   _done
+sub   esp,0c
+push  eax
+call  k2a
+add   esp,10
+jmp   kret
+
+schk:
+movzx eax,word ptr[ebp+14] // specialization
+cmp  eax,0
+jle  _done
+sub   esp,0c
+push  eax
+call  s2k
+add   esp,10
+jmp   sret
+
+domod:
+mov   [_smod+14],eax
+push  eax
+fild  dword ptr[esp]
+fmul  dword ptr[_smod+10]
+fist  dword ptr[esp]
+pop   eax
+doadd:
+mov   [_smod+18],eax
+add   edi,eax
+cmp   edi,[_smod+14]
+jle   @f
+cmp   dword ptr [ebp+0c],#12
+je    @f
+cmp   dword ptr [ebp+0c],#15
+je    @f
+mov   edi,[_smod+14]
+_done:
+pop  eax
+jmp  smod+18
+
+
+smod+13:
+jmp _smod+20
+
+registersymbol(_smod)
+
+[DISABLE]
+[_smod+08]+13:
+db 33 ff 8b 45 08
+
+dealloc(_smod)
+unregistersymbol(_smod)
+
+
+</AssemblerScript>
+              <CheatEntries>
+                <CheatEntry>
+                  <ID>39</ID>
+                  <Description>"????VALID????"</Description>
+                  <DropDownList ReadOnly="1" DescriptionOnly="1" DisplayValueAsItem="1">0:not yet
+2:not valid, activate inside map!
+1:Valid
+</DropDownList>
+                  <LastState Value="1" Activated="0" RealAddress="032E1018"/>
+                  <Color>80000008</Color>
+                  <VariableType>Byte</VariableType>
+                  <Address>__</Address>
+                  <Offsets>
+                    <Offset>1018</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>40</ID>
+                  <Description>"adder (0.5=+50% max attr)"</Description>
+                  <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                  <Color>80000008</Color>
+                  <VariableType>Float</VariableType>
+                  <Address>_smod</Address>
+                  <Offsets>
+                    <Offset>10</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>41</ID>
+                  <Description>"ApPoolAdd"</Description>
+                  <LastState Value="3" Activated="0" RealAddress="032E101C"/>
+                  <Color>80000008</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>__</Address>
+                  <Offsets>
+                    <Offset>101C</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>43</ID>
+                  <Description>"MoveAdd"</Description>
+                  <LastState Value="10" Activated="0" RealAddress="032E1020"/>
+                  <Color>80000008</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>__</Address>
+                  <Offsets>
+                    <Offset>1020</Offset>
+                  </Offsets>
+                </CheatEntry>
+              </CheatEntries>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>28</ID>
+              <Description>"not consume backpack itm if release ctrl"</Description>
+              <LastState Activated="1"/>
+              <Color>80000008</Color>
+              <VariableType>Auto Assembler Script</VariableType>
+              <AssemblerScript>usemono()
+getmonostruct(PlayerInventory)
+define(useitm,"PlayerInventory:removeEquipment")
+
+
+[ENABLE]
+assert(useitm,55 8b ec 53 56)
+
+alloc(_itmuse,$100,useitm)
+
+_itmuse:
+dq _itmuse
+__+70:
+dd 3,4,5,6
+
+label(_normal)
+label(_skip)
+_itmuse+20:// free eax ebx,esi
+readmem(useitm,5)
+movzx eax,byte ptr[ebp+14] // from packpack?
+test  eax,eax
+je    _normal
+
+push  0a2
+call  GetAsyncKeyState
+shr   eax,0f
+test  eax,1
+je    _skip
+_normal:
+jmp  useitm+05  // pressing ctrl, remove item
+_skip:
+@@:   // not consume if not pressing ctrl
+pop   esi
+pop   ebx
+leave
+ret
+
+
+useitm:
+jmp _itmuse+20
+
+registersymbol(_itmuse)
+
+[DISABLE]
+useitm:
+db 55 8b ec 53 56
+
+dealloc(_itmuse)
+unregistersymbol(_itmuse)
+
+
+
+</AssemblerScript>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>21</ID>
+              <Description>"inf ammo(global?)"</Description>
+              <LastState Activated="1"/>
+              <Color>80000008</Color>
+              <VariableType>Auto Assembler Script</VariableType>
+              <AssemblerScript>usemono()
+getmonostruct(Item)
+define(ammo,"Item:DecrementAmmo")
+
+
+[ENABLE]
+assert(ammo,55 8b ec)
+ammo:
+ret
+
+[DISABLE]
+ammo:
+db 55 8b ec
+
+</AssemblerScript>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>30</ID>
+              <Description>"setup time.scale"</Description>
+              <Options moHideChildren="1"/>
+              <LastState Activated="1"/>
+              <Color>80000008</Color>
+              <VariableType>Auto Assembler Script</VariableType>
+              <AssemblerScript>usemono()
+define(settimescale,"UnityEngine:Time:set_timeScale")
+define(tscale,__+20)
+[ENABLE]
+
+alloc(_settimescale,$100,settimescale)
+_settimescale:
+push eax
+mov  eax,[tscale]
+cmp  eax,(float)0.01
+jg   @f
+mov  eax,(float)1.5
+mov  [tscale],eax
+@@:
+cmp  eax,(float)20
+jl   @f
+mov  eax,(float)1.5
+mov  [tscale],eax
+@@:
+sub  esp,0c
+push eax
+call settimescale
+add  esp,10
+pop  eax
+ret
+
+createthread(_settimescale)
+
+[DISABLE]
+dealloc(_settimescale)
+
+</AssemblerScript>
+              <CheatEntries>
+                <CheatEntry>
+                  <ID>31</ID>
+                  <Description>"global timeScale"</Description>
+                  <LastState Value="1.5" Activated="0" RealAddress="032E0020"/>
+                  <Color>80000008</Color>
+                  <VariableType>Float</VariableType>
+                  <Address>__</Address>
+                  <Offsets>
+                    <Offset>20</Offset>
+                  </Offsets>
+                </CheatEntry>
+              </CheatEntries>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>7</ID>
+          <Description>"64-bit (empty)"</Description>
+          <Options moHideChildren="1"/>
+          <LastState Activated="0"/>
+          <Color>80000008</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>assert(__+08,64)
+[ENABLE]
+
+[DISABLE]
+
+</AssemblerScript>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>49</ID>
+      <Description>"IGNORE"</Description>
+      <Options moHideChildren="1"/>
+      <LastState Value="" Activated="0" RealAddress="00000000"/>
+      <Color>80000008</Color>
+      <GroupHeader>1</GroupHeader>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>44</ID>
+          <Description>"statMod &lt;&lt;DragonFall&gt;&gt;"</Description>
+          <Options moHideChildren="1" moAllowManualCollapseAndExpand="1"/>
+          <LastState Activated="0"/>
+          <Color>80000008</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>usemono()
+getmonostruct(StatsUtil)
+define(smod,"StatsUtil:GetActorStatMod")
+define(amax,"StatsUtil:GetAttributeMax")
+//StatsUtil:GetActorStatMod
+
+//define(AllyWorking,__+1c)
+
+struct setupData
+  pad00: resb $1000
+  allyCaptain: dd ? // 1000
+  allyUnitTag: dd ?
+  allyTeam: dd ?
+  lastActor: dd ?
+  lastUnitTag: dd ? // 1010
+  lastIsAlly: dd ?
+  AllyWorking: dd ?
+  ApPoolAdd: dd ?
+  MoveAdd: dd ?
+endstruct
+struct globalFunc
+  pad01: resb $1400
+  IsAlly: resb $200
+endstruct
+
+
+[ENABLE]
+assert(__+AllyWorking,01)
+assert(smod+09,33 ff 8b 45 08)
+alloc(_smod,$100,smod)
+
+__+ApPoolAdd:
+dd 3
+__+MoveAdd:
+dd #10
+
+_smod:
+dq _smod
+dq smod
+dd (float)0.5
+
+label(addfive)
+label(addmax)
+label(domod)
+label(doadd)
+_smod+20:// free eax ecx
+xor   edi,edi
+mov   eax,[ebp+08]
+push  eax
+//cmp   [__+AllyWorking],1
+//jne   _done
+call  __+IsAlly
+test  eax,eax
+je    _done
+movzx eax,word ptr[ebp+0c]
+cmp   eax,0
+jle   _done
+
+cmp   eax,#12
+je    addfive
+cmp   eax,#15
+je    addfive
+
+cmp   eax,56
+je    addmax
+
+cmp   eax,#21 //#106
+jg    _done
+
+//cmp   eax,#9
+//jle   addmax
+
+
+//cmp   eax,#16
+//jle   addmax
+
+//cmp   eax,#17
+//je    addfive
+
+//cmp   eax,#50
+//jle   addmax
+
+//cmp   eax,#56
+//je    addmax
+
+//cmp   eax,#61
+//je    addmax
+
+
+addmax:
+sub   esp,0c
+push  eax
+call  amax
+add   esp,10
+jmp  domod
+
+addfive:
+cmp   eax,#12
+jne   @f
+mov   eax,[__+ApPoolAdd]
+jmp  doadd
+@@:
+//cmp   eax,#15
+//jne   @f
+mov   eax,[__+MoveAdd]
+jmp  doadd
+domod:
+mov   [_smod+14],eax
+push  eax
+fild  dword ptr[esp]
+fmul  dword ptr[_smod+10]
+fist  dword ptr[esp]
+pop   eax
+doadd:
+mov   [_smod+18],eax
+add   edi,eax
+_done:
+pop  eax
+jmp  smod+0e
+
+
+smod+09:
+jmp _smod+20
+
+registersymbol(_smod)
+
+[DISABLE]
+[_smod+08]+09:
+db 33 ff 8b 45 08
+
+dealloc(_smod)
+unregistersymbol(_smod)
+
+
+</AssemblerScript>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>45</ID>
+              <Description>"????VALID????"</Description>
+              <DropDownList ReadOnly="1" DescriptionOnly="1" DisplayValueAsItem="1">0:not yet
+2:not valid, activate inside map!
+1:Valid
+</DropDownList>
+              <LastState Value="1" Activated="0" RealAddress="032E1018"/>
+              <Color>80000008</Color>
+              <VariableType>Byte</VariableType>
+              <Address>__</Address>
+              <Offsets>
+                <Offset>1018</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>46</ID>
+              <Description>"adder (0.5=+50% max attr)"</Description>
+              <LastState Value="??" Activated="0" RealAddress="00000000"/>
+              <Color>80000008</Color>
+              <VariableType>Float</VariableType>
+              <Address>_smod</Address>
+              <Offsets>
+                <Offset>10</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>47</ID>
+              <Description>"ApPoolAdd"</Description>
+              <LastState Value="3" Activated="0" RealAddress="032E101C"/>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>__</Address>
+              <Offsets>
+                <Offset>101C</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>48</ID>
+              <Description>"MoveAdd"</Description>
+              <LastState Value="10" Activated="0" RealAddress="032E1020"/>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>__</Address>
+              <Offsets>
+                <Offset>1020</Offset>
+              </Offsets>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols>
+    <SymbolEntry>
+      <Name>__</Name>
+      <Address>032E0000</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>_test</Name>
+      <Address>40E4946</Address>
+    </SymbolEntry>
+  </UserdefinedSymbols>
+  <LuaScript>
+</LuaScript>
+</CheatTable>

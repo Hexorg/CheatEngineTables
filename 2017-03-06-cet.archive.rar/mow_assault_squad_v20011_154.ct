@@ -1,0 +1,388 @@
+<?xml version="1.0"?>
+<CheatTable CheatEngineTableVersion="11">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>0</ID>
+      <Description>"[X] &lt;== Men of War Assault Squad v20011 Script"</Description>
+      <Options moHideChildren="1"/>
+      <Color>80000008</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>{
+===========================================
+ Game Title    : Men of War: Assault Squad
+ Game Version  : 2.00.11
+ Process Name  : mow_assault_squad.exe
+ Script Version: 1.0
+ CE Version    : 6.1
+ Release date  : 05-Feb-2012 (adapted from version 1.98.8)
+ Author        : Recifense
+ Features:
+ - God Mode
+ - Unlimited Fuel
+ - Unlimited Ammo
+ - Full Stamina
+ - Unlimited Command Points
+===========================================
+}
+
+[ENABLE]
+//=========================================
+// Check if script is compatible to this game version
+// If false the script will not be loaded
+
+assert(mow_assault_squad.exe+3996fb,d9 9e a0 00 00 00 75 59) //ok
+assert(mow_assault_squad.exe+2e659b,d8 ae 90 00 00 00 d9 1c) //ok
+assert(mow_assault_squad.exe+26da60,8b 44 24 04 89 41 2c c2) //ok
+assert(mow_assault_squad.exe+39a5b1,d9 00 d9 55 00 d8 64 24) //ok
+assert(mow_assault_squad.exe+522d5e,a1 cc ab df 00 8d 4c 24) //ok
+
+//=========================================
+alloc(MyCode,1024)
+//=========================================
+// Declaration section
+label(_GodMode)
+label(_BackGM)
+label(_ExitGM)
+label(_MonFuel)
+label(_BackMF)
+label(_ExitMF)
+label(_MonAmmo)
+label(_MonA0)
+label(_MonA1)
+label(_BackMA)
+label(_ExitMA)
+label(_MonStamina)
+label(_BackMS)
+label(_ExitMS)
+label(_MonCP)
+label(_BackMCP)
+label(_ExitMCP)
+label(pHero)
+label(iEnableGM)
+label(iEnableMF)
+label(iEnableMA)
+label(iEnableMS)
+label(iEnableMC)
+label(fRubbish)
+label(iEDI)
+
+//=========================================
+// Registering Symbols
+registersymbol(MyCode)
+registersymbol(pHero)
+registersymbol(iEnableGM)
+registersymbol(iEnableMF)
+registersymbol(iEnableMA)
+registersymbol(iEnableMS)
+registersymbol(iEnableMC)
+
+//=========================================
+MyCode:
+//========================================= ok
+// God Mode
+_GodMode:
+ pushfd                        // Save EFLAGS
+ mov [pHero],esi               // Save pointer for debugging
+
+ cmp dword ptr [iEnableGM],0
+ je _ExitGM                    // Jump if feature is disabled
+
+ push edi
+ push eax
+ mov edi,[esi+0c]              // Get ptr to Owner ID
+ mov al,[mow_assault_squad.exe+8cc6e4]   // Get player ID (OK)
+ cmp al,[edi+000002f0]         // Player´s unit? ...
+ pop eax
+ pop edi
+ jne _ExitGM                   // ... Jump if true
+
+ fstp st(0)                    // Discard value
+ mov dword ptr [esi+0000009c],47f11d00 // 123450.0
+ fld dword ptr [esi+0000009c]  // Get max HP
+
+_ExitGM:
+ fstp dword ptr [esi+000000a0] // Original code
+ popfd                         // Restore EFLAGS
+ jmp _BackGM                   // Back to main code
+
+//========================================= ok
+_MonFuel:
+ cmp dword ptr [iEnableMF],0
+ je _ExitMF                    // Jump if feature is disabled
+
+ push edi
+ push eax
+ mov edi,[esi+08]              // Get ptr to Owner ID
+ mov al,[mow_assault_squad.exe+8cc6e4]   // Get player ID (OK)
+ cmp al,[edi+000002f0]
+ pop eax
+ pop edi
+ jne _ExitMF                   // Jump if it is not a player´s unit
+
+ fstp st(0)                    // Discard value
+ fldz                          // Make value2decrease = 0
+
+ push eax
+ mov eax,[esi+0000008c]        // Get maximum fuel
+ mov [esi+00000090],eax        // Make current fuel = maximum
+ pop eax
+
+_ExitMF:
+ fsubr dword ptr [esi+00000090]// Original code
+ jmp _BackMF                   // Back to main code
+
+//========================================= ok
+_MonAmmo:
+ mov [iEDI],edi
+
+ mov eax,[esp+04]              // Original code
+
+ cmp dword ptr [iEnableMA],0
+ je _ExitMA                    // Jump if feature is disabled
+
+ mov edi,[ecx+18]              // Human ?
+ or edi,edi
+ jz _MonA0                     // Jump if false
+
+ cmp dword ptr [edi+04],00010001 // Really human?
+ jne _ExitMA                   // Jump if false
+
+ mov edi,[edi+24]
+ or edi,edi
+ jz _ExitMA                    // Jump if it is a null pointer
+ jmp _MonA1
+
+_MonA0:                        // Check if ammo of a tank
+ mov edi,[ecx+1c]
+ or edi,edi
+ jz _ExitMA                    // Jump if it is a null pointer
+
+ cmp dword ptr [edi+0c],0      // Tank or similar?
+ jne _ExitMA                   // Jump if false
+
+ mov edi,[edi+18]
+ or edi,edi
+ jz _ExitMA                    // Jump if it is a null pointer
+
+_MonA1:
+ push eax
+ mov al,[edi+000002f0]         // Get Unit ID
+ cmp al,[mow_assault_squad.exe+8cc6e4]   // Player´s UNIT? (OK)
+ pop eax
+ jne _ExitMA                   // Jump if it is not a player´s unit´s ammo
+
+ or eax,eax                    // Next value = 0?
+ jz _ExitMA                    // Jump if true
+
+ cmp eax,[ecx+2c]              // New value greater than current one?
+ jge _ExitMA                   // Jump if true
+
+ mov eax,[ecx+2c]              // Make new value = current value
+
+_ExitMA:
+ mov edi,[iEDI]
+
+ mov [ecx+2c],eax              // Original code
+ jmp _BackMA                   // Back to main code
+
+//========================================= ok
+_MonStamina:
+ cmp dword ptr [iEnableMS],0
+ je _ExitMS                    // Jump if feature is disabled
+
+ push esi
+ push edi
+ push eax
+ lea esi,[ebp-24]              // Point to structure base
+ mov edi,[esi+0c]              // Get ptr to Owner ID
+ mov al,[mow_assault_squad.exe+8cc6e4]   // Get player ID (OK)
+ cmp al,[edi+000002f0]         // Player´s unit? ....
+ pop eax
+ pop edi
+ pop esi
+ jne _ExitMS                   // .... Jump if false
+
+ mov dword ptr [eax],42c80000  // New stamina = 100.0
+
+_ExitMS:
+ fld dword ptr [eax]           // Original code
+ fst dword ptr [ebp+00]        // Original code
+ jmp _BackMS                   // Back to main code
+
+//========================================= v1988
+_MonCP:
+ cmp dword ptr [iEnableMC],0
+ je _ExitMCP                   // Jump if feature is disabled
+
+ mov eax,[mow_assault_squad.exe+9fabd0]
+ mov [mow_assault_squad.exe+9fabcc],eax
+
+_ExitMCP:
+ mov eax,[mow_assault_squad.exe+9fabcc] // Original code
+ jmp _BackMCP                  // Back to main code
+
+//=========================================
+ db '===============================&gt;'
+ db 'CE6.1 Script by Recifense 020512'
+//=========================================
+// Variables
+pHero:
+ dd 0
+iEnableGM:
+ dd 1
+iEnableMA:
+ dd 1
+iEnableMF:
+ dd 1
+iEnableMS:
+ dd 1
+iEnableMC:
+ dd 1
+fRubbish:
+ dd 0
+iEDI:
+ dd 0
+
+//=========================================
+// Hacking Points
+//mow_assault_squad.exe+3996db: //v1977
+mow_assault_squad.exe+3996fb: //v1988 no change
+ jmp _GodMode
+ nop
+_BackGM:
+
+//mow_assault_squad.exe+2e659b: //v1977
+mow_assault_squad.exe+2e659b: //v1988 no change
+ jmp _MonFuel
+ nop
+_BackMF:
+
+//mow_assault_squad.exe+26da60: //v1977
+mow_assault_squad.exe+26da60: //v1988 no change
+ jmp _MonAmmo
+ nop
+ nop
+_BackMA:
+
+//mow_assault_squad.exe+39a591: //v1977
+mow_assault_squad.exe+39a5b1: //v1988 no change
+ jmp _MonStamina
+_BackMS:
+
+//mow_assault_squad.exe+522a2e: //v1977
+//mow_assault_squad.exe+522dae: //v1988
+mow_assault_squad.exe+522d5e: //v20011
+ jmp _MonCP
+_BackMCP:
+
+//=========================================
+// Script for Restoring Original Codes
+[DISABLE]
+//mow_assault_squad.exe+3996db: //v1977
+mow_assault_squad.exe+3996fb: //v1988
+// fstp dword ptr [esi+000000a0]
+ db d9 9e a0 00 00 00
+
+//mow_assault_squad.exe+2e659b: //v1977
+mow_assault_squad.exe+2e659b: //v1988
+// fsubr dword ptr [esi+00000090]
+ db d8 ae 90 00 00 00
+
+//mow_assault_squad.exe+26da60: //v1977
+mow_assault_squad.exe+26da60: //v1988
+// mov eax,[esp+04]
+// mov [ecx+2c],eax
+ db 8b 44 24 04 89 41 2c
+
+//mow_assault_squad.exe+39a591: //v1977
+mow_assault_squad.exe+39a5b1: //v1988
+// fld dword ptr [eax]
+// fst dword ptr [ebp+00]
+ db d9 00 d9 55 00
+
+//mow_assault_squad.exe+522a2e: //v1977
+// mov eax,[mow_assault_squad.exe+9f8aec]
+//mow_assault_squad.exe+522dae: //v1988
+mow_assault_squad.exe+522d5e: //v20011
+// mov eax,[mow_assault_squad.exe+9fabcc]
+ db a1 cc ab df 00
+
+//=========================================
+// Unregistering Symbols
+unregistersymbol(MyCode)
+unregistersymbol(pHero)
+unregistersymbol(iEnableGM)
+unregistersymbol(iEnableMF)
+unregistersymbol(iEnableMA)
+unregistersymbol(iEnableMS)
+unregistersymbol(iEnableMC)
+
+//=========================================
+dealloc(MyCode)
+//============= Scripts End ===============
+
+// ****************************************
+// NOTES
+// ****************************************
+{
+}
+
+
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>1</ID>
+          <Description>"Enable/Disable God Mode"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableGM</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>4</ID>
+          <Description>"Enable/Disable Unlimited Stamina"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMS</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>3</ID>
+          <Description>"Enable/Disable Unlimited Fuel"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMF</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>5</ID>
+          <Description>"Enable/Disable Unlimited Command Points"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMC</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>2</ID>
+          <Description>"Enable/Disable Unlimited Ammo"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMA</Address>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols/>
+  <Comments>===========================================
+ Game Title    : Men of War: Assault Squad
+ Game Version  : 2.00.11
+ Process Name  : mow_assault_squad.exe
+ Script Version: 1.0
+ CE Version    : 6.1
+ Release date  : 05-Feb-2012 (adapted from version 1.98.8)
+ Author        : Recifense
+ Features:
+ - God Mode
+ - Unlimited Fuel
+ - Unlimited Ammo
+ - Full Stamina
+ - Unlimited Command Points
+===========================================
+</Comments>
+</CheatTable>

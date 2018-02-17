@@ -1,0 +1,717 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="14">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>202</ID>
+      <Description>"[X] &lt;== Spellforce 2 Faith in Destiny v2.02 Script v1.1"</Description>
+      <Options moHideChildren="1"/>
+      <Color>FF0000</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>{
+===========================================
+ Game Title    : SpellForce 2 Faith in Destiny
+ Game Version  : 2.02 #85918
+ Proces Name   : SpellForce2FaithinDestiny.exe
+ Script Version: 1.1
+ CE Version    : 6.2
+ Release date  : 02-Jul-2012
+ Author        : Recifense
+ History:
+ 20-Jun-12: First Release
+ 02-Jul-12: Removing unlimited units (v1.1)
+ Features:
+ - Minimum Resources
+ - God Mode
+   - Units
+   - Buildings
+ - Full Mana
+ - Quick Level Up
+ - Minimum Gold
+ - Pointers
+===========================================
+}
+
+//=========================================
+// Definitions
+define(LUDO,"SpellForce2FaithinDestiny.exe")
+
+//=========================================
+[ENABLE]
+//=========================================
+//LuaCall(CheckVersion())
+//=========================================
+// Check if script is compatible to this game version
+// If false the script will not be loaded
+
+assert(LUDO+00250a12,8b 4c 24 1c 3b c8)    //_MR1
+assert(LUDO+00250a54,8b 44 24 1c 3b 47 78) //_MR2
+assert(LUDO+00250a97,8b 44 24 1c 3b 47 78) //_MR3
+assert(LUDO+00464fd0,f3 0f 10 44 24 04)    //_GMH
+assert(LUDO+00425493,f3 0f 10 45 18)       //_GMB
+assert(LUDO+00255764,f3 0f 10 47 18)       //_MM
+assert(LUDO+002bc1d3,8b ce 89 44 24 18)    //_MX
+assert(LUDO+003c4400,8b 41 04 c3)          //_MG
+
+//=========================================
+alloc(MyCode,2048,LUDO)
+//=========================================
+// Declaration section
+label(_MonRes1)
+label(_MonR10)
+label(_BackMR1)
+label(_ExitMR1)
+label(_MonRes2)
+label(_BackMR2)
+label(_ExitMR2)
+label(_MonRes3)
+label(_BackMR3)
+label(_ExitMR3)
+label(_GodModeH)
+label(_BackGMH)
+label(_ExitGMH)
+label(_GodModeB)
+label(_BackGMB)
+label(_ExitGMB)
+label(_MonMana)
+label(_BackMM)
+label(_ExitMM)
+label(_MonXP)
+label(_BackMX)
+label(_ExitMX)
+label(_MonGold)
+label(_BackMG)
+label(_ExitMG)
+label(pUnit)
+label(pXP)
+label(pGold)
+label(pPlayer)
+label(iPlayerID)
+label(iEnableMR)
+label(iEnableGM)
+label(iEnableMM)
+label(iEnableMP)
+label(iEnableMX)
+label(iEnableMG)
+
+//=========================================
+// Registering Symbols
+registersymbol(MyCode)
+registersymbol(pUnit)
+registersymbol(pXP)
+registersymbol(pGold)
+registersymbol(pPlayer)
+registersymbol(iEnableMR)
+registersymbol(iEnableGM)
+registersymbol(iEnableMM)
+registersymbol(iEnableMP)
+registersymbol(iEnableMX)
+registersymbol(iEnableMG)
+
+//=========================================
+MyCode:
+//=========================================
+_MonRes1:
+ mov ecx,[esp+1C]                  // Original code
+ cmp ecx,eax                       // Original code
+ push ebx
+ je _ExitMR1
+
+ mov ebx,[edi+10]
+
+ mov [pPlayer],edi
+ mov [iPlayerID],ebx
+
+ cmp dword ptr [iEnableMP],0
+ je _MonR10                        // Jump if feature is disabled
+
+// mov word ptr [edi+100],0
+
+_MonR10:
+ cmp dword ptr [iEnableMR],0
+ je _ExitMR1                       // Jump if feature is disabled
+
+ mov ebx,#6200
+ cmp ebx,[ecx+10]
+ jle _ExitMR1
+
+ mov [ecx+10],ebx
+
+_ExitMR1:
+ pop ebx
+
+ mov ecx,[esp+1C]                  // Original code
+ cmp ecx,eax                       // Original code
+ jmp _BackMR1                      // Back to main code
+
+//=========================================
+_MonRes2:
+ mov eax,[esp+1C]                  // Original code
+ cmp eax,[edi+78]                  // Original code
+ push ebx
+ je _ExitMR2
+
+ cmp dword ptr [iEnableMR],0
+ je _ExitMR2                       // Jump if feature is disabled
+
+ mov ebx,#6200
+ cmp ebx,[eax+10]
+ jle _ExitMR2
+
+ mov [eax+10],ebx
+
+_ExitMR2:
+ pop ebx
+
+ mov eax,[esp+1C]                  // Original code
+ cmp eax,[edi+78]                  // Original code
+ jmp _BackMR2                      // Back to main code
+
+//=========================================
+_MonRes3:
+ mov eax,[esp+1C]                  // Original code
+ cmp eax,[edi+78]                  // Original code
+ push ebx
+ je _ExitMR3
+
+ cmp dword ptr [iEnableMR],0
+ je _ExitMR3                       // Jump if feature is disabled
+
+ mov ebx,#6200
+ cmp ebx,[eax+10]
+ jle _ExitMR3
+
+ mov [eax+10],ebx
+
+_ExitMR3:
+ pop ebx
+
+ mov eax,[esp+1C]                  // Original code
+ cmp eax,[edi+78]                  // Original code
+ jmp _BackMR3                      // Back to main code
+
+//=========================================
+// Human Entity
+_GodModeH:
+ push eax
+ push ebx
+
+ mov eax,[esp+0c]
+ test eax,eax
+ jns _ExitGMH
+
+ mov [pUnit],ecx                   // Save ptr for debugging
+
+ cmp dword ptr [iEnableGM],0
+ je _ExitGMH                       // Jump if feature is disabled
+
+ cmp ebp,05000000
+ jle _ExitGMH
+
+ test ebp,ebp
+ js _ExitGMH
+
+ mov eax,[ebp+000000d8]
+ cmp eax,[iPlayerID]
+ jne _ExitGMH
+
+ xor eax,eax                       // value2decrease = 0
+ mov [esp+0c],eax
+
+ mov eax,[ecx+1c]
+ cmp eax,[ecx+18]
+ jle _ExitGMH
+
+ mov [ecx+18],eax
+
+_ExitGMH:
+ pop ebx
+ pop eax
+
+ movss xmm0,[esp+04]               // Original code
+ jmp _BackGMH                      // Back to main code
+
+//=========================================
+// Building Entity
+_GodModeB:
+ push eax
+
+ cmp dword ptr [iEnableGM],0
+ je _ExitGMB                       // Jump if feature is disabled
+
+ mov eax,[esi+000000bc]
+ cmp eax,[iPlayerID]
+ jne _ExitGMB
+
+ mov eax,[ebp+1c]
+ cmp eax,[ebp+18]
+ jle _ExitGMB
+
+ mov [ebp+18],eax
+
+_ExitGMB:
+ pop eax
+
+ movss xmm0,[ebp+18]               // Original code (rd HP)
+ jmp _BackGMB                      // Back to main code
+
+//=========================================
+_MonMana:
+ push eax
+
+ cmp dword ptr [iEnableMM],0
+ je _ExitMM                       // Jump if feature is disabled
+
+ mov eax,[esi+000000d8]
+ cmp eax,[iPlayerID]
+ jne _ExitMM
+
+ mov eax,[edi+1c]
+ cmp eax,[edi+18]
+ jle _ExitMM
+
+ mov [edi+18],eax
+
+_ExitMM:
+ pop eax
+
+ movss xmm0,[edi+18]               // Original code (rd mana)
+ jmp _BackMM                       // Back to main code
+
+//=========================================
+// ESI = pXP  (ESP+20 = pUnitInfo)
+// EAX = XP_Needed
+_MonXP:
+ mov [pXP],esi
+
+ cmp dword ptr [iEnableMX],0
+ je _ExitMX                        // Jump if feature is disabled
+
+ mov ecx,[esi+00000094]
+ cmp eax,ecx
+ jle _ExitMX
+
+ mov ecx,eax
+ dec ecx
+ mov [esi+00000094],ecx            // cXP = needed - 1
+
+_ExitMX:
+ mov [esp+18],eax                  // Original code (needed XP)
+ mov ecx,esi                       // Original code (pXP)
+ jmp _BackMX                       // Back to main code
+
+//=========================================
+// In the inventory
+_MonGold:
+ mov [pGold],ecx
+
+ cmp dword ptr [iEnableMG],0
+ je _ExitMG                        // Jump if feature is disabled
+
+ mov eax,#62000
+ cmp eax,[ecx+04]
+ jle _ExitMG
+
+ mov [ecx+04],eax
+
+_ExitMG:
+ mov eax,[ecx+04]                  // Original code (gold)
+ ret                               // Original code
+ jmp _BackMG                       // Back to main code (just to keep the template)
+
+//=========================================
+ db '===========================&gt;'
+ db 'CE6.2 Script by Recifense 070212'
+//=========================================
+// Variables
+iEnableMR:
+ dd 0
+iEnableGM:
+ dd 0
+iEnableMM:
+ dd 0
+iEnableMP:
+ dd 0
+iEnableMX:
+ dd 0
+iEnableMG:
+ dd 0
+pUnit:
+ dd 0
+pXP:
+ dd 0
+pGold:
+ dd 0
+pPlayer:
+ dd MyCode
+iPlayerID:
+ dd MyCode
+
+//=========================================
+// Hacking Points
+LUDO+00250a12:
+ jmp _MonRes1
+ nop
+_BackMR1:
+
+LUDO+00250a54:
+ jmp _MonRes2
+ nop
+ nop
+_BackMR2:
+
+LUDO+00250a97:
+ jmp _MonRes3
+ nop
+ nop
+_BackMR3:
+
+LUDO+00464fd0:
+ jmp _GodModeH
+ nop
+_BackGMH:
+
+LUDO+00425493:
+ jmp _GodModeB
+_BackGMB:
+
+LUDO+00255764:
+ jmp _MonMana
+_BackMM:
+
+LUDO+002bc1d3:
+ jmp _MonXP
+ nop
+_BackMX:
+
+LUDO+003c4400:
+ jmp _MonGold
+_BackMG:
+
+//=========================================
+// Script for Restoring Original Codes
+[DISABLE]
+LUDO+00250a12:
+// mov ecx,[esp+1C]
+// cmp ecx,eax
+ db 8b 4c 24 1c 3b c8
+
+LUDO+00250a54:
+// mov eax,[esp+1C]
+// cmp eax,[edi+78]
+ db 8b 44 24 1c 3b 47 78
+
+LUDO+00250a97:
+// mov eax,[esp+1C]
+// cmp eax,[edi+78]
+ db 8b 44 24 1c 3b 47 78
+
+LUDO+00464fd0:
+// movss xmm0,[esp+04]
+ db f3 0f 10 44 24 04
+
+LUDO+00425493:
+// movss xmm0,[ebp+18]
+ db f3 0f 10 45 18
+
+LUDO+00255764:
+// movss xmm0,[edi+18]
+ db f3 0f 10 47 18
+
+LUDO+002bc1d3:
+// mov ecx,esi
+// mov [esp+18],eax
+ db 8b ce 89 44 24 18
+
+LUDO+003c4400:
+// mov eax,[ecx+04]
+// ret
+// int 3
+ db 8b 41 04 c3 cc
+
+//=========================================
+// Unregistering Symbols
+unregistersymbol(MyCode)
+unregistersymbol(pUnit)
+unregistersymbol(pXP)
+unregistersymbol(pGold)
+unregistersymbol(pPlayer)
+unregistersymbol(iEnableMR)
+unregistersymbol(iEnableGM)
+unregistersymbol(iEnableMM)
+unregistersymbol(iEnableMP)
+unregistersymbol(iEnableMX)
+unregistersymbol(iEnableMG)
+
+//=========================================
+dealloc(MyCode)
+//============= Scripts End ===============
+
+// ****************************************
+// NOTES
+// ****************************************
+{
+}
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>179</ID>
+          <Description>"Enable/Disable Minimum Resources =&gt; (1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMR</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>208</ID>
+          <Description>"Enable/Disable God Mode =&gt; (1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableGM</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>209</ID>
+          <Description>"Enable/Disable Full Mana =&gt; (1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMM</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>211</ID>
+          <Description>"Enable/Disable Quick Level Up =&gt; (1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMX</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>212</ID>
+          <Description>"Enable/Disable Minimum Gold =&gt; (1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMG</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>204</ID>
+          <Description>"========= Some Hero's Explicit Values ========="</Description>
+          <ShowAsHex>1</ShowAsHex>
+          <Color>0000FF</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>pXP</Address>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>205</ID>
+              <Description>"Current Experience Points"</Description>
+              <Color>0000FF</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pXP</Address>
+              <Offsets>
+                <Offset>94</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>206</ID>
+              <Description>"Available Attribute Points"</Description>
+              <Color>0000FF</Color>
+              <VariableType>2 Bytes</VariableType>
+              <Address>pXP</Address>
+              <Offsets>
+                <Offset>12</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>207</ID>
+              <Description>"Current Gold"</Description>
+              <Color>0000FF</Color>
+              <VariableType>2 Bytes</VariableType>
+              <Address>pGold</Address>
+              <Offsets>
+                <Offset>4</Offset>
+              </Offsets>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols>
+    <SymbolEntry>
+      <Name>pUnit</Name>
+      <Address>01D80258</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>pXP</Name>
+      <Address>01D8025C</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>pGold</Name>
+      <Address>01D80260</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>pPlayer</Name>
+      <Address>01D80264</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>iEnableMR</Name>
+      <Address>01D80240</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>iEnableGM</Name>
+      <Address>01D80244</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>iEnableMM</Name>
+      <Address>01D80248</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>iEnableMP</Name>
+      <Address>01D8024C</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>iEnableMX</Name>
+      <Address>01D80250</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>iEnableMG</Name>
+      <Address>01D80254</Address>
+    </SymbolEntry>
+  </UserdefinedSymbols>
+  <Comments>===========================================
+ Game Title    : SpellForce 2 Faith in Destiny
+ Game Version  : 2.02 #85918
+ Proces Name   : SpellForce2FaithinDestiny.exe
+ Script Version: 1.1
+ CE Version    : 6.2
+ Release date  : 02-Jul-2012
+ Author        : Recifense
+ History:
+ 20-Jun-12: First Release
+ 02-Jul-12: Removing unlimited units (v1.1)
+ Features:
+ - Minimum Resources [1]
+ - God Mode          [2]
+   - Units
+   - Buildings
+ - Full Mana         [3]
+ - Unlimited Units   [4]
+ - Quick Level Up    [5]
+ - Minimum Gold      [6]
+ - Pointers
+===========================================
+[1] The minimum resource value is 6200. It is valid during the RTS part of the game;
+[2] Units and Buildings (RTS and RPG);
+[3] For the hero and all his units; (RTS and RPG);
+[4] The number of units produced will be set to 0. (RTS)
+[5] The hero's XP will be set to the value needed - 1. (RPG)
+[6] The hero's minimum gold will be 62000. (RPG)
+===========================================
+HOTKEYS:
+CTRL+Home = ENABLE  all features (cheats);
+CTRL+End  = DISABLE all features (cheats);
+===========================================
+[NOTE] All cheats are disabled by default. For enabling any of them, just change its value to 1.
+[NOTE] You can set/change different hotkeys for each cheat or group of cheats.
+[NOTE] You can also set hotkeys for the explicit values.
+===========================================
+Visit the forum at www.cheatengine.org
+===========================================
+Cheers!
+</Comments>
+</CheatTable>

@@ -1,0 +1,1103 @@
+<?xml version="1.0"?>
+<CheatTable CheatEngineTableVersion="11">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>41</ID>
+      <Description>"[X] &lt;== TW - Shogun 2 V1.10 (4768) Script RTS"</Description>
+      <Options moHideChildren="1"/>
+      <Color>80000008</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>{
+===========================================
+ Game Title    : Total War - Shogun 2 (Rise of the Samurai)
+ Game Version  : 1.10 (Build 4768)
+ Process Name  : Shogun2.exe
+ Script Version: 2.2
+ CE Version    : 6.1
+ Release date  : 13-Jan-2012
+ Author        : Recifense
+ Features:
+ - God Mode
+ - Unlimited Ammo (Arrows, Bombs, etc)
+===========================================
+}
+
+[ENABLE]
+//=========================================
+// Check if script is compatible to this game version
+// If false the script will not be loaded
+
+assert(Shogun2.dll+00d9ee60,53 56 8b 74 24 0c 8b 86 08 02 00)
+//aobscan(aobGodMode,53 56 8b 74 24 0c 8b 86 08 02 00 00 8b 40 18)
+
+assert(Shogun2.dll+00ca6d70,83 ec 5c 53 55 56 8b f1 8b 86 cc)
+//aobscan(aobGodMode1,83 ec 5c 53 55 56 8b f1 8b 86 cc 01 00 00)
+
+assert(Shogun2.dll+00065b35,0f 2f c8 f3 0f 11 86 a4 0f 00 00)
+//aobscan(aobMonAmmo,0f 2f c8 f3 0f 11 86 a4 0f 00 00)
+
+assert(Shogun2.dll+00271cb0,56 57 8b 7c 24 0c 8b f1 8b 8f ac)
+//aobscan(aobGodModeS,56 57 8b 7c 24 0c 8b f1 8b 8f ac 03 00 00)
+
+assert(Shogun2.dll+000dc8f9,8b 4e 40 2b cb 89 4c 24 2c c7 44)
+//aobscan(aobGodModeSH,8b 4e 40 2b cb 89 4c 24 2c c7 44 24 38 00 00 00)
+
+//=========================================
+alloc(MyCodeG,1024)
+//=========================================
+// Declaration section
+label(_GodMode)
+label(_GodM00)
+label(_GodM01)
+label(_BackGM)
+label(_ExitGM)
+label(_GodMode1)
+label(_GodM10)
+label(_GodM11)
+label(_BackGM1)
+label(_ExitGM1)
+label(_MonAmmo)
+label(_MonA0)
+label(_MonA1)
+label(_BackMA)
+label(_ExitMA)
+label(_GodModeS)
+label(_BackGMS)
+label(_ExitGMS)
+label(_GodModeSH)
+label(_BackGMSH)
+label(_ExitGMSH)
+
+label(iEnableGM)
+label(iEnableMA)
+
+label(iPlayerID)
+label(iEAX)
+label(iEAX1)
+label(iEAX2)
+label(iEDI)
+label(aLast)
+label(iCount)
+label(iCount1)
+label(pCaller)
+
+//=========================================
+// Registering Symbols
+registersymbol(MyCodeG)
+registersymbol(iEnableGM)
+registersymbol(iEnableMA)
+registersymbol(iPlayerID)
+
+registersymbol(aLast)
+registersymbol(iCount)
+registersymbol(iCount1)
+registersymbol(pCaller)
+
+//=========================================
+MyCodeG:
+//=========================================
+_GodMode:
+ mov [iEAX],eax                    // Save EAX
+
+ mov eax,[esp+04]                  // Get Unit
+ mov eax,[eax+00000210]            // Get pTroop ** 208
+ test eax,eax
+ jnz _GodM00                       // Jump if the pointer is null
+
+ mov eax,[esp+04]                  // Get Unit
+ mov eax,[eax+00000218]            // Get pShip ** 210
+ test eax,eax
+ jz _ExitGM                        // Jump if the pointer is null
+
+ mov al,[eax+00001120]             // Get pCommon **111c
+ cmp al,[iPlayerID]                // Is it a Player's Troop ?
+ jne _ExitGM                       // Jump if false
+
+ inc dword ptr [iCount]
+
+ cmp dword ptr [iEnableGM],0
+ je _ExitGM                        // Jump if feature is disabled
+
+ jmp _GodM01
+//=====
+_GodM00:
+ mov al,[eax+00000c09]             // Get pCommon ** b9f
+ cmp al,[iPlayerID]                // Is it a Player's Troop ?
+ jne _ExitGM                       // Jump if false
+
+ cmp dword ptr [iEnableGM],0
+ je _ExitGM                        // Jump if feature is disabled
+
+_GodM01:
+ mov dword ptr [aLast],'GoMo'
+
+ mov eax,[iEAX]                    // Restore EAX
+ ret 0004                          // Avoid routine
+//-----
+_ExitGM:
+ mov eax,[iEAX]                    // Restore EAX
+
+ push ebx                          // Original code
+ push esi                          // Original code
+ mov esi,[esp+0C]                  // Original code
+ jmp _BackGM                       // Back to main code
+
+ //=========================================
+_GodMode1:
+ mov [iEAX1],eax                   // Save EAX
+
+ mov eax,[ecx+00000210]            // Get pTroop
+ test eax,eax
+ jnz _GodM10                       // Jump if the pointer is not null
+
+ mov eax,[ecx+00000218]            // Get pShip
+ test eax,eax
+ jz _ExitGM1                       // Jump if the pointer is null
+
+ inc dword ptr [iCount1]
+
+// Ship Crew
+ mov al,[eax+00001120]             // Get pCommon *
+ cmp al,[iPlayerID]                // Is it a Player's Troop ?
+ jne _ExitGM1                      // Jump if false
+
+ cmp dword ptr [iEnableGM],0
+ je _ExitGM1                       // Jump if feature is disabled
+ jmp _GodM11
+//Land Soldiers
+_GodM10:
+ mov al,[eax+00000c09]             // Get pCommon
+ cmp al,[iPlayerID]                // Is it a Player's Troop ?
+ jne _ExitGM1                      // Jump if false
+
+ cmp dword ptr [iEnableGM],0
+ je _ExitGM1                       // Jump if feature is disabled
+
+_GodM11:
+ mov dword ptr [aLast],'GoM1'
+
+ mov eax,[esp]
+ mov [pCaller],eax
+
+ mov eax,[iEAX1]                   // Restore EAX
+ ret 0004                          // Avoid routine
+//-----
+_ExitGM1:
+ mov eax,[iEAX1]                   // Restore EAX
+
+ sub esp,5C                        // Original code
+ push ebx                          // Original code
+ push ebp                          // Original code
+ jmp _BackGM1                      // Back to main code
+
+//========================================= V110
+_MonAmmo:
+ mov dword ptr [aLast],'MoAm'
+
+ mov al,[esi+00000c09]             // Get pCommon
+ cmp al,[iPlayerID]                // Is it a Player's Troop ?
+ jne _ExitMA                       // Jump if false
+
+ cmp dword ptr [iEnableMA],0
+ je _MonA0                         // Jump if feature is disabled
+
+ cvtsi2ss xmm0,[esi+00000Fa8]      // Get Maximum Ammo
+
+_MonA0:
+_MonA1:
+_ExitMA:
+ comiss xmm1,xmm0                  // Update EFLAGS
+ movss [esi+00000Fa4],xmm0         // Original code
+ jmp _BackMA                       // Back to main code
+
+//========================================= V110
+_GodModeS:
+ mov [iEAX2],eax                   // Save EAX
+ mov [iEDI],edi                    // Save EDI
+
+ mov edi,[esp+04]                  // Get pUnit
+
+ mov eax,[edi+00000218]            // Get pShip
+ test eax,eax
+ jz _ExitGMS                       // Jump if the pointer is null
+
+ mov al,[eax+00001120]             // Get pCommon
+ cmp al,[iPlayerID]                // Is it a Player's Troop ?
+ jne _ExitGMS                      // Jump if false
+
+ cmp dword ptr [iEnableGM],0
+ je _ExitGMS                       // Jump if feature is disabled
+
+ mov dword ptr [aLast],'GoMS'
+
+ mov eax,[iEAX2]                   // Restore EAX
+ mov edi,[iEDI]                    // Restore EDI
+ ret 0004                          // Avoid routine
+//-----
+_ExitGMS:
+ mov edi,[iEDI]                    // Restore EDI
+ mov eax,[iEAX2]                   // Restore EAX
+
+ push esi                          // Original code
+ push edi                          // Original code
+ mov edi,[esp+0C]                  // Original code
+ jmp _BackGMS                      // Back to main code
+
+//=========================================
+// Ship Hull
+_GodModeSH:
+ mov dword ptr [aLast],'GMSH'
+
+ mov ecx,[esi+24]                  // Get pShip (ESI = pShipPart)
+ test ecx,ecx
+ jz _ExitGMSH                      // Jump if the pointer is null
+
+ mov cl,[ecx+00001120]             // Get pCommon
+ cmp cl,[iPlayerID]                // Is it a Player's Troop ?
+ jne _ExitGMSH                     // Jump if false
+
+ cmp dword ptr [iEnableGM],0
+ je _ExitGMSH                      // Jump if feature is disabled
+
+ mov ecx,[esi+1c]                  // Get max HP
+ mov [esi+40],ecx                  // Update cur HP
+
+ xor ebx,ebx                       // value2decrease = 0
+
+_ExitGMSH:
+ mov ecx,[esi+40]                  // Original code
+ sub ecx,ebx                       // Original code
+ jmp _BackGMSH                     // Back to main code
+
+//=========================================
+ db '===================&gt;'
+ db 'CE6.1 Script by Recifense 011312'
+//=========================================
+// Variables
+iEnableGM:
+ dd 1
+iEnableMA:
+ dd 1
+iPlayerID:
+ dd 0
+iEAX:
+ dd 0
+iEAX1:
+ dd 0
+iEAX2:
+ dd 0
+iEDI:
+ dd 0
+aLast:
+ dd 'CE61'
+iCount:
+ dd 0
+iCount1:
+ dd 0
+pCaller:
+ dd 0
+
+//=========================================
+// Hacking Points
+//aobGodMode:
+//pGodMode:
+Shogun2.dll+00d9ee60:
+ jmp _GodMode
+ nop
+_BackGM:
+
+//aobGodMode1:
+//pGodMode1:
+Shogun2.dll+00ca6d70:
+ jmp _GodMode1
+_BackGM1:
+
+//aobMonAmmo+03:
+//pMonAmmo:
+Shogun2.dll+00065b38:
+ jmp _MonAmmo
+ nop
+ nop
+ nop
+_BackMA:
+
+//aobGodModeS:
+//pGodModeS:
+Shogun2.dll+00271cb0:
+ jmp _GodModeS
+ nop
+_BackGMS:
+
+//aobGodModeSH:
+//pGodModeSH:
+Shogun2.dll+000dc8f9:
+ jmp _GodModeSH
+_BackGMSH:
+
+//=========================================
+// Script for Restoring Original Codes
+[DISABLE]
+//pGodMode:
+Shogun2.dll+00d9ee60:
+// push ebx
+// push esi
+// mov esi,[esp+0C]
+ db 53 56 8b 74 24 0c
+
+//pGodMode1:
+Shogun2.dll+00ca6d70:
+// sub esp,5C
+// push ebx
+// push ebp
+ db 83 ec 5c 53 55
+
+//pMonAmmo:
+Shogun2.dll+00065b38:
+// movss [esi+00000FA4],xmm0
+ db f3 0f 11 86 a4 0f 00 00
+
+//pGodModeS:
+Shogun2.dll+00271cb0:
+// push esi
+// push edi
+// mov edi,[esp+0C]
+ db 56 57 8b 7c 24 0c
+
+//pGodModeSH:
+Shogun2.dll+000dc8f9:
+// mov ecx,[esi+40]
+// sub ecx,ebx
+ db 8b 4e 40 2b cb
+
+//=========================================
+// Unregistering Symbols
+unregistersymbol(MyCodeG)
+unregistersymbol(iEnableGM)
+unregistersymbol(iEnableMA)
+unregistersymbol(iPlayerID)
+
+unregistersymbol(aLast)
+unregistersymbol(iCount)
+unregistersymbol(iCount1)
+unregistersymbol(pCaller)
+
+//=========================================
+dealloc(MyCodeG)
+//============= Scripts End ===============
+
+// ****************************************
+// NOTES
+// ****************************************
+{
+}
+
+</AssemblerScript>
+      <Hotkeys>
+        <Hotkey>
+          <Action>Toggle Activation</Action>
+          <Keys>
+            <Key>17</Key>
+            <Key>36</Key>
+          </Keys>
+          <ID>0</ID>
+        </Hotkey>
+      </Hotkeys>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>1</ID>
+          <Description>"Enable/Disable God Mode"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableGM</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>2</ID>
+          <Description>"Enable/Disable Unlimited Ammo"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMA</Address>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>58</ID>
+      <Description>"[X] &lt;== TW - Shogun 2 V1.10 (4768) Script TBS"</Description>
+      <Options moHideChildren="1"/>
+      <Color>80000008</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>{
+===========================================
+ Game Title    : Total War - Shogun 2 (Rise of the Samurai)
+ Game Version  : 1.10 (Build 4768)
+ Process Name  : Shogun2.exe
+ Script Version: 2.2
+ CE Version    : 6.1
+ Release date  : 13-Jan-2012
+ Author        : Recifense
+ Features:
+ - Unlimited Movement Points (Army on strategic map)
+ - Recover Troop Size when army moves (Army on strategic map)
+ - One turn Recruitment (Troops and Ships)
+ - One turn Research (Mastery on Arts)
+ - Minimum Gold (on strategic map)
+ - Pointer to Player's current gold (on strategic map)
+ - Pointer to Skill points of select army's officer (on strategic map)
+ - Pointer to Player's Agent that last moved (on strategic map)
+ [Note] In order to identify the human player, at the start/load of
+ any game, selected a troop with an officer or selected a city info.
+===========================================
+}
+
+[ENABLE]
+//=========================================
+// Check if script is compatible to this game version
+// If false the script will not be loaded
+
+//aobscan(aobMonGold,8b 81 6c 04 00 00 c3 cc cc cc)
+assert(Shogun2.dll+0094a280,8b 81 6c 04 00 00 c3 cc cc cc)
+
+//aobscan(aobMonMP,2b d7 89 50 6c ?? ?? c7 40 6c 00 00 00 00)
+assert(Shogun2.dll+005800e0,2b d7 89 50 6c ?? ?? c7 40 6c 00 00 00 00)
+
+//aobscan(aobMonSelOfficer,39 98 14 1c 00 00 ?? ?? 8b bf 7c 08 00 00)
+assert(Shogun2.dll+004650fc,39 98 14 1c 00 00 ?? ?? 8b bf 7c 08 00 00)
+
+//aobscan(aobMonSelTown,8b 86 cc 00 00 00 03 86 c0 00 00 00 6a 00) // NHP
+assert(Shogun2.dll+00914df3,8b 86 cc 00 00 00 03 86 c0 00 00 00 6a 00)
+
+//aobscan(aobMonMP1,2b c2 89 41 1c c2 04 00 c7 41 1c 00 00 00 00 c2 04 00)
+assert(Shogun2.dll+00717825,2b c2 89 41 1c c2 04 00 c7 41 1c 00 00 00 00 c2 04 00)
+
+//aobscan(aobMonProd,8b 17 8b 42 0c 8b cf ff d0 39 a8 ac 00 00 00) // NHP
+assert(Shogun2.dll+00d038b6,8b 17 8b 42 0c 8b cf ff d0 39 a8 ac 00 00 00)
+{
+//aobscan(aobMonResearch,03 d0 3b 51 1c ?? ?? 8b b6 b0 07 00 00)
+assert(Shogun2.dll+009b3486,03 d0 3b 51 1c ?? ?? 8b b6 b0 07 00 00)
+}
+assert(Shogun2.dll+00c11881,8b 49 1c 2b 4e 08 8b c7 33 d2 85 c0) //NHP
+
+//=========================================
+alloc(MyCode,1024)
+//=========================================
+// Declaration section
+label(_MonGold)
+label(_BackMG)
+label(_ExitMG)
+label(_MonMP)
+label(_MonM0)
+label(_BackMM)
+label(_ExitMM)
+label(_MonSelOfficer)
+label(_BackMSO)
+label(_ExitMSO)
+label(_MonSelTown)
+label(_BackMST)
+label(_ExitMST)
+label(_MonMP1)
+label(_BackMM1)
+label(_ExitMM1)
+label(_MonProd)
+label(_BackMPr)
+label(_ExitMPr)
+label(_MonResearch)
+label(_BackMR)
+label(_ExitMR)
+
+label(pSel)
+label(pGold)
+label(pOfficer)
+label(pTown)
+label(pAgent)
+
+label(iEnableQR)
+label(iEnableMG)
+label(iEnableMM)
+label(iEnableMTS)
+label(iEnableMP)
+label(iEnableMR)
+label(iEnableMC)
+label(iMinGold)
+label(aLast1)
+
+label(iCountMST)
+label(iCountMPR)
+
+//=========================================
+// Registering Symbols
+registersymbol(MyCode)
+registersymbol(pSel)
+registersymbol(pGold)
+registersymbol(pOfficer)
+registersymbol(pTown)
+registersymbol(pAgent)
+registersymbol(iEnableQR)
+registersymbol(iEnableMG)
+registersymbol(iEnableMM)
+registersymbol(iEnableMTS)
+registersymbol(iEnableMP)
+registersymbol(iEnableMR)
+registersymbol(iEnableMC)
+registersymbol(iMinGold)
+
+registersymbol(aLast1)
+
+registersymbol(iCountMST)
+registersymbol(iCountMPR)
+
+//=========================================
+MyCode:
+//=========================================
+// TBS Gold
+_MonGold:
+ mov dword ptr [aLast1],'MoGo'
+
+ mov eax,[ecx+00000470]            // Get pointer to player
+
+ cmp eax,[pGold]
+ jne _ExitMG
+
+ cmp dword ptr [iEnableMG],0
+ je _ExitMG                        // Jump if feature is disabled
+
+ mov eax,[iMinGold]
+ cmp eax,[ecx+0000046C]
+ jle _ExitMG
+
+ mov [ecx+0000046C],eax            // Update gold
+
+_ExitMG:
+ mov eax,[ecx+0000046C]            // Original code
+ jmp _BackMG                       // Back to main code
+
+//=========================================
+// TBS Troop Movement Points/Size
+_MonMP:
+ mov dword ptr [aLast1],'MoMP'
+
+ push ecx
+
+ mov ecx,[eax+44]                  // Get pointer to Owner
+ cmp ecx,[pGold]                   // Is it a player's troop?
+ jne _ExitMM
+
+ cmp dword ptr [iEnableMM],0
+ je _MonM0                         // Jump if feature is disabled
+
+ xor edi,edi                       // value2decrease = 0
+
+_MonM0:
+ cmp dword ptr [iEnableMTS],0
+ je _ExitMM                        // Jump if feature is disabled
+
+ mov ecx,[eax+50]                  // Get troop maximum size
+ mov [eax+4c],ecx                  // Update current size
+
+_ExitMM:
+ pop ecx
+
+ sub edx,edi                       // Original code
+ mov [eax+6C],edx                  // Original code
+ jmp _BackMM                       // Back to main code
+
+//=========================================
+// TBS Selected Officer
+_MonSelOfficer:
+ mov dword ptr [aLast1],'MoSO'
+
+ mov [pOfficer],eax
+
+ mov ebx,[eax+000002b4]            // Get pointer to ptr to Owner
+ test ebx,ebx
+ jz _ExitMSO
+
+ mov ebx,[ebx]
+
+ mov [pGold],ebx
+
+_ExitMSO:
+ cmp [eax+00001C14],ebx            // Original code
+ jmp _BackMSO                      // Back to main code
+
+//========================================= NHP
+// TBS Find out player ID via Selected City Info
+_MonSelTown:
+ mov dword ptr [aLast1],'MoST'
+
+ inc dword ptr [iCountMST]
+
+ mov eax,[esi+40]
+ mov [pGold],eax
+ mov [pTown],esi
+
+_ExitMST:
+ mov eax,[esi+000000CC]            // Original code
+ jmp _BackMST                      // Back to main code
+
+//=========================================
+// TBS Agents Movement Points
+_MonMP1:
+ mov dword ptr [aLast1],'MMP1'
+
+ push ebx
+
+ mov ebx,[ecx+000002b4]            // Get pointer to ptr to Owner
+ test ebx,ebx
+ jz _ExitMM1
+
+ mov ebx,[ebx]
+ cmp ebx,[pGold]                   // Is it a player's Agent?
+ jne _ExitMM1
+
+ mov [pAgent],ecx
+
+ cmp dword ptr [iEnableMM],0
+ je _ExitMM1                       // Jump if feature is disabled
+
+ mov ebx,[ecx+18]                  // Get Max MP
+ mov [ecx+1C],ebx                  // Cur = max
+
+ mov eax,ebx
+ xor edx,edx                       // value2decrease = 0
+
+_ExitMM1:
+ pop ebx
+
+ sub eax,edx                       // Original code
+ mov [ecx+1C],eax                  // Original code
+ jmp _BackMM1                      // Back to main code
+
+//========================================= NHP
+// TBS Troop Production of selected Town
+_MonProd:
+ mov dword ptr [aLast1],'MoPr'
+
+ inc dword ptr [iCountMPR]
+
+ mov edx,[edi+14]                  // Get pointer to Town
+ test edx,edx
+ jz _ExitMPr
+
+ mov eax,[edx+40]                  // Get pointer to ptr to Owner
+ test eax,eax
+ jz _ExitMPr
+
+ cmp eax,[pGold]                   // Is it a player's Town?
+ jne _ExitMPr
+
+ cmp dword ptr [iEnableMP],0
+ je _ExitMPr                       // Jump if feature is disabled
+
+ xor eax,eax
+ mov [edi+1c],eax                  // Make it one turn production
+
+_ExitMPr:
+ mov edx,[edi]                     // Original code
+ mov eax,[edx+0C]                  // Original code
+ jmp _BackMPr                      // Back to main code
+
+//========================================= NHP
+// TBS Research Progress
+_MonResearch:
+ mov dword ptr [aLast1],'MoRe'
+
+ cmp dword ptr [iEnableMR],0
+ je _ExitMR                        // Jump if feature is disabled
+
+ mov eax,[esi+08]                  // Get research points
+ mov [ecx+1c],eax                  // Update points needed to complete research
+
+_ExitMR:
+ mov ecx,[ecx+1C]                  // Original code
+ sub ecx,[esi+08]                  // Original code
+ jmp _BackMR                       // Back to main code
+{
+//=========================================
+// TBS Research Progress
+_MonResearch:
+ mov dword ptr [aLast1],'MoRe'
+
+ cmp dword ptr [iEnableMR],0
+ je _ExitMR                        // Jump if feature is disabled
+
+ cmp ebp,[pGold]                   // Is it a player's research
+ jne _ExitMR                       // Jump if false
+
+ mov edx,[ecx+1c]                  // Get points needed to complete research
+
+_ExitMR:
+ add edx,eax                       // Original code
+ cmp edx,[ecx+1C]                  // Original code
+ jmp _BackMR                       // Back to main code
+}
+//=========================================
+ db '=============================&gt;'
+ db 'CE6.1 Script by Recifense 011312'
+//=========================================
+// Variables
+iEnableQR:
+ dd 1
+iEnableMG:
+ dd 1
+iEnableMM:
+ dd 1
+iEnableMTS:
+ dd 1
+iEnableMP:
+ dd 1
+iEnableMR:
+ dd 1
+iEnableMC:
+ dd 0
+pSel:
+ dd 0
+pGold:
+ dd MyCode
+pOfficer:
+ dd 0
+pTown:
+ dd 0
+pAgent:
+ dd 0
+iMinGold:
+ dd #50000
+aLast1:
+ dd 'CE61'
+iCountMST:
+ dd 0
+iCountMPR:
+ dd 0
+
+//=========================================
+// Hacking Points
+//aobMonGold:
+//pMonGold:
+Shogun2.dll+0094a280:
+ jmp _MonGold
+ nop
+_BackMG:
+
+//aobMonMP:
+//pMonMP:
+Shogun2.dll+005800e0:
+ jmp _MonMP
+_BackMM:
+
+//aobMonSelOfficer:
+//pMonSelOfficer:
+Shogun2.dll+004650fc:
+ jmp _MonSelOfficer
+ nop
+_BackMSO:
+
+//aobMonSelTown: //NHP
+//pMonSelTown:
+Shogun2.dll+00914df3:
+ jmp _MonSelTown
+ nop
+_BackMST:
+
+//aobMonMP1:
+//pMonMP1:
+Shogun2.dll+00717825:
+ jmp _MonMP1
+_BackMM1:
+
+//aobMonProd: //NHP
+//pMonProd:
+Shogun2.dll+00d038b6:
+ jmp _MonProd
+_BackMPr:
+{
+//aobMonResearch:
+//pMonResearch:
+Shogun2.dll+009b3486:
+ jmp _MonResearch
+_BackMR:
+}
+Shogun2.dll+00c11881: //NHP
+ jmp _MonResearch
+ nop
+_BackMR:
+
+//=========================================
+// Script for Restoring Original Codes
+[DISABLE]
+//pMonGold:
+Shogun2.dll+0094a280:
+// mov eax,[ecx+0000046C]
+ db 8b 81 6c 04 00 00
+
+//pMonMP:
+Shogun2.dll+005800e0:
+// sub edx,edi
+// mov [eax+6C],edx
+ db 2b d7 89 50 6c
+
+//pMonSelOfficer:
+Shogun2.dll+004650fc:
+// cmp [eax+00001C14],ebx
+ db 39 98 14 1c 00 00
+
+//pMonSelTown: // NHP
+Shogun2.dll+00914df3:
+// mov eax,[esi+000000CC]
+ db 8b 86 cc 00 00 00
+
+//pMonMP1:
+Shogun2.dll+00717825:
+// sub eax,edx
+// mov [ecx+1C],eax
+ db 2b c2 89 41 1c
+
+//pMonProd: //NHP
+Shogun2.dll+00d038b6:
+// mov edx,[edi]
+// mov eax,[edx+0C]
+ db 8b 17 8b 42 0c
+{
+//pMonResearch:
+Shogun2.dll+009b3486:
+// add edx,eax
+// cmp edx,[ecx+1C]
+ db 03 d0 3b 51 1c
+}
+Shogun2.dll+00c11881: //NHP
+// mov ecx,[ecx+1C]
+// sub ecx,[esi+08]
+ db 8b 49 1c 2b 4e 08
+
+//=========================================
+// Unregistering Symbols
+unregistersymbol(MyCode)
+unregistersymbol(pSel)
+unregistersymbol(pGold)
+unregistersymbol(pOfficer)
+unregistersymbol(pTown)
+unregistersymbol(pAgent)
+unregistersymbol(iEnableQR)
+unregistersymbol(iEnableMG)
+unregistersymbol(iEnableMM)
+unregistersymbol(iEnableMTS)
+unregistersymbol(iEnableMP)
+unregistersymbol(iEnableMR)
+unregistersymbol(iMinGold)
+
+unregistersymbol(aLast1)
+
+unregistersymbol(iCountMST)
+unregistersymbol(iCountMPR)
+
+//=========================================
+dealloc(MyCode)
+//============= Scripts End ===============
+
+// ****************************************
+// NOTES
+// ****************************************
+{
+}
+
+</AssemblerScript>
+      <Hotkeys>
+        <Hotkey>
+          <Action>Toggle Activation</Action>
+          <Keys>
+            <Key>17</Key>
+            <Key>35</Key>
+          </Keys>
+          <ID>0</ID>
+        </Hotkey>
+      </Hotkeys>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>3</ID>
+          <Description>"Enable/Disable Unlimited Movement Points"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMM</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>4</ID>
+          <Description>"Enable/Disable Auto Troop Size Recover"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMTS</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>5</ID>
+          <Description>"Enable/Disable Minimum Gold"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMG</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>6</ID>
+          <Description>"Enable/Disable One Turn Research"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMR</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>7</ID>
+          <Description>"Enable/Disable One Turn Recruitment"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMP</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>8</ID>
+          <Description>"Minimum Gold"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iMinGold</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>9</ID>
+          <Description>"Player's Current Gold"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>pGold</Address>
+          <Offsets>
+            <Offset>4FC</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>10</ID>
+          <Description>"Selected General's Skill Points"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>pOfficer</Address>
+          <Offsets>
+            <Offset>1C14</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>24</ID>
+          <Description>"Selected General's Current XP"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>pOfficer</Address>
+          <Offsets>
+            <Offset>1C1C</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>19</ID>
+          <Description>"Last Moved Agent's Skill Points"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>pAgent</Address>
+          <Offsets>
+            <Offset>1C14</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>20</ID>
+          <Description>"Last Moved Agent's Current XP"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>pAgent</Address>
+          <Offsets>
+            <Offset>1C1C</Offset>
+          </Offsets>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols>
+    <SymbolEntry>
+      <Name>pTroop</Name>
+      <Address>046A032A</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>pUnit</Name>
+      <Address>046A032E</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>pRot</Name>
+      <Address>046A0332</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>pCommon</Name>
+      <Address>046A033E</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>iCount0</Name>
+      <Address>046A0356</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>iCount2</Name>
+      <Address>046A035E</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>iCount3</Name>
+      <Address>046A0362</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>iCountS</Name>
+      <Address>046A0366</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>pTroop1</Name>
+      <Address>046A034E</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>pUnit1</Name>
+      <Address>046A0352</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>iEnableGM1</Name>
+      <Address>02BA0344</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>iEnableGM2</Name>
+      <Address>02BA0348</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>iEnableGMS</Name>
+      <Address>02BA0354</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>iEnableMC</Name>
+      <Address>02DF0208</Address>
+    </SymbolEntry>
+  </UserdefinedSymbols>
+  <Comments>===========================================
+ Game Title    : Total War - Shogun 2 (Rise of the Samurai)
+ Game Version  : 1.10 (Build 4768)
+ Process Name  : Shogun2.exe
+ Script Version: 2.2
+ CE Version    : 6.1
+ Release date  : 13-Jan-2012
+ Author        : Recifense
+ Features:
+ - God Mode
+ - Unlimited Ammo (Arroes, Bombs, etc)
+ - Unlimited Movement Points (Army on strategic map)
+ - Recover Troop Size when army moves (Army on strategic map)
+ - One turn Recruitment (Troops and Ships)
+ - One turn Research (Mastery on Arts)
+ - Minimum Gold (on strategic map)
+ - Pointer to Player's current gold (on strategic map)
+ - Pointer to Skill points of select army's officer (on strategic map)
+ - Pointer to Player's Agent that last moved (on strategic map)
+ [Note] In order to identify the human player, at the start/load of
+ any game, selected a troop with an officer or selected a city info.
+===========================================
+1) God Mode: For all Units and Ships
+2) Unlimited Ammo (Arrows, Bombs, etc)
+3) Unlimited Movement Points (Army on campaign)
+4) Recover troop size when Army moves (Army on campaign)
+5) One Turn Recruitment (Troops and Ships)
+6) One Turn Research (Mastery of the Arts)
+7) Minimum Gold (On campaign)
+8) Player's Current Gold (On campaign)
+9) Skill points of selected army's general (On Campaign)
+[Note] In order to identify the human player, at the start/load of any game, selected a troop with an officer or selected a city info.
+[Note] For activating the script, just check its "active" box by clicking on it [X].
+[IMPORTANT] The RTS script should be deactivated between turns OR just activated  during a BATTLE !!!!!!!!
+HOT_KEYS:
+CTRL+HOME = Toggle RTS script
+CTRL+END = Toggle TBS Script
+</Comments>
+</CheatTable>

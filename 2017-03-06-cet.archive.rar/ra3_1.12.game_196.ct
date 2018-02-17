@@ -1,0 +1,319 @@
+<?xml version="1.0"?>
+<CheatTable CheatEngineTableVersion="10">
+  <CheatEntries>
+    <CheatEntry>
+      <Description>"RA3_1.12 Script"</Description>
+      <Options moHideChildren="1"/>
+      <Color>80000008</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>{
+===========================================
+ Command and Conquer - Red Alert 3
+ Game Version  :
+ Script Version: 1.0
+ CE Version    : 6.0
+ Resource, Research and GodMode
+ 01-Mar-2011 adapted to version 1.12
+ By Recifense
+===========================================
+}
+
+[ENABLE]
+//=========================================
+// Check if script is compatible to this game version
+// If false the script will not be loaded
+
+assert("RA3_1.12.game"+43be2c,8b 89 e4 00 00 00)
+assert("RA3_1.12.game"+3651ae,f3 0f 11 46 04)
+assert("RA3_1.12.game"+457865,f3 0f 11 46 2c)
+assert("RA3_1.12.game"+5906e5,8b 87 80 00 00 00)
+assert("RA3_1.12.game"+38e2f3,f6 86 71 04 00 00 01)
+
+//=========================================
+alloc(MyCode,1024)
+//=========================================
+// Declaration section
+label(_MonResource)
+label(_BackMR)
+label(_ExitMR)
+label(_GodMode)
+label(_GodM0)
+label(_BackGM)
+label(_ExitGM)
+label(_MonRPoints)
+label(_BackMRP)
+label(_ExitMRP)
+label(_MonPlayerID)
+label(_BackMPI)
+label(_MonL3Caller)
+label(_BackML)
+label(_MonL3Caller1)
+label(_BackML1)
+label(pResource)
+label(pLastOne)
+label(iPlayerID)
+label(iEnableGM)
+label(iEnableMRP)
+label(iEnableMR)
+label(iL3Back)
+
+registersymbol(MyCode)
+registersymbol(pLastOne)
+registersymbol(iEnableGM)
+registersymbol(iEnableMRP)
+registersymbol(iEnableMR)
+
+//=========================================
+MyCode:
+//=========================================
+_MonResource:
+ push eax
+ mov eax,[iPlayerID]
+ cmp eax,[ecx+20]           // Player's?...
+ pop eax
+ mov ecx,[ecx+000000e4]     // Original code
+ mov [pResource],ecx        // Save ptr for debugging
+ jne _ExitMR                // ...Jump if false
+
+ cmp dword ptr [iEnableMR],0
+ je _ExitMR                // Jump if Monitor Resource is disabled
+
+ mov ecx,[ecx]
+
+ cmp dword ptr [ecx+04],#100000
+ jge _ExitMR                // Jump if greater then 100000
+
+ mov dword ptr [ecx+04],#100000
+
+_ExitMR:
+ mov ecx,[pResource]
+ jmp _BackMR                // back to main code
+
+//=========================================
+_GodMode:
+ push eax
+
+ mov eax,[iL3Back]              // Get L3Caller returning address
+ cmp eax,"RA3_1.12.game"+3ad79e // Could it be an effect?
+ je _GodM0                      // Jump if false
+
+ mov eax,[iL3Back]              // Get L3Caller returning address
+ cmp eax,"RA3_1.12.game"+3adee2 // Could it be an effect?
+ je _GodM0                      // Jump if false
+
+ mov eax,[iL3Back]              // Get L3Caller returning address
+ cmp eax,"RA3_1.12.game"+38e651 // Could it be an effect?
+ jne _ExitGM                    // Jump if true
+
+_GodM0:
+ mov eax,[esi-08]               // Get ptr to Unit
+ or eax,eax                     // Null Ptr?
+ jz _ExitGM                     // Jump if true
+
+ mov eax,[eax+00000418]         // Get ptr to Player
+ mov eax,[eax+20]               // Get ID
+
+ cmp eax,[iPlayerID]            // Player's?...
+ jne _ExitGM                    // Jump if false
+
+ mov [pLastOne],esi             // Save ptr for debugging
+
+// mov eax,[esi+30]
+// cmp eax,00000070               // Is it an effect?
+// je _ExitGM                     // Jump if true
+
+ cmp dword ptr [iEnableGM],0
+ je _ExitGM                     // Jump if God Mode is disabled
+
+ movss xmm0,[esi+0c]            // Get Maximum HP
+
+_ExitGM:
+ movss [esi+04],xmm0            // Original code
+
+ pop eax
+ test eax,eax                   // Restore EFLAGS
+ jmp _BackGM                    // Back to main code
+
+//=========================================
+// Quick Research
+_MonRPoints:
+ push edx
+
+ movss [esi+2c],xmm0       // Original code
+
+ cmp dword ptr [iEnableMRP],0
+ je _ExitMRP               // Jump if Quick Research is disabled
+
+ mov edx,[esi+28]
+ mov edx,[edx+20]
+ cmp edx,[iPlayerID]       // Player´s research?
+ jne _ExitMRP              // Jump if false
+
+ mov edx,43af0000          // 350.0
+ cmp edx,[esi+2c]
+ jle _ExitMRP
+
+ mov [esi+2c],edx          
+
+_ExitMRP:
+ pop edx
+ jmp _BackMRP              // Back to main code
+
+//=========================================
+_MonPlayerID:
+ mov eax,[edi+00000080]
+ mov [iPlayerID],eax       // Save Player ID for further use
+ jmp _BackMPI              // Back to main code
+
+//=========================================
+// This is the key for God Mode (important)
+_MonL3Caller:
+ mov ecx,[esp+04]                // Get returning address
+ mov [iL3Back],ecx               // Save it for further use
+
+ test byte ptr [esi+00000471],01 // Original code
+ jmp _BackML                     // Back to main code
+
+//=========================================
+// This is the key for God Mode (important)
+_MonL3Caller1:
+ push ebx                        // Original code
+
+ mov ebx,[esp+04]                // Get returning address
+ mov [iL3Back],ebx               // Save it for further use
+
+ push ebp                        // Original code
+ push edi                        // Original code
+ mov edi,ecx                     // Original code
+ jmp _BackML1                    // Back to main code
+
+//=========================================
+// Variables
+iPlayerID:
+ dd 0
+iL3Back:
+ dd 0
+pResource:
+ dd 0
+pLastOne:
+ dd 0
+iEnableGM:
+ dd 1
+iEnableMRP:
+ dd 1
+iEnableMR:
+ dd 1
+
+//=============================
+// Hacking Points
+//ra3_1.0.game+3e4acc:
+//ra3_1.4.game+3e56dc:
+"RA3_1.12.game"+43be2c:
+ jmp _MonResource
+ nop
+_BackMR:
+
+//ra3_1.0.game+30d4ae:
+//ra3_1.4.game+30e23e:
+"RA3_1.12.game"+3651ae:
+ jmp _GodMode
+_BackGM:
+
+//ra3_1.0.game+4004e5:
+//ra3_1.4.game+400cd5:
+"RA3_1.12.game"+457865:
+ jmp _MonRPoints
+_BackMRP:
+
+//ra3_1.0.game+58bb45:
+//ra3_1.4.game+58c055:
+"RA3_1.12.game"+5906e5:
+ jmp _MonPlayerID
+ nop
+_BackMPI:
+
+"RA3_1.12.game"+38e2f3:
+ jmp _MonL3Caller
+ nop
+ nop
+_BackML:
+
+"RA3_1.12.game"+38e360:
+ jmp _MonL3Caller1
+_BackML1:
+
+//=========================================
+// Original Codes
+
+[DISABLE]
+//ra3_1.0.game+3e4acc:
+//ra3_1.4.game+3e56dc:
+"RA3_1.12.game"+43be2c:
+ mov ecx,[ecx+000000e4]
+
+//ra3_1.0.game+30d4ae:
+//ra3_1.4.game+30e23e:
+"RA3_1.12.game"+3651ae:
+ movss [esi+04],xmm0
+
+//ra3_1.0.game+4004e5:
+//ra3_1.4.game+400cd5:
+"RA3_1.12.game"+457865:
+ movss [esi+2c],xmm0
+
+//ra3_1.0.game+58bb45:
+//ra3_1.4.game+58c055:
+"RA3_1.12.game"+5906e5:
+ mov eax,[edi+00000080]
+
+"RA3_1.12.game"+38e2f3:
+ test byte ptr [esi+00000471],01
+
+"RA3_1.12.game"+38e360:
+ push ebx
+ push ebp
+ push edi
+ mov edi,ecx
+
+unregistersymbol(MyCode)
+unregistersymbol(pLastOne)
+unregistersymbol(iEnableGM)
+unregistersymbol(iEnableMRP)
+unregistersymbol(iEnableMR)
+
+dealloc(MyCode)
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <Description>"Enable/Disable God Mode"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableGM</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <Description>"Enable/Disable Quick Top Secret Points"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMRP</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <Description>"Enable/Disable Minimum Resource"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMR</Address>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols/>
+  <Comments>===========================================
+ Command and Conquer - Red Alert 3
+ Game Version  :
+ Script Version: 1.0
+ CE Version    : 6.0
+ Resource, Research and GodMode
+ 01-Mar-2011 adapted to version 1.12
+ By Recifense
+===========================================
+</Comments>
+</CheatTable>

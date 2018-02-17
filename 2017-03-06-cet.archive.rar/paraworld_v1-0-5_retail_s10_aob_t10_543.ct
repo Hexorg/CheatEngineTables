@@ -1,0 +1,318 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="16">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>0</ID>
+      <Description>"[X] &lt;== ParaWorld v1.0.5 Script v1.0 AOB"</Description>
+      <Options moHideChildren="1"/>
+      <Color>FF0000</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>{
+===========================================
+ Game Title    : ParaWorld
+ Game Version  : 1.0
+ Game Sponsor  : Myself
+ Proces Name   : PWServer.exe
+ Script Version: 1.0 (AOB)
+ CE Version    : 6.3
+ Release date  : 22-Dec-2013
+ Author        : Recifense
+ History:
+ 22-Dec-13: First Release
+ Features:
+ - God Mode
+ - Minimum Resources
+ - Some Pointers
+===========================================
+}
+
+//=========================================
+// Definitions
+define(LUDO,"PWServer.exe")
+
+//=========================================
+// Constants used in the script (that can be changed)
+// None
+
+//=========================================
+[ENABLE]
+//=========================================
+//LuaCall(CheckVersion())
+//=========================================
+// Check if script is compatible to this game version
+// If false the script will not be loaded
+
+AOBScanModule(aobFPID,PWServer.exe,8b 4c 24 2c 3b 41 10 ?? ?? 8b 91 68 02 00 00 c1 ea 03 f6 c2 01)
+AOBScanModule(aobGDMD,PWServer.exe,d9 86 18 06 00 00 d8 64 24 08 d9 5c 24 08 8b 44 24 08 8b c8 89)
+AOBScanModule(aobMPRS,PWServer.exe,d9 86 dc 02 00 00 8b 86 dc 02 00 00 d8 64 24 0c 8b 16 51 89 44)
+
+//=========================================
+alloc(MyCode,4096,LUDO)
+//=========================================
+// Declaration section
+label(_FindPlayerID)
+label(_BackFPI)
+label(_ExitFPI)
+label(_GodMode)
+label(_BackGMD)
+label(_ExitGMD)
+label(_MonPlayerRes)
+label(_BackMPR)
+label(_ExitMPR)
+label(iEnableGMD)
+label(iEnableMPR)
+label(iPlayerID)
+label(pUnit)
+label(pRes)
+label(fMinRes)
+
+//=========================================
+// Registering Symbols
+registersymbol(MyCode)
+registersymbol(iEnableGMD)
+registersymbol(iEnableMPR)
+registersymbol(iPlayerID)
+registersymbol(pUnit)
+registersymbol(pRes)
+registersymbol(aobFPID)
+registersymbol(aobGDMD)
+registersymbol(aobMPRS)
+
+//=========================================
+MyCode:
+//=========================================
+// Main game screen
+_FindPlayerID:
+ mov ecx,[esp+2c]                  // Original code
+
+ mov [pUnit],ecx                   // Save ptr for debugging
+
+ push ebx
+ mov ebx,[ecx+10]                  // Original code
+ mov [iPlayerID],ebx               // Save Player ID for further use
+ pop ebx
+
+_ExitFPI:
+ cmp eax,[ecx+10]                  // Original code
+ jmp _BackFPI                      // Back to main code
+
+//=========================================
+// During Combat
+_GodMode:
+ cmp dword ptr [iEnableGMD],0
+ je _ExitGMD                       // Jump if feature is disabled
+
+ mov eax,[iPlayerID]               // Get player ID
+ cmp eax,[esi+10]                  // Is it a playerÂ´s Object?
+ jne _ExitGMD                      // Jump if false
+
+ mov [pUnit],esi                   // Save pointer for debugging
+
+ mov dword ptr [esp+08],0          // value2decrease = 0
+
+ mov eax,[esi+0000061c]            // Get Max HP
+ mov [esi+00000618],eax            // Update HP
+
+_ExitGMD:
+ fld dword ptr [esi+00000618]      // Original code
+ jmp _BackGMD                      // Back to main code
+
+//=========================================
+// EDI = ptr to Worker
+_MonPlayerRes:
+ cmp dword ptr [iEnableMPR],0
+ je _ExitMPR                       // Jump if feature is disabled
+
+ test edi,edi                      // Valid pointer?
+ jz _ExitMPR                       // Jump if false
+
+ mov eax,[iPlayerID]               // Get player ID
+ cmp eax,[edi+10]                  // Is it a playerÂ´s worker?
+ jne _ExitMPR                      // Jump if false
+
+ mov [pRes],esi                    // Save ptr for debugging
+
+ mov eax,[fMinRes]                 // Get cheat value
+ cmp eax,[esi+000002dc]            // Current value &gt;= cheat value?
+ js _ExitMPR                       // Jump if true
+
+ mov [esi+000002dc],eax            // Update value
+
+_ExitMPR:
+ fld dword ptr [esi+000002dc]      // Original code
+ jmp _BackMPR                      // Back to main code
+
+//=========================================
+ db '=======================================&gt;'
+ db 'CE6.3 Script by Recifense 122213'
+//=========================================
+// Variables
+iEnableGMD:
+ dd 0
+iEnableMPR:
+ dd 0
+iPlayerID:
+ dd 55555555
+pUnit:
+ dd 0
+pRes:
+ dd 0
+fMinRes:
+ dd (float)5000.0
+
+//=========================================
+// Hacking Points
+aobFPID:
+ jmp _FindPlayerID
+ nop
+ nop
+_BackFPI:
+
+aobGDMD:
+ jmp _GodMode
+ nop
+_BackGMD:
+
+aobMPRS:
+ jmp _MonPlayerRes
+ nop
+_BackMPR:
+
+//=========================================
+// Script for Restoring Original Codes
+[DISABLE]
+aobFPID:
+// mov ecx,[esp+2C]
+// cmp eax,[ecx+10]
+ db 8b 4c 24 2c 3b 41 10
+
+aobGDMD:
+// fld dword ptr [esi+00000618]
+ db d9 86 18 06 00 00
+
+aobMPRS:
+// fld dword ptr [esi+000002DC]
+ db d9 86 dc 02 00 00
+
+//=========================================
+// Unregistering Symbols
+unregistersymbol(MyCode)
+unregistersymbol(iEnableGMD)
+unregistersymbol(iEnableMPR)
+unregistersymbol(iPlayerID)
+unregistersymbol(pUnit)
+unregistersymbol(pRes)
+unregistersymbol(aobFPID)
+unregistersymbol(aobGDMD)
+unregistersymbol(aobMPRS)
+
+//=========================================
+dealloc(MyCode)
+//============= Scripts End ===============
+
+// ****************************************
+// NOTES
+// ****************************************
+{
+}
+
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>1</ID>
+          <Description>"Enable/Disable God Mode =&gt; (1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableGMD</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>2</ID>
+          <Description>"Enable/Disable Unlimited Resource Sources =&gt; (1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMPR</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols/>
+  <Comments>===========================================
+ Game Title    : ParaWorld
+ Game Version  : 1.0
+ Game Sponsor  : Myself
+ Proces Name   : PWServer.exe
+ Script Version: 1.0
+ CE Version    : 6.3
+ Release date  : 22-Dec-2013
+ Author        : Recifense
+ History:
+ 22-Dec-13: First Release
+ Features:
+ - God Mode             [1]
+ - Full Resource Source [2]
+ - Some Pointers        [3]
+===========================================
+[1] For player's units and buildings;
+[2] The source of resouces will not deplete for player's workers;
+[3] Just for debugging;
+===========================================
+[USAGE]
+1) Run CE;
+2) Run Game and start/load a match;
+3) Pause game and go to CE;
+4) Choose the game proccess (PWServer.exe);
+5) Activate the script and enable the cheat you want to use by change each value to 1;
+6) Go back to the game and have fun;
+[IMPORTANT]
+The PWServer.exe is unloaded when you are at main menu and in other situations. So you have to repeat steps 4 and 5 and 6 everytime this happens.
+===========================================
+[HOTKEYS]
+CTRL+Home = Enable  all cheats;
+CTRL+End  = Disable all cheats;
+===========================================
+[NOTE]
+The AOB technique was used in the script, so it should work with previous versions.
+===========================================
+Cheers!
+ </Comments>
+</CheatTable>

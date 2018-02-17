@@ -1,0 +1,83 @@
+<?xml version="1.0"?>
+<CheatTable CheatEngineTableVersion="12">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>0</ID>
+      <Description>"Replace stuff"</Description>
+      <Color>80000008</Color>
+      <GroupHeader>1</GroupHeader>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols/>
+  <LuaScript>
+function replaceAOB()
+
+  r=AOBScan("62 06 66 ?? ?? 24 03 a1 4f ?? ?? ?? d0 4f ?? ?? ?? d0 4f ?? ?? ?? 47")
+
+
+  if (r~=nil) then
+    c=strings_getCount(r)
+    if (c&gt;0) then
+      resultlist=nil
+      resultlist={}
+      for i=0,c-1 do
+        a=strings_getString(r,i);
+        resultlist[i+1]={}
+        resultlist[i+1][1]=a  --store the address
+        resultlist[i+1][2]=readBytes(a, 23, true) --store the original bytes
+
+        --6.1 has an ugly bug with writeBytes using a tableformat so I have to use an ugly workaround...
+        for j=12,22 do
+          writeBytes(tonumber("0x"..a)+j, 2)
+        end
+
+
+      end
+      --print("Found "..c.." results")
+    else
+      print("No results");
+    end
+  else
+    print("Scan error")
+  end
+
+end
+
+function restoreAOB()
+  for i=1,#resultlist do
+    --print("restoring result "..i)
+    local a=tonumber("0x"..resultlist[i][1])
+    local orig=resultlist[i][2];
+    for j=12,22 do
+      writeBytes(a+j,orig[j])
+    end
+  end
+end
+
+
+function activatetick(mr, before, currentstate)
+  if (before==false) and (currentstate==true) then
+    replaceAOB()
+  end
+
+  return true
+end
+
+function deactivatetick(mr, before, currentstate)
+  if (before==false) and (currentstate==false) then
+    restoreAOB()
+  end
+
+  return true
+end
+
+al=getAddressList()
+--mr=addresslist_getMemoryRecordByDescription(al,"Replace stuff")
+--In this specific cheat table the ID number of 0, only if you delete the entry it will change (moving has no effect)
+mr=addresslist_getMemoryRecordByID(al,0);
+
+
+memoryrecord_onActivate(mr,activatetick)
+memoryrecord_onDeactivate(mr,deactivatetick)
+</LuaScript>
+</CheatTable>

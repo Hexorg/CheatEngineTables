@@ -1,0 +1,2122 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="16">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>99</ID>
+      <Description>"README:  double click on &lt;script&gt; ---------&gt; "</Description>
+      <Color>0000FF</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>{
+  Game:    Tron 2.0
+  Version: Patch v1.042
+  Author:  gwodus (gwodusx@xsmail.com)
+  Date:    2014-05-08
+
+  AoB scans are used. So it might work with other versions.
+
+  Player Trainer:
+
+  * Unlimited Health: Health will not decrease
+  * Unlimited Energy: Energy will not decrease
+  * One Shot Kill: Enemies are killed with one shot
+  * Float up/down:
+      Press X to float up
+      Press Shift-X to float down
+
+  Subroutine Trainer:
+
+  * Auto-Disinfect Subroutine: All Subroutine are disinfected when
+      you enter the subroutine menu (F1).
+  * Auto-Gold Subroutines: Subroutines received are automatically
+      converted to gold version.
+  * Insta-Process: Defrag, Disinfect and Port take no time (you
+      have to exit and re-enter the subroutine menu though).
+
+  Light Cycle Trainer:
+
+  * Power Light Cycle: The maximum speed is much higher and the
+      minimum speed is almost a standstill.
+
+  Notes:
+     There is a fight in the Progress Bar where you have to
+     protect Ma3a. You might want to turn off 'One Shot Kill',
+     because Ma3a is also regarded as a NPC.
+
+     You should enable Unlimited Health when using float up.
+     Because the fall will kill you otherwise.
+     Float-Up and Float-Down go though ceilings and floors. So if
+     you get stuck above a ceiling when floating up, just press
+     shift-X until you are free again.
+}
+
+[ENABLE]
+[DISABLE]
+</AssemblerScript>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>31</ID>
+      <Description>"Enable Player Trainer"</Description>
+      <Options moHideChildren="1" moBindActivation="1"/>
+      <Color>80000008</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>{
+  Game:    Tron 2.0
+  Version: Patch v1.042
+  Author:  gwodus (gwodusx@xsmail.com)
+
+  The injection point is called whenever a character is hit (player and NPC).
+  Register esi contains a pointer to struct sPlayer, which holds Health
+  and Energy. Offset pPlayer+0x88 is 0 for NPCs and 1 for the player.
+}
+
+[ENABLE]
+aobscan(inject_HEALTH,D9 5E 64 F6 C4 44)
+alloc(mem_HEALTH,2048)
+label(code_HEALTH)
+label(bEnableHealth)
+label(bEnableOneShotKill)
+label(pPlayer)
+label(returnhere)
+label(exit)
+label(npc)
+label(player)
+registersymbol(inject_HEALTH)
+registersymbol(mem_HEALTH)
+registersymbol(code_HEALTH)
+registersymbol(bEnableHealth)
+registersymbol(bEnableOneShotKill)
+registersymbol(pPlayer)
+
+mem_HEALTH:
+bEnableHealth:
+dd 01
+bEnableOneShotKill:
+dd 01
+pPlayer:
+dd 00
+
+code_HEALTH:
+fstp dword ptr [esi+64]  // orig code: set health
+push eax
+
+cmp dword [esi+88], 1
+je player
+cmp dword [esi+88], 0
+je npc
+jmp exit
+
+player:
+mov [pPlayer], esi
+
+cmp [bEnableHealth], 0
+je exit
+mov eax, [esi+60]        // max health
+mov [esi+64], eax        // current health
+jmp exit
+
+npc:
+cmp [bEnableOneShotKill], 0
+je exit
+mov [esi+64], (float)0    // current health
+
+exit:
+pop eax
+test ah,44
+jmp returnhere
+
+inject_HEALTH:
+//"object.lto"+DECC3:
+jmp code_HEALTH
+nop
+returnhere:
+
+[DISABLE]
+//object.ObjectDLLSetup+3BD01 - D9 46 7C              - fld dword ptr [esi+7C]
+//object.ObjectDLLSetup+3BD04 - D8 1D FC42720D        - fcomp dword ptr [0D7242FC] : [00000000]
+//object.ObjectDLLSetup+3BD0A - D9 46 64              - fld dword ptr [esi+64]
+//object.ObjectDLLSetup+3BD0D - D8 64 24 10           - fsub dword ptr [esp+10]
+//object.ObjectDLLSetup+3BD11 - DFE0                  - fnstsw ax
+//----------- Inject Here ------------------
+//object.ObjectDLLSetup+3BD13 - D9 5E 64              - fstp dword ptr [esi+64]
+//object.ObjectDLLSetup+3BD16 - F6 C4 44              - test ah,44
+//----------- Inject Here ------------------
+//object.ObjectDLLSetup+3BD19 - 7B 3C                 - jnp object.ObjectDLLSetup+3BD57
+//object.ObjectDLLSetup+3BD1B - 8B CE                 - mov ecx,esi
+//object.ObjectDLLSetup+3BD1D - E8 0EF7FFFF           - call object.ObjectDLLSetup+3B430
+
+inject_HEALTH:
+db D9 5E 64 F6 C4 44
+
+dealloc(mem_HEALTH)
+unregistersymbol(inject_HEALTH)
+unregistersymbol(mem_HEALTH)
+unregistersymbol(code_HEALTH)
+unregistersymbol(bEnableHealth)
+unregistersymbol(bEnableOneShotKill)
+unregistersymbol(pPlayer)
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>77</ID>
+          <Description>"Unlimited Health"</Description>
+          <Color>80000008</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[ENABLE]
+bEnableHealth:
+dd 01
+
+[DISABLE]
+bEnableHealth:
+dd 00
+
+</AssemblerScript>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>82</ID>
+          <Description>"Unlimited Energy"</Description>
+          <Color>80000008</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>{
+  Game:    Tron 2.0
+  Version: Patch v1.042
+  Author:  gwodus (gwodusx@xsmail.com)
+
+  The injection point is called in a loop. Register esi contains a
+  pointer with points to sPlayer with a certain negative offset.
+  We constantly set the energy to the max energy.
+}
+
+[ENABLE]
+aobscan(inject_ENERGY,D9 86 CC 04 00 00 D8 9E 14 0D 00 00)
+alloc(mem_ENERGY,2048)
+label(code_ENERGY)
+label(returnhere)
+label(originalcode)
+label(exit)
+registersymbol(inject_ENERGY)
+registersymbol(mem_ENERGY)
+registersymbol(code_ENERGY)
+
+mem_ENERGY:
+code_ENERGY:
+push eax
+mov eax,[esi+4C8]     // max Energy
+mov [esi+4CC],eax     // current Energy
+pop eax
+
+originalcode:
+fld dword ptr [esi+000004CC]
+
+exit:
+jmp returnhere
+
+inject_ENERGY:
+//"object.lto"+78D26:
+jmp code_ENERGY
+nop
+returnhere:
+ 
+ 
+[DISABLE]
+inject_ENERGY:
+//"object.lto"+78D26:
+//fld dword ptr [esi+000004CC]
+db D9 86 CC 04 00 00
+
+dealloc(mem_ENERGY)
+unregistersymbol(inject_ENERGY)
+unregistersymbol(mem_ENERGY)
+unregistersymbol(code_ENERGY)
+
+</AssemblerScript>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>78</ID>
+          <Description>"One Shot Kill"</Description>
+          <Color>80000008</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[ENABLE]
+bEnableOneShotKill:
+dd 01
+
+[DISABLE]
+bEnableOneShotKill:
+dd 00
+
+</AssemblerScript>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>83</ID>
+          <Description>"Float up/down (Press X/Shift-X in game)"</Description>
+          <Options moHideChildren="1"/>
+          <Color>80000008</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>{
+  Game:    Tron 2.0
+  Version: Patch v1.042
+  Author:  gwodus (gwodusx@xsmail.com)
+
+  There are two injection points. inject_FLOAT2 is entered
+  evertime the player moves. Here we remember the pointer to
+  the player's objects (sPlayerPos). The player consists of
+  more then one object. Usually two (might be player + weapon).
+  Changing coordinates here does not work. They are overwritten
+  later.
+
+  Injection point inject_FLOAT is called in a loop for every
+  object. If it's one of the player's objects, then we check the
+  keyboard and manipulate the object's coordinates accordingly.
+}
+
+[ENABLE]
+aobscan(inject_FLOAT,8B 91 C8 00 00 00 89 10)
+aobscan(inject_FLOAT2,8B 8C 24 40 05 00 00 51)
+alloc(mem_FLOAT,2048)
+label(code_FLOAT)
+label(pPlayerPos1)
+label(pPlayerPos2)
+label(pPlayerPos3)
+label(pPlayerPos4)
+label(returnhere)
+label(returnhere2)
+label(originalcode)
+label(originalcode2)
+label(checkKeyPressedEnd)
+label(iCounter)
+label(fDirection)
+label(fIncStep)
+label(checkKeyPressed)
+label(player)
+label(nokey)
+label(code_FLOAT2)
+registersymbol(inject_FLOAT)
+registersymbol(inject_FLOAT2)
+registersymbol(mem_FLOAT)
+registersymbol(code_FLOAT)
+registersymbol(code_FLOAT2)
+registersymbol(fIncStep)
+registersymbol(pPlayerPos1)
+registersymbol(pPlayerPos2)
+registersymbol(pPlayerPos3)
+registersymbol(pPlayerPos4)
+
+mem_FLOAT:
+fIncStep:
+dd (float)0.7
+fDirection:
+dd 00
+iCounter:
+dd 00
+pPlayerPos1:
+dd 00
+pPlayerPos2:
+dd 00
+pPlayerPos3:
+dd 00
+pPlayerPos4:
+dd 00
+
+// -------------------------------------------------------------------
+// cheat code: Entered in a loop for all objects (ecx = object pointer).
+// If the current object is on the mini stack, then let's handle it.
+// -------------------------------------------------------------------
+
+code_FLOAT:
+
+cmp [pPlayerPos1], ecx
+je player
+cmp [pPlayerPos2], ecx
+je player
+cmp [pPlayerPos3], ecx
+je player
+cmp [pPlayerPos4], ecx
+je player
+jmp originalcode
+
+player:
+call checkKeyPressed
+
+cmp [fDirection], (float)0
+je originalcode
+
+fld [ecx+000000CC]   // load num1 and push it onto the fpu stack
+fld [fIncStep]       // load num2 and push it onto the fpu stack
+fld [fDirection]     // load num2 and push it onto the fpu stack
+fmulp
+faddp                // pop two numbers, add them, push sum on the stack
+fstp [ecx+000000CC]  // pop sum from the stack and store it in res
+mov [ecx+000000E8], (float)0
+
+originalcode:
+mov edx,[ecx+000000C8]
+
+jmp returnhere
+
+
+// -------------------------------------------------------------------
+// cheat code: Entered when player moves (only for player object).
+// [esi+8] contains pointer to sPlayerPos. The routine is entered
+// with more then one object here. Only one is the correct one. Since
+// we don't know which, we store them all in some sort of mini stack
+// (pPlayerPos1-4).
+// -------------------------------------------------------------------
+
+code_FLOAT2:
+
+test esi, esi
+jz originalcode2
+
+mov ecx, [esi+8]
+test ecx, ecx
+jz originalcode2
+
+// leave, if object is already on stack.
+cmp [pPlayerPos1], ecx
+je originalcode2
+cmp [pPlayerPos2], ecx
+je originalcode2
+cmp [pPlayerPos3], ecx
+je originalcode2
+cmp [pPlayerPos4], ecx
+je originalcode2
+
+// otherwise push object pointer on stack.
+push ecx
+mov ecx, [pPlayerPos3]
+mov [pPlayerPos4], ecx
+mov ecx, [pPlayerPos2]
+mov [pPlayerPos3], ecx
+mov ecx, [pPlayerPos1]
+mov [pPlayerPos2], ecx
+pop ecx
+mov [pPlayerPos1], ecx
+
+originalcode2:
+mov ecx,[esp+00000540]
+
+jmp returnhere2
+
+
+
+// -------------------------------------------------------------------
+// subroutine checkKeyPressed
+// -------------------------------------------------------------------
+
+checkKeyPressed:
+
+// We are in a loop which is called very often.
+// It's not neccesary to check ever time.
+add [iCounter], 1
+cmp [iCounter], #20
+jl checkKeyPressedEnd
+mov [iCounter], 0
+
+// save everything
+pushad
+pushfd
+
+mov [fDirection], 0
+//virtual key codes
+push 'X'
+call GetAsyncKeyState
+shr ax,#15 //bit 15 is 1 if it is CURRENTLY down
+jz nokey
+
+mov [fDirection], (float)1
+
+push A0 // VK_LSHIFT
+call GetAsyncKeyState
+shr ax,#15 //bit 15 is 1 if it is CURRENTLY down
+jz nokey
+
+mov [fDirection], (float)-1
+
+nokey:
+popfd
+popad
+
+checkKeyPressedEnd:
+ret
+
+// -------------------------------------------------------------------
+// Code Injection Point
+// -------------------------------------------------------------------
+
+inject_FLOAT:
+//"Lithtech.exe"+74D0:
+jmp code_FLOAT
+nop
+returnhere:
+
+inject_FLOAT2:
+//"Lithtech.exe"+50228:
+jmp code_FLOAT2
+nop
+nop
+returnhere2:
+
+
+ 
+[DISABLE]
+inject_FLOAT:
+//"Lithtech.exe"+74D0:
+//mov edx,[ecx+000000C8]
+db 8B 91 C8 00 00 00
+
+inject_FLOAT2:
+//"Lithtech.exe"+50228:
+//mov ecx,[esp+00000540]
+db 8B 8C 24 40 05 00 00
+
+dealloc(mem_FLOAT)
+unregistersymbol(inject_FLOAT)
+unregistersymbol(inject_FLOAT2)
+unregistersymbol(mem_FLOAT)
+unregistersymbol(code_FLOAT)
+unregistersymbol(code_FLOAT2)
+unregistersymbol(fIncStep)
+unregistersymbol(pPlayerPos1)
+unregistersymbol(pPlayerPos2)
+unregistersymbol(pPlayerPos3)
+unregistersymbol(pPlayerPos4)
+
+</AssemblerScript>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>98</ID>
+              <Description>"Float Rate"</Description>
+              <Color>80000008</Color>
+              <VariableType>Float</VariableType>
+              <Address>fIncStep</Address>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>49</ID>
+      <Description>"Enable Subroutine Trainer"</Description>
+      <Options moHideChildren="1" moBindActivation="1"/>
+      <Color>80000008</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>{
+  Game:    Tron 2.0
+  Version: Patch v1.042
+  Author:  gwodus (gwodusx@xsmail.com)
+
+  Register esi has a pointer to struct sTools. sTools+0x07C8 points
+  to an array of pointers to sPayload (payload is a subroutine).
+  The injection point is called for each payload upon entering the
+  subroutine menu (F1). Address [esp+14] contains a pointer to the
+  currently processed payload. sPayload contains the subroutine
+  build state (alpha, beta, gold) and an infection state.
+}
+
+[ENABLE]
+aobscan(inject_TOOLS,8B 42 0C 83 C9 FF 89 42 08)
+
+alloc(mem_TOOLS,2048)
+label(pTools)
+label(bEnableDisinfect)
+label(bEnableGold)
+label(code_TOOLS)
+label(returnhere)
+label(originalcode)
+label(exit)
+label(endofhack)
+label(nogold)
+label(tool)
+registersymbol(inject_TOOLS)
+registersymbol(mem_TOOLS)
+registersymbol(code_TOOLS)
+registersymbol(pTools)
+registersymbol(bEnableDisinfect)
+registersymbol(bEnableGold)
+
+mem_TOOLS:
+pTools:
+dd 00
+bEnableDisinfect:
+dd 01
+bEnableGold:
+dd 01
+
+code_TOOLS:
+mov [pTools], esi
+
+mov eax, [esp+14]   // current pPayload
+test eax, eax
+jz originalcode
+
+push ecx
+// There are two special payloads which are not subroutines.
+// 'bad_block' is a fragmented slot. And base_code is an
+// empty slot. We ignore both.
+mov ecx, [eax+0]         // pPayload-&gt;Type (string)
+cmp [ecx], 5F646162      // 'bad_'block
+je endofhack
+cmp [ecx], 65736162      // 'base'_code
+jne tool
+cmp [ecx+4], 646F635F    // base'_cod'e
+je endofhack
+
+tool:
+cmp [bEnableGold], 0
+je nogold
+mov [eax+4], 2           // 0=alpha,1=beta,2=gold
+nogold:
+
+cmp [bEnableDisinfect], 0
+je endofhack
+mov [eax+14], 0
+
+endofhack:
+pop ecx
+
+
+originalcode:
+mov eax,[edx+0C]
+or ecx,-01
+
+exit:
+jmp returnhere
+
+inject_TOOLS:
+//"cshell.dll"+86F95:
+jmp code_TOOLS
+nop
+returnhere:
+
+
+[DISABLE]
+inject_TOOLS:
+//"cshell.dll"+86F95:
+//mov eax,[edx+0C]
+//or ecx,-01
+db 8B 42 0C 83 C9 FF
+
+dealloc(mem_TOOLS)
+unregistersymbol(inject_TOOLS)
+unregistersymbol(mem_TOOLS)
+unregistersymbol(code_TOOLS)
+unregistersymbol(pTools)
+unregistersymbol(bEnableDisinfect)
+unregistersymbol(bEnableGold)
+
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>52</ID>
+          <Description>"Auto-Disinfected Subroutines"</Description>
+          <Color>80000008</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[ENABLE]
+bEnableDisinfect:
+dd 01
+
+[DISABLE]
+bEnableDisinfect:
+dd 00
+</AssemblerScript>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>51</ID>
+          <Description>"Auto-Gold Subroutines"</Description>
+          <Color>80000008</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[ENABLE]
+bEnableGold:
+dd 01
+
+[DISABLE]
+bEnableGold:
+dd 00
+</AssemblerScript>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>37</ID>
+          <Description>"Insta-Process"</Description>
+          <Options moHideChildren="1"/>
+          <Color>80000008</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>{
+  Game:    Tron 2.0
+  Version: Patch v1.042
+  Author:  gwodus (gwodusx@xsmail.com)
+
+  At the injection point we get a pointer to struct sMain.
+  sMain contains a pointer array to three processors (defrag,
+  disinfect and port). Each processors (struct sProcessor) can
+  have a payload (subroutine - struct sPayload) assigned. The
+  progress of the task is in sPayload itself.
+}
+
+[ENABLE]
+aobscan(inject_PROC,55 8B E9 56 8B 85)
+
+alloc(mem_PROC,2048)
+label(returnhere)
+label(originalcode)
+label(exit)
+label(code_PROC)
+label(pMain)
+label(pPort)
+label(pDefrag)
+label(pDisinfect)
+label(bInstaProcess)
+label(doProgress)
+label(doProgressEnd)
+registersymbol(inject_PROC)
+registersymbol(mem_PROC)
+registersymbol(code_PROC)
+registersymbol(pMain)
+registersymbol(pPort)
+registersymbol(pDisinfect)
+registersymbol(pDefrag)
+registersymbol(bInstaProcess)
+
+mem_PROC:
+pMain:
+dd 00
+pPort:
+dd 00
+pDisinfect:
+dd 00
+pDefrag:
+dd 00
+bInstaProcess:
+dd 01
+
+code_PROC:
+push edx
+mov [pMain], ecx
+mov eax, [ecx+1134]   // pointer array to sProcessor
+mov edx, [eax]
+mov [pPort], edx
+mov edx, [eax+4]
+mov [pDisinfect], edx
+mov edx, [eax+8]
+mov [pDefrag], edx
+pop edx
+cmp [bInstaProcess], 1
+jne originalcode
+
+// set progress of all payloads to 100%
+mov eax, [pPort]
+call doProgress
+mov eax, [pDisinfect]
+call doProgress
+mov eax, [pDefrag]
+call doProgress
+jmp originalcode
+
+doProgress:
+test eax, eax      // safety check processor
+je doProgressEnd
+mov eax, [eax+0138]
+test eax, eax      // has payload assigned?
+je doProgressEnd
+mov [eax+10], (float)1.0  // progress 100%
+doProgressEnd:
+ret
+
+originalcode:
+push ebp
+mov ebp,ecx
+push esi
+mov eax,[ebp+00001150]
+
+exit:
+jmp returnhere
+
+inject_PROC:
+//"cshell.dll"+9BF08:
+jmp code_PROC
+nop
+nop
+nop
+nop
+nop
+returnhere:
+
+
+[DISABLE]
+inject_PROC:
+//"cshell.dll"+9BF08:
+//push ebp
+//mov ebp,ecx
+//push esi
+//mov eax,[ebp+00001150]
+db 55 8B E9 56 8B 85 50 11 00 00
+
+dealloc(mem_PROC)
+unregistersymbol(mem_PROC)
+unregistersymbol(code_PROC)
+unregistersymbol(pMain)
+unregistersymbol(pPort)
+unregistersymbol(pDisinfect)
+unregistersymbol(pDefrag)
+unregistersymbol(bInstaProcess)
+
+</AssemblerScript>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>58</ID>
+      <Description>"Power Light Cycle"</Description>
+      <Color>80000008</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>{
+  Game:    Tron 2.0
+  Version: Patch v1.042
+  Author:  gwodus (gwodusx@xsmail.com)
+
+  At the injection point we get a pointer to struct sCycle, which
+  holds a couple cycle characteristics we can beef up.
+}
+
+[ENABLE]
+aobscan(inject_CYCLE,D9 45 74 E8 FB 24 1A 00)
+alloc(mem_CYCLE,2048)
+label(code_CYCLE)
+label(pCycle)
+label(returnhere)
+label(originalcode)
+label(exit)
+registersymbol(inject_CYCLE)
+registersymbol(mem_CYCLE)
+registersymbol(code_CYCLE)
+registersymbol(pCycle)
+
+mem_CYCLE:
+pCycle:
+dd 00
+
+code_CYCLE:
+mov [pCycle], ebp
+mov edx, ebp
+cmp edx, 0
+je originalcode
+
+mov [edx+7c], (float)10000    // boost
+mov [edx+88], (float)100      // min speed
+
+mov [edx+8c], (float)5000     // Acceleration
+mov [edx+90], (float)5000     // Deceleration
+mov [edx+94], (float)2000     // Acceleration back to normal when no key is pressed
+mov [edx+98], (float)2000     // Deceleration back to normal when no key is pressed
+
+originalcode:
+fld dword ptr [ebp+74]
+call cshell.dll+1D4176
+
+exit:
+jmp returnhere
+
+inject_CYCLE:
+//"cshell.dll"+31C73:
+jmp code_CYCLE
+nop
+nop
+nop
+returnhere:
+
+
+[DISABLE]
+inject_CYCLE:
+//"cshell.dll"+31C73:
+//fld dword ptr [ebp+74]
+//call cshell.dll+1D4176
+db D9 45 74 E8 FB 24 1A 00
+
+dealloc(newmem)
+unregistersymbol(inject_CYCLE)
+unregistersymbol(mem_CYCLE)
+unregistersymbol(code_CYCLE)
+unregistersymbol(pCycle)
+
+</AssemblerScript>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>32</ID>
+      <Description>"Info (Debug)"</Description>
+      <Options moHideChildren="1"/>
+      <Color>C0C0C0</Color>
+      <GroupHeader>1</GroupHeader>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>80</ID>
+          <Description>"pPlayer"</Description>
+          <ShowAsHex>1</ShowAsHex>
+          <Color>C0C0C0</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>pPlayer</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>85</ID>
+          <Description>"pPlayerPos1"</Description>
+          <ShowAsHex>1</ShowAsHex>
+          <Color>C0C0C0</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>pPlayerPos1</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>96</ID>
+          <Description>"pPlayerPos2"</Description>
+          <ShowAsHex>1</ShowAsHex>
+          <Color>C0C0C0</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>pPlayerPos2</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>95</ID>
+          <Description>"pPlayerPos3"</Description>
+          <ShowAsHex>1</ShowAsHex>
+          <Color>C0C0C0</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>pPlayerPos3</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>94</ID>
+          <Description>"pPlayerPos4"</Description>
+          <ShowAsHex>1</ShowAsHex>
+          <Color>C0C0C0</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>pPlayerPos4</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>59</ID>
+          <Description>"pCycle"</Description>
+          <Options moHideChildren="1"/>
+          <ShowAsHex>1</ShowAsHex>
+          <Color>C0C0C0</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>pCycle</Address>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>60</ID>
+              <Description>"Speed"</Description>
+              <Color>C0C0C0</Color>
+              <VariableType>Float</VariableType>
+              <Address>pCycle</Address>
+              <Offsets>
+                <Offset>74</Offset>
+              </Offsets>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>50</ID>
+          <Description>"pTools"</Description>
+          <ShowAsHex>1</ShowAsHex>
+          <Color>C0C0C0</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>pTools</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>44</ID>
+          <Description>"Processor"</Description>
+          <Options moHideChildren="1"/>
+          <Color>C0C0C0</Color>
+          <GroupHeader>1</GroupHeader>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>45</ID>
+              <Description>"Done Defrag (Percent / 100)"</Description>
+              <Color>C0C0C0</Color>
+              <VariableType>Float</VariableType>
+              <Address>pDefrag</Address>
+              <Offsets>
+                <Offset>10</Offset>
+                <Offset>138</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>46</ID>
+              <Description>"Done Disinfect (Percent / 100)"</Description>
+              <Color>C0C0C0</Color>
+              <VariableType>Float</VariableType>
+              <Address>pDisinfect</Address>
+              <Offsets>
+                <Offset>10</Offset>
+                <Offset>138</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>36</ID>
+              <Description>"Done Port (Percent / 100)"</Description>
+              <Color>C0C0C0</Color>
+              <VariableType>Float</VariableType>
+              <Address>pPort</Address>
+              <Offsets>
+                <Offset>10</Offset>
+                <Offset>138</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>38</ID>
+              <Description>"pMain"</Description>
+              <ShowAsHex>1</ShowAsHex>
+              <Color>C0C0C0</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pMain</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>39</ID>
+              <Description>"pDefrag"</Description>
+              <ShowAsHex>1</ShowAsHex>
+              <Color>C0C0C0</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pDefrag</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>41</ID>
+              <Description>"pDisinfect"</Description>
+              <ShowAsHex>1</ShowAsHex>
+              <Color>C0C0C0</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pDisinfect</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>40</ID>
+              <Description>"pPort"</Description>
+              <ShowAsHex>1</ShowAsHex>
+              <Color>C0C0C0</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pPort</Address>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>97</ID>
+          <Description>"Experiments"</Description>
+          <Options moHideChildren="1"/>
+          <Color>C0C0C0</Color>
+          <GroupHeader>1</GroupHeader>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>69</ID>
+              <Description>"Coordinates"</Description>
+              <Color>C0C0C0</Color>
+              <VariableType>Auto Assembler Script</VariableType>
+              <AssemblerScript>[ENABLE]
+//code from here to '[DISABLE]' will be used to enable the cheat
+alloc(mem_COORD,2048)
+label(code_COORD)
+label(pCoord)
+label(returnhere)
+label(originalcode)
+label(exit)
+label(npc)
+registersymbol(mem_COORD)
+registersymbol(code_COORD)
+registersymbol(pCoord)
+
+mem_COORD:
+pCoord:
+dd 00
+
+code_COORD:
+
+push eax
+
+sub eax, 24
+cmp [eax+44], 6867694C //'Ligh'
+jne originalcode
+cmp [eax+48], 63794374 //'tCyc'
+jne npc
+cmp [eax+4C], 6C42656C //'leBl'
+jne npc
+cmp word ptr [eax+50], 6575 //'ue'
+jne npc
+cmp byte ptr [eax+52], 0
+jne npc
+nop
+mov [pCoord], ecx
+
+jmp originalcode
+
+npc:
+nop
+mov [ecx+000000C8], (float)0
+
+//mov [pOponent], eax
+//mov [eax+18], (float)1
+//mov [eax+20], (float)0
+
+originalcode:
+pop eax
+mov edx,[ecx+000000C8]
+
+exit:
+jmp returnhere
+
+"Lithtech.exe"+74D0:
+jmp code_COORD
+nop
+returnhere:
+
+ 
+[DISABLE]
+"Lithtech.exe"+74D0:
+//mov edx,[ecx+000000C8]
+db 8B 91 C8 00 00 00
+
+dealloc(mem_COORD)
+unregistersymbol(mem_COORD)
+unregistersymbol(code_COORD)
+unregistersymbol(pCoord)
+
+</AssemblerScript>
+              <CheatEntries>
+                <CheatEntry>
+                  <ID>70</ID>
+                  <Description>"pCoord"</Description>
+                  <ShowAsHex>1</ShowAsHex>
+                  <Color>C0C0C0</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pCoord</Address>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>71</ID>
+                  <Description>"pCoord-&gt;X"</Description>
+                  <Color>C0C0C0</Color>
+                  <VariableType>Float</VariableType>
+                  <Address>pCoord</Address>
+                  <Offsets>
+                    <Offset>C8</Offset>
+                  </Offsets>
+                </CheatEntry>
+              </CheatEntries>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>65</ID>
+              <Description>"Dir"</Description>
+              <Color>C0C0C0</Color>
+              <VariableType>Auto Assembler Script</VariableType>
+              <AssemblerScript>{
+  Tried to freeze the cycles orientation into one direction.
+  Unfortunatley only works for player. No effect on NPC.
+}
+
+[ENABLE]
+alloc(newmem,2048)
+label(returnhere)
+label(originalcode)
+label(exit)
+label(npc)
+label(pOponent)
+label(code_DIR)
+registersymbol(code_DIR)
+registersymbol(pOponent)
+
+newmem:
+pOponent:
+dd 00
+
+code_DIR:
+push eax
+
+sub eax, 18
+cmp [eax+44], 6867694C //'Ligh'
+jne originalcode
+cmp [eax+48], 63794374 //'tCyc'
+jne npc
+cmp [eax+4C], 6C42656C //'leBl'
+jne npc
+cmp word ptr [eax+50], 6575 //'ue'
+jne npc
+cmp byte ptr [eax+52], 0
+jne npc
+jmp originalcode
+
+npc:
+mov [pOponent], eax
+//mov [eax+18], (float)1
+//mov [eax+20], (float)0
+
+originalcode:
+pop eax
+mov edx,[esi]
+lea eax,[esp+48]
+
+exit:
+jmp returnhere
+
+"cshell.dll"+F4E00:
+jmp code_DIR
+nop
+returnhere:
+
+
+
+
+[DISABLE]
+dealloc(newmem)
+"cshell.dll"+F4E00:
+mov edx,[esi]
+lea eax,[esp+48]
+//Alt: db 8B 16 8D 44 24 48
+
+unregistersymbol(code_DIR)
+unregistersymbol(pOponent)
+</AssemblerScript>
+              <CheatEntries>
+                <CheatEntry>
+                  <ID>66</ID>
+                  <Description>"pOponent"</Description>
+                  <ShowAsHex>1</ShowAsHex>
+                  <Color>C0C0C0</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pOponent</Address>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>74</ID>
+                  <Description>"pOponent-&gt;X"</Description>
+                  <Color>C0C0C0</Color>
+                  <VariableType>Float</VariableType>
+                  <Address>pOponent</Address>
+                  <Offsets>
+                    <Offset>24</Offset>
+                  </Offsets>
+                </CheatEntry>
+              </CheatEntries>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>72</ID>
+              <Description>"Move Coord NPC"</Description>
+              <Color>C0C0C0</Color>
+              <VariableType>Auto Assembler Script</VariableType>
+              <AssemblerScript>{
+  Tried to change the cycles position. Unfortunatly this has only
+  and effect on the 3D-objects. There are still invisible traces
+  the player crashes into.
+}
+
+[ENABLE]
+//"cshell.dll"+1306B
+alloc(mem_NPC,2048)
+label(returnhere)
+label(code_NPC)
+label(pCycleNpc)
+label(originalcode)
+label(exit)
+label(npc)
+label(nocycle)
+registersymbol(mem_NPC)
+registersymbol(code_NPC)
+registersymbol(pCycleNpc)
+
+mem_NPC:
+pCycleNpc:
+dd 00
+
+code_NPC:
+//mov [esp+14], (float)0 // x
+//mov [esp+1C], (float)0 // y
+//mov [esp+38], (float)0 // y
+
+push eax
+mov eax, ebx
+
+cmp [eax+44], 6867694C //'Ligh'
+jne nocycle
+cmp [eax+48], 63794374 //'tCyc'
+jne npc
+cmp [eax+4C], 6C42656C //'leBl'
+jne npc
+cmp word ptr [eax+50], 6575 //'ue'
+jne npc
+cmp byte ptr [eax+52], 0
+jne npc
+nop
+
+jmp originalcode
+
+npc:
+mov [pCycleNpc], eax
+//mov [eax+24], (float)0
+//mov [eax+28], (float)0
+//mov [eax+2C], (float)0
+nop
+
+jmp originalcode
+nocycle:
+nop
+
+originalcode:
+pop eax
+mov [ebx+24],ecx
+mov [ebx+28],edx
+
+exit:
+jmp returnhere
+
+"cshell.dll"+1306B:
+jmp code_NPC
+nop
+returnhere:
+
+ 
+[DISABLE]
+"cshell.dll"+1306B:
+//mov [ebx+24],ecx
+//mov [ebx+28],edx
+db 89 4B 24 89 53 28
+
+dealloc(newmem)
+unregistersymbol(mem_NPC)
+unregistersymbol(code_NPC)
+
+</AssemblerScript>
+              <CheatEntries>
+                <CheatEntry>
+                  <ID>73</ID>
+                  <Description>"pCycleNpc"</Description>
+                  <ShowAsHex>1</ShowAsHex>
+                  <Color>C0C0C0</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pCycleNpc</Address>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>75</ID>
+                  <Description>"pCycleNpc-&gt;X"</Description>
+                  <Color>C0C0C0</Color>
+                  <VariableType>Float</VariableType>
+                  <Address>pCycleNpc</Address>
+                  <Offsets>
+                    <Offset>24</Offset>
+                  </Offsets>
+                </CheatEntry>
+              </CheatEntries>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols>
+    <SymbolEntry>
+      <Name>ledx</Name>
+      <Address>05A30000</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>bEnableOneHitKill</Name>
+      <Address>066B0008</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>code_COORD</Name>
+      <Address>0A9D0004</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>pCoord</Name>
+      <Address>0A9D0000</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>code_NPC</Name>
+      <Address>0B280004</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>pCycleNpc</Name>
+      <Address>0B280000</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>bEnableEnergy</Name>
+      <Address>05AF0004</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>bEnableDecorrupt</Name>
+      <Address>0B610004</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>inject_HEALTH</Name>
+      <Address> 0DC9ECC3</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>code_HEALTH</Name>
+      <Address>0BBF000C</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>bEnableHealth</Name>
+      <Address>0BBF0000</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>bEnableOneShotKill</Name>
+      <Address>0BBF0004</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>pPlayer</Name>
+      <Address>0BBF0008</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>inject_ENERGY</Name>
+      <Address> 0DC38D26</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>code_ENERGY</Name>
+      <Address>0BE40000</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>inject_FLOAT</Name>
+      <Address> 004074D0</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>inject_FLOAT2</Name>
+      <Address> 00450228</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>code_FLOAT</Name>
+      <Address>0BFF001C</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>code_FLOAT2</Name>
+      <Address>0BFF0097</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>fIncStep</Name>
+      <Address>0BFF0000</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>pPlayerPos1</Name>
+      <Address>0BFF000C</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>pPlayerPos2</Name>
+      <Address>0BFF0010</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>pPlayerPos3</Name>
+      <Address>0BFF0014</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>pPlayerPos4</Name>
+      <Address>0BFF0018</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>inject_TOOLS</Name>
+      <Address> 03106F95</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>code_TOOLS</Name>
+      <Address>0C00000C</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>pTools</Name>
+      <Address>0C000000</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>bEnableDisinfect</Name>
+      <Address>0C000004</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>bEnableGold</Name>
+      <Address>0C000008</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>inject_PROC</Name>
+      <Address> 0311BF08</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>code_PROC</Name>
+      <Address>0C010014</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>pMain</Name>
+      <Address>0C010000</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>pPort</Name>
+      <Address>0C010004</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>pDisinfect</Name>
+      <Address>0C010008</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>pDefrag</Name>
+      <Address>0C01000C</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>bInstaProcess</Name>
+      <Address>0C010010</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>inject_CYCLE</Name>
+      <Address> 030B1C73</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>code_CYCLE</Name>
+      <Address>0C020004</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>pCycle</Name>
+      <Address>0C020000</Address>
+    </SymbolEntry>
+  </UserdefinedSymbols>
+  <Structures StructVersion="2">
+    <Structure Name="sPlayer" AutoFill="0" AutoCreate="1" DefaultHex="0" AutoDestroy="1" DoNotSaveLocal="1" AutoCreateStructsize="4096">
+      <Elements>
+        <Element Offset="0" Vartype="Pointer" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="4" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="8" Vartype="Pointer" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="12" Vartype="Pointer" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="16" Vartype="Pointer" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="20" Vartype="Pointer" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="24" Vartype="Pointer" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="28" Vartype="Pointer" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="32" Vartype="Pointer" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="36" Vartype="Pointer" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="40" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="44" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Hexadecimal" BackgroundColor="80000005"/>
+        <Element Offset="48" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="52" Vartype="Float" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="56" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="60" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="64" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="68" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="72" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="76" Vartype="Float" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="80" Vartype="Byte" Bytesize="1" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="81" Vartype="String" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="85" Vartype="Byte" Bytesize="1" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="86" Vartype="Byte" Bytesize="1" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="87" Vartype="Byte" Bytesize="1" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="88" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="92" Vartype="Float" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="96" Vartype="Float" Bytesize="4" Description="Max Health" DisplayMethod="Unsigned Integer" BackgroundColor="80FFFF"/>
+        <Element Offset="100" Vartype="Float" Bytesize="4" Description="Health" DisplayMethod="Unsigned Integer" BackgroundColor="80FFFF"/>
+        <Element Offset="104" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="108" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="112" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="116" Vartype="Float" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="120" Vartype="Float" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="124" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="128" Vartype="Float" Bytesize="4" Description="Max Energy" DisplayMethod="Unsigned Integer" BackgroundColor="80FFFF"/>
+        <Element Offset="132" Vartype="Float" Bytesize="4" Description="Energy" DisplayMethod="Unsigned Integer" BackgroundColor="80FFFF"/>
+        <Element Offset="136" Vartype="4 Bytes" Bytesize="4" Description="PlayerOrNPC" DisplayMethod="Unsigned Integer" BackgroundColor="80FF80"/>
+        <Element Offset="140" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="144" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="148" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="152" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+      </Elements>
+    </Structure>
+    <Structure Name="sProcessor" AutoFill="0" AutoCreate="1" DefaultHex="0" AutoDestroy="1" DoNotSaveLocal="1" AutoCreateStructsize="4096">
+      <Elements>
+        <Element Offset="0" Vartype="String" Bytesize="10" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="10" Vartype="String" Bytesize="15" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="25" Vartype="Byte" Bytesize="1" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="26" Vartype="Byte" Bytesize="1" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="27" Vartype="String" Bytesize="5" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="32" Vartype="Pointer" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="36" Vartype="Pointer" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="303" Vartype="Byte" Bytesize="1" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="304" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Hexadecimal" BackgroundColor="80000005"/>
+        <Element Offset="308" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="312" Vartype="Pointer" Bytesize="4" ChildStruct="sPayload" Description="Payload" DisplayMethod="Unsigned Integer" BackgroundColor="80FFFF"/>
+        <Element Offset="316" Vartype="String" Bytesize="6" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="322" Vartype="Byte" Bytesize="1" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="323" Vartype="Byte" Bytesize="1" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="324" Vartype="Pointer" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+      </Elements>
+    </Structure>
+    <Structure Name="sMain" AutoFill="0" AutoCreate="1" DefaultHex="0" AutoDestroy="0" DoNotSaveLocal="0" AutoCreateStructsize="4096">
+      <Elements>
+        <Element Offset="0" Vartype="Pointer" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="4" Vartype="Pointer" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="8" Vartype="Pointer" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="12" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="16" Vartype="Pointer" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="20" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="24" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="28" Vartype="Pointer" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="32" Vartype="Pointer" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="36" Vartype="Pointer" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="40" Vartype="Pointer" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="44" Vartype="Pointer" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="48" Vartype="Pointer" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="52" Vartype="Pointer" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="4352" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="4356" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="4360" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="4364" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="4368" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="4372" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="4376" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="4380" Vartype="Pointer" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="4384" Vartype="Pointer" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="4388" Vartype="Pointer" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="4392" Vartype="Pointer" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="4396" Vartype="Pointer" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="4400" Vartype="Pointer" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="4404" Vartype="Pointer" Bytesize="4" Description="First in Processor Array" DisplayMethod="Unsigned Integer" BackgroundColor="80FFFF">
+          <Structure Name="Autocreated from 02B4CCF8" AutoFill="0" AutoCreate="1" DefaultHex="0" AutoDestroy="0" DoNotSaveLocal="0" AutoCreateStructsize="4096">
+            <Elements>
+              <Element Offset="0" Vartype="Pointer" Bytesize="4" ChildStruct="sProcessor" Description="Port Processor" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="4" Vartype="Pointer" Bytesize="4" ChildStruct="sProcessor" Description="Disinfect Port Processor" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="8" Vartype="Pointer" Bytesize="4" ChildStruct="sProcessor" Description="Defrag Port Processor" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+            </Elements>
+          </Structure>
+        </Element>
+        <Element Offset="4408" Vartype="Pointer" Bytesize="4" Description="Last+1 in Processor Array" DisplayMethod="Unsigned Integer" BackgroundColor="80FFFF"/>
+        <Element Offset="4412" Vartype="Pointer" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="4416" Vartype="Pointer" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="4420" Vartype="Pointer" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="4424" Vartype="Pointer" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="4428" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="4432" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="4436" Vartype="Float" Bytesize="4" Description="TimerCounter" DisplayMethod="Unsigned Integer" BackgroundColor="80FFFF"/>
+        <Element Offset="4440" Vartype="Byte" Bytesize="1" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="4441" Vartype="Byte" Bytesize="1" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="4442" Vartype="Byte" Bytesize="1" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="4443" Vartype="Byte" Bytesize="1" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="4444" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="4448" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="4452" Vartype="Float" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="4456" Vartype="Float" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="4460" Vartype="Float" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="4464" Vartype="Float" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="4468" Vartype="Float" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="4472" Vartype="Float" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="4476" Vartype="Float" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+      </Elements>
+    </Structure>
+    <Structure Name="sPayload" AutoFill="0" AutoCreate="1" DefaultHex="0" AutoDestroy="1" DoNotSaveLocal="1" AutoCreateStructsize="50">
+      <Elements>
+        <Element Offset="0" Vartype="Pointer" Bytesize="4" Description="Type" DisplayMethod="Unsigned Integer" BackgroundColor="80FFFF"/>
+        <Element Offset="4" Vartype="4 Bytes" Bytesize="4" Description="Level (0-2)" DisplayMethod="Unsigned Integer" BackgroundColor="80FFFF"/>
+        <Element Offset="8" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="12" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="16" Vartype="Float" Bytesize="4" Description="Progress (Percent / 100)" DisplayMethod="Unsigned Integer" BackgroundColor="80FFFF"/>
+        <Element Offset="20" Vartype="4 Bytes" Bytesize="4" Description="Corrupted (=2)" DisplayMethod="Unsigned Integer" BackgroundColor="80FFFF"/>
+        <Element Offset="24" Vartype="Pointer" Bytesize="4" ChildStruct="sProcessor" Description="pProcessor" DisplayMethod="Unsigned Integer" BackgroundColor="80FFFF"/>
+        <Element Offset="28" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="32" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="36" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="40" Vartype="Pointer" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="44" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Hexadecimal" BackgroundColor="80000005"/>
+        <Element Offset="48" Vartype="Float" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="52" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Hexadecimal" BackgroundColor="80000005"/>
+        <Element Offset="56" Vartype="Pointer" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="60" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Hexadecimal" BackgroundColor="80000005"/>
+        <Element Offset="64" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+      </Elements>
+    </Structure>
+    <Structure Name="sTools" AutoFill="0" AutoCreate="1" DefaultHex="0" AutoDestroy="0" DoNotSaveLocal="0" AutoCreateStructsize="4096">
+      <Elements>
+        <Element Offset="1968" Vartype="Pointer" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="1972" Vartype="Pointer" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="1976" Vartype="Pointer" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="1980" Vartype="Pointer" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="1984" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="1988" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="1992" Vartype="Pointer" Bytesize="4" Description="Array of Payloads" DisplayMethod="Unsigned Integer" BackgroundColor="80FFFF">
+          <Structure Name="Autocreated from 02CB9C78" AutoFill="0" AutoCreate="1" DefaultHex="0" AutoDestroy="0" DoNotSaveLocal="0" AutoCreateStructsize="4096">
+            <Elements>
+              <Element Offset="0" Vartype="Pointer" Bytesize="4" ChildStruct="sPayload" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="4" Vartype="Pointer" Bytesize="4" ChildStruct="sPayload" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="8" Vartype="Pointer" Bytesize="4" ChildStruct="sPayload" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="12" Vartype="Pointer" Bytesize="4" ChildStruct="sPayload" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="16" Vartype="Pointer" Bytesize="4" ChildStruct="sPayload" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="20" Vartype="Pointer" Bytesize="4" ChildStruct="sPayload" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="24" Vartype="Pointer" Bytesize="4" ChildStruct="sPayload" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="28" Vartype="Pointer" Bytesize="4" ChildStruct="sPayload" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="32" Vartype="Pointer" Bytesize="4" ChildStruct="sPayload" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="36" Vartype="Pointer" Bytesize="4" ChildStruct="sPayload" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="40" Vartype="Pointer" Bytesize="4" ChildStruct="sPayload" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="44" Vartype="Pointer" Bytesize="4" ChildStruct="sPayload" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="48" Vartype="Pointer" Bytesize="4" ChildStruct="sPayload" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="52" Vartype="Pointer" Bytesize="4" ChildStruct="sPayload" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="56" Vartype="Pointer" Bytesize="4" ChildStruct="sPayload" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="60" Vartype="Pointer" Bytesize="4" ChildStruct="sPayload" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="64" Vartype="Pointer" Bytesize="4" ChildStruct="sPayload" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="68" Vartype="Pointer" Bytesize="4" ChildStruct="sPayload" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="72" Vartype="Pointer" Bytesize="4" ChildStruct="sPayload" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="76" Vartype="Pointer" Bytesize="4" ChildStruct="sPayload" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="80" Vartype="Pointer" Bytesize="4" ChildStruct="sPayload" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="84" Vartype="Pointer" Bytesize="4" ChildStruct="sPayload" DisplayMethod="Unsigned Integer" BackgroundColor="FFFFFF"/>
+              <Element Offset="88" Vartype="Pointer" Bytesize="4" ChildStruct="sPayload" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="92" Vartype="Pointer" Bytesize="4" ChildStruct="sPayload" DisplayMethod="Unsigned Integer" BackgroundColor="FFFFFF"/>
+              <Element Offset="96" Vartype="Pointer" Bytesize="4" ChildStruct="sPayload" DisplayMethod="Unsigned Integer" BackgroundColor="FFFFFF"/>
+              <Element Offset="100" Vartype="Pointer" Bytesize="4" ChildStruct="sPayload" DisplayMethod="Unsigned Integer" BackgroundColor="FFFFFF"/>
+              <Element Offset="104" Vartype="Pointer" Bytesize="4" ChildStruct="sPayload" DisplayMethod="Unsigned Integer" BackgroundColor="FFFFFF"/>
+              <Element Offset="108" Vartype="Pointer" Bytesize="4" ChildStruct="sPayload" DisplayMethod="Unsigned Integer" BackgroundColor="FFFFFF"/>
+              <Element Offset="112" Vartype="Pointer" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="116" Vartype="Pointer" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="120" Vartype="Pointer" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="124" Vartype="Pointer" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="128" Vartype="Pointer" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="132" Vartype="Pointer" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="136" Vartype="Pointer" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="140" Vartype="Pointer" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="144" Vartype="Pointer" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="148" Vartype="Pointer" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="152" Vartype="Pointer" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="156" Vartype="Pointer" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="160" Vartype="Pointer" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="164" Vartype="Pointer" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="168" Vartype="Pointer" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="172" Vartype="Pointer" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="176" Vartype="Pointer" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="180" Vartype="Pointer" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="184" Vartype="Pointer" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="188" Vartype="Pointer" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="192" Vartype="Pointer" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="196" Vartype="Pointer" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="200" Vartype="Pointer" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="204" Vartype="Pointer" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="208" Vartype="Pointer" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="212" Vartype="Pointer" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="216" Vartype="Pointer" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="220" Vartype="Pointer" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="224" Vartype="Pointer" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="228" Vartype="Pointer" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="232" Vartype="Pointer" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="236" Vartype="Pointer" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="240" Vartype="Pointer" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="244" Vartype="Pointer" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="248" Vartype="Pointer" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="252" Vartype="Pointer" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="256" Vartype="Pointer" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="260" Vartype="String" Bytesize="23" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="283" Vartype="Byte" Bytesize="1" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="284" Vartype="Byte" Bytesize="1" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="285" Vartype="String" Bytesize="6" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="291" Vartype="Byte" Bytesize="1" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+            </Elements>
+          </Structure>
+        </Element>
+        <Element Offset="1996" Vartype="Pointer" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="FFFFFF"/>
+        <Element Offset="2000" Vartype="Pointer" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="2004" Vartype="Pointer" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="2008" Vartype="Pointer" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="2012" Vartype="Pointer" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="2016" Vartype="Pointer" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+      </Elements>
+    </Structure>
+    <Structure Name="sCycle" AutoFill="0" AutoCreate="1" DefaultHex="0" AutoDestroy="0" DoNotSaveLocal="1" AutoCreateStructsize="4096">
+      <Elements>
+        <Element Offset="0" Vartype="Pointer" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="4" Vartype="Pointer" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="8" Vartype="Pointer" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="12" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="16" Vartype="Float" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="20" Vartype="Float" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="24" Vartype="Float" Bytesize="4" Description="Dir1" DisplayMethod="Unsigned Integer" BackgroundColor="80FFFF"/>
+        <Element Offset="28" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="32" Vartype="Float" Bytesize="4" Description="Dir2" DisplayMethod="Unsigned Integer" BackgroundColor="80FFFF"/>
+        <Element Offset="36" Vartype="Float" Bytesize="4" Description="X" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="40" Vartype="Float" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="44" Vartype="Float" Bytesize="4" Description="Y" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="48" Vartype="Pointer" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="52" Vartype="Pointer" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="56" Vartype="Pointer" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="60" Vartype="Pointer" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="64" Vartype="Float" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="68" Vartype="String" Bytesize="20" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="83" Vartype="Byte" Bytesize="1" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="84" Vartype="Float" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="88" Vartype="Float" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="92" Vartype="Float" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="96" Vartype="Float" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="100" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="104" Vartype="Float" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="108" Vartype="Float" Bytesize="4" Description="Current Acceleration" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="112" Vartype="Float" Bytesize="4" Description="Normal Speed" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="116" Vartype="Float" Bytesize="4" Description="Current Speed" DisplayMethod="Unsigned Integer" BackgroundColor="80FFFF"/>
+        <Element Offset="120" Vartype="Float" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="124" Vartype="Float" Bytesize="4" Description="Boost (Forward Key)" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="128" Vartype="Float" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="132" Vartype="Float" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="136" Vartype="Float" Bytesize="4" Description="Min Speed" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="140" Vartype="Float" Bytesize="4" Description="Acceleration (700)" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="144" Vartype="Float" Bytesize="4" Description="Deceleration (560)" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="148" Vartype="Float" Bytesize="4" Description="Acceleration withouth key (280)" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="152" Vartype="Float" Bytesize="4" Description="Deceleration without key (140)" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="156" Vartype="Float" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="160" Vartype="Float" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="164" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="168" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="172" Vartype="Float" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="176" Vartype="Float" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="180" Vartype="Float" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="184" Vartype="Float" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="188" Vartype="Float" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="192" Vartype="Float" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="196" Vartype="Float" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="200" Vartype="Float" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="204" Vartype="Float" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="208" Vartype="Float" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="212" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="216" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="220" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="224" Vartype="Float" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="228" Vartype="Float" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="232" Vartype="Float" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="236" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="240" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80FF80"/>
+        <Element Offset="244" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="248" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="252" Vartype="Float" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="256" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="260" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="264" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="268" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="272" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="276" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="280" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="284" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="288" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="292" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="296" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="300" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="304" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="308" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="312" Vartype="Float" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="316" Vartype="Float" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="320" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Hexadecimal" BackgroundColor="80000005"/>
+        <Element Offset="324" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Hexadecimal" BackgroundColor="80000005"/>
+        <Element Offset="328" Vartype="Float" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="332" Vartype="Float" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="336" Vartype="Float" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="340" Vartype="Float" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="344" Vartype="Byte" Bytesize="1" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="345" Vartype="Byte" Bytesize="1" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="346" Vartype="Byte" Bytesize="1" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="347" Vartype="Byte" Bytesize="1" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="348" Vartype="Float" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="352" Vartype="String" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="356" Vartype="Float" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="360" Vartype="Float" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="364" Vartype="Byte" Bytesize="1" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="365" Vartype="Byte" Bytesize="1" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="366" Vartype="Byte" Bytesize="1" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="367" Vartype="Byte" Bytesize="1" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="368" Vartype="Float" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="372" Vartype="Float" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="376" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="380" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="384" Vartype="Float" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="388" Vartype="Float" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="392" Vartype="Float" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="396" Vartype="Float" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="400" Vartype="Float" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="404" Vartype="Float" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="408" Vartype="Byte" Bytesize="1" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="409" Vartype="Byte" Bytesize="1" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="410" Vartype="Byte" Bytesize="1" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="411" Vartype="Byte" Bytesize="1" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="412" Vartype="Float" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="416" Vartype="String" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="420" Vartype="Float" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="424" Vartype="Float" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="428" Vartype="Byte" Bytesize="1" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="429" Vartype="Byte" Bytesize="1" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="430" Vartype="Byte" Bytesize="1" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="431" Vartype="Byte" Bytesize="1" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="432" Vartype="Float" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="436" Vartype="Float" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="440" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="444" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="448" Vartype="Float" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="452" Vartype="Float" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="456" Vartype="Float" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="460" Vartype="Float" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="464" Vartype="Float" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="468" Vartype="Float" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="472" Vartype="Byte" Bytesize="1" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="473" Vartype="Byte" Bytesize="1" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="474" Vartype="Byte" Bytesize="1" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="475" Vartype="Byte" Bytesize="1" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="476" Vartype="Float" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="480" Vartype="String" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="484" Vartype="Float" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="488" Vartype="Float" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="492" Vartype="Byte" Bytesize="1" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="493" Vartype="Byte" Bytesize="1" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="494" Vartype="Byte" Bytesize="1" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="495" Vartype="Byte" Bytesize="1" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="496" Vartype="Float" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="500" Vartype="Float" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="504" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="508" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="512" Vartype="Float" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="516" Vartype="Float" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="520" Vartype="Float" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="524" Vartype="Float" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="528" Vartype="Float" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="532" Vartype="Float" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="536" Vartype="Byte" Bytesize="1" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="537" Vartype="Byte" Bytesize="1" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="538" Vartype="Byte" Bytesize="1" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="539" Vartype="Byte" Bytesize="1" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="540" Vartype="Float" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="544" Vartype="String" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="548" Vartype="Float" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="552" Vartype="Float" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="556" Vartype="Byte" Bytesize="1" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="557" Vartype="Byte" Bytesize="1" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="558" Vartype="Byte" Bytesize="1" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="559" Vartype="Byte" Bytesize="1" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="560" Vartype="Float" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="564" Vartype="Float" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="568" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="572" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="576" Vartype="Float" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="580" Vartype="Float" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="584" Vartype="Float" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="588" Vartype="Float" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="592" Vartype="Float" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+      </Elements>
+    </Structure>
+    <Structure Name="sCoord" AutoFill="0" AutoCreate="1" DefaultHex="0" AutoDestroy="0" DoNotSaveLocal="1" AutoCreateStructsize="4096">
+      <Elements>
+        <Element Offset="0" Vartype="Pointer" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="4" Vartype="Float" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="8" Vartype="Float" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="12" Vartype="Float" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="16" Vartype="Float" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="20" Vartype="Float" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="24" Vartype="Float" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="28" Vartype="Pointer" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="32" Vartype="Pointer" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="36" Vartype="Pointer" Bytesize="4" ChildStruct="sCoord" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="40" Vartype="Pointer" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="44" Vartype="Pointer" Bytesize="4" ChildStruct="sCoord" DisplayMethod="Unsigned Integer" BackgroundColor="80000005" ChildStructStart="44"/>
+        <Element Offset="48" Vartype="Pointer" Bytesize="4" ChildStruct="sCoord" DisplayMethod="Unsigned Integer" BackgroundColor="80000005" ChildStructStart="44"/>
+        <Element Offset="52" Vartype="Pointer" Bytesize="4" ChildStruct="sCoord" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="56" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="60" Vartype="Pointer" Bytesize="4" ChildStruct="sCoord" DisplayMethod="Unsigned Integer" BackgroundColor="80000005" ChildStructStart="60"/>
+        <Element Offset="64" Vartype="Pointer" Bytesize="4" ChildStruct="sCoord" DisplayMethod="Unsigned Integer" BackgroundColor="80000005" ChildStructStart="60"/>
+        <Element Offset="68" Vartype="Pointer" Bytesize="4" ChildStruct="sCoord" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="72" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="76" Vartype="Pointer" Bytesize="4" ChildStruct="sCoord" DisplayMethod="Unsigned Integer" BackgroundColor="80000005" ChildStructStart="76"/>
+        <Element Offset="80" Vartype="Pointer" Bytesize="4" ChildStruct="sCoord" DisplayMethod="Unsigned Integer" BackgroundColor="80000005" ChildStructStart="76"/>
+        <Element Offset="84" Vartype="Pointer" Bytesize="4" ChildStruct="sCoord" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="88" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="92" Vartype="Pointer" Bytesize="4" ChildStruct="sCoord" DisplayMethod="Unsigned Integer" BackgroundColor="80000005" ChildStructStart="92"/>
+        <Element Offset="96" Vartype="Pointer" Bytesize="4" ChildStruct="sCoord" DisplayMethod="Unsigned Integer" BackgroundColor="80000005" ChildStructStart="92"/>
+        <Element Offset="100" Vartype="Pointer" Bytesize="4" ChildStruct="sCoord" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="104" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="108" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="112" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="116" Vartype="Pointer" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="120" Vartype="Pointer" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="124" Vartype="Pointer" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="128" Vartype="Pointer" Bytesize="4" ChildStruct="sCoord" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="132" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Hexadecimal" BackgroundColor="80000005"/>
+        <Element Offset="136" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="140" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="144" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="148" Vartype="Float" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="152" Vartype="Float" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="156" Vartype="Float" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="160" Vartype="Float" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="164" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Hexadecimal" BackgroundColor="80000005"/>
+        <Element Offset="168" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="172" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="176" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="180" Vartype="Float" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="184" Vartype="Float" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="188" Vartype="Float" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="192" Vartype="Float" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="196" Vartype="Float" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="200" Vartype="Float" Bytesize="4" Description="X" DisplayMethod="Unsigned Integer" BackgroundColor="80FFFF"/>
+        <Element Offset="204" Vartype="Float" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="208" Vartype="Float" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="212" Vartype="Float" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="216" Vartype="Float" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="220" Vartype="Float" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="224" Vartype="Float" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="228" Vartype="Float" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="232" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="236" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="240" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="244" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="248" Vartype="Float" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="252" Vartype="Float" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="256" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="260" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="264" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="268" Vartype="Pointer" Bytesize="4" ChildStruct="sCoord" DisplayMethod="Unsigned Integer" BackgroundColor="80000005" ChildStructStart="268"/>
+        <Element Offset="272" Vartype="Pointer" Bytesize="4" ChildStruct="sCoord" DisplayMethod="Unsigned Integer" BackgroundColor="80000005" ChildStructStart="268"/>
+        <Element Offset="276" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="280" Vartype="Pointer" Bytesize="4" ChildStruct="sCoord" DisplayMethod="Unsigned Integer" BackgroundColor="80000005" ChildStructStart="280"/>
+        <Element Offset="284" Vartype="Pointer" Bytesize="4" ChildStruct="sCoord" DisplayMethod="Unsigned Integer" BackgroundColor="80000005" ChildStructStart="280"/>
+        <Element Offset="288" Vartype="Pointer" Bytesize="4" ChildStruct="sCoord" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="292" Vartype="Pointer" Bytesize="4" ChildStruct="sCycle" DisplayMethod="Unsigned Integer" BackgroundColor="8080FF" ChildStructStart="52"/>
+        <Element Offset="296" Vartype="Pointer" Bytesize="4" ChildStruct="sCycle" DisplayMethod="Unsigned Integer" BackgroundColor="80000005" ChildStructStart="52"/>
+        <Element Offset="300" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="304" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="308" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="312" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="316" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="320" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="324" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="328" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="332" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="336" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="340" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+      </Elements>
+    </Structure>
+    <Structure Name="sPlayerPos" AutoFill="0" AutoCreate="1" DefaultHex="0" AutoDestroy="0" DoNotSaveLocal="1" AutoCreateStructsize="4096">
+      <Elements>
+        <Element Offset="0" Vartype="Pointer" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="4" Vartype="Float" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="8" Vartype="Float" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="12" Vartype="Float" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="16" Vartype="Float" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="20" Vartype="Float" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="24" Vartype="Float" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="28" Vartype="Pointer" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="32" Vartype="Pointer" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="36" Vartype="Pointer" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="40" Vartype="Pointer" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="44" Vartype="Pointer" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="48" Vartype="Pointer" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="52" Vartype="Pointer" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="56" Vartype="Pointer" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="60" Vartype="Pointer" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="64" Vartype="Pointer" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="68" Vartype="Pointer" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="72" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="76" Vartype="Pointer" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="80" Vartype="Pointer" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="84" Vartype="Pointer" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="88" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="92" Vartype="Pointer" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="96" Vartype="Pointer" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="100" Vartype="Pointer" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="104" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="108" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="112" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Hexadecimal" BackgroundColor="80000005"/>
+        <Element Offset="116" Vartype="Pointer" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="120" Vartype="Pointer" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="124" Vartype="Pointer" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="128" Vartype="Pointer" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="132" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Hexadecimal" BackgroundColor="80000005"/>
+        <Element Offset="136" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="140" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="144" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="148" Vartype="Float" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="152" Vartype="Float" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="156" Vartype="Float" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="160" Vartype="Float" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="164" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Hexadecimal" BackgroundColor="80000005"/>
+        <Element Offset="168" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="172" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="176" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="180" Vartype="Float" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="184" Vartype="Float" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="188" Vartype="Float" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="192" Vartype="Float" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="196" Vartype="Float" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="200" Vartype="Float" Bytesize="4" Description="Y-Coord" DisplayMethod="Unsigned Integer" BackgroundColor="80FFFF"/>
+        <Element Offset="204" Vartype="Float" Bytesize="4" Description="Z-Coord" DisplayMethod="Unsigned Integer" BackgroundColor="80FFFF"/>
+        <Element Offset="208" Vartype="Float" Bytesize="4" Description="X-Coord" DisplayMethod="Unsigned Integer" BackgroundColor="80FFFF"/>
+        <Element Offset="212" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="216" Vartype="Byte" Bytesize="1" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="217" Vartype="Byte" Bytesize="1" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="218" Vartype="Byte" Bytesize="1" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="219" Vartype="Byte" Bytesize="1" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="220" Vartype="Double" Bytesize="8" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="228" Vartype="Float" Bytesize="4" Description="Y-Momentum" DisplayMethod="Unsigned Integer" BackgroundColor="80FFFF"/>
+        <Element Offset="232" Vartype="Float" Bytesize="4" Description="Z-Momentum" DisplayMethod="Unsigned Integer" BackgroundColor="80FFFF"/>
+        <Element Offset="236" Vartype="Float" Bytesize="4" Description="X-Momentum" DisplayMethod="Unsigned Integer" BackgroundColor="80FFFF"/>
+        <Element Offset="240" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="244" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="248" Vartype="Float" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="252" Vartype="Float" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="256" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="260" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="264" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="268" Vartype="Pointer" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="272" Vartype="Pointer" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="276" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="280" Vartype="Pointer" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="284" Vartype="Pointer" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="288" Vartype="Pointer" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="292" Vartype="Pointer" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="296" Vartype="Pointer" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="300" Vartype="Byte" Bytesize="1" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="301" Vartype="String" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="305" Vartype="Byte" Bytesize="1" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="306" Vartype="Byte" Bytesize="1" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="307" Vartype="Byte" Bytesize="1" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="308" Vartype="Pointer" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="312" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="316" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="320" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+      </Elements>
+    </Structure>
+  </Structures>
+  <Comments>Info about this table:
+</Comments>
+  <DisassemblerComments>
+    <DisassemblerComment>
+      <Address>"Lithtech.exe"+74D0</Address>
+      <Comment>Copy cycle coordinates into sCycle
+</Comment>
+    </DisassemblerComment>
+    <DisassemblerComment>
+      <Address>"Lithtech.exe"+50228</Address>
+      <Comment>Only entered when Player moves
+</Comment>
+    </DisassemblerComment>
+    <DisassemblerComment>
+      <Address>"Lithtech.exe"+5025D</Address>
+      <Comment>Write Y-Coord
+</Comment>
+    </DisassemblerComment>
+    <DisassemblerComment>
+      <Address>"Lithtech.exe"+50278</Address>
+      <Comment>Write Z-Coord
+</Comment>
+    </DisassemblerComment>
+    <DisassemblerComment>
+      <Address>"Lithtech.exe"+50282</Address>
+      <Comment>Write X-Coord
+</Comment>
+    </DisassemblerComment>
+    <DisassemblerComment>
+      <Address>"cshell.dll"+1306B</Address>
+      <Comment>Write X
+</Comment>
+    </DisassemblerComment>
+    <DisassemblerComment>
+      <Address>"cshell.dll"+2C5EB</Address>
+      <Comment>Increase Nummerical Health Value
+</Comment>
+    </DisassemblerComment>
+    <DisassemblerComment>
+      <Address>"cshell.dll"+2C6D7</Address>
+      <Comment>Write Health Bar Value
+</Comment>
+    </DisassemblerComment>
+    <DisassemblerComment>
+      <Address>"cshell.dll"+9BF08</Address>
+      <Comment>Routine Start: Processor
+</Comment>
+    </DisassemblerComment>
+    <DisassemblerComment>
+      <Address>"cshell.dll"+9BF6A</Address>
+      <Comment>Check if processor has payload
+</Comment>
+    </DisassemblerComment>
+    <DisassemblerComment>
+      <Address>"cshell.dll"+9C094</Address>
+      <Comment>Jump, if not fully defraged
+</Comment>
+    </DisassemblerComment>
+    <DisassemblerComment>
+      <Address>"cshell.dll"+F4DF2</Address>
+      <Comment>Write Dir1
+</Comment>
+    </DisassemblerComment>
+    <DisassemblerComment>
+      <Address>"object.lto"+DECC3</Address>
+      <Comment>Health dec on hit
+</Comment>
+    </DisassemblerComment>
+  </DisassemblerComments>
+</CheatTable>

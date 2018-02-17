@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="14">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>83</ID>
+      <Description>"Script: Speed Multiplier"</Description>
+      <Color>80000008</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>define(bytes,F3 0F 10 8E 8C 05 00 00)
+//define(address,"Dishonored.exe"+74A992)
+
+[ENABLE]
+aobscan(address,bytes)
+alloc(newmem,2048) //2kb should be enough
+label(returnhere)
+label(originalcode)
+label(exit)
+
+newmem: // this is allocated memory, you have read,write,execute access
+label(SPEED_MULTIPLIER)
+registersymbol(SPEED_MULTIPLIER)
+SPEED_MULTIPLIER:
+  dd (float)3.0
+  dd 0 // ratio
+  dd 0 // result
+
+label(code)
+code:
+  push eax
+  mov eax,[ebp-4]
+  mov [SPEED_MULTIPLIER+4],eax
+  pop eax
+  fst [SPEED_MULTIPLIER+8]
+  fmul [SPEED_MULTIPLIER]
+  movss xmm1,[esi+0000058C]
+
+originalcode:
+//  movss xmm1,[esi+0000058C]
+
+exit:
+  jmp returnhere
+
+address:
+label(I_MovementSpeed)
+registersymbol(I_MovementSpeed)
+I_MovementSpeed:
+  jmp code
+  nop
+  nop
+  nop
+returnhere:
+
+[DISABLE]
+I_MovementSpeed:
+  db bytes
+
+unregistersymbol(SPEED_MULTIPLIER)
+unregistersymbol(I_MovementSpeed)
+
+{
+Dishonored.exe+74A975 - 8D 8E A8040000        - lea ecx,[esi+000004A8]
+Dishonored.exe+74A97B - E8 406A1200           - call Dishonored.exe+8713C0 // get speed ratio
+Dishonored.exe+74A980 - D9 5D FC              - fstp dword ptr [ebp-04]
+Dishonored.exe+74A983 - 8B 06                 - mov eax,[esi]
+Dishonored.exe+74A985 - 8B 90 A4050000        - mov edx,[eax+000005A4]
+Dishonored.exe+74A98B - 8B CE                 - mov ecx,esi
+Dishonored.exe+74A98D - FF D2                 - call edx // get player normal speed (0.90)
+Dishonored.exe+74A98F - D8 4D FC              - fmul dword ptr [ebp-04]
+
+// [ebp-04] had the speed ratio:
+//    0.50 - stealthed AND strafing
+//    0.6875 - stealthed (forward/backward)
+//    0.70 - strafing
+//    0.80 - moving backwards
+//    1.00 - normal
+//    1.95 - sprinting
+// st(0) had the normal char speed (0.90), from the function I think
+// what we do is just multiply the result by the [CHEAT_SPEED]
+Dishonored.exe+74A992 - F3 0F10 8E 8C050000   - movss xmm1,[esi+0000058C]
+Dishonored.exe+74A99A - F3 0F11 4D F8         - movss [ebp-08],xmm1
+Dishonored.exe+74A99F - D9 55 FC              - fst dword ptr [ebp-04]
+Dishonored.exe+74A9A2 - F3 0F10 45 FC         - movss xmm0,[ebp-04]
+Dishonored.exe+74A9A7 - 0F2F C8               - comiss xmm1,xmm0
+Dishonored.exe+74A9AA - 76 6F                 - jna I_Speed2
+Dishonored.exe+74A9AC - D9 45 F8              - fld dword ptr [ebp-08]
+Dishonored.exe+74A9AF - D8E1                  - fsub st(0),st(1)
+Dishonored.exe+74A9B1 - DD 05 C8D3F300        - fld qword ptr [Dishonored.exe+B3D3C8]
+Dishonored.exe+74A9B7 - D9C9                  - fxch st(1)
+Dishonored.exe+74A9B9 - DFF1                  - fcomip st(0),st(1)
+Dishonored.exe+74A9BB - DDD8                  - fstp st(0)
+
+}
+
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>84</ID>
+          <Description>"SPEED_MULTIPLIER"</Description>
+          <Color>80000008</Color>
+          <VariableType>Float</VariableType>
+          <Address>SPEED_MULTIPLIER</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>86</ID>
+          <Description>"(debug) - multipler"</Description>
+          <Color>80000008</Color>
+          <VariableType>Float</VariableType>
+          <Address>SPEED_MULTIPLIER+4</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>85</ID>
+          <Description>"(debug) original calculated value"</Description>
+          <Color>80000008</Color>
+          <VariableType>Float</VariableType>
+          <Address>SPEED_MULTIPLIER+8</Address>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols>
+    <SymbolEntry>
+      <Name>SPEED_MULTIPLIER</Name>
+      <Address>14800000</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>I_MovementSpeed</Name>
+      <Address>00B4A992</Address>
+    </SymbolEntry>
+  </UserdefinedSymbols>
+</CheatTable>

@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="19">
+  <Forms>
+    <UDF1 Class="TCEForm" Encoding="Ascii85">b7Ej%2nldAU:MM2b.}cxWeIh0Gi32eO*Ft]WMuP5%{mcIVgA6t9Fkwal+{5QnNpI$=7,zGoLEqjnV-i7R=ffx00</UDF1>
+  </Forms>
+  <CheatEntries>
+    <CheatEntry>
+      <ID>3</ID>
+      <Description>"One hit kill"</Description>
+      <LastState/>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>{ Game   : Boot Hill Heroes.exe
+  Version: 1.0
+  Date   : 2016-03-15
+  Author : masamunecyrus
+
+  This script modifies how much damage is inflicted.
+  NOTE1: This cheat also affects the enemies.
+  NOTE2: You will probably have to get into a battle and attack once
+         before Cheat Engine allows you to enable this cheat.
+}
+
+[ENABLE]
+//code from here to '[DISABLE]' will be used to enable the cheat
+aobscan(INJECT,50 18 0F B7 45 DC 89 45 80) // should be unique
+alloc(newmem,$1000)
+
+label(code)
+label(original)
+label(return)
+
+newmem:
+
+code:
+
+  /* for some reason, if the code is active and
+  a critical hit kills an enemy, the enemy won't
+  disappear and you'll be stuck in battle */
+  cmp word ptr [ebp+7C],01  // if critical hit
+  je original               // go to original code
+
+  /* check if the original damage of your attack is 0.
+  some attacks don't drain any damage (e.g., attacks that
+  simply inflict status ailments). for those attacks,
+  we should use the normal codes */
+  cmp word ptr [ebp-24],00  // if damage 0
+  je original               // go to original code
+
+  /* for all other cases, damage a lot */
+  mov word ptr [ebp-24],(Int)127  // set damage to 127
+  jmp original                    // go to original code
+
+original:
+  // original code
+  movzx eax,word ptr [ebp-24]
+  mov [ebp-80],eax
+  jmp return
+
+
+INJECT+02:
+  jmp code
+  nop
+  nop
+return:
+registersymbol(INJECT)
+
+[DISABLE]
+//code from here till the end of the code will be used to disable the cheat
+INJECT+02:
+  db 0F B7 45 DC 89 45 80
+
+unregistersymbol(INJECT)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: 112C64A4
+
+112C6476: DE E9                    -  fsubp st(1),st(0)
+112C6478: DD 9D 78 FF FF FF        -  fstp qword ptr [ebp-00000088]
+112C647E: F2 0F 10 85 78 FF FF FF  -  movsd xmm0,[ebp-00000088]
+112C6486: F2 0F 2C D0              -  cvttsd2si edx,xmm0
+112C648A: 81 E2 FF FF 00 00        -  and edx,0000FFFF
+112C6490: 8B 45 18                 -  mov eax,[ebp+18]
+112C6493: 01 90 AC 00 00 00        -  add [eax+000000AC],edx
+112C6499: E9 67 01 00 00           -  jmp 112C6605
+112C649E: 8B 45 1C                 -  mov eax,[ebp+1C]
+112C64A1: 8B 50 18                 -  mov edx,[eax+18]
+// ---------- INJECTING HERE ----------
+112C64A4: 0F B7 45 DC              -  movzx eax,word ptr [ebp-24]
+112C64A8: 89 45 80                 -  mov [ebp-80],eax
+// ---------- DONE INJECTING  ----------
+112C64AB: DB 45 80                 -  fild dword ptr [ebp-80]
+112C64AE: D9 5D 80                 -  fstp dword ptr [ebp-80]
+112C64B1: D9 45 80                 -  fld dword ptr [ebp-80]
+112C64B4: E9 47 9B DF F6           -  jmp 080C0000
+112C64B9: 90                       -  nop
+112C64BA: D9 42 04                 -  fld dword ptr [edx+04]
+112C64BD: D9 EE                    -  fldz
+112C64BF: DF F1                    -  fcomip st(0),st(1)
+112C64C1: DD D8                    -  fstp st(0)
+112C64C3: 7A 07                    -  jp 112C64CC
+}
+</AssemblerScript>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols/>
+</CheatTable>

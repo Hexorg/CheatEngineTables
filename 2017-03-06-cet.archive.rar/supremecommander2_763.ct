@@ -1,0 +1,411 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="14">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>28</ID>
+      <Description>"Recifense's script"</Description>
+      <Options moHideChildren="1"/>
+      <Color>80000008</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>{
+===========================================
+ Game Title    : Supreme Commander 2
+ Game Version  : 1.250
+ Script Version: 1.1
+ CE Version    : 6.2
+ Release date  : 28-May-2012
+ Author        : Recifense; updated by Csimbi
+ Features:
+ - God Mode
+ - Minimum Resources
+ - Minimum Research Points
+ - Unit limit multiplier
+===========================================
+}
+
+[ENABLE]
+//=========================================
+aobscan(aobResourceHook,8B 90 74 02 00 00 56 57 8D 98 88 00 00 00)
+aobscan(aobGodModeHook,F3 0F 11 96 8C 00 00 00 E8 17 8B 11 00)
+aobscan(aobUnitLimitHook,D9 9E 0C 02 00 00 8B 16 8B 42 58 8B CE FF D0)
+
+//=========================================
+alloc(MyCode,1024)
+//=========================================
+// Declaration section
+label(aobResourceHook_r)
+label(aobGodModeHook_r)
+label(aobUnitLimitHook_r)
+label(_MonPlayer)
+label(_MonP0)
+label(_MonP1)
+label(_BackMP)
+label(_ExitMP)
+label(_GodMode)
+label(_BackGM)
+label(_ExitGM)
+label(pUnit)
+label(pPlayer)
+label(iPlayerID)
+label(iEnableGM)
+label(iEnableMR)
+label(iEnableRP)
+label(fMinRes)
+label(fMinRP)
+label(lblUnitLimit)
+label(lblSkipUnitLimit)
+label(lblUnitLimitReturn)
+label(bUnitLimitEnabled)
+label(fUnitLimitMultiplier)
+
+//=========================================
+// Registering Symbols
+registersymbol(aobResourceHook_r)
+registersymbol(aobGodModeHook_r)
+registersymbol(aobUnitLimitHook_r)
+registersymbol(MyCode)
+registersymbol(pUnit)
+registersymbol(pPlayer)
+registersymbol(iPlayerID)
+registersymbol(iEnableGM)
+registersymbol(iEnableMR)
+registersymbol(iEnableRP)
+registersymbol(fMinRes)
+registersymbol(fMinRP)
+registersymbol(bUnitLimitEnabled)
+registersymbol(fUnitLimitMultiplier)
+
+//=========================================
+MyCode:
+//=========================================
+_MonPlayer:
+ mov edx,[eax+00000274]              // Original code
+
+ cmp dword ptr [eax+00000178],'Huma'
+ jne _ExitMP                         // Jump if it is not the player
+
+ mov [pPlayer],eax
+
+ mov ebx,[eax+08]
+ mov [iPlayerID],ebx
+
+ cmp dword ptr [iEnableMR],0
+ je _MonP1                           // Jump if feature is disabled
+
+ mov ebx,[fMinRes]
+ cmp ebx,[edx+38]                    // Energy
+ jle _MonP0
+
+ mov [edx+38],ebx
+
+_MonP0:
+ cmp ebx,[edx+3C]                    // Mass
+ jle _MonP1
+
+ mov [edx+3C],ebx
+
+_MonP1:
+ cmp dword ptr [iEnableRP],0
+ je _ExitMP                          // Jump if feature is disabled
+
+ mov ebx,[fMinRP]
+ cmp ebx,[edx+40]                    // Research Points
+ jle _ExitMP
+
+ mov [edx+40],ebx
+
+_ExitMP:
+ jmp _BackMP                         // Back to main code
+
+//=========================================
+// God Mode and Instant Building
+_GodMode:
+ push eax
+
+ mov [pUnit],esi                     // Save ptr for debugging
+
+ cmp dword ptr [iEnableGM],0
+ je _ExitGM                          // Jump if feature is disabled
+
+ mov eax,[esi+000001a8]
+ cmp eax,[pPlayer]
+ jne _ExitGM
+
+ movss xmm2,[esi+00000090]           // Get Max HP
+
+_ExitGM:
+ pop eax
+
+ movss [esi+0000008C],xmm2           // Original code
+ jmp _BackGM                         // Back to main code
+
+
+//=========================================
+// Unit limit
+lblUnitLimit:
+pushfd
+cmp dword ptr [bUnitLimitEnabled],1
+jne short lblSkipUnitLimit
+cmp dword ptr [esi+00000178],'Huma'
+jne short lblSkipUnitLimit
+fmul [fUnitLimitMultiplier]
+lblSkipUnitLimit:
+popfd
+fstp dword ptr [esi+0000020C] // Original code
+jmp lblUnitLimitReturn
+
+//=========================================
+ db '================&gt;'
+ db 'CE6.1 Script by Recifense 091411'
+//=========================================
+// Variables
+iEnableGM:
+ dd 1
+iEnableMR:
+ dd 1
+iEnableRP:
+ dd 1
+pUnit:
+ dd 0
+pPlayer:
+ dd MyCode
+iPlayerID:
+ dd #99
+fMinRes:
+ dd (float)10000.0
+fMinRP:
+ dd (float)20.0
+bUnitLimitEnabled:
+dd 1
+fUnitLimitMultiplier:
+dd (float)1.5
+
+//=========================================
+// Hacking Points
+
+aobResourceHook:
+aobResourceHook_r:
+ jmp _MonPlayer
+ nop
+_BackMP:
+
+aobGodModeHook:
+aobGodModeHook_r:
+ jmp _GodMode
+ nop
+ nop
+ nop
+_BackGM:
+
+aobUnitLimitHook:
+aobUnitLimitHook_r:
+jmp lblUnitLimit
+nop
+lblUnitLimitReturn:
+
+//=========================================
+// Script for Restoring Original Codes
+[DISABLE]
+aobResourceHook_r:
+// mov edx,[eax+00000274]
+ db 8b 90 74 02 00 00
+
+aobGodModeHook_r:
+// movss [esi+0000008C],xmm2
+ db f3 0f 11 96 8c 00 00 00
+
+aobUnitLimitHook_r:
+db D9 9E 0C 02 00 00
+//Alt: fstp dword ptr [esi+0000020C]
+
+//=========================================
+// Unregistering Symbols
+unregistersymbol(aobResourceHook_r)
+unregistersymbol(aobGodModeHook_r)
+unregistersymbol(aobUnitLimitHook_r)
+unregistersymbol(MyCode)
+unregistersymbol(pUnit)
+unregistersymbol(pPlayer)
+unregistersymbol(iPlayerID)
+unregistersymbol(iEnableGM)
+unregistersymbol(iEnableMR)
+unregistersymbol(iEnableRP)
+unregistersymbol(fMinRes)
+unregistersymbol(fMinRP)
+unregistersymbol(bUnitLimitEnabled)
+unregistersymbol(fUnitLimitMultiplier)
+
+//=========================================
+dealloc(MyCode)
+//============= Scripts End ===============
+
+// ****************************************
+// NOTES
+// ****************************************
+{
+Supreme Commander 2:
+
+struct PLAYER:
+0000 = 01377124
+0008 = iIndex
+0010 = aPlayerArmy (ARMY_4, ARMY_2, ...)
+0178 = aType (Human, Easy, ...)
+0268 = 103bb800
+0274 = pResources
+
+struct RESOURCES:
+0000 = 103bb800
+0004 = iIndex
+0038 = fcEnergy
+003c = fcMass
+0040 = fcResearch
+
+struct UNIT:
+0000 xxxx = 0137014c (real base)
+0008 0000 = 013701d4 (GM Base)
+0084 007c = f1
+0088 0080 = f1
+008c 0084 = f1
+0090 0088 = f0
+0094 008c = fcHP
+0098 0090 = fmHP
+009C 0094 = f0
+01b0 01a8 = pPlayer
+0374 036c = aName (only for hero)
+}
+
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>29</ID>
+          <Description>"bEnableGodModeAndInstantBuild"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableGM</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>30</ID>
+          <Description>"bEnableMinResource"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMR</Address>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>32</ID>
+              <Description>"fMinResources"</Description>
+              <Color>FF0000</Color>
+              <VariableType>Float</VariableType>
+              <Address>fMinRes</Address>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>31</ID>
+          <Description>"bEnableMinResearchPoints"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableRP</Address>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>33</ID>
+              <Description>"fMinResearchPoints"</Description>
+              <Color>FF0000</Color>
+              <VariableType>Float</VariableType>
+              <Address>fMinRP</Address>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>36</ID>
+          <Description>"bUnitLimitEnabled"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>bUnitLimitEnabled</Address>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>35</ID>
+              <Description>"fUnitLimitMultiplier"</Description>
+              <Color>FF0000</Color>
+              <VariableType>Float</VariableType>
+              <Address>fUnitLimitMultiplier</Address>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols>
+    <SymbolEntry>
+      <Name>pResources</Name>
+      <Address>06190040</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>pEnableResourceHack</Name>
+      <Address>06190044</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>pMinResources</Name>
+      <Address>06190048</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>pEnableGodMode</Name>
+      <Address>03720044</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>pEnableInstantKill</Name>
+      <Address>03720048</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>aobResourceHook_r</Name>
+      <Address>0080CE03</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>aobGodModeHook_r</Name>
+      <Address>0075E0FC</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>aobUnitLimitHook_r</Name>
+      <Address>0080C914</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>pUnit</Name>
+      <Address>3CBE0115</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>pPlayer</Name>
+      <Address>3CBE0119</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>iPlayerID</Name>
+      <Address>3CBE011D</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>iEnableGM</Name>
+      <Address>3CBE0109</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>iEnableMR</Name>
+      <Address>3CBE010D</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>iEnableRP</Name>
+      <Address>3CBE0111</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>fMinRes</Name>
+      <Address>3CBE0121</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>fMinRP</Name>
+      <Address>3CBE0125</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>bUnitLimitEnabled</Name>
+      <Address>3CBE0129</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>fUnitLimitMultiplier</Name>
+      <Address>3CBE012D</Address>
+    </SymbolEntry>
+  </UserdefinedSymbols>
+</CheatTable>

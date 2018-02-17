@@ -1,0 +1,778 @@
+<?xml version="1.0"?>
+<CheatTable CheatEngineTableVersion="11">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>38</ID>
+      <Description>"[X] &lt;== EU Rome Gold v232 Script 2.1"</Description>
+      <Options moHideChildren="1"/>
+      <Color>80000008</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>{
+===========================================
+ Game Title    : Europa Universalis - Rome Gold (Vea Victis)
+ Game Version  : 2.32
+ Process Name  : romegame.exe
+ Script Version: 2.1
+ CE Version    : 6.1
+ Release date  : 24-Feb-2012 (Adapted/Improved from verion 1.00)
+ Author        : Recifense
+ Features:
+ - Minimum Gold
+ - Maximum Manpower
+ - Minimum Stability
+ - Quick Ownership
+ - Blessed City:
+ ----- Citizen &gt;= 10
+ ----- Freemen &gt;= 10
+ ----- Slaves  &gt;= 4
+ ----- Civilization Level &gt;= 90%
+ ----- Garrison &gt;= 1000
+ ----- Revolt Risk = 0
+ - Colonization/Recruitment/Construction in 1 day
+ - Movement to neighbor province in 1 day
+ - God Mode (Battle/Assault)
+ - Minimum Morale (In battle/Assault) &gt;= 50%
+ - All Researches every month
+===========================================
+}
+
+[ENABLE]
+//=========================================
+// Check if script is compatible to this game version
+// If false the script will not be loaded
+
+assert(romegame.exe+212a5f,8b 80 d0 01 00 00)
+assert(romegame.exe+063400,8b 89 d8 03 00 00)
+assert(romegame.exe+204741,8b 86 a0 05 00 00)
+assert(romegame.exe+035c20,8b 89 84 05 00 00)
+assert(romegame.exe+0413e6,8b 4c 24 14 3b 08)
+assert(romegame.exe+13f238,01 ae 98 00 00 00)
+assert(romegame.exe+12e335,8b 86 8c 00 00 00)
+assert(romegame.exe+03763a,89 9e 8c 05 00 00)
+assert(romegame.exe+0b3db0,8b 86 98 00 00 00)
+
+//=========================================
+alloc(MyCode,1024)
+//=========================================
+// Declaration section
+label(_MonPlayer)
+label(_BackMP)
+label(_ExitMP)
+label(_MonGold)
+label(_MonG00)
+label(_MonG01)
+label(_BackMG)
+label(_ExitMG)
+label(_BlessCity)
+label(_Bless0)
+label(_Bless1)
+label(_Bless2)
+label(_Bless3)
+label(_Bless4)
+label(_Bless5)
+label(_BackBC)
+label(_ExitBC)
+label(_MonBarbCity)
+label(_BackMBC)
+label(_ExitMBC)
+label(_MonCRC)
+label(_MonC00)
+label(_BackCR)
+label(_ExitCR)
+label(_MonMove)
+label(_BackMM)
+label(_ExitMM)
+label(_MonBattle)
+label(_MonB00)
+label(_BackMB)
+label(_ExitMB)
+label(_MonAssault)
+label(_MonA00)
+label(_BackMA)
+label(_ExitMA)
+label(_MonGarrison)
+label(_BackMGa)
+label(_ExitMGa)
+label(_MonResearch)
+label(_BackMR)
+label(_ExitMR)
+label(iPlayerID)
+label(pUnit)
+label(pPlayer)
+label(pLastCity)
+label(pLastPop)
+label(pBarbCity)
+label(iEnableMG)
+label(iEnableGM)
+label(iEnableMMP)
+label(iEnableMS)
+label(iEnableTO)
+label(iEnableBC)
+label(iEnableCR)
+label(iEnableMM)
+label(iEnableMMo)
+label(iEnableMR)
+
+//=========================================
+// Registering Symbols
+registersymbol(MyCode)
+registersymbol(pUnit)
+registersymbol(pPlayer)
+registersymbol(pLastCity)
+registersymbol(pBarbCity)
+registersymbol(iEnableMG)
+registersymbol(iEnableMMP)
+registersymbol(iEnableMS)
+registersymbol(iEnableTO)
+registersymbol(iEnableBC)
+registersymbol(iEnableGM)
+registersymbol(iEnableCR)
+registersymbol(iEnableMM)
+registersymbol(iEnableMMo)
+registersymbol(iEnableMR)
+registersymbol(iPlayerID)
+
+//=========================================
+MyCode:
+//=========================================
+// This code finds out Player ID
+_MonPlayer:
+ mov eax,[eax+000001D0]     // Read player ID
+
+ mov [iPlayerID],eax        // Save player ID for further use
+
+_ExitMP:
+ jmp _BackMP                // Back to main code
+
+//=========================================
+// Minimum Gold = 1000 and Manpower = Maximum
+// On entry EDX = Player ID (Ex.: LUS, ROM, etc)
+_MonGold:
+ push edx
+
+ mov eax,[ecx+00000104]     // Get iID
+ cmp eax,[iPlayerID]        // Is it the player´s resource?
+ jne _ExitMG                // jump if false
+
+ mov [pPlayer],ecx
+
+ cmp dword ptr [iEnableMG],0
+ je _MonG00                 // Jump if feature is disabled
+
+ mov eax,[ecx+000003D8]     // Get Gold
+
+ mov edx,#10000000
+ cmp edx,eax                // Currrent gold &gt; 10000?
+ jle _MonG00                // Jump if true
+
+ mov [ecx+000003D8],edx     // Make gold = 10000
+
+_MonG00:
+ cmp dword ptr [iEnableMMP],0
+ je _MonG01                 // Jump if feature is disabled
+
+ mov eax,[ecx+00000664]     // EDX = Max MP
+ mov [ecx+00000660],eax     // Make Manpower = Max
+
+_MonG01:
+ cmp dword ptr [iEnableMS],0
+ je _ExitMG                 // Jump if feature is disabled
+
+ cmp dword ptr [ecx+0000047c],#10000 // Stability = 10 ?
+ jge _ExitMG
+
+ mov dword ptr [ecx+0000047c],#10000 // Stability = 10
+
+_ExitMG:
+ pop edx
+
+ mov ecx,[ecx+000003D8]     // Original code
+ jmp _BackMG                // Back to main code
+
+//=========================================
+// Set Citizen = 10, Freemen = 10, Slaves = 4, Barbarians = 0
+// Level = 90% and Garrison = 1000 (updated when city is selected)
+_BlessCity:
+ cmp dword ptr [iEnableTO],0 // Take ownership
+ je _Bless0                 // Jump if feature is disabled
+
+ mov eax,[esi+000005ac]     // Get controller ID
+ cmp eax,[iPlayerID]        // Is it the player´s?
+ jne _Bless0                // jump if false
+
+ mov [esi+000005a4],eax     // Change Owner
+ mov eax,[esi+000005a8]     // Get controller ID
+ mov [esi+000005a0],eax     // Change Owner
+
+_Bless0:
+ cmp dword ptr [iEnableBC],0
+ je _ExitBC                 // Jump if feature is disabled
+
+ mov eax,[esi+00000578]     // read ptr to city pop structure
+
+ mov [pLastCity],esi        // Save ptr to city for debugging
+ mov [pLastPop],eax         // Save ptr to pop for debugging
+
+ mov ecx,[esi+000005a4]     // Read city's owner ID
+ cmp ecx,[iPlayerID]        // Is it the player´s?
+ jne _ExitBC                // jump if false
+
+ mov ecx,#10000
+ cmp ecx,[eax]              // Citizens &gt;= 10?
+ jle _Bless1                // Jump if true
+
+ mov [eax],ecx              // Citizens = 10
+
+_Bless1:
+ cmp ecx,[eax+04]           // Freemen &gt;= 10?
+ jle _Bless2                // jump if true
+
+ mov [eax+04],ecx           // Freemen = 10
+
+_Bless2:
+ mov ecx,#4000
+ cmp ecx,[eax+08]           // Slaves &gt;= 4?
+ jle _Bless3                // jump if true
+
+ mov [eax+08],ecx           // Slaves = 4
+
+_Bless3:
+ mov dword ptr [esi+00000584],0 //Barbarians = 0
+
+ mov ecx,#90000
+ cmp ecx,[esi+00000588]     // CityLevel &gt;= 90%?
+ jle _Bless4                // jump if true
+
+ mov [esi+00000588],ecx     // City Level = 90%
+
+_Bless4:
+ mov eax,[esi+000000cc]     // pStatus
+ test eax,eax
+ jz _Bless5
+
+ xor ecx,ecx
+ mov [eax+18],ecx           // Revolt Risk = 0
+
+_Bless5:
+ mov ecx,#1000000
+ cmp ecx,[esi+0000058c]     // Garrison &gt;= 1000?
+ jle _ExitBC                // jump if true
+
+ mov [esi+0000058c],ecx     // Garrison = 1000
+
+_ExitBC:
+ mov eax,[esi+000005A0]     // Original code
+ jmp _BackBC                // Back to main code
+
+//=========================================
+// Monitor Barbarian City when it is selected (game paused)
+// ecx + 0584 = # barbarians
+
+_MonBarbCity:
+ cmp dword ptr [ecx+000005a4],0
+ jne _ExitMBC               // Jump if not a barbarian city
+
+ mov [pBarbCity],ecx        // Save ptr for debugging
+
+_ExitMBC:
+ mov ecx,[ecx+00000584]     // Original code
+ jmp _BackMBC               // Back to main code
+
+//=========================================
+// Colonization/Recruitment/Construction in 1 day
+_MonCRC:
+ test edi,edi
+ jz _ExitCR
+
+ cmp dword ptr [iEnableCR],0
+ je _ExitCR                 // Jump if feature is disabled
+
+ mov ecx,[edi+2c]           // Read colonization's owner ID
+ test ecx,ecx
+ jnz _MonC00
+
+ mov ecx,[edi+18]           // Get pProvince
+ test ecx,ecx
+ jz _ExitCR
+
+ mov ecx,[ecx+000005a4]    // Get owner ID
+
+_MonC00:
+ cmp ecx,[iPlayerID]        // Is it the player´s?
+ jne _ExitCR                // jump if false
+
+ mov ecx,[esp+14]           // Get Current Date
+ mov [eax],ecx              // Update the expected date
+
+_ExitCR:
+ mov ecx,[esp+14]           // Original code
+ cmp ecx,[eax]              // Original code
+ jmp _BackCR                // Back to main code
+
+//=========================================
+// Army movement to neighbor province in 1 day
+_MonMove:
+ push eax
+
+ cmp dword ptr [iEnableMM],0
+ je _ExitMM                 // Jump if feature is disabled
+
+ mov eax,[esi+74]           // Read colonization's owner ID
+ cmp eax,[iPlayerID]        // Is it the player´s?
+ jne _ExitMM                // jump if false
+
+ add [esi+00000098],ecx     // Add what is needed
+
+_ExitMM:
+ pop eax
+
+ add [esi+00000098],ebp     // Original code
+ jmp _BackMM                // Back to main code
+
+//=========================================
+// Troops during battle
+_MonBattle:
+ mov eax,[esi+60]           // Get owner ID
+ cmp eax,[iPlayerID]        // Is it the player´s?
+ jne _ExitMB                // jump if false
+
+ cmp dword ptr [iEnableGM],0
+ je _MonB00                 // Jump if feature is disabled
+
+ mov dword ptr [esi+0000008C],0 // value2decrease = 0
+ mov dword ptr [esi+30],#1000   // Troop size = 1000
+
+_MonB00:
+ cmp dword ptr [iEnableMMo],0
+ je _ExitMB                 // Jump if feature is disabled
+
+ mov dword ptr [esi+00000090],0 // value2decrease = 0
+
+ mov eax,#50000
+ cmp eax,[esi+34]
+ jle _ExitMB
+
+ mov [esi+34],eax           // Morale = 50%
+
+_ExitMB:
+ mov eax,[esi+0000008C]     // Original code
+ jmp _BackMB                // Back to main code
+
+//=========================================
+// Troops during Assault
+_MonAssault:
+ mov eax,[ecx+60]           // Get owner ID
+ cmp eax,[iPlayerID]        // Is it the player´s?
+ jne _ExitMA                // jump if false
+
+ cmp dword ptr [iEnableGM],0
+ je _ExitMA                 // Jump if feature is disabled
+
+ mov eax,#1000
+ mov [esp+04],eax           // Troop size = 1000
+
+_MonA00:
+ cmp dword ptr [iEnableMMo],0
+ je _ExitMA                 // Jump if feature is disabled
+
+ mov eax,#50000
+ cmp eax,[ecx+34]
+ jle _ExitMA
+
+ mov [ecx+34],eax           // Morale = 50%
+
+_ExitMA:
+ mov eax,[esp+04]           // Original code
+ cmp eax,000003E8           // Original code
+ jmp _BackMA                // Back to main code
+
+//=========================================
+// Garrison during Assault
+_MonGarrison:
+ push eax
+
+ mov eax,[esi+000005a4]     // Get owner ID
+ cmp eax,[iPlayerID]        // Is it the player´s?
+ jne _ExitMGa               // jump if false
+
+ cmp dword ptr [iEnableGM],0
+ je _ExitMGa                // Jump if feature is disabled
+
+ mov ebx,[esi+0000058C]     // Get current Garrison
+ cmp ebx,#1000000
+ jge _ExitMGa
+
+ mov ebx,#1000000
+
+_ExitMGa:
+ pop eax
+
+ mov [esi+0000058C],ebx     // Original code (Garrison)
+ jmp _BackMGa               // Back to main code
+
+//=========================================
+// When the month changes
+_MonResearch:
+ mov eax,[esi+000000A4]
+ cmp eax,[pPlayer]
+ jne _ExitMR
+
+ cmp dword ptr [iEnableMR],0
+ je _ExitMR                 // Jump if feature is disabled
+
+ mov eax,[esp+18]           // Get points needed
+ add ebp,eax                // Updates points to be added
+
+_ExitMR:
+ mov eax,[esi+00000098]
+ jmp _BackMR                // Back to main code
+
+//=========================================
+ db '================================&gt;'
+ db 'CE6.1 Script by Recifense 022412'
+//=========================================
+// Variables
+iEnableMG:
+ dd 1
+iEnableMMP:
+ dd 1
+iEnableMS:
+ dd 1
+iEnableGM:
+ dd 1
+iEnableTO:
+ dd 1
+iEnableBC:
+ dd 1
+iEnableCR:
+ dd 1
+iEnableMM:
+ dd 1
+iEnableMMo:
+ dd 1
+iEnableMR:
+ dd 1
+pUnit:
+ dd 0
+pPlayer:
+ dd MyCode
+iPlayerID:
+ dd #999
+pLastCity:
+ dd 0
+pLastPop:
+ dd 0
+pBarbCity:
+ dd 0
+
+//=========================================
+// Hacking Points
+romegame.exe+212a5f:
+ jmp _MonPlayer
+ nop
+_BackMP:
+
+romegame.exe+063400:
+ jmp _MonGold
+ nop
+_BackMG:
+
+romegame.exe+204741:
+ jmp _BlessCity
+ nop
+_BackBC:
+
+romegame.exe+035c20:
+ jmp _MonBarbCity
+ nop
+_BackMBC:
+
+romegame.exe+0413e6:
+ jmp _MonCRC
+ nop
+_BackCR:
+
+romegame.exe+13f238:
+ jmp _MonMove
+ nop
+_BackMM:
+
+romegame.exe+12e335:
+ jmp _MonBattle
+ nop
+_BackMB:
+
+romegame.exe+12e3a0:
+ jmp _MonAssault
+ nop
+ nop
+ nop
+ nop
+_BackMA:
+
+romegame.exe+03763a:
+ jmp _MonGarrison
+ nop
+_BackMGa:
+
+romegame.exe+0b3db0:
+ jmp _MonResearch
+ nop
+_BackMR:
+
+//=========================================
+// Script for Restoring Original Codes
+[DISABLE]
+romegame.exe+212a5f:
+// mov eax,[eax+000001D0]
+ db 8b 80 d0 01 00 00
+
+romegame.exe+063400:
+// mov ecx,[ecx+000003D8]
+ db 8b 89 d8 03 00 00
+
+romegame.exe+204741:
+// mov eax,[esi+000005A0]
+ db 8b 86 a0 05 00 00
+
+romegame.exe+035c20:
+// mov ecx,[ecx+00000584]
+ db 8b 89 84 05 00 00
+
+romegame.exe+0413e6:
+// mov ecx,[esp+14]
+// cmp ecx,[eax]
+ db 8b 4c 24 14 3b 08
+
+romegame.exe+13f238:
+// add [esi+00000098],ebp
+ db 01 ae 98 00 00 00
+
+romegame.exe+12e335:
+// mov eax,[esi+0000008C]
+ db 8b 86 8c 00 00 00
+
+romegame.exe+12e3a0:
+// mov eax,[esp+04]
+// cmp eax,000003E8
+ db 8b 44 24 04 3d e8 03 00 00
+
+romegame.exe+03763a:
+// mov [esi+0000058C],ebx
+ db 89 9e 8c 05 00 00
+
+romegame.exe+0b3db0:
+// mov eax,[esi+00000098]
+ db 8b 86 98 00 00 00
+
+//=========================================
+// Unregistering Symbols
+unregistersymbol(MyCode)
+unregistersymbol(pUnit)
+unregistersymbol(iEnableMG)
+unregistersymbol(iEnableGM)
+unregistersymbol(iEnableMMP)
+unregistersymbol(iEnableMS)
+unregistersymbol(iEnableTO)
+unregistersymbol(iEnableBC)
+unregistersymbol(iEnableCR)
+unregistersymbol(iEnableMM)
+unregistersymbol(iEnableMMo)
+unregistersymbol(iEnableMR)
+unregistersymbol(pPlayer)
+unregistersymbol(pLastCity)
+unregistersymbol(pBarbCity)
+unregistersymbol(iPlayerID)
+
+//=========================================
+dealloc(MyCode)
+//============= Scripts End ===============
+
+// ****************************************
+// NOTES
+// ****************************************
+{
+}
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>1</ID>
+          <Description>"Enable/Disable Minimum Gold =&gt; (1/0)"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMG</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>2</ID>
+          <Description>"Enable/Disable maximum Manpower =&gt; (1/0)"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMMP</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>3</ID>
+          <Description>"Enable/Disabled Blessed Province =&gt; (1/0)"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableBC</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>4</ID>
+          <Description>"Enable/Disable Quick Production =&gt; (1/0)"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableCR</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>5</ID>
+          <Description>"Enable/Disable God Mode =&gt; (1/0)"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableGM</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>6</ID>
+          <Description>"Enable/Disable Troop Morale =&gt; (1/0)"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMMo</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>7</ID>
+          <Description>"Enable/Disable Quick Ownership =&gt; (1/0)"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableTO</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>8</ID>
+          <Description>"Enable/Disable Minimum Stability =&gt; (1/0)"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMS</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>39</ID>
+          <Description>"Enable/Disable Research Every Month =&gt; (1/0)"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMR</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>9</ID>
+          <Description>"Barbarians in selected Barb Province (x1000)"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>pBarbCity</Address>
+          <Offsets>
+            <Offset>584</Offset>
+          </Offsets>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>34</Key>
+              </Keys>
+              <Value>1000</Value>
+              <ID>0</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols>
+    <SymbolEntry>
+      <Name>MyCode</Name>
+      <Address>03320000</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>pUnit</Name>
+      <Address>03320388</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>pPlayer</Name>
+      <Address>0332038C</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>pLastCity</Name>
+      <Address>03320394</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>pBarbCity</Name>
+      <Address>0332039C</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>iEnableMG</Name>
+      <Address>03320360</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>iEnableMMP</Name>
+      <Address>03320364</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>iEnableMS</Name>
+      <Address>03320368</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>iEnableTO</Name>
+      <Address>03320370</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>iEnableBC</Name>
+      <Address>03320374</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>iEnableGM</Name>
+      <Address>0332036C</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>iEnableCR</Name>
+      <Address>03320378</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>iEnableMM</Name>
+      <Address>0332037C</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>iEnableMMo</Name>
+      <Address>03320380</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>iEnableMR</Name>
+      <Address>03320384</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>iPlayerID</Name>
+      <Address>03320390</Address>
+    </SymbolEntry>
+  </UserdefinedSymbols>
+  <Comments>===========================================
+ Game Title    : Europa Universalis - Rome Gold (Vea Victis)
+ Game Version  : 2.32
+ Process Name  : romegame.exe
+ Script Version: 2.1
+ CE Version    : 6.1
+ Release date  : 24-Feb-2012 (Adapted/Improved from verion 1.00)
+ Author        : Recifense
+ Features:
+ - Minimum Gold
+ - Maximum Manpower
+ - Minimum Stability
+ - Quick Ownership
+ - Blessed City:
+ ----- Citizen &gt;= 10
+ ----- Freemen &gt;= 10
+ ----- Slaves  &gt;= 4
+ ----- Civilization Level &gt;= 90%
+ ----- Garrison &gt;= 1000
+ ----- Revolt Risk = 0
+ - Colonization/Recruitment/Construction in 1 day
+ - Movement to neighbor province in 1 day
+ - God Mode (Battle/Assault)
+ - Minimum Morale (In battle/Assault) &gt;= 50%
+ - All Researches every month
+===========================================
+</Comments>
+</CheatTable>

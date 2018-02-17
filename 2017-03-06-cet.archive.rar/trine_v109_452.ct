@@ -1,0 +1,298 @@
+<?xml version="1.0"?>
+<CheatTable CheatEngineTableVersion="11">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>5</ID>
+      <Description>"[X] &lt;== Trine v1.09 Script"</Description>
+      <Options moHideChildren="1"/>
+      <Color>80000008</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>{
+===========================================
+ Game Title    : Trine
+ Game Version  : 1.09
+ Process Name  : trine.exe
+ Script Version: 1.0
+ CE Version    : 6.1
+ Release date  : 01-Jan-2012 (adapted from version 1.001)
+ Author        : Recifense
+ Features:
+ - God Mode
+ - Unlimited Mana
+ - Unlimited Breath
+===========================================
+}
+
+[ENABLE]
+//=========================================
+// Check if script is compatible to this game version
+// If false the script will not be loaded
+
+assert(trine.exe+322f05,39 8a d4 d3 88 00)
+assert(trine.exe+2a86a4,8b 83 54 02 00 00)
+assert(trine.exe+29b4c1,29 8c 86 8c 07 00 00)
+assert(trine.exe+299b33,89 b4 82 8c 07 00 00)
+assert(trine.exe+3430bd,d9 9b 5c 0f 00 00)
+
+//=========================================
+alloc(MyCode,1024)
+//=========================================
+// Declaration section
+label(_MonSelected)
+label(_BackMS)
+label(_GodMode)
+label(_BackGM)
+label(_ExitGM)
+label(_MonMana)
+label(_BackMM)
+label(_ExitMM)
+label(_MonMana1)
+label(_BackMM1)
+label(_ExitMM1)
+label(_MonBreath)
+label(_BackMB)
+label(_ExitMB)
+label(pSelected)
+label(iEnableGM)
+label(iEnableMM)
+label(iEnableMB)
+
+//=========================================
+// Registering Symbols
+registersymbol(MyCode)
+registersymbol(pSelected)
+registersymbol(iEnableGM)
+registersymbol(iEnableMM)
+registersymbol(iEnableMB)
+
+//=========================================
+MyCode:
+//========================================= ok
+_MonSelected:
+ mov [pSelected],ecx            // Save pointer for further use
+ 
+ cmp [edx+trine.exe+48d3d4],ecx // Original code
+ jmp _BackMS                    // Back to main code
+  
+//========================================= ok
+// God Mode
+_GodMode:
+ cmp dword ptr [iEnableGM],0
+ je _ExitGM                     // Jump if feature is disabled
+
+ cmp ebx,[pSelected]            // Player´s unit?
+ jne _ExitGM                    // Jump if falae
+ 
+ mov dword ptr [esp+40],0       // Value_to_decrease = 0
+ 
+ mov eax,[ebx+00000258]
+ mov [ebx+00000254],eax         // Current HP = Maximum
+
+_ExitGM:
+ mov eax,[ebx+00000254]         // Original code
+ jmp _BackGM                    // Back to main code
+
+//========================================= ok
+_MonMana:
+ cmp dword ptr [iEnableMM],0
+ je _ExitMM                     // Jump if feature is disabled
+
+ cmp esi,[pSelected]            // Player´s unit?
+ jne _ExitMM                    // Jump if falae
+
+ cmp eax,1                      // Mana?
+ jne _ExitMM                    // Jump if false
+  
+ xor ecx,ecx                    // Value_to_decrease = 0
+
+_ExitMM:
+ sub [esi+eax*4+0000078c],ecx   // Original code
+ jmp _BackMM                    // Back to main code
+
+//========================================= ok
+_MonMana1:
+ cmp dword ptr [iEnableMM],0
+ je _ExitMM1                    // Jump if feature is disabled
+
+ cmp edx,[pSelected]            // Player´s unit?
+ jne _ExitMM1                   // Jump if falae
+
+ cmp eax,1                      // Mana?
+ jne _ExitMM1                   // Jump if false
+
+ cmp esi,[edx+eax*4+0000078c]   // Greater than current value?
+ jge _ExitMM1                   // Jump if true
+ 
+ mov esi,[edx+eax*4+0000078c]   // Get current value
+
+_ExitMM1:
+ mov [edx+eax*4+0000078c],esi   // Original code
+ cmp esi,ecx                    // Original code
+ jmp _BackMM1                   // Back to main code
+
+//========================================= ok
+_MonBreath:
+ pushfd
+ fstp dword ptr [ecx+00000f5c]  // Original code
+ 
+ cmp dword ptr [iEnableMB],0
+ je _ExitMB                     // Jump if feature is disabled
+
+ cmp ecx,[pSelected]            // Player´s unit?
+ jne _ExitMB                    // Jump if falae
+
+ mov dword ptr [ecx+00000f5c],3f800000 // Breath = 100%
+
+_ExitMB:
+ popfd
+ jmp _BackMB                    // Back to main code
+
+//=========================================
+ db '==================&gt;'
+ db 'CE6.1 Script by Recifense 010112'
+//=========================================
+// Variables
+pSelected:
+ dd 0
+iEnableGM:
+ dd 1
+iEnableMM:
+ dd 1
+iEnableMB:
+ dd 1
+
+//=========================================
+// Hacking Points
+//trine.exe+30ad3a:
+trine.exe+322f05:
+ jmp _MonSelected
+ nop
+_BackMS:
+
+//trine.exe+291d4d:
+trine.exe+2a86a4:
+ jmp _GodMode
+ nop
+_BackGM:
+
+//trine.exe+284c31:
+trine.exe+29b4c1:
+ jmp _MonMana
+ nop
+ nop
+_BackMM:
+
+//trine.exe+2832a3:
+trine.exe+299b33:
+ jmp _MonMana1
+ nop
+ nop
+_BackMM1:
+
+//trine.exe+32b304:
+trine.exe+3430bd:
+ jmp _MonBreath
+ nop
+_BackMB:
+
+//=========================================
+// Script for Restoring Original Codes
+[DISABLE]
+//trine.exe+30ad3a:
+// cmp [edx+trine.exe+46fe58],ecx
+trine.exe+322f05:
+// cmp [edx+trine.exe+48d3d4],ecx
+ db 39 8a d4 d3 88 00
+
+//trine.exe+291d4d:
+trine.exe+2a86a4:
+// mov eax,[ebx+00000254]
+ db 8b 83 54 02 00 00
+
+//trine.exe+284c31:
+trine.exe+29b4c1:
+// sub [esi+eax*4+0000078c],ecx
+ db 29 8c 86 8c 07 00 00
+
+//trine.exe+2832a3:
+trine.exe+299b33:
+// mov [edx+eax*4+0000078c],esi
+ db 89 b4 82 8c 07 00 00
+
+//trine.exe+32b304:
+trine.exe+3430bd:
+// fstp dword ptr [ecx+00000f5c]
+ db d9 9b 5c 0f 00 00
+
+//=========================================
+// Unregistering Symbols
+unregistersymbol(MyCode)
+unregistersymbol(pSelected)
+unregistersymbol(iEnableGM)
+unregistersymbol(iEnableMM)
+unregistersymbol(iEnableMB)
+
+//=========================================
+dealloc(MyCode)
+//============= Scripts End ===============
+
+// ****************************************
+// NOTES
+// ****************************************
+{
+}
+
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>1</ID>
+          <Description>"Enable/Disable God Mode"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableGM</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>2</ID>
+          <Description>"Enable/Disable Unlimited Mana"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMM</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>3</ID>
+          <Description>"Enable/Disable Unlimited Breath"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMB</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>4</ID>
+          <Description>"Group XP"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>trine.exe+489508</Address>
+          <Offsets>
+            <Offset>18</Offset>
+            <Offset>294</Offset>
+            <Offset>14</Offset>
+          </Offsets>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols/>
+  <Comments>===========================================
+ Game Title    : Trine
+ Game Version  : 1.09
+ Process Name  : trine.exe
+ Script Version: 1.0
+ CE Version    : 6.1
+ Release date  : 01-Jan-2012 (adapted from version 1.001)
+ Author        : Recifense
+ Features:
+ - God Mode
+ - Unlimited Mana
+ - Unlimited Breath
+===========================================
+</Comments>
+</CheatTable>

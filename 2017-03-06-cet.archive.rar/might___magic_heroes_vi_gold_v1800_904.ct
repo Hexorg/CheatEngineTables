@@ -1,0 +1,649 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="14">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>69</ID>
+      <Description>"[X] &lt;== HoMM 6 Gold v1.8.0.0 Script v1.2"</Description>
+      <Options moHideChildren="1"/>
+      <Color>FF0000</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>{
+===========================================
+ Game Title    : Might&amp;Magic Heroes VI (gold)
+ Game Version  : 1.8.0.0 (crack by ECLIPSEERA)
+ Game Process  : Might &amp; Magic Heroes VI.exe
+ Game Sponsor  : Catalyst (via Internet: torrent)
+ Script Version: 1.2
+ CE Version    : 6.2
+ Release date  : 20-Jan-2013
+ Author        : Recifense
+ History:
+ 25-May-12: Release for version 1.4.0.0
+ 08-Nov-12: Release for version 1.7.1.0 (gold)
+ 20-Jan-13: Release for version 1.8.0.0
+ Features:
+ - Minimum Resources
+ - Unlimited Movement
+ - Minimum Troop Size for player's moving Army (minimum value can be defined by user)
+ - Minimum XP for player's moving hero (minimum value can be defined by user)
+ - Recover Mana (on the move)
+===========================================
+}
+
+//=========================================
+// Definitions
+define(LUDO,"Might &amp; Magic Heroes VI.exe")
+
+//=========================================
+[ENABLE]
+//=========================================
+// Check if script is compatible to this game version
+// If false the script will not be loaded
+
+assert(LUDO+0004d836,8b 75 c0 83 c6 04) //_MR
+assert(LUDO+012f5cdb,f3 0f 11 42 0c)    //_MMp
+assert(LUDO+012a8875,d9 45 fc 8b e5)    //_MMa
+
+//=========================================
+alloc(MyCode,4096,LUDO)
+//=========================================
+// Declaration section
+label(_MonResources)
+label(_MonR0)
+label(_MonR1)
+label(_MonR2)
+label(_BackMR)
+label(_ExitMR)
+label(_MonMovement)
+label(_MonM0)
+label(_MonM1)
+label(_MonM2)
+label(_MonM3)
+label(_MonM4)
+label(_BackMM)
+label(_ExitMM)
+label(_MonMana)
+label(_BackMMa)
+label(_ExitMMa)
+label(pRes)
+label(pUnit)
+label(pHero)
+label(iEnableMR)
+label(iEnableMM)
+label(iEnableMS)
+label(iEnableMX)
+label(iEnableMMa)
+label(iMinSize)
+label(iMinXP)
+label(fSaveSS)
+
+//=========================================
+// Registering Symbols
+registersymbol(MyCode)
+registersymbol(pUnit)
+registersymbol(pRes)
+registersymbol(pHero)
+registersymbol(iEnableMR)
+registersymbol(iEnableMM)
+registersymbol(iEnableMS)
+registersymbol(iEnableMX)
+registersymbol(iEnableMMa)
+registersymbol(iMinSize)
+registersymbol(iMinXP)
+
+//=========================================
+MyCode:
+//========================================= 180
+_MonResources:
+ mov esi,[ebp-40]                  // Original code
+ lea edi,[esi-28]                  // Adjust pointer
+ mov [pRes],edi                    // Save it for further use
+
+ cmp dword ptr [iEnableMR],0
+ je _ExitMR                        // Jump if feature is disabled
+
+ mov ecx,#50000
+ mov edi,[esi+04]
+ xor edi,[esi+08]
+ cmp ecx,edi                       // Gold
+ jle _MonR0
+
+ mov edi,ecx
+ xor edi,[esi+08]
+ mov [esi+04],edi
+
+_MonR0:
+ mov ecx,#5000
+
+ mov edi,[esi+0c]
+ xor edi,[esi+10]
+ cmp ecx,edi                       // Wood
+ jle _MonR1
+
+ mov edi,ecx
+ xor edi,[esi+10]
+ mov [esi+0c],edi
+
+_MonR1:
+ mov edi,[esi+14]
+ xor edi,[esi+18]
+ cmp ecx,edi                       // Ore
+ jle _MonR2
+
+ mov edi,ecx
+ xor edi,[esi+18]
+ mov [esi+14],edi
+
+_MonR2:
+ mov edi,[esi+1c]
+ xor edi,[esi+20]
+ cmp ecx,edi                       // Blood Crystal
+ jle _ExitMR
+
+ mov edi,ecx
+ xor edi,[esi+20]
+ mov [esi+1c],edi
+
+_ExitMR:
+ mov esi,[ebp-40]                  // Original code
+ add esi,04                        // Original code
+ jmp _BackMR                       // Back to main code
+
+//========================================= 180
+_MonMovement:
+ push eax
+ push ebx
+ push ecx
+ push edi
+ push esi
+
+ mov ecx,edx
+
+ mov eax,[ecx+10]
+ mov [pUnit],eax                    // Save ptr for debugging
+
+ mov ebx,[eax+0000011c]
+ cmp ebx,00020000
+ jne _ExitMM
+
+ mov [pHero],eax
+
+ mov edx,[eax+70]                  // Get pArmy
+ test edx,edx
+ jz _MonM2
+
+ mov ebx,[edx+0c]                  // Get # troops
+ test ebx,ebx
+ jz _MonM2
+
+ cmp dword ptr [iEnableMS],0       // Troop Size
+ je _MonM2                         // Jump if feature is disabled
+
+ mov edx,[edx+04]                  // get pTroopList
+ test edx,edx
+ jz _MonM2
+
+ mov eax,[iMinSize]
+
+_MonM0:
+ dec ebx
+
+ mov esi,[edx+ebx*4]               // Get Troop
+ mov edi,[esi+54]
+ xor edi,[esi+58]
+ cmp eax,edi
+ jle _MonM1
+
+ mov edi,eax
+ xor edi,[esi+58]
+ mov [esi+54],edi
+
+_MonM1:
+ test ebx,ebx
+ jnz _MonM0
+
+_MonM2:
+ cmp dword ptr [iEnableMX],0
+ je _MonM3                        // Jump if feature is disabled
+
+ mov eax,[pHero]
+ mov esi,[eax+00000134]           // Get pXP
+ test esi,esi
+ jz _MonM3
+
+ mov eax,[iMinXP]
+ mov edi,[esi+0c]
+ xor edi,[esi+10]
+ cmp eax,edi
+ jle _MonM3
+
+ mov edi,eax
+ xor edi,[esi+10]
+ mov [esi+0c],edi
+
+_MonM3:
+ mov eax,[pHero]
+
+ cmp dword ptr [iEnableMM],0
+ je _MonM4                         // Jump if feature is disabled
+
+ mov edx,[eax+00000674]
+ test edx,edx
+ jz _MonM4
+
+ movss xmm0,[eax+00000674]
+
+_MonM4:
+_ExitMM:
+ mov edx,ecx
+
+ pop esi
+ pop edi
+ pop ecx
+ pop ebx
+ pop eax
+
+ movss [edx+0C],xmm0               // Original code
+ jmp _BackMM                       // Back to main code
+
+//========================================= 180
+_MonMana:
+ push eax
+ push ebx
+
+ cmp dword ptr [iEnableMMa],0
+ je _ExitMMa                       // Jump if feature is disabled
+
+ mov ebx,[ebp-0c]                  // Get pHero
+ cmp ebx,[pHero]
+ jne _ExitMMa
+
+ mov eax,[ebp-04]
+ mov [ebx+000006e4],eax
+
+_ExitMMa:
+ pop ebx
+ pop eax
+
+ fld dword ptr [ebp-04]            // Original code
+ mov esp,ebp                       // Original code
+ jmp _BackMMa                      // Back to main code
+
+//=========================================
+ db '=========================================&gt;'
+ db 'CE6.2 Script by Recifense 012013'
+//=========================================
+// Variables
+iEnableMR:
+ dd 0
+iEnableMM:
+ dd 0
+iEnableMS:
+ dd 0
+iEnableMX:
+ dd 0
+iEnableMMa:
+ dd 0
+pUnit:
+ dd 0
+pRes:
+ dd 0
+pHero:
+ dd 0
+iMinSize:
+ dd #2000
+iMinXP:
+ dd #10000
+fSaveSS:
+ dd 00
+
+//=========================================
+// Hacking Points
+LUDO+0004d836:
+ jmp _MonResources
+ nop
+_BackMR:
+
+LUDO+012f5cdb:
+ jmp _MonMovement
+_BackMM:
+
+LUDO+012a8875:
+ jmp _MonMana
+_BackMMa:
+
+//=========================================
+// Script for Restoring Original Codes
+[DISABLE]
+LUDO+0004d836:
+// mov esi,[ebp-40]
+// add esi,04
+ db 8b 75 c0 83 c6 04
+
+LUDO+012f5cdb:
+// movss [edx+0C],xmm0
+ db f3 0f 11 42 0c
+
+LUDO+012a8875:
+// fld dword ptr [ebp-04]
+// mov esp,ebp
+ db d9 45 fc 8b e5
+
+//=========================================
+// Unregistering Symbols
+unregistersymbol(MyCode)
+unregistersymbol(pUnit)
+unregistersymbol(pRes)
+unregistersymbol(pHero)
+unregistersymbol(iEnableMR)
+unregistersymbol(iEnableMM)
+unregistersymbol(iEnableMS)
+unregistersymbol(iEnableMX)
+unregistersymbol(iEnableMMa)
+unregistersymbol(iMinSize)
+unregistersymbol(iMinXP)
+
+//=========================================
+dealloc(MyCode)
+//============= Scripts End ===============
+
+// ****************************************
+// NOTES
+// ****************************************
+{
+}
+
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>4</ID>
+          <Description>"Enable/Disable Minimum Resources ==&gt; (1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMR</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>5</ID>
+          <Description>"Enable/Disable Unlimited Movement ==&gt; (1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMM</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>70</ID>
+          <Description>"Enable/Disable Fast Recover Mana ==&gt; (1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMMa</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>6</ID>
+          <Description>"Enable/Disable Troop Minimum Sizes ==&gt; (1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMS</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>7</ID>
+              <Description>"Minimum Troop Size Value ==&gt;"</Description>
+              <Color>0080FF</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>iMinSize</Address>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>66</ID>
+          <Description>"Enable/Disable Hero's Minimum XP ==&gt; (1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMX</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>67</ID>
+              <Description>"Minimum Hero's Minimum XP Value ==&gt;"</Description>
+              <Color>0080FF</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>iMinXP</Address>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>10</ID>
+          <Description>"Hero's Available Ability Points ==&gt;"</Description>
+          <Color>0000FF</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>pHero</Address>
+          <Offsets>
+            <Offset>18</Offset>
+            <Offset>120</Offset>
+          </Offsets>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>33</Key>
+              </Keys>
+              <Value>5</Value>
+              <ID>0</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>13</ID>
+          <Description>"Hero's Base Might Power ==&gt;"</Description>
+          <Color>0000FF</Color>
+          <VariableType>Float</VariableType>
+          <Address>pHero</Address>
+          <Offsets>
+            <Offset>140</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>14</ID>
+          <Description>"Hero's Base Might Defense ==&gt;"</Description>
+          <Color>0000FF</Color>
+          <VariableType>Float</VariableType>
+          <Address>pHero</Address>
+          <Offsets>
+            <Offset>154</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>15</ID>
+          <Description>"Hero's Base Magic Power ==&gt;"</Description>
+          <Color>0000FF</Color>
+          <VariableType>Float</VariableType>
+          <Address>pHero</Address>
+          <Offsets>
+            <Offset>168</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>16</ID>
+          <Description>"Hero's Base Magic Defense ==&gt;"</Description>
+          <Color>0000FF</Color>
+          <VariableType>Float</VariableType>
+          <Address>pHero</Address>
+          <Offsets>
+            <Offset>17C</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>17</ID>
+          <Description>"Hero's Base Leadership ==&gt;"</Description>
+          <Color>0000FF</Color>
+          <VariableType>Float</VariableType>
+          <Address>pHero</Address>
+          <Offsets>
+            <Offset>190</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>18</ID>
+          <Description>"Hero's Base Destiny ==&gt;"</Description>
+          <Color>0000FF</Color>
+          <VariableType>Float</VariableType>
+          <Address>pHero</Address>
+          <Offsets>
+            <Offset>1A4</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>19</ID>
+          <Description>"Hero's Tears Reputation ==&gt;"</Description>
+          <Color>0000FF</Color>
+          <VariableType>Float</VariableType>
+          <Address>pHero</Address>
+          <Offsets>
+            <Offset>5F0</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>20</ID>
+          <Description>"Hero's Blood Reputation ==&gt;"</Description>
+          <Color>0000FF</Color>
+          <VariableType>Float</VariableType>
+          <Address>pHero</Address>
+          <Offsets>
+            <Offset>5F4</Offset>
+          </Offsets>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols/>
+  <Comments>===========================================
+ Game Title    : Might&amp;Magic Heroes VI (gold)
+ Game Version  : 1.8.0.0 (crack by ECLIPSEERA)
+ Game Process  : Might &amp; Magic Heroes VI.exe
+ Game Sponsor  : Catalyst (via Internet: torrent)
+ Script Version: 1.2
+ CE Version    : 6.2
+ Release date  : 20-Jan-2013
+ Author        : Recifense
+ History:
+ 25-May-12: Release for version 1.4.0.0
+ 08-Nov-12: Release for version 1.7.1.0 (gold)
+ 20-Jan-13: Release for version 1.8.0.0
+ Features:
+ - Minimum Resources
+ - Unlimited Movement
+ - Minimum Troop Size for player's moving Army (minimum value can be defined by user)
+ - Minimum XP for player's moving hero (minimum value can be defined by user)
+ - Recover Mana (on the move)
+===========================================
+[Note] The HERO's values are only valid for the last hero that the player moved.
+===
+In fact, most of the cheats only works when the player moves one of his/her heroes. :)
+===========================================
+HOTKEYS:
+CTRL+Home = Enable  all cheats;
+CTRL+End  = Disable all cheats;
+CTRL+PgUp = Set Ability Points to 5
+[NOTE] You can create/change hotkeys.
+===========================================
+Cheers!
+</Comments>
+</CheatTable>

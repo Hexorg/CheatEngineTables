@@ -1,0 +1,377 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="14">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>30</ID>
+      <Description>"[X] &lt;== Magic the Gathering DotP 2013 Script 1.0"</Description>
+      <Options moHideChildren="1"/>
+      <Color>FF0000</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>{
+===========================================
+ Game Title    : Magic The Gathering DOTP 2013
+ Game Version  : Unknown
+ Script Version: 1.0
+ CE Version    : 6.2
+ Release date  : 22-Jun-2012 (adapted from previous version)
+ Author        : Recifense
+ Features:
+ - God Mode;
+ - Minimum Attack value;
+ - Minimum Defence Value;
+===========================================
+}
+
+[ENABLE]
+//=========================================
+// Check if script is compatible to this game version
+// If false the script will not be loaded
+
+assert(DotP_D13.exe+0030d113,89 97 cc 01 00 00)     // _GM
+assert(DotP_D13.exe+00394c49,a1 b4 da af 00)        // _MP
+assert(DotP_D13.exe+002fef1d,8b f7 89 4f 30)        // _GM2x2
+assert(DotP_D13.exe+003bcaca,8b 81 bc 02 00 00)     // _MT
+
+//=========================================
+alloc(MyCode,2048,DotP_D13.exe)
+//=========================================
+// Declaration section
+label(_GodMode)
+label(_BackGM)
+label(_ExitGM)
+label(_MonPlayer)
+label(_BackMP)
+label(_ExitMP)
+label(_GodMode2x2)
+label(_BackGM2)
+label(_ExitGM2)
+label(_MonSelCard)
+label(_BackMSC)
+label(_ExitMSC)
+label(_MonToughness)
+label(_MonT00)
+label(_MonT01)
+label(_MonT02)
+label(_BackMT)
+label(_ExitMT)
+label(pPlayer)
+label(pCommon)
+label(pCard)
+label(iEnableGM)
+label(iEnableMA)
+label(iEnableMD)
+label(iMinAttVal)
+label(iMinDefVal)
+label(pSeila)
+
+//=========================================
+// Registering Symbols
+registersymbol(MyCode)
+registersymbol(pPlayer)
+registersymbol(pCard)
+registersymbol(iEnableGM)
+registersymbol(iEnableMA)
+registersymbol(iEnableMD)
+registersymbol(iMinAttVal)
+registersymbol(iMinDefVal)
+registersymbol(pSeila)
+
+//=========================================
+MyCode:
+//=========================================
+_GodMode:
+ push eax
+
+ mov eax,[edi+1c]
+ cmp eax,[pCommon]
+ jne _ExitGM                       // Jump if it is not a player's hero
+
+ cmp dword ptr [iEnableGM],0
+ je _ExitGM                        // Jump if feature is disabled
+
+ mov edx,[edi+000001C8]            // Get max HP
+
+_ExitGM:
+ pop eax
+
+ mov [edi+000001CC],edx            // Original code (update HP)
+ jmp _BackGM                       // Back to main code
+
+//=========================================
+_MonPlayer:
+ mov eax,[DotP_D13.exe+006fdab4]   // Original code
+ test eax,eax
+ jz _ExitMP
+
+ mov [pPlayer],eax                 // Save ptr for debugging
+
+ mov eax,[eax+1c]                  // Get Common pointer **38
+ mov [pCommon],eax                 // Save ptr for debugging
+
+_ExitMP:
+ mov eax,[DotP_D13.exe+006fdab4]   // Original code
+ jmp _BackMP                       // Back to main code
+
+//=========================================
+// When playing 2 x 2 (Two-Headed Giants)
+_GodMode2x2:
+ cmp dword ptr [edi+58],1
+ jne _ExitGM2                      // Jump if it is not the player
+
+ cmp dword ptr [iEnableGM],0
+ je _ExitGM2                       // Jump if feature is disabled
+
+ mov ecx,[edi+14]                  // Get max HP
+
+_ExitGM2:
+ mov esi,edi                       // Original code
+ mov [edi+30],ecx                  // Original code (update HP)
+ jmp _BackGM2                      // Back to main code
+
+//=========================================
+_MonSelCard:
+ mov [pCard],esi                   // Save ptr for debugging
+
+_ExitMSC:
+ mov edx,[esi+0000036C]            // Original code
+ jmp _BackMSC                      // Back to main code
+
+//=========================================
+_MonToughness:
+ mov [pSeila],ecx
+
+ mov eax,[ecx+00000180]
+ test eax,eax
+ jz _ExitMT
+
+ mov eax,[eax+1c]
+ cmp eax,[pCommon]
+ jne _ExitMT
+
+ cmp dword ptr [iEnableMD],0
+ je _MonT01                        // Jump if feature is disabled
+
+ mov eax,[ecx+000002BC]
+ test eax,eax
+ jns _MonT00
+
+ xor eax,eax
+ mov [ecx+000002BC],eax
+
+_MonT00:
+ mov eax,[iMinDefVal]
+ cmp eax,[ecx+000002BC]
+ jle _MonT01
+
+ mov [ecx+000002BC],eax
+ mov [ecx+0000015c],eax
+
+_MonT01:
+ cmp dword ptr [iEnableMA],0
+ je _ExitMT                        // Jump if feature is disabled
+
+ mov eax,[ecx+000002B8]
+ test eax,eax
+ jns _MonT02
+
+ xor eax,eax
+ mov [ecx+000002B8],eax
+
+_MonT02:
+ mov eax,[iMinAttVal]
+ cmp eax,[ecx+000002B8]
+ jle _ExitMT
+
+ mov [ecx+000002B8],eax
+ mov [ecx+00000158],eax
+
+_ExitMT:
+ mov eax,[ecx+000002BC]            // Original code
+ jmp _BackMT                       // Back to main code (template)
+
+//=========================================
+ db '=======================&gt;'
+ db 'CE6.2 Script by Recifense 062212'
+//=========================================
+// Variables
+iEnableGM:
+ dd 0
+iEnableMA:
+ dd 0
+iEnableMD:
+ dd 0
+pPlayer:
+ dd 0
+pCommon:
+ dd MyCode
+pCard:
+ dd 0
+iMinAttVal:
+ dd #4
+iMinDefVal:
+ dd #10
+pSeila:
+ dd 0
+
+//=========================================
+// Hacking Points
+DotP_D13.exe+0030d113:
+ jmp _GodMode
+ nop
+_BackGM:
+
+DotP_D13.exe+00394c49:
+ jmp _MonPlayer
+_BackMP:
+
+DotP_D13.exe+002fef1d:
+ jmp _GodMode2x2
+_BackGM2:
+
+DotP_D13.exe+003c1595:
+ jmp _MonSelCard
+ nop
+_BackMSC:
+
+DotP_D13.exe+003bcaca:
+ jmp _MonToughness
+ nop
+_BackMT:
+
+//=========================================
+// Script for Restoring Original Codes
+[DISABLE]
+DotP_D13.exe+0030d113:
+// mov [edi+000001CC],edx
+ db 89 97 cc 01 00 00
+
+DotP_D13.exe+00394c49:
+// mov eax,[00AFDAB4]
+ db a1 b4 da af 00
+
+DotP_D13.exe+002fef1d:
+// mov esi,edi
+// mov [edi+30],ecx
+ db 8b f7 89 4f 30
+
+DotP_D13.exe+003c1595:
+// mov edx,[esi+0000036C]
+ db 8b 96 6c 03 00 00
+
+DotP_D13.exe+003bcaca:
+// mov eax,[ecx+000002BC]
+ db 8b 81 bc 02 00 00
+
+//=========================================
+// Unregistering Symbols
+unregistersymbol(MyCode)
+unregistersymbol(pPlayer)
+unregistersymbol(pCard)
+unregistersymbol(pSeila)
+unregistersymbol(iEnableGM)
+unregistersymbol(iEnableMA)
+unregistersymbol(iEnableMD)
+unregistersymbol(iMinAttVal)
+unregistersymbol(iMinDefVal)
+
+//=========================================
+dealloc(MyCode)
+//============= Scripts End ===============
+
+// ****************************************
+// NOTES
+// ****************************************
+{
+  Cheers!
+}
+
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>12</ID>
+          <Description>"Enable/Disable God Mode =&gt; (1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableGM</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>13</ID>
+          <Description>"Enable/Disable Minimum Toughness =&gt; (1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMD</Address>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>31</ID>
+              <Description>"User Defined Minimum Toughness ==&gt;"</Description>
+              <Color>0080FF</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>iMinDefVal</Address>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>14</ID>
+          <Description>"Enable/Disable Minimum Power =&gt; (1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMA</Address>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>32</ID>
+              <Description>"User Defined Minimum Power ==&gt;"</Description>
+              <Color>0080FF</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>iMinAttVal</Address>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols/>
+  <Comments>===========================================
+ Game Title    : Magic The Gathering DOTP 2013
+ Game Version  : Unknown
+ Script Version: 1.0
+ CE Version    : 6.2
+ Release date  : 22-Jun-2012 (adapted from previous version)
+ Author        : Recifense
+ Features:
+ - God Mode; [1]
+ - Minimum Defence Value; [2]
+ - Minimum Attack value; [3]
+===========================================
+[1] Your character will not die;
+[2] The minimum Toughness will defined by the user (default = 10);
+[3] The minimum Power will defined by the user (default = 4);
+===========================================
+HOTKEYS:
+CTRL+Home = ENABLE  God Mode;
+CTRL+End  = DISABLE God Mode;
+===========================================
+[Note] You can create hotkeys for enabling/disabling the other cheats.
+===========================================
+Cheers!
+</Comments>
+</CheatTable>

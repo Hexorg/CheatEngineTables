@@ -1,0 +1,312 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="18">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>1</ID>
+      <Description>"Cities in Motion v1.0.22 (Steam) Script v1.0"</Description>
+      <Options moHideChildren="1"/>
+      <LastState Activated="0"/>
+      <Color>80000008</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>/*
+ * Game Title:     Cities in Motion
+ * Game Version:   1.0.22 (Steam)
+ * Proces Name:    Cities In Motion.exe
+ * Script Version: 1.0
+ * CE Version:     6.4
+ * Author:         Yuri Sakhno (George1)
+ * Release date:   25-Jan-2015
+ *
+ * History:
+ *   25-Jan-15: Initial release; Money, Capacious Vehicles that do not break down
+ *
+ * Features:
+ *   + Minimum money with selectabe minimum value
+ *   + Vehicles with infinite capacity
+ *   + Vehicles do not break down
+ */
+
+[ENABLE]
+
+// The Change Money AOB-scan targets the following code:
+// 8B 49 08              mov ecx, [ecx+8]
+// 8B 04 81              mov eax, [ecx+eax*4]
+// 83 C4 2C              add esp, 2C
+// C2 04 00              ret 4
+aobscan(changeMoney, 8B 49 08 8B 04 81 83 C4 2C C2 04 00);
+registersymbol(changeMoney);
+
+// The Vehicle Capacity AOB-scan targets the following code:
+// 8B B8 74 01 00 00     mov edi, [eax+174]
+// 03 B8 70 01 00 00     add edi, [eax+170]
+// 3B B8 6C 01 00 00     cmp edi, [eax+16C]
+aobscan(vehicleCapacity, 8B B8 74 01 00 00 03 B8 70 01 00 00 3B B8 6C 01 00 00);
+registersymbol(_vehicleCapacity);
+label(_vehicleCapacity);
+
+// The Vehicle Breakdown AOB-scan targets the following code:
+// 33 ED                 xor ebp, ebp
+// D9 46 3C              fld dword ptr [esi+3C]
+// D8 1D ?? ?? ?? ??     fcomp dword ptr [????????]
+// DF E0                 fnstsw ax
+// F6 C4 05              test ah, 5
+// 0F ....               jXX ....
+aobscan(vehicleBreakdown, 33 ED D9 46 3C D8 1D ?? ?? ?? ?? DF E0 F6 C4 05 0F);
+registersymbol(_vehicleBreakdown);
+label(_vehicleBreakdown);
+
+alloc(newmem, 1024);
+
+label(changeMoneyHook);
+label(changeMoneyOriginalCode);
+label(changeMoneyReturn);
+label(vehicleCapacityHook);
+label(vehicleCapacityOriginalCode);
+label(vehicleCapacityReturn);
+label(vehicleBreakdownHook);
+label(vehicleBreakdownOriginalCode);
+label(vehicleBreakdownReturn);
+
+label(bEnableMinMoney);
+registersymbol(bEnableMinMoney);
+label(dwMinMoney);
+registersymbol(dwMinMoney);
+label(bEnableInfiniteCapacity);
+registersymbol(bEnableInfiniteCapacity);
+label(bEnableNoBreakdowns);
+registersymbol(bEnableNoBreakdowns);
+label(pStructWithMoney);
+registersymbol(pStructWithMoney);
+
+newmem:
+
+/*
+ * ================================  Variables  ================================
+ */
+
+// Determines whether money should not go below certain limit
+bEnableMinMoney:
+    dd 0
+// The default minimum money value. Can be altered by user via CE interface
+dwMinMoney:
+    dd #75000
+// Determines whether vehicles should be able to carry more passengers than their capacity
+bEnableInfiniteCapacity:
+    dd 0
+// Determines whether vehicles should never break down (even very-very old ones)
+bEnableNoBreakdowns:
+    dd 0
+// Pointer to structure containing money value at offset 8
+pStructWithMoney:
+    dd 0
+
+
+/*
+ * ============================  Actual hooks code =============================
+ */
+
+//// Money related hook ////////////////////////////////////////////////////////
+changeMoneyHook:
+    mov ecx, [ecx+8] // This is part of the original code (load some fancy address)
+
+    // EBX must contain 3 and ECX must contain 2 (do not ask why), or else this hook isn't about money
+    cmp ebx, 3
+    jne changeMoneyOriginalCode
+    cmp eax, 2
+    jne changeMoneyOriginalCode
+
+    mov eax, [ecx+eax*4] // Load some fancy address. Money is at offset 8
+    mov [pStructWithMoney], eax // Save the address loaded for monitoring purposes
+
+    // This check is done after all of the above so that pStructWithMoney is initialized even if bEnableMinMoney is 0
+    cmp [bEnableMinMoney], 0 // Check if the user wants minimum money
+    jz changeMoneyReturn // If he does not exit from patch (all of the original code has already been executed at this point)
+
+    mov ecx, [dwMinMoney] // Load up the required minimum money value
+    // Multiply the loaded value by 100 (one hundred, decimal)
+    shl ecx, 2   // multiply by 4
+    mov ebx, ecx // EBX now contains value*4
+    shl ecx, 3   // mulpitly by 8, i.e. 32 total
+    add ebx, ecx // EBX now contains value*(4+32)
+    shl ecx, 1   // multiply by 2, i.e. 64 total
+    add ebx, ecx // EBX now has value*(4+32+64), which is value*100
+
+    // Check to see if the amount of money at hand is less than the computed value
+    cmp dword ptr [eax+8], ebx
+    jge changeMoneyReturn // If user currently has more than minimum money, exit from hook
+
+    // Store the computed value at the appropriate location
+    mov dword ptr [eax+8], ebx
+    jmp changeMoneyReturn
+
+changeMoneyOriginalCode:
+    // This is actually the second part of the original code; the first part is at the very beginning of the hook
+    mov eax, [ecx+eax*4] // Load some fancy address before returning from the function
+    jmp changeMoneyReturn
+
+//// Vehicle Capacity related hook /////////////////////////////////////////////
+vehicleCapacityHook:
+    cmp [bEnableInfiniteCapacity], 0
+    jz vehicleCapacityOriginalCode
+
+    // At this point EDI contains number of people already
+    // on board plus the number of people that want to get in.
+    // This is later compared with total capacity
+    xor edi, edi // Set EDI to zero now
+    dec edi // Make it even smaller so that it would be less than any capacity!
+
+vehicleCapacityOriginalCode:
+    cmp edi, [eax+16C] // Do actual comparison and return, original code will check flags on its own
+    jmp vehicleCapacityReturn
+
+//// Vehicle Breakdown related hook ////////////////////////////////////////////
+vehicleBreakdownHook:
+    cmp [bEnableNoBreakdowns], 0 // Check if the user wants vehicles not to break down
+    jz vehicleBreakdownOriginalCode // If he does not, simply execute original code
+
+    mov ax, 73 // When vehicle is brand new, fnstsw pulls this value into AX
+    test ah, 5 // This is original code (sort of, see below)
+    jmp vehicleBreakdownReturn
+
+vehicleBreakdownOriginalCode:
+    fnstsw ax
+    test ah, 5
+    jmp vehicleBreakdownReturn
+
+
+/*
+ * =================================  Patches  =================================
+ */
+
+changeMoney:
+    jmp changeMoneyHook
+    nop
+changeMoneyReturn:
+
+vehicleCapacity+C:
+_vehicleCapacity:
+    jmp vehicleCapacityHook
+    nop
+vehicleCapacityReturn:
+
+vehicleBreakdown+B:
+_vehicleBreakdown:
+    jmp vehicleBreakdownHook
+vehicleBreakdownReturn:
+
+[DISABLE]
+dealloc(newmem)
+
+changeMoney:
+    mov ecx, [ecx+8]
+    mov eax, [ecx+eax*4]
+//  db 8B 49 08 8B 04 81
+
+_vehicleCapacity:
+    cmp edi, [eax+16C]
+//  db 3B B8 6C 01 00 00
+
+_vehicleBreakdown:
+    fnstsw ax
+    test ah, 5
+//  db DF E0 F6 C4 05
+
+unregistersymbol(pStructWithMoney);
+unregistersymbol(bEnableNoBreakdowns);
+unregistersymbol(bEnableInfiniteCapacity);
+unregistersymbol(dwMinMoney);
+unregisterSymbol(bEnableMinMoney);
+unregistersymbol(_vehicleBreakdown);
+unregistersymbol(_vehicleCapacity);
+unregistersymbol(changeMoney);
+
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>11</ID>
+          <Description>"Enable minimum Money"</Description>
+          <DropDownList ReadOnly="1" DescriptionOnly="1" DisplayValueAsItem="1">0:Disable
+1:Enable
+</DropDownList>
+          <LastState Value="??" Activated="0" RealAddress="00000000"/>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>bEnableMinMoney</Address>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>111</ID>
+              <Description>"Minimum Money value"</Description>
+              <LastState Value="??" Activated="0" RealAddress="00000000"/>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>dwMinMoney</Address>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>12</ID>
+          <Description>"Enable Infinite Capacity Vehicles"</Description>
+          <DropDownList ReadOnly="1" DescriptionOnly="1" DisplayValueAsItem="1">0:Disable
+1:Enable
+</DropDownList>
+          <LastState Value="??" Activated="0" RealAddress="00000000"/>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>bEnableInfiniteCapacity</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>13</ID>
+          <Description>"Enable Non-breakable Vehicles"</Description>
+          <DropDownList ReadOnly="1" DescriptionOnly="1" DisplayValueAsItem="1">0:Disable
+1:Enable
+</DropDownList>
+          <LastState Value="??" Activated="0" RealAddress="00000000"/>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>bEnableNoBreakdowns</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>14</ID>
+          <Description>"Current Money (x100) ==&gt;"</Description>
+          <LastState Value="??" Activated="0" RealAddress="00000000"/>
+          <Color>808080</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>pStructWithMoney</Address>
+          <Offsets>
+            <Offset>8</Offset>
+          </Offsets>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols/>
+  <Comments>==========================================
+ Game Title:      Cities in Motion
+ Game Version:    1.0.22 (Steam)
+ Process Name:    Cities In Motion.exe
+ Script Version:  1.0
+ CE Version:      6.4
+ Author:          Yuri Sakhno (George1)
+ Release Date:    25-Jan-2015
+ 
+ Features:
+   + Minimum money with selectable minimum value
+   + Vehicles with infinite capacity
+   + Vehicles do not break down
+ 
+ History:
+   25-Jan-15:  Initial release; Money, Vehicle capacity, Vehicle durability
+==========================================
+ How to use:
+   Activate the script by clicking on an empty box next to the script
+   in Cheat Engine's list. Then change values of the options you desire
+   to activate from Disabled to Enabled (freezing these values
+   is not necessary). If you want to use Minimum Money option, you can also
+   change the Minimum Money Value in the list, and the value you provide will
+   be used by the script.
+   Note: If the top-level function does not expand when you click in the empty
+   box, it means that your game is not compatible with this version
+   of the table.
+==========================================
+</Comments>
+</CheatTable>

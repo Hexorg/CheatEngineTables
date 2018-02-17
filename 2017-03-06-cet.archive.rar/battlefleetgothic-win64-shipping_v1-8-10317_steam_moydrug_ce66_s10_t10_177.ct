@@ -1,0 +1,739 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="24">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>9</ID>
+      <Description>"[X] &lt;== Battlefleet Gothic v1.8.10317 Steam Script v1.0"</Description>
+      <Options moHideChildren="1" moDeactivateChildrenAsWell="1"/>
+      <LastState/>
+      <Color>FF0000</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>{
+===========================================
+ Game Title    : BattleFleet Gothic Armada
+ Game Version  : 1.8.xxxx
+ Game Sponsor  : Steam (Schviedler help)
+ Process Name  : BattleFleetGothic-Win64-Shipping.exe
+ Relevant Info : Unreal4 Engine/64bits/TBS-RTS
+ Script Version: 1.0
+ CE Version    : 6.6
+ Release date  : 12-Jan-2017
+ Author        : Recifense
+ History:
+ 12-Jan-2017: First Release (SKIDROW - v1.7.9962)
+ 12-Jan-2017: Release for v1.8.xxxx (steam)
+ Features:
+ - God Mode (*)
+ - Shield (*)
+ - (*) Include Team Ships (blue ones)
+ - Renown
+ - Fleet Points
+ - Some Pointers
+===========================================
+}
+
+//=========================================
+// Checking CE version
+{$lua}
+  if(getCEVersion() &lt; 6.5) then
+    ShowMessage('Sorry. CE version should be 6.5 or above')
+  end
+{$asm}
+
+//=========================================
+// Checking Selected Process
+{$lua}
+  if(process == nil) then
+    ShowMessage('No process was selected')
+  elseif (process ~= "BattleFleetGothic-Win64-Shipping.exe") then
+    ShowMessage('Error. Expected Process = BattleFleetGothic-Win64-Shipping.exe')
+  end
+{$asm}
+
+//=========================================
+// Definitions
+define(LUDO,"BattleFleetGothic-Win64-Shipping.exe")
+define(MOPS,"BattleFleetGothic-Win64-Shipping.exe"+001F422F) //#
+define(MOPR,"BattleFleetGothic-Win64-Shipping.exe"+001A9470) //#
+define(MOFP,"BattleFleetGothic-Win64-Shipping.exe"+00192EE0) //#
+define(MFP1,"BattleFleetGothic-Win64-Shipping.exe"+0017CC30) //#
+define(MOPD,"BattleFleetGothic-Win64-Shipping.exe"+0018E2E0) //=
+define(MOPT,"BattleFleetGothic-Win64-Shipping.exe"+00207B1A) //#
+
+//=========================================
+// Constants used in the script (that can be changed)
+define(ctCE65,(float)6.6)
+define(ctMMON,#66000)  // Minimum Money
+define(ctMATT,#10)     // Minimum Attributes
+
+//=========================================
+[ENABLE]
+//=========================================
+//LuaCall(CheckVersion())
+//=========================================
+// Check if script is compatible to this game version
+// If false the script will not be loaded
+
+assert(MOPS,f3 0f 11 44 24 10 66 03 c0 66 89 41 06 98 8b c8 c1 e1 10 0b c8)
+assert(MOPR,03 c0 44 2b 41 74 83 c8 01 89 41 74 8b 41 78 03 c0 89 41 78 8b)
+assert(MOFP,0f b6 81 19 05 00 00 44 0f b6 81 1b 05 00 00 4c 8b c9 0f b6 89)
+assert(MFP1,0f b6 81 19 05 00 00 44 0f b6 81 1b 05 00 00 4c 8b c9 0f b6 89)
+assert(MOPD,48 8b 81 40 04 00 00 8b 88 e4 03 00 00 2b 88 e0 03 00 00 8b c1)
+assert(MOPT,48 83 b9 a8 03 00 00 00 48 8b d9 ?? ?? 48 8b 01 ff 90 e8 00 00)
+
+//=========================================
+alloc(MyCode,4096,$process)
+//=========================================
+// Declaration section
+label(_MonPlayerShip)
+label(_BackMPS)
+label(_ExitMPS)
+label(_MonPlayerRenown)
+label(_BackMPR)
+label(_ExitMPR)
+label(_MonFleetPoints)
+label(_BackMFP)
+label(_ExitMFP)
+label(_MonFleetPoints1)
+label(_BackFP1)
+label(_ExitFP1)
+label(_MonPlayerDeployment)
+label(_BackMPD)
+label(_ExitMPD)
+label(_MonPlayerTeam)
+label(_BackMPT)
+label(_ExitMPT)
+
+label(iEnableMSH)
+label(iEnableMSS)
+label(iEnableMPR)
+label(iEnableMFP)
+label(iEnableMPT)
+label(iEnableOHK)
+label(iVal)
+
+label(pShip)
+label(pPlayer)
+label(pFleet)
+label(pDeploy)
+label(pTeam)
+
+//=========================================
+// Registering Symbols
+registersymbol(MyCode)
+registersymbol(iEnableMSH)
+registersymbol(iEnableMSS)
+registersymbol(iEnableMPR)
+registersymbol(iEnableMFP)
+registersymbol(iEnableMPT)
+registersymbol(iEnableOHK)
+registersymbol(iVal)
+registersymbol(pShip)
+registersymbol(pPlayer)
+registersymbol(pFleet)
+registersymbol(pDeploy)
+registersymbol(pTeam)
+
+//=========================================
+MyCode:
+//========================================= # ok
+// When decreasing (Hull/Shield)
+_MonPlayerShip:
+ mov [qRSI],rsi
+ mov [pShip],rdi
+
+ mov rsi,[rdi+000003a8]
+ test rsi,rsi
+ jz _ExitMPS
+
+ cmp dword ptr [iEnableMPT],0
+ je _MonPSZZ                       // Jump if feature is disabled
+
+ mov rsi,[rsi+00000510]            //#
+ cmp rsi,[pTeam]
+ je _MonPSZO
+
+ jmp _MonS01
+//--
+_MonPSZZ:
+ cmp dword ptr [rsi+00000368],0
+ je _MonS01
+
+_MonPSZO:
+ lea rsi,[rdi+000007a0]            // ok steam
+ cmp rsi,rcx
+ jne _MonPS00
+
+ cmp dword ptr [iEnableMSH],0
+ je _ExitMPS                       // Jump if feature is disabled
+
+ movss xmm0,[rdi+00000790]
+ jmp _ExitMPS
+//--
+_MonPS00:
+ lea rsi,[rdi+000007d8]            // ok steam
+ cmp rsi,rcx
+ jne _ExitMPS
+
+ cmp dword ptr [iEnableMSS],0
+ je _ExitMPS                       // Jump if feature is disabled
+
+ movss xmm0,[rdi+000007e0]
+ jmp _ExitMPS
+//--
+_MonS01:
+ cmp dword ptr [iEnableOHK],0
+ je _ExitMPS                       // Jump if feature is disabled
+
+ lea rsi,[rdi+000007a0]
+ cmp rsi,rcx
+ jne _ExitMPS
+
+ xorps xmm0,xmm0
+
+_ExitMPS:
+ mov rsi,[qRSI]
+
+ movss [rsp+10],xmm0               // Original code (new value)
+ jmp _BackMPS                      // Back to main code
+
+//========================================= # ok
+// When decreasing (Renown)
+_MonPlayerRenown:
+ mov [pPlayer],rcx
+
+ add eax,eax                       // Original code
+ sub r8d,[rcx+74]                  // Original code (decrypt Value) #
+
+ mov [iVal],r8d
+
+ sub r8d,edx
+
+ cmp dword ptr [iEnableMPR],0
+ je _ExitMPR                       // Jump if feature is disabled
+
+ cmp r8d,#6600
+ jns _ExitMPR
+
+ mov r8d,#6600
+
+_ExitMPR:
+ add r8d,edx
+ jmp _BackMPR                      // Back to main code
+
+//========================================= # ok
+// When increasing Spent Fleet points
+_MonFleetPoints:
+ mov [pFleet],rcx
+
+ cmp dword ptr [iEnableMFP],0
+ je _ExitMFP                       // Jump if feature is disabled
+
+ cmp dword ptr [rcx+00000368],0
+ je _ExitMFP
+
+ xor edx,edx                       // Spending 0
+
+_ExitMFP:
+ movzx eax,byte ptr [rcx+00000519] // Original code (decrypt Value) #
+ jmp _BackMFP                      // Back to main code
+
+//========================================= # ok
+// When decreasing Spent Fleet points
+_MonFleetPoints1:
+ mov [pFleet],rcx
+
+ cmp dword ptr [iEnableMFP],0
+ je _ExitFP1                       // Jump if feature is disabled
+
+ cmp dword ptr [rcx+00000368],0
+ je _ExitFP1
+
+ xor edx,edx                       // Recovering 0
+
+_ExitFP1:
+ movzx eax,byte ptr [rcx+00000519] // Original code (decrypt Value) #
+ jmp _BackFP1                      // Back to main code
+
+//========================================= ok
+// At the campaign system map
+_MonPlayerDeployment:
+ mov rax,[rcx+00000440]            // Original code (get pDeploy)
+
+ mov [pDeploy],rax
+
+_ExitMPD:
+ jmp _BackMPD                      // Back to main code
+
+//========================================= #
+// When ships are displayed (mainly on battle)
+_MonPlayerTeam:
+ mov rbx,[rcx+000003A8]
+ test rbx,rbx
+ jz _ExitMPT
+
+ cmp dword ptr [rbx+00000368],0
+ je _ExitMPT
+
+ mov rbx,[rbx+00000510]             // #
+ test rbx,rbx
+ jz _ExitMPT
+
+ mov [pTeam],rbx
+
+_ExitMPT:
+ cmp qword ptr [rcx+000003A8],00   // Original code (get pDeploy)
+ jmp _BackMPT                      // Back to main code
+
+//=========================================
+ db '=================================&gt;'
+ db 'CE6.6 Script by Recifense 011217'
+//=========================================
+// Variables
+iEnableMSH:
+ dd 0
+iEnableMSS:
+ dd 0
+iEnableMPR:
+ dd 0
+iEnableMFP:
+ dd 0
+iEnableMPT:
+ dd 0
+iEnableOHK:
+ dd 0
+iVal:
+ dd 0
+pShip:
+ dq 0
+pPlayer:
+ dq 0
+pFleet:
+ dq 0
+pDeploy:
+ dq 0
+pTeam:
+ dq MyCode
+qRSI:
+ dq 0
+
+//=========================================
+// Hacking Points
+MOPS:
+ jmp _MonPlayerShip
+ nop
+_BackMPS:
+
+MOPR:
+ jmp _MonPlayerRenown
+ nop
+_BackMPR:
+
+MOFP:
+ jmp _MonFleetPoints
+ nop
+ nop
+_BackMFP:
+
+MFP1:
+ jmp _MonFleetPoints1
+ nop
+ nop
+_BackFP1:
+
+MOPD:
+ jmp _MonPlayerDeployment
+ nop
+ nop
+_BackMPD:
+
+MOPT:
+ jmp _MonPlayerTeam
+ nop
+ nop
+ nop
+_BackMPT:
+
+//=========================================
+// Script for Restoring Original Codes
+[DISABLE]
+MOPS:
+// movss [rsp+10],xmm0
+ db f3 0f 11 44 24 10
+
+MOPR:
+// add eax,eax
+// sub r8d,[rcx+74]
+ db 03 c0 44 2b 41 74
+
+MOFP:
+// movzx eax,byte ptr [rcx+00000519]
+ db 0f b6 81 19 05 00 00
+
+MFP1:
+// movzx eax,byte ptr [rcx+00000519]
+ db 0f b6 81 19 05 00 00
+
+MOPD:
+// mov rax,[rcx+00000440]
+ db 48 8b 81 40 04 00 00
+
+MOPT:
+// cmp qword ptr [rcx+000003A8],00
+ db 48 83 b9 a8 03 00 00 00
+
+//=========================================
+// Unregistering Symbols
+unregistersymbol(MyCode)
+unregistersymbol(iEnableMSH)
+unregistersymbol(iEnableMSS)
+unregistersymbol(iEnableMPR)
+unregistersymbol(iEnableMFP)
+unregistersymbol(iEnableMPT)
+unregistersymbol(iEnableOHK)
+unregistersymbol(iVal)
+unregistersymbol(pShip)
+unregistersymbol(pPlayer)
+unregistersymbol(pFleet)
+unregistersymbol(pDeploy)
+unregistersymbol(pTeam)
+
+//=========================================
+dealloc(MyCode)
+//============= Scripts End ===============
+
+// ****************************************
+// NOTES
+// ****************************************
+{
+}
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>138</ID>
+          <Description>"[X] &lt;== God Mode (Ships and Stations)"</Description>
+          <LastState/>
+          <Color>C08000</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[enable]
+define(test,LUDO)
+
+{$LUA}
+writeInteger("iEnableMSH",1)
+getAddressList().getMemoryRecordByID(138).Color=0x00008000
+{$ASM}
+
+[disable]
+{$LUA}
+writeInteger("iEnableMSH",0)
+getAddressList().getMemoryRecordByID(138).Color=0x00c08000
+{$ASM}
+
+</AssemblerScript>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Activate</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>97</Key>
+              </Keys>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Deactivate</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>96</Key>
+              </Keys>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>139</ID>
+          <Description>"[X] &lt;== Full Shield (does not work all the time)"</Description>
+          <LastState/>
+          <Color>C08000</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[enable]
+define(test,LUDO)
+
+{$LUA}
+writeInteger("iEnableMSS",1)
+getAddressList().getMemoryRecordByID(139).Color=0x00008000
+{$ASM}
+
+[disable]
+{$LUA}
+writeInteger("iEnableMSS",0)
+getAddressList().getMemoryRecordByID(139).Color=0x00c08000
+{$ASM}
+
+</AssemblerScript>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Activate</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>97</Key>
+              </Keys>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Deactivate</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>96</Key>
+              </Keys>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>142</ID>
+          <Description>"[X] &lt;== Protect Blue Ships and Stations as well (GM/Shield for Team)"</Description>
+          <LastState/>
+          <Color>C08000</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[enable]
+define(test,LUDO)
+
+{$LUA}
+writeInteger("iEnableMPT",1)
+getAddressList().getMemoryRecordByID(142).Color=0x00008000
+{$ASM}
+
+[disable]
+{$LUA}
+writeInteger("iEnableMPT",0)
+getAddressList().getMemoryRecordByID(142).Color=0x00c08000
+{$ASM}
+
+</AssemblerScript>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Activate</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>97</Key>
+              </Keys>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Deactivate</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>96</Key>
+              </Keys>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>140</ID>
+          <Description>"[X] &lt;== Minimum Renown"</Description>
+          <LastState/>
+          <Color>C08000</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[enable]
+define(test,LUDO)
+
+{$LUA}
+writeInteger("iEnableMPR",1)
+getAddressList().getMemoryRecordByID(140).Color=0x00008000
+{$ASM}
+
+[disable]
+{$LUA}
+writeInteger("iEnableMPR",0)
+getAddressList().getMemoryRecordByID(140).Color=0x00c08000
+{$ASM}
+
+</AssemblerScript>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Activate</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>97</Key>
+              </Keys>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Deactivate</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>96</Key>
+              </Keys>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>141</ID>
+          <Description>"[X] &lt;== Fleet Points"</Description>
+          <LastState/>
+          <Color>C08000</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[enable]
+define(test,LUDO)
+
+{$LUA}
+writeInteger("iEnableMFP",1)
+getAddressList().getMemoryRecordByID(141).Color=0x00008000
+{$ASM}
+
+[disable]
+{$LUA}
+writeInteger("iEnableMFP",0)
+getAddressList().getMemoryRecordByID(141).Color=0x00c08000
+{$ASM}
+
+</AssemblerScript>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Activate</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>97</Key>
+              </Keys>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Deactivate</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>96</Key>
+              </Keys>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>144</ID>
+          <Description>"[X] &lt;== Weak Fow (almost one hit kill)"</Description>
+          <LastState/>
+          <Color>C08000</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[enable]
+define(test,LUDO)
+
+{$LUA}
+writeInteger("iEnableOHK",1)
+getAddressList().getMemoryRecordByID(144).Color=0x00008000
+{$ASM}
+
+[disable]
+{$LUA}
+writeInteger("iEnableOHK",0)
+getAddressList().getMemoryRecordByID(144).Color=0x00c08000
+{$ASM}
+
+</AssemblerScript>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Activate</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>103</Key>
+              </Keys>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Deactivate</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>100</Key>
+              </Keys>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>143</ID>
+          <Description>"[X] &lt;== Deployment Values"</Description>
+          <Options moHideChildren="1"/>
+          <LastState Value="" RealAddress="00000000"/>
+          <Color>404080</Color>
+          <GroupHeader>1</GroupHeader>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>22</ID>
+              <Description>"Spent Deployments =====&gt;"</Description>
+              <Color>0000FF</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pDeploy</Address>
+              <Offsets>
+                <Offset>3e0</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>23</ID>
+              <Description>"Maximum Deployments ==&gt;"</Description>
+              <Color>0000FF</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pDeploy</Address>
+              <Offsets>
+                <Offset>3e4</Offset>
+              </Offsets>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols>
+    <SymbolEntry>
+      <Name>Recifense</Name>
+      <Address>20170112</Address>
+    </SymbolEntry>
+  </UserdefinedSymbols>
+  <Comments>===========================================
+ Game Title    : BattleFleet Gothic Armada
+ Game Version  : 1.8.10317
+ Game Sponsor  : Steam (Schviedler help)
+ Process Name  : BattleFleetGothic-Win64-Shipping.exe
+ Relevant Info : Unreal4 Engine/64bits/TBS-RTS
+ Script Version: 1.0
+ CE Version    : 6.6
+ Release date  : 12-Jan-2017
+ Author        : Recifense
+ History:
+ 12-Jan-2017: First Release (SKIDROW - v1.7.9962)
+ 12-Jan-2017: Release for v1.8.10317 (steam)
+ Features:
+ - God Mode (*)                       [1]
+ - Shield (*)                         [2]
+ - (*) Include Team Ships (blue ones) [3]
+ - Renown                             [4]
+ - Fleet Points                       [5]
+ - Some Pointers                      [6]
+===========================================
+[1] For human player's ships and stations;
+[2] For human player's ships and stations (**);
+[3] Apply [1] and [2] for Team as well (blue ships and turrets);
+[4] When spending. Minimum Value is 6600;
+[5] Fleet Points will not change;
+[6] Used at the table;
+(**) It can still decrease, but most of the time it will work;
+===========================================
+[USAGE]
+1) Run CE65 or greater;
+2) Run Game;
+3) Load the game process "BattleFleetGothic-Win64-Shipping.exe" in CE;
+4) Load this table and activate the main script;
+5) Now Activate the script of each cheat you want to use;
+6) Game On;
+===========================================
+[HOTKEYS]
+- See description on the table entries;
+===========================================
+[ADVICE]
+When you can,save the game before starting using table/cheat. So you can always come back in case you don't like the result.
+===========================================
+[INFO]
+Tested on Win 10 64bits
+===========================================
+Cheers!
+</Comments>
+</CheatTable>

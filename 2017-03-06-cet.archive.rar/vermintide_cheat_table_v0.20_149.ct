@@ -1,0 +1,3833 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="18">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>147</ID>
+      <Description>"Activate me once"</Description>
+      <LastState Activated="1"/>
+      <Color>408000</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>{ Game   : vermintide.exe
+  Version: 
+  Date   : 2015-11-06
+  Author : Nessin
+}
+
+[ENABLE]
+
+aobscanmodule(INJECT,vermintide.exe,83 79 04 FF 74 36) // should be unique
+alloc(newmem,$1000)
+
+label(code)
+label(return)
+label(originalcode)
+label(health)
+label(gravity)
+label(checkammoclip)
+
+label(checkvalidmemory)
+label(checkhealth)
+label(checkgravity)
+label(checkoverheat)
+label(checkbarrels)
+label(checkdices)
+label(dices)
+
+label(resetaddresses)
+
+label(dmg1)
+label(dmg2)
+label(dmg3)
+label(dmg4)
+label(dmg5)
+label(dmg6)
+label(dmg7)
+label(dmg8)
+label(grav1)
+label(grav2)
+label(grav3)
+label(grav4)
+label(grimoire)
+label(tome)
+label(cursed)
+label(ukdice1)
+label(ukdice2)
+label(ukdice3)
+globalalloc(_barrels,4)
+globalalloc(_overheat,4)
+globalalloc(_infiniteammo,4)
+globalalloc(_damage1,4)
+globalalloc(_damage2,4)
+globalalloc(_damage3,4)
+globalalloc(_damage4,4)
+globalalloc(_damage5,4)
+globalalloc(_damage6,4)
+globalalloc(_damage7,4)
+globalalloc(_damage8,4)
+globalalloc(_gravity1,4)
+globalalloc(_gravity2,4)
+globalalloc(_gravity3,4)
+globalalloc(_gravity4,4)
+globalalloc(_unknowndice1,4)
+globalalloc(_unknowndice2,4)
+globalalloc(_unknowndice3,4)
+globalalloc(_tome2,4)
+globalalloc(_grimoire2,4)
+globalalloc(_cursed2,4)
+globalalloc(_debugvalue1,4)
+globalalloc(_debugvalue2,4)
+globalalloc(_debugvalue3,4)
+
+
+//ecx hold our potential address
+
+newmem:
+
+code:
+pushfd
+pushad
+
+checkvalidmemory:
+mov esi, ecx
+add esi, 8          //Purely so I can reuse my old code instead of replacing all esi with ecx+8
+
+// esi points to descriptor
+
+mov eax, [esi]
+add eax,C
+push 00000004
+push eax
+call isbadreadptr   //make sure [esi]+C points to valid memory
+cmp eax,0
+jne originalcode
+mov eax, [esi]
+add eax, 1C
+push 00000004
+push eax
+call isbadreadptr   //make sure [esi]+1C points to valid memory
+cmp eax,0
+jne originalcode
+
+mov eax, [esi]
+
+checkhealth:
+cmp word ptr [eax+C],00000006     //length of string is 6
+jne checkgravity
+cmp dword ptr [eax+10],'dama'
+jne checkgravity
+jmp health
+
+checkgravity:
+cmp word ptr [eax+C],00000014     //length of string is 20
+jne checkoverheat
+cmp dword ptr [eax+10],'grav'
+jne checkoverheat
+cmp dword ptr [eax+14],'ity_'
+jne checkoverheat
+cmp dword ptr [eax+18],'acce'
+jne checkoverheat
+jmp gravity
+
+checkoverheat:
+cmp word ptr [eax+C],00000010     //length of string is 16
+jne checkammoclip
+cmp dword ptr [eax+10],'over'
+jne checkammoclip
+cmp dword ptr [eax+14],'char'
+jne checkammoclip
+cmp dword ptr [eax+18],'ge_v'
+jne checkammoclip
+mov eax, esi
+add eax, -8
+mov [_overheat],eax
+jmp originalcode
+
+
+checkammoclip:
+cmp word ptr [eax+C],0000000C     //length of string is 12
+jne checkbarrels
+cmp dword ptr [eax+10],'curr'
+jne checkbarrels
+cmp dword ptr [eax+14],'ent_'
+jne checkbarrels
+cmp dword ptr [eax+18],'ammo'
+jne checkbarrels
+mov eax, esi
+add eax, -8
+//found ammo address
+cmp [_infiniteammo], 0
+je originalcode
+//now check if it is a barrel or grain sack, we dont want an infinite amount of those
+mov ebx, [eax-F0]
+cmp dword ptr [ebx+10],'expl'
+je originalcode
+cmp dword ptr [ebx+10],'beer'
+je originalcode
+cmp dword ptr [ebx+10],'grai'
+je originalcode
+cmp dword ptr [ebx+10],'torc'
+je originalcode
+mov [eax+4],40490000
+add [_debugvalue3],1
+jmp originalcode
+
+checkbarrels:
+cmp word ptr [eax+C],00000012     //length of string is 18
+jne checkdices
+cmp dword ptr [eax+10],'num_'
+jne checkdices
+cmp dword ptr [eax+14],'clos'
+jne checkdices
+cmp dword ptr [eax+18],'ed_s'
+jne checkdices
+cmp dword ptr [eax+1C],'ocke'
+jne checkdices
+mov eax, esi
+add eax, -8       // store the address in eax
+mov [_barrels], eax
+jmp originalcode
+
+checkdices:
+
+
+mov eax, [esi]
+
+cmp word ptr [eax+C],0000000E     //length of string is 14
+jne originalcode
+cmp dword ptr [eax+10],'curr'
+jne originalcode
+cmp dword ptr [eax+14],'ent_'       // these compares check if it belongs to a dice
+jne originalcode
+cmp dword ptr [eax+18],'amou'
+jne originalcode
+
+//It's a dice
+add [_debugvalue1], 1
+
+mov eax, [esi-C8]
+add eax, C
+push 00000004
+push eax
+call isbadreadptr   //make sure [esi-C8]+C points to valid memory
+cmp eax,0
+jne originalcode
+
+mov eax, [esi-C8]
+add eax, 1C
+push 00000004
+push eax
+call isbadreadptr   //make sure [esi-C8]+1C points to valid memory
+cmp eax,0
+jne originalcode
+
+jmp dices
+
+
+dices:
+mov eax, esi
+add eax, -8       // store the address of  tome/grimoire/dice in eax
+
+mov ebx, [esi-C8]
+cmp dword ptr [ebx+10],'Tome'   //Is it a Tome?
+je tome
+cmp dword ptr [ebx+10],'Skav'    //Is it a Skaven Grimoire?
+je grimoire
+cmp dword ptr [ebx+10],'Curs'   //Is it a Cursed Bonus Die?
+je cursed
+                             //None of the above
+cmp [_unknowndice1], eax
+je originalcode
+cmp [_unknowndice2], eax
+je originalcode
+cmp [_unknowndice3], eax
+je originalcode
+cmp [_unknowndice1],0
+je ukdice1
+cmp [_unknowndice2],0
+je ukdice2
+cmp [_unknowndice3],0
+je ukdice3
+jmp originalcode
+
+tome:
+add [_debugvalue2], 1
+mov [_tome2], eax         //store the previously saved eax in [_tome2]
+jmp originalcode
+
+grimoire:
+mov [_grimoire2], eax      //store the previously saved eax in [_grimoire2]
+jmp originalcode
+
+cursed:
+mov [_cursed2], eax        //store the previously saved eax in [_cursed2]
+jmp originalcode
+
+ukdice1:
+mov [_unknowndice1], eax
+jmp originalcode
+
+ukdice2:
+mov [_unknowndice2], eax
+jmp originalcode
+
+ukdice3:
+mov [_unknowndice3], eax
+jmp originalcode
+
+
+health:
+mov eax, [esi-78]
+add eax,10
+push 00000004
+push eax
+call isbadreadptr   //make sure [esi-78]+10 points to valid memory
+cmp eax,0
+jne originalcode
+mov eax, [esi-78]
+
+cmp word ptr [eax+C],00000006     //length of string is 6
+jne originalcode
+cmp dword ptr [eax+10],'play'
+jne originalcode
+cmp word ptr [esi-7C],FFFFFFF4   //is it a player?
+jne originalcode
+
+mov eax, esi
+add eax, -8                //this code is shared for 4 players.. so I try to separate addresses
+cmp [_damage1], eax
+je originalcode
+cmp [_damage2], eax
+je originalcode
+cmp [_damage3], eax
+je originalcode
+cmp [_damage4], eax
+je originalcode
+{cmp [_damage5], eax
+je originalcode
+cmp [_damage6], eax
+je originalcode
+cmp [_damage7], eax
+je originalcode
+cmp [_damage8], eax
+je originalcode}
+cmp [_damage1],0
+je dmg1
+cmp [_damage2],0
+je dmg2
+cmp [_damage3],0
+je dmg3
+cmp [_damage4],0
+je dmg4
+//All addresses are full, probably restarted level?
+jmp resetaddresses
+
+{cmp [_damage5],0
+je dmg5
+cmp [_damage6],0
+je dmg6
+cmp [_damage7],0
+je dmg7
+cmp [_damage8],0
+je dmg8}
+
+jmp originalcode
+
+dmg1:
+mov [_damage1], eax
+jmp originalcode
+
+dmg2:
+mov [_damage2], eax
+jmp originalcode
+
+dmg3:
+mov [_damage3], eax
+jmp originalcode
+
+dmg4:
+mov [_damage4], eax
+jmp originalcode
+
+dmg5:
+mov [_damage5], eax
+jmp originalcode
+
+dmg6:
+mov [_damage6], eax
+jmp originalcode
+
+dmg7:
+mov [_damage7], eax
+jmp originalcode
+
+dmg8:
+mov [_damage8], eax
+jmp originalcode
+
+
+
+
+//
+//              GRAVITY &amp; SPEED                //
+//
+
+gravity:
+
+mov eax, esi
+add eax, -8
+cmp [_gravity1], eax
+je originalcode
+cmp [_gravity2], eax
+je originalcode
+cmp [_gravity3], eax
+je originalcode
+cmp [_gravity4], eax
+je originalcode
+cmp [_gravity1],0
+je grav1
+cmp [_gravity2],0
+je grav2
+cmp [_gravity3],0
+je grav3
+cmp [_gravity4],0
+je grav4             //All addresses are full, probably restarted level ?
+jmp resetaddresses
+
+grav1:
+mov [_gravity1],eax
+jmp originalcode
+
+grav2:
+mov [_gravity2],eax
+jmp originalcode
+
+grav3:
+mov [_gravity3],eax
+jmp originalcode
+
+grav4:
+mov [_gravity4],eax
+jmp originalcode
+
+
+resetaddresses:
+mov [_gravity1],0
+mov [_gravity2],0
+mov [_gravity3],0
+mov [_gravity4],0
+mov [_damage1], 0
+mov [_damage2], 0
+mov [_damage3], 0
+mov [_damage4], 0
+mov [_unknowndice1],0
+mov [_unknowndice2],0
+mov [_unknowndice3],0
+
+
+originalcode:
+popad
+popfd
+  cmp dword ptr [ecx+04],-01
+  je vermintide.luaL_openlibs+36EF
+  jmp return
+
+INJECT:
+  jmp code
+  nop
+return:
+registersymbol(INJECT)
+
+[DISABLE]
+
+INJECT:
+  db 83 79 04 FF 74 36
+
+unregistersymbol(INJECT)
+unregistersymbol(_damage1)
+unregistersymbol(_damage2)
+unregistersymbol(_damage3)
+unregistersymbol(_damage4)
+unregistersymbol(_damage5)
+unregistersymbol(_damage6)
+unregistersymbol(_damage7)
+unregistersymbol(_damage8)
+unregistersymbol(_gravity1)
+unregistersymbol(_gravity2)
+unregistersymbol(_gravity3)
+unregistersymbol(_gravity4)
+unregistersymbol(_unknowndice1)
+unregistersymbol(_unknowndice2)
+unregistersymbol(_unknowndice3)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: "vermintide.exe"+558553
+
+"vermintide.exe"+558533: 0F 85 67 0E 00 00        -  jne vermintide.exe+5593A0
+"vermintide.exe"+558539: 8B 2C EA                 -  mov ebp,[edx+ebp*8]
+"vermintide.exe"+55853C: 8B 4D 1C                 -  mov ecx,[ebp+1C]
+"vermintide.exe"+55853F: 23 48 08                 -  and ecx,[eax+08]
+"vermintide.exe"+558542: 6B C9 18                 -  imul ecx,ecx,18
+"vermintide.exe"+558545: 03 4D 14                 -  add ecx,[ebp+14]
+"vermintide.exe"+558548: 83 79 0C FB              -  cmp dword ptr [ecx+0C],-05
+"vermintide.exe"+55854C: 75 3A                    -  jne vermintide.exe+558588
+"vermintide.exe"+55854E: 39 41 08                 -  cmp [ecx+08],eax
+"vermintide.exe"+558551: 75 35                    -  jne vermintide.exe+558588
+// ---------- INJECTING HERE ----------
+"vermintide.exe"+558553: 83 79 04 FF              -  cmp dword ptr [ecx+04],-01
+"vermintide.exe"+558557: 74 36                    -  je vermintide.exe+55858F
+// ---------- DONE INJECTING  ----------
+"vermintide.exe"+558559: 0F B6 46 FD              -  movzx eax,byte ptr [esi-03]
+"vermintide.exe"+55855D: 8B 29                    -  mov ebp,[ecx]
+"vermintide.exe"+55855F: 8B 49 04                 -  mov ecx,[ecx+04]
+"vermintide.exe"+558562: 89 2C C2                 -  mov [edx+eax*8],ebp
+"vermintide.exe"+558565: 89 4C C2 04              -  mov [edx+eax*8+04],ecx
+"vermintide.exe"+558569: 8B 06                    -  mov eax,[esi]
+"vermintide.exe"+55856B: 0F B6 CC                 -  movzx ecx,ah
+"vermintide.exe"+55856E: 0F B6 E8                 -  movzx ebp,al
+"vermintide.exe"+558571: 83 C6 04                 -  add esi,04
+"vermintide.exe"+558574: C1 E8 10                 -  shr eax,10
+}
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>18</ID>
+          <Description>"Tomes"</Description>
+          <LastState Value="??" Activated="0" RealAddress="00000000"/>
+          <Color>808000</Color>
+          <VariableType>Double</VariableType>
+          <Address>[_tome2]</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>17</ID>
+          <Description>"Grimoires"</Description>
+          <LastState Value="??" Activated="0" RealAddress="00000000"/>
+          <Color>808000</Color>
+          <VariableType>Double</VariableType>
+          <Address>[_grimoire2]</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>19</ID>
+          <Description>"Cursed dices"</Description>
+          <LastState Value="??" Activated="0" RealAddress="00000000"/>
+          <Color>808000</Color>
+          <VariableType>Double</VariableType>
+          <Address>[_cursed2]</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>78</ID>
+          <Description>"Expand this if the grimoire/tome addresses stay invalid even after picking one up in-game"</Description>
+          <Options moHideChildren="1"/>
+          <LastState Value="" Activated="0" RealAddress="00000000"/>
+          <Color>408080</Color>
+          <GroupHeader>1</GroupHeader>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>79</ID>
+              <Description>"The following 3 lines belong to tomes/grimoires/cursed dice counts. Usually in the order you picked them up"</Description>
+              <LastState Value="" Activated="0" RealAddress="00000000"/>
+              <Color>808080</Color>
+              <GroupHeader>1</GroupHeader>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>75</ID>
+              <Description>"Tome, grimoire or cursed dice"</Description>
+              <LastState Value="??" Activated="0" RealAddress="00000000"/>
+              <Color>80000008</Color>
+              <VariableType>Double</VariableType>
+              <Address>[_unknowndice1]</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>76</ID>
+              <Description>"Tome, grimoire or cursed dice"</Description>
+              <LastState Value="??" Activated="0" RealAddress="00000000"/>
+              <Color>80000008</Color>
+              <VariableType>Double</VariableType>
+              <Address>[_unknowndice2]</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>77</ID>
+              <Description>"Tome, grimoire or cursed dice"</Description>
+              <LastState Value="??" Activated="0" RealAddress="00000000"/>
+              <Color>80000008</Color>
+              <VariableType>Double</VariableType>
+              <Address>[_unknowndice3]</Address>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>247</ID>
+          <Description>"Infinite ammo, potions, bombs &amp; healthkits"</Description>
+          <LastState Activated="0"/>
+          <Color>80000008</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[ENABLE]
+{$lua}
+
+addresslist = getAddressList()
+description1= [[INFINITE AMMO]]
+
+memoryrec1 = addresslist_getMemoryRecordByDescription(addresslist, description1)
+
+newvalue = 1
+if (memoryrecord_getValue(memoryrec1) == "0") then
+  memoryrecord_setValue(memoryrec1, newvalue)   --sets value for the memoryrecord
+  memoryrecord_setColor(memoryrec1,0x228B22)
+end
+
+{$asm}
+
+
+[DISABLE]
+
+{$lua}
+
+addresslist = getAddressList()
+description1= [[INFINITE AMMO]]
+
+memoryrec1 = addresslist_getMemoryRecordByDescription(addresslist, description1)
+
+  newvalue = 0
+  if (memoryrecord_getValue(memoryrec1) == "1") then
+    memoryrecord_setValue(memoryrec1, newvalue)   --sets value for the memoryrecord
+    memoryrecord_setColor(memoryrec1,0x000000)
+  end
+
+{$asm}
+</AssemblerScript>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>46</ID>
+          <Description>"Barrels &amp; Grain sacks"</Description>
+          <LastState Value="??" Activated="0" RealAddress="00000000"/>
+          <Color>80000008</Color>
+          <VariableType>Double</VariableType>
+          <Address>[_barrels]</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>73</ID>
+          <Description>"Overheat wizard"</Description>
+          <LastState Value="??" Activated="0" RealAddress="00000000"/>
+          <Color>80000008</Color>
+          <VariableType>Double</VariableType>
+          <Address>[_overheat]</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>142</ID>
+          <Description>"Gravity &amp; Speed values"</Description>
+          <Options moHideChildren="1"/>
+          <LastState Value="" Activated="1" RealAddress="00000000"/>
+          <Color>408080</Color>
+          <GroupHeader>1</GroupHeader>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>125</ID>
+              <Description>"Gravity 1"</Description>
+              <LastState Value="11" Activated="0" RealAddress="58BFA238"/>
+              <Color>000000</Color>
+              <VariableType>Double</VariableType>
+              <Address>[_gravity1]</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>126</ID>
+              <Description>"Gravity 2"</Description>
+              <LastState Value="??" Activated="0" RealAddress="00000000"/>
+              <Color>000000</Color>
+              <VariableType>Double</VariableType>
+              <Address>[_gravity2]</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>127</ID>
+              <Description>"Gravity 3"</Description>
+              <LastState Value="??" Activated="0" RealAddress="00000000"/>
+              <Color>000000</Color>
+              <VariableType>Double</VariableType>
+              <Address>[_gravity3]</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>128</ID>
+              <Description>"Gravity 4"</Description>
+              <LastState Value="??" Activated="0" RealAddress="00000000"/>
+              <Color>000000</Color>
+              <VariableType>Double</VariableType>
+              <Address>[_gravity4]</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>129</ID>
+              <Description>"Speed 1"</Description>
+              <LastState Value="1" Activated="0" RealAddress="58BFA2C8"/>
+              <Color>000000</Color>
+              <VariableType>Double</VariableType>
+              <Address>[_gravity1]+90</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>130</ID>
+              <Description>"Speed 2"</Description>
+              <LastState Value="??" Activated="0" RealAddress="00000000"/>
+              <Color>000000</Color>
+              <VariableType>Double</VariableType>
+              <Address>[_gravity2]+90</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>131</ID>
+              <Description>"Speed 3"</Description>
+              <LastState Value="??" Activated="0" RealAddress="00000000"/>
+              <Color>000000</Color>
+              <VariableType>Double</VariableType>
+              <Address>[_gravity3]+90</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>132</ID>
+              <Description>"Speed 4"</Description>
+              <LastState Value="??" Activated="0" RealAddress="00000000"/>
+              <Color>000000</Color>
+              <VariableType>Double</VariableType>
+              <Address>[_gravity4]+90</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>123</ID>
+              <Description>"Gravity and speed found by drewsk1 on Cheat Engine forums \o/"</Description>
+              <LastState Value="" Activated="0" RealAddress="00000000"/>
+              <Color>007900</Color>
+              <GroupHeader>1</GroupHeader>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>81</ID>
+          <Description>"Health values"</Description>
+          <Options moHideChildren="1"/>
+          <LastState Value="" Activated="0" RealAddress="00000000"/>
+          <Color>408080</Color>
+          <GroupHeader>1</GroupHeader>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>58</ID>
+              <Description>"All damage values"</Description>
+              <Options moHideChildren="1"/>
+              <LastState Value="" Activated="0" RealAddress="00000000"/>
+              <Color>80000008</Color>
+              <GroupHeader>1</GroupHeader>
+              <CheatEntries>
+                <CheatEntry>
+                  <ID>52</ID>
+                  <Description>"Damage player1"</Description>
+                  <LastState Value="0" Activated="0" RealAddress="217294B8"/>
+                  <Color>80000008</Color>
+                  <VariableType>Double</VariableType>
+                  <Address>[_damage1]</Address>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>53</ID>
+                  <Description>"Damage player2"</Description>
+                  <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                  <Color>80000008</Color>
+                  <VariableType>Double</VariableType>
+                  <Address>[_damage2]</Address>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>54</ID>
+                  <Description>"Damage player3"</Description>
+                  <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                  <Color>80000008</Color>
+                  <VariableType>Double</VariableType>
+                  <Address>[_damage3]</Address>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>55</ID>
+                  <Description>"Damage player4"</Description>
+                  <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                  <Color>80000008</Color>
+                  <VariableType>Double</VariableType>
+                  <Address>[_damage4]</Address>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>57</ID>
+                  <Description>"Damage player5 ?"</Description>
+                  <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                  <Color>80000008</Color>
+                  <VariableType>Double</VariableType>
+                  <Address>[_damage5]</Address>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>59</ID>
+                  <Description>"Damage player6 ?"</Description>
+                  <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                  <Color>80000008</Color>
+                  <VariableType>Double</VariableType>
+                  <Address>[_damage6]</Address>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>60</ID>
+                  <Description>"Damage player7 ?"</Description>
+                  <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                  <Color>80000008</Color>
+                  <VariableType>Double</VariableType>
+                  <Address>[_damage7]</Address>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>61</ID>
+                  <Description>"Damage player8 ?"</Description>
+                  <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                  <Color>80000008</Color>
+                  <VariableType>Double</VariableType>
+                  <Address>[_damage8]</Address>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>148</ID>
+                  <Description>"Godmode 1"</Description>
+                  <LastState Value="-2" Activated="0" RealAddress="217294D4"/>
+                  <ShowAsSigned>1</ShowAsSigned>
+                  <Color>000000</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>[_damage1]+1C</Address>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>149</ID>
+                  <Description>"Godmode 2"</Description>
+                  <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                  <ShowAsSigned>1</ShowAsSigned>
+                  <Color>000000</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>[_damage2]+1C</Address>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>150</ID>
+                  <Description>"Godmode 3"</Description>
+                  <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                  <ShowAsSigned>1</ShowAsSigned>
+                  <Color>000000</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>[_damage3]+1C</Address>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>151</ID>
+                  <Description>"Godmode 4"</Description>
+                  <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                  <ShowAsSigned>1</ShowAsSigned>
+                  <Color>000000</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>[_damage4]+1C</Address>
+                </CheatEntry>
+              </CheatEntries>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>82</ID>
+              <Description>"Player1"</Description>
+              <Options moHideChildren="1"/>
+              <LastState Value="" Activated="0" RealAddress="00000000"/>
+              <Color>C0C0C0</Color>
+              <GroupHeader>1</GroupHeader>
+              <CheatEntries>
+                <CheatEntry>
+                  <ID>83</ID>
+                  <Description>"Damage taken"</Description>
+                  <LastState Value="0" Activated="0" RealAddress="217294B8"/>
+                  <Color>80000008</Color>
+                  <VariableType>Double</VariableType>
+                  <Address>[_damage1]</Address>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>87</ID>
+                  <Description>"Max Health"</Description>
+                  <LastState Value="150" Activated="0" RealAddress="217293E0"/>
+                  <Color>80000008</Color>
+                  <VariableType>Double</VariableType>
+                  <Address>[_damage1]-D8</Address>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>84</ID>
+                  <Description>"Invincible  (change to 1 for godmode)"</Description>
+                  <LastState Value="-2" Activated="0" RealAddress="217294D4"/>
+                  <ShowAsSigned>1</ShowAsSigned>
+                  <Color>80000008</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>[_damage1]+1C</Address>
+                </CheatEntry>
+              </CheatEntries>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>89</ID>
+              <Description>"Player2"</Description>
+              <Options moHideChildren="1"/>
+              <LastState Value="" Activated="0" RealAddress="00000000"/>
+              <Color>C0C0C0</Color>
+              <GroupHeader>1</GroupHeader>
+              <CheatEntries>
+                <CheatEntry>
+                  <ID>93</ID>
+                  <Description>"Damage taken"</Description>
+                  <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                  <Color>80000008</Color>
+                  <VariableType>Double</VariableType>
+                  <Address>[_damage2]</Address>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>92</ID>
+                  <Description>"Max Health"</Description>
+                  <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                  <Color>80000008</Color>
+                  <VariableType>Double</VariableType>
+                  <Address>[_damage2]-D8</Address>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>94</ID>
+                  <Description>"Invincible"</Description>
+                  <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                  <ShowAsSigned>1</ShowAsSigned>
+                  <Color>80000008</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>[_damage2]+1C</Address>
+                </CheatEntry>
+              </CheatEntries>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>90</ID>
+              <Description>"Player3"</Description>
+              <Options moHideChildren="1"/>
+              <LastState Value="" Activated="0" RealAddress="00000000"/>
+              <Color>C0C0C0</Color>
+              <GroupHeader>1</GroupHeader>
+              <CheatEntries>
+                <CheatEntry>
+                  <ID>96</ID>
+                  <Description>"Damage taken"</Description>
+                  <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                  <Color>80000008</Color>
+                  <VariableType>Double</VariableType>
+                  <Address>[_damage3]</Address>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>95</ID>
+                  <Description>"Max Health"</Description>
+                  <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                  <Color>80000008</Color>
+                  <VariableType>Double</VariableType>
+                  <Address>[_damage3]-D8</Address>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>97</ID>
+                  <Description>"Invincible"</Description>
+                  <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                  <ShowAsSigned>1</ShowAsSigned>
+                  <Color>80000008</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>[_damage3]+1C</Address>
+                </CheatEntry>
+              </CheatEntries>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>91</ID>
+              <Description>"Player4"</Description>
+              <Options moHideChildren="1"/>
+              <LastState Value="" Activated="0" RealAddress="00000000"/>
+              <Color>C0C0C0</Color>
+              <GroupHeader>1</GroupHeader>
+              <CheatEntries>
+                <CheatEntry>
+                  <ID>99</ID>
+                  <Description>"Damage taken"</Description>
+                  <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                  <Color>80000008</Color>
+                  <VariableType>Double</VariableType>
+                  <Address>[_damage4]</Address>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>98</ID>
+                  <Description>"Max Health"</Description>
+                  <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                  <Color>80000008</Color>
+                  <VariableType>Double</VariableType>
+                  <Address>[_damage4]-D8</Address>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>100</ID>
+                  <Description>"Invincible"</Description>
+                  <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                  <ShowAsSigned>1</ShowAsSigned>
+                  <Color>80000008</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>[_damage4]+1C</Address>
+                </CheatEntry>
+              </CheatEntries>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>217</ID>
+          <Description>"Position"</Description>
+          <Options moHideChildren="1"/>
+          <LastState Activated="1"/>
+          <Color>800000</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>{ Game   : vermintide.exe
+  Version: 
+  Date   : 2015-11-22
+  Author : Nessin
+}
+
+[ENABLE]
+
+aobscanmodule(INJECT2,vermintide.exe,8B 83 FC 00 00 00 F3) // should be unique
+alloc(newmem2,$1000)
+globalalloc(_height1,4)
+globalalloc(_height2,4)
+globalalloc(_height3,4)
+globalalloc(_height4,4)
+
+label(code)
+label(return)
+label(originalcode)
+label(p1)
+label(p2)
+label(p3)
+label(p4)
+label(resetaddresses2)
+
+newmem2:
+
+code:
+pushfd
+pushad
+
+mov eax, ebx
+add eax, 000000FC
+add eax, -8
+add eax, 1C4
+cmp dword ptr [eax], 3F266666
+je p1
+
+mov eax, ebx
+add eax, 000000FC
+
+
+cmp [_height1], eax
+je originalcode
+cmp [_height2], eax
+je originalcode
+cmp [_height3], eax
+je originalcode
+cmp [_height4], eax
+je originalcode
+cmp [_height1], 0
+je p1
+cmp [_height2], 0
+je p2
+cmp [_height3], 0
+je p3
+cmp [_height4], 0
+je p4
+jmp resetaddresses2
+
+
+
+p1:
+mov [_height1], ebx
+add [_height1],000000FC
+jmp originalcode
+
+p2:
+mov [_height2], ebx
+add [_height2],000000FC
+jmp originalcode
+
+p3:
+mov [_height3], ebx
+add [_height3],000000FC
+jmp originalcode
+
+p4:
+mov [_height4], ebx
+add [_height4],000000FC
+jmp originalcode
+
+
+resetaddresses2:
+mov [_height1],0
+mov [_height2],0
+mov [_height3],0
+mov [_height4],0
+jmp originalcode
+
+originalcode:
+popad
+popfd
+  mov eax,[ebx+000000FC]
+  jmp return
+
+INJECT2:
+  jmp code
+  nop
+return:
+registersymbol(INJECT2)
+
+[DISABLE]
+
+INJECT2:
+  db 8B 83 FC 00 00 00
+
+unregistersymbol(INJECT2)
+dealloc(newmem2)
+
+{
+// ORIGINAL CODE - INJECTION POINT: "vermintide.exe"+21DB76
+
+"vermintide.exe"+21DB55: E8 B6 58 33 00           -  call vermintide.exe+553410
+"vermintide.exe"+21DB5A: 83 C4 0C                 -  add esp,0C
+"vermintide.exe"+21DB5D: 8B CB                    -  mov ecx,ebx
+"vermintide.exe"+21DB5F: E8 9C E4 0A 00           -  call vermintide.exe+2CC000
+"vermintide.exe"+21DB64: 84 C0                    -  test al,al
+"vermintide.exe"+21DB66: 74 0E                    -  je vermintide.exe+21DB76
+"vermintide.exe"+21DB68: 68 D8 8A B8 00           -  push vermintide.exe+788AD8
+"vermintide.exe"+21DB6D: 56                       -  push esi
+"vermintide.exe"+21DB6E: E8 0D 59 33 00           -  call vermintide.exe+553480
+"vermintide.exe"+21DB73: 83 C4 08                 -  add esp,08
+// ---------- INJECTING HERE ----------
+"vermintide.exe"+21DB76: 8B 83 FC 00 00 00        -  mov eax,[ebx+000000FC]
+// ---------- DONE INJECTING  ----------
+"vermintide.exe"+21DB7C: F3 0F 7E 83 F4 00 00 00  -  movq xmm0,[ebx+000000F4]
+"vermintide.exe"+21DB84: 89 45 F0                 -  mov [ebp-10],eax
+"vermintide.exe"+21DB87: 8D 45 E8                 -  lea eax,[ebp-18]
+"vermintide.exe"+21DB8A: 50                       -  push eax
+"vermintide.exe"+21DB8B: 8D 4D F4                 -  lea ecx,[ebp-0C]
+"vermintide.exe"+21DB8E: 66 0F D6 45 E8           -  movq [ebp-18],xmm0
+"vermintide.exe"+21DB93: E8 28 AC F0 FF           -  call vermintide.exe+1287C0
+"vermintide.exe"+21DB98: 5E                       -  pop esi
+"vermintide.exe"+21DB99: B8 01 00 00 00           -  mov eax,00000001
+"vermintide.exe"+21DB9E: 5B                       -  pop ebx
+}
+</AssemblerScript>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Toggle Activation</Action>
+              <Keys>
+                <Key>109</Key>
+              </Keys>
+              <ID>0</ID>
+            </Hotkey>
+          </Hotkeys>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>222</ID>
+              <Description>"Save positions (F7)"</Description>
+              <LastState Activated="0"/>
+              <Color>80000008</Color>
+              <VariableType>Auto Assembler Script</VariableType>
+              <AssemblerScript>[ENABLE]
+{$lua}
+
+
+addresslist = getAddressList()
+description1= [[X1]]
+description2= [[Y1]]
+description3= [[Z1]]
+
+description4= [[X2]]
+description5= [[Y2]]
+description6= [[Z2]]
+
+description7= [[X3]]
+description8= [[Y3]]
+description9= [[Z3]]
+
+description10= [[X4]]
+description11= [[Y4]]
+description12= [[Z4]]
+
+memoryrec1 = addresslist_getMemoryRecordByDescription(addresslist, description1)
+memoryrec2 = addresslist_getMemoryRecordByDescription(addresslist, description2)
+memoryrec3 = addresslist_getMemoryRecordByDescription(addresslist, description3)
+
+memoryrec4 = addresslist_getMemoryRecordByDescription(addresslist, description4)
+memoryrec5 = addresslist_getMemoryRecordByDescription(addresslist, description5)
+memoryrec6 = addresslist_getMemoryRecordByDescription(addresslist, description6)
+
+memoryrec7 = addresslist_getMemoryRecordByDescription(addresslist, description7)
+memoryrec8 = addresslist_getMemoryRecordByDescription(addresslist, description8)
+memoryrec9 = addresslist_getMemoryRecordByDescription(addresslist, description9)
+
+memoryrec10 = addresslist_getMemoryRecordByDescription(addresslist, description10)
+memoryrec11 = addresslist_getMemoryRecordByDescription(addresslist, description11)
+memoryrec12 = addresslist_getMemoryRecordByDescription(addresslist, description12)
+
+savedX1= memoryrecord_getValue(memoryrec1)
+savedY1= memoryrecord_getValue(memoryrec2)
+savedZ1= tostring(tonumber(memoryrecord_getValue(memoryrec3))+tonumber("0.3"))
+
+savedX2= memoryrecord_getValue(memoryrec4)
+savedY2= memoryrecord_getValue(memoryrec5)
+savedZ2= tostring(tonumber(memoryrecord_getValue(memoryrec6))+tonumber("0.3"))
+
+savedX3= memoryrecord_getValue(memoryrec7)
+savedY3= memoryrecord_getValue(memoryrec8)
+savedZ3= tostring(tonumber(memoryrecord_getValue(memoryrec9))+tonumber("0.3"))
+
+savedX4= memoryrecord_getValue(memoryrec10)
+savedY4= memoryrecord_getValue(memoryrec11)
+savedZ4= tostring(tonumber(memoryrecord_getValue(memoryrec12))+tonumber("0.3"))
+
+{$asm}
+
+[DISABLE]
+
+{$lua}
+
+
+addresslist = getAddressList()
+description1= [[X1]]
+description2= [[Y1]]
+description3= [[Z1]]
+
+description4= [[X2]]
+description5= [[Y2]]
+description6= [[Z2]]
+
+description7= [[X3]]
+description8= [[Y3]]
+description9= [[Z3]]
+
+description10= [[X4]]
+description11= [[Y4]]
+description12= [[Z4]]
+
+memoryrec1 = addresslist_getMemoryRecordByDescription(addresslist, description1)
+memoryrec2 = addresslist_getMemoryRecordByDescription(addresslist, description2)
+memoryrec3 = addresslist_getMemoryRecordByDescription(addresslist, description3)
+
+memoryrec4 = addresslist_getMemoryRecordByDescription(addresslist, description4)
+memoryrec5 = addresslist_getMemoryRecordByDescription(addresslist, description5)
+memoryrec6 = addresslist_getMemoryRecordByDescription(addresslist, description6)
+
+memoryrec7 = addresslist_getMemoryRecordByDescription(addresslist, description7)
+memoryrec8 = addresslist_getMemoryRecordByDescription(addresslist, description8)
+memoryrec9 = addresslist_getMemoryRecordByDescription(addresslist, description9)
+
+memoryrec10 = addresslist_getMemoryRecordByDescription(addresslist, description10)
+memoryrec11 = addresslist_getMemoryRecordByDescription(addresslist, description11)
+memoryrec12 = addresslist_getMemoryRecordByDescription(addresslist, description12)
+
+savedX1= memoryrecord_getValue(memoryrec1)
+savedY1= memoryrecord_getValue(memoryrec2)
+savedZ1= tostring(tonumber(memoryrecord_getValue(memoryrec3))+tonumber("0.3"))
+
+savedX2= memoryrecord_getValue(memoryrec4)
+savedY2= memoryrecord_getValue(memoryrec5)
+savedZ2= tostring(tonumber(memoryrecord_getValue(memoryrec6))+tonumber("0.3"))
+
+savedX3= memoryrecord_getValue(memoryrec7)
+savedY3= memoryrecord_getValue(memoryrec8)
+savedZ3= tostring(tonumber(memoryrecord_getValue(memoryrec9))+tonumber("0.3"))
+
+savedX4= memoryrecord_getValue(memoryrec10)
+savedY4= memoryrecord_getValue(memoryrec11)
+savedZ4= tostring(tonumber(memoryrecord_getValue(memoryrec12))+tonumber("0.3"))
+
+{$asm}
+</AssemblerScript>
+              <Hotkeys>
+                <Hotkey>
+                  <Action>Toggle Activation</Action>
+                  <Keys>
+                    <Key>118</Key>
+                  </Keys>
+                  <ID>0</ID>
+                </Hotkey>
+              </Hotkeys>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>223</ID>
+              <Description>"Load positions (F8)"</Description>
+              <LastState Activated="0"/>
+              <Color>80000008</Color>
+              <VariableType>Auto Assembler Script</VariableType>
+              <AssemblerScript>[ENABLE]
+{$lua}
+
+
+addresslist = getAddressList()
+description1= [[X1]]
+description2= [[Y1]]
+description3= [[Z1]]
+
+description4= [[X2]]
+description5= [[Y2]]
+description6= [[Z2]]
+
+description7= [[X3]]
+description8= [[Y3]]
+description9= [[Z3]]
+
+description10= [[X4]]
+description11= [[Y4]]
+description12= [[Z4]]
+
+memoryrec1 = addresslist_getMemoryRecordByDescription(addresslist, description1)
+memoryrec2 = addresslist_getMemoryRecordByDescription(addresslist, description2)
+memoryrec3 = addresslist_getMemoryRecordByDescription(addresslist, description3)
+
+memoryrec4 = addresslist_getMemoryRecordByDescription(addresslist, description4)
+memoryrec5 = addresslist_getMemoryRecordByDescription(addresslist, description5)
+memoryrec6 = addresslist_getMemoryRecordByDescription(addresslist, description6)
+
+memoryrec7 = addresslist_getMemoryRecordByDescription(addresslist, description7)
+memoryrec8 = addresslist_getMemoryRecordByDescription(addresslist, description8)
+memoryrec9 = addresslist_getMemoryRecordByDescription(addresslist, description9)
+
+memoryrec10 = addresslist_getMemoryRecordByDescription(addresslist, description10)
+memoryrec11 = addresslist_getMemoryRecordByDescription(addresslist, description11)
+memoryrec12 = addresslist_getMemoryRecordByDescription(addresslist, description12)
+
+memoryrecord_setValue(memoryrec1, savedX1)
+memoryrecord_setValue(memoryrec2, savedY1)
+memoryrecord_setValue(memoryrec3, savedZ1)
+
+memoryrecord_setValue(memoryrec4, savedX2)
+memoryrecord_setValue(memoryrec5, savedY2)
+memoryrecord_setValue(memoryrec6, savedZ2)
+
+memoryrecord_setValue(memoryrec7, savedX3)
+memoryrecord_setValue(memoryrec8, savedY3)
+memoryrecord_setValue(memoryrec9, savedZ3)
+
+memoryrecord_setValue(memoryrec10, savedX4)
+memoryrecord_setValue(memoryrec11, savedY4)
+memoryrecord_setValue(memoryrec12, savedZ4)
+
+{$asm}
+
+[DISABLE]
+
+{$lua}
+
+
+addresslist = getAddressList()
+description1= [[X1]]
+description2= [[Y1]]
+description3= [[Z1]]
+
+description4= [[X2]]
+description5= [[Y2]]
+description6= [[Z2]]
+
+description7= [[X3]]
+description8= [[Y3]]
+description9= [[Z3]]
+
+description10= [[X4]]
+description11= [[Y4]]
+description12= [[Z4]]
+
+memoryrec1 = addresslist_getMemoryRecordByDescription(addresslist, description1)
+memoryrec2 = addresslist_getMemoryRecordByDescription(addresslist, description2)
+memoryrec3 = addresslist_getMemoryRecordByDescription(addresslist, description3)
+
+memoryrec4 = addresslist_getMemoryRecordByDescription(addresslist, description4)
+memoryrec5 = addresslist_getMemoryRecordByDescription(addresslist, description5)
+memoryrec6 = addresslist_getMemoryRecordByDescription(addresslist, description6)
+
+memoryrec7 = addresslist_getMemoryRecordByDescription(addresslist, description7)
+memoryrec8 = addresslist_getMemoryRecordByDescription(addresslist, description8)
+memoryrec9 = addresslist_getMemoryRecordByDescription(addresslist, description9)
+
+memoryrec10 = addresslist_getMemoryRecordByDescription(addresslist, description10)
+memoryrec11 = addresslist_getMemoryRecordByDescription(addresslist, description11)
+memoryrec12 = addresslist_getMemoryRecordByDescription(addresslist, description12)
+
+memoryrecord_setValue(memoryrec1, savedX1)
+memoryrecord_setValue(memoryrec2, savedY1)
+memoryrecord_setValue(memoryrec3, savedZ1)
+
+memoryrecord_setValue(memoryrec4, savedX2)
+memoryrecord_setValue(memoryrec5, savedY2)
+memoryrecord_setValue(memoryrec6, savedZ2)
+
+memoryrecord_setValue(memoryrec7, savedX3)
+memoryrecord_setValue(memoryrec8, savedY3)
+memoryrecord_setValue(memoryrec9, savedZ3)
+
+memoryrecord_setValue(memoryrec10, savedX4)
+memoryrecord_setValue(memoryrec11, savedY4)
+memoryrecord_setValue(memoryrec12, savedZ4)
+
+{$asm}
+</AssemblerScript>
+              <Hotkeys>
+                <Hotkey>
+                  <Action>Toggle Activation</Action>
+                  <Keys>
+                    <Key>119</Key>
+                  </Keys>
+                  <ID>0</ID>
+                </Hotkey>
+              </Hotkeys>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>244</ID>
+              <Description>"Save positions 2 (F9)"</Description>
+              <LastState Activated="0"/>
+              <Color>80000008</Color>
+              <VariableType>Auto Assembler Script</VariableType>
+              <AssemblerScript>[ENABLE]
+{$lua}
+
+
+addresslist = getAddressList()
+description1= [[X1]]
+description2= [[Y1]]
+description3= [[Z1]]
+
+description4= [[X2]]
+description5= [[Y2]]
+description6= [[Z2]]
+
+description7= [[X3]]
+description8= [[Y3]]
+description9= [[Z3]]
+
+description10= [[X4]]
+description11= [[Y4]]
+description12= [[Z4]]
+
+memoryrec1 = addresslist_getMemoryRecordByDescription(addresslist, description1)
+memoryrec2 = addresslist_getMemoryRecordByDescription(addresslist, description2)
+memoryrec3 = addresslist_getMemoryRecordByDescription(addresslist, description3)
+
+memoryrec4 = addresslist_getMemoryRecordByDescription(addresslist, description4)
+memoryrec5 = addresslist_getMemoryRecordByDescription(addresslist, description5)
+memoryrec6 = addresslist_getMemoryRecordByDescription(addresslist, description6)
+
+memoryrec7 = addresslist_getMemoryRecordByDescription(addresslist, description7)
+memoryrec8 = addresslist_getMemoryRecordByDescription(addresslist, description8)
+memoryrec9 = addresslist_getMemoryRecordByDescription(addresslist, description9)
+
+memoryrec10 = addresslist_getMemoryRecordByDescription(addresslist, description10)
+memoryrec11 = addresslist_getMemoryRecordByDescription(addresslist, description11)
+memoryrec12 = addresslist_getMemoryRecordByDescription(addresslist, description12)
+
+saved2X1= memoryrecord_getValue(memoryrec1)
+saved2Y1= memoryrecord_getValue(memoryrec2)
+saved2Z1= tostring(tonumber(memoryrecord_getValue(memoryrec3))+tonumber("0.3"))
+
+saved2X2= memoryrecord_getValue(memoryrec4)
+saved2Y2= memoryrecord_getValue(memoryrec5)
+saved2Z2= tostring(tonumber(memoryrecord_getValue(memoryrec6))+tonumber("0.3"))
+
+saved2X3= memoryrecord_getValue(memoryrec7)
+saved2Y3= memoryrecord_getValue(memoryrec8)
+saved2Z3= tostring(tonumber(memoryrecord_getValue(memoryrec9))+tonumber("0.3"))
+
+saved2X4= memoryrecord_getValue(memoryrec10)
+saved2Y4= memoryrecord_getValue(memoryrec11)
+saved2Z4= tostring(tonumber(memoryrecord_getValue(memoryrec12))+tonumber("0.3"))
+
+{$asm}
+
+[DISABLE]
+
+{$lua}
+
+
+addresslist = getAddressList()
+description1= [[X1]]
+description2= [[Y1]]
+description3= [[Z1]]
+
+description4= [[X2]]
+description5= [[Y2]]
+description6= [[Z2]]
+
+description7= [[X3]]
+description8= [[Y3]]
+description9= [[Z3]]
+
+description10= [[X4]]
+description11= [[Y4]]
+description12= [[Z4]]
+
+memoryrec1 = addresslist_getMemoryRecordByDescription(addresslist, description1)
+memoryrec2 = addresslist_getMemoryRecordByDescription(addresslist, description2)
+memoryrec3 = addresslist_getMemoryRecordByDescription(addresslist, description3)
+
+memoryrec4 = addresslist_getMemoryRecordByDescription(addresslist, description4)
+memoryrec5 = addresslist_getMemoryRecordByDescription(addresslist, description5)
+memoryrec6 = addresslist_getMemoryRecordByDescription(addresslist, description6)
+
+memoryrec7 = addresslist_getMemoryRecordByDescription(addresslist, description7)
+memoryrec8 = addresslist_getMemoryRecordByDescription(addresslist, description8)
+memoryrec9 = addresslist_getMemoryRecordByDescription(addresslist, description9)
+
+memoryrec10 = addresslist_getMemoryRecordByDescription(addresslist, description10)
+memoryrec11 = addresslist_getMemoryRecordByDescription(addresslist, description11)
+memoryrec12 = addresslist_getMemoryRecordByDescription(addresslist, description12)
+
+saved2X1= memoryrecord_getValue(memoryrec1)
+saved2Y1= memoryrecord_getValue(memoryrec2)
+saved2Z1= tostring(tonumber(memoryrecord_getValue(memoryrec3))+tonumber("0.3"))
+
+saved2X2= memoryrecord_getValue(memoryrec4)
+saved2Y2= memoryrecord_getValue(memoryrec5)
+saved2Z2= tostring(tonumber(memoryrecord_getValue(memoryrec6))+tonumber("0.3"))
+
+saved2X3= memoryrecord_getValue(memoryrec7)
+saved2Y3= memoryrecord_getValue(memoryrec8)
+saved2Z3= tostring(tonumber(memoryrecord_getValue(memoryrec9))+tonumber("0.3"))
+
+saved2X4= memoryrecord_getValue(memoryrec10)
+saved2Y4= memoryrecord_getValue(memoryrec11)
+saved2Z4= tostring(tonumber(memoryrecord_getValue(memoryrec12))+tonumber("0.3"))
+
+{$asm}
+</AssemblerScript>
+              <Hotkeys>
+                <Hotkey>
+                  <Action>Toggle Activation</Action>
+                  <Keys>
+                    <Key>120</Key>
+                  </Keys>
+                  <ID>0</ID>
+                </Hotkey>
+              </Hotkeys>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>245</ID>
+              <Description>"Load positions 2 (F10)"</Description>
+              <LastState Activated="0"/>
+              <Color>80000008</Color>
+              <VariableType>Auto Assembler Script</VariableType>
+              <AssemblerScript>[ENABLE]
+{$lua}
+
+
+addresslist = getAddressList()
+description1= [[X1]]
+description2= [[Y1]]
+description3= [[Z1]]
+
+description4= [[X2]]
+description5= [[Y2]]
+description6= [[Z2]]
+
+description7= [[X3]]
+description8= [[Y3]]
+description9= [[Z3]]
+
+description10= [[X4]]
+description11= [[Y4]]
+description12= [[Z4]]
+
+memoryrec1 = addresslist_getMemoryRecordByDescription(addresslist, description1)
+memoryrec2 = addresslist_getMemoryRecordByDescription(addresslist, description2)
+memoryrec3 = addresslist_getMemoryRecordByDescription(addresslist, description3)
+
+memoryrec4 = addresslist_getMemoryRecordByDescription(addresslist, description4)
+memoryrec5 = addresslist_getMemoryRecordByDescription(addresslist, description5)
+memoryrec6 = addresslist_getMemoryRecordByDescription(addresslist, description6)
+
+memoryrec7 = addresslist_getMemoryRecordByDescription(addresslist, description7)
+memoryrec8 = addresslist_getMemoryRecordByDescription(addresslist, description8)
+memoryrec9 = addresslist_getMemoryRecordByDescription(addresslist, description9)
+
+memoryrec10 = addresslist_getMemoryRecordByDescription(addresslist, description10)
+memoryrec11 = addresslist_getMemoryRecordByDescription(addresslist, description11)
+memoryrec12 = addresslist_getMemoryRecordByDescription(addresslist, description12)
+
+memoryrecord_setValue(memoryrec1, saved2X1)
+memoryrecord_setValue(memoryrec2, saved2Y1)
+memoryrecord_setValue(memoryrec3, saved2Z1)
+
+memoryrecord_setValue(memoryrec4, saved2X2)
+memoryrecord_setValue(memoryrec5, saved2Y2)
+memoryrecord_setValue(memoryrec6, saved2Z2)
+
+memoryrecord_setValue(memoryrec7, saved2X3)
+memoryrecord_setValue(memoryrec8, saved2Y3)
+memoryrecord_setValue(memoryrec9, saved2Z3)
+
+memoryrecord_setValue(memoryrec10, saved2X4)
+memoryrecord_setValue(memoryrec11, saved2Y4)
+memoryrecord_setValue(memoryrec12, saved2Z4)
+
+{$asm}
+
+[DISABLE]
+
+{$lua}
+
+addresslist = getAddressList()
+description1= [[X1]]
+description2= [[Y1]]
+description3= [[Z1]]
+
+description4= [[X2]]
+description5= [[Y2]]
+description6= [[Z2]]
+
+description7= [[X3]]
+description8= [[Y3]]
+description9= [[Z3]]
+
+description10= [[X4]]
+description11= [[Y4]]
+description12= [[Z4]]
+
+memoryrec1 = addresslist_getMemoryRecordByDescription(addresslist, description1)
+memoryrec2 = addresslist_getMemoryRecordByDescription(addresslist, description2)
+memoryrec3 = addresslist_getMemoryRecordByDescription(addresslist, description3)
+
+memoryrec4 = addresslist_getMemoryRecordByDescription(addresslist, description4)
+memoryrec5 = addresslist_getMemoryRecordByDescription(addresslist, description5)
+memoryrec6 = addresslist_getMemoryRecordByDescription(addresslist, description6)
+
+memoryrec7 = addresslist_getMemoryRecordByDescription(addresslist, description7)
+memoryrec8 = addresslist_getMemoryRecordByDescription(addresslist, description8)
+memoryrec9 = addresslist_getMemoryRecordByDescription(addresslist, description9)
+
+memoryrec10 = addresslist_getMemoryRecordByDescription(addresslist, description10)
+memoryrec11 = addresslist_getMemoryRecordByDescription(addresslist, description11)
+memoryrec12 = addresslist_getMemoryRecordByDescription(addresslist, description12)
+
+memoryrecord_setValue(memoryrec1, saved2X1)
+memoryrecord_setValue(memoryrec2, saved2Y1)
+memoryrecord_setValue(memoryrec3, saved2Z1)
+
+memoryrecord_setValue(memoryrec4, saved2X2)
+memoryrecord_setValue(memoryrec5, saved2Y2)
+memoryrecord_setValue(memoryrec6, saved2Z2)
+
+memoryrecord_setValue(memoryrec7, saved2X3)
+memoryrecord_setValue(memoryrec8, saved2Y3)
+memoryrecord_setValue(memoryrec9, saved2Z3)
+
+memoryrecord_setValue(memoryrec10, saved2X4)
+memoryrecord_setValue(memoryrec11, saved2Y4)
+memoryrecord_setValue(memoryrec12, saved2Z4)
+
+
+{$asm}
+</AssemblerScript>
+              <Hotkeys>
+                <Hotkey>
+                  <Action>Toggle Activation</Action>
+                  <Keys>
+                    <Key>121</Key>
+                  </Keys>
+                  <ID>0</ID>
+                </Hotkey>
+              </Hotkeys>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>227</ID>
+              <Description>"Horn of Magnus locations"</Description>
+              <LastState Value="" Activated="0" RealAddress="00000000"/>
+              <Color>80000008</Color>
+              <GroupHeader>1</GroupHeader>
+              <CheatEntries>
+                <CheatEntry>
+                  <ID>225</ID>
+                  <Description>"Teleport to first grimoire"</Description>
+                  <LastState Activated="0"/>
+                  <Color>80000008</Color>
+                  <VariableType>Auto Assembler Script</VariableType>
+                  <AssemblerScript>[ENABLE]
+{$lua}
+
+
+gotoX=-59.66689682
+gotoY=-18.36071014
+gotoZ=-2.664463043
+
+addresslist = getAddressList()
+description1= [[X1]]
+description2= [[Y1]]
+description3= [[Z1]]
+
+description4= [[X2]]
+description5= [[Y2]]
+description6= [[Z2]]
+
+description7= [[X3]]
+description8= [[Y3]]
+description9= [[Z3]]
+
+description10= [[X4]]
+description11= [[Y4]]
+description12= [[Z4]]
+
+memoryrec1 = addresslist_getMemoryRecordByDescription(addresslist, description1)
+memoryrec2 = addresslist_getMemoryRecordByDescription(addresslist, description2)
+memoryrec3 = addresslist_getMemoryRecordByDescription(addresslist, description3)
+
+memoryrec4 = addresslist_getMemoryRecordByDescription(addresslist, description4)
+memoryrec5 = addresslist_getMemoryRecordByDescription(addresslist, description5)
+memoryrec6 = addresslist_getMemoryRecordByDescription(addresslist, description6)
+
+memoryrec7 = addresslist_getMemoryRecordByDescription(addresslist, description7)
+memoryrec8 = addresslist_getMemoryRecordByDescription(addresslist, description8)
+memoryrec9 = addresslist_getMemoryRecordByDescription(addresslist, description9)
+
+memoryrec10 = addresslist_getMemoryRecordByDescription(addresslist, description10)
+memoryrec11 = addresslist_getMemoryRecordByDescription(addresslist, description11)
+memoryrec12 = addresslist_getMemoryRecordByDescription(addresslist, description12)
+
+memoryrecord_setValue(memoryrec1, gotoX)
+memoryrecord_setValue(memoryrec2, gotoY)
+memoryrecord_setValue(memoryrec3, gotoZ)
+
+memoryrecord_setValue(memoryrec4, gotoX)
+memoryrecord_setValue(memoryrec5, gotoY)
+memoryrecord_setValue(memoryrec6, gotoZ)
+
+memoryrecord_setValue(memoryrec7, gotoX)
+memoryrecord_setValue(memoryrec8, gotoY)
+memoryrecord_setValue(memoryrec9, gotoZ)
+
+memoryrecord_setValue(memoryrec10, gotoX)
+memoryrecord_setValue(memoryrec11, gotoY)
+memoryrecord_setValue(memoryrec12, gotoZ)
+
+
+
+{$asm}
+
+[DISABLE]
+
+{$lua}
+
+gotoX=-59.66689682
+gotoY=-18.36071014
+gotoZ=-2.664463043
+
+addresslist = getAddressList()
+description1= [[X1]]
+description2= [[Y1]]
+description3= [[Z1]]
+
+description4= [[X2]]
+description5= [[Y2]]
+description6= [[Z2]]
+
+description7= [[X3]]
+description8= [[Y3]]
+description9= [[Z3]]
+
+description10= [[X4]]
+description11= [[Y4]]
+description12= [[Z4]]
+
+memoryrec1 = addresslist_getMemoryRecordByDescription(addresslist, description1)
+memoryrec2 = addresslist_getMemoryRecordByDescription(addresslist, description2)
+memoryrec3 = addresslist_getMemoryRecordByDescription(addresslist, description3)
+
+memoryrec4 = addresslist_getMemoryRecordByDescription(addresslist, description4)
+memoryrec5 = addresslist_getMemoryRecordByDescription(addresslist, description5)
+memoryrec6 = addresslist_getMemoryRecordByDescription(addresslist, description6)
+
+memoryrec7 = addresslist_getMemoryRecordByDescription(addresslist, description7)
+memoryrec8 = addresslist_getMemoryRecordByDescription(addresslist, description8)
+memoryrec9 = addresslist_getMemoryRecordByDescription(addresslist, description9)
+
+memoryrec10 = addresslist_getMemoryRecordByDescription(addresslist, description10)
+memoryrec11 = addresslist_getMemoryRecordByDescription(addresslist, description11)
+memoryrec12 = addresslist_getMemoryRecordByDescription(addresslist, description12)
+
+memoryrecord_setValue(memoryrec1, gotoX)
+memoryrecord_setValue(memoryrec2, gotoY)
+memoryrecord_setValue(memoryrec3, gotoZ)
+
+memoryrecord_setValue(memoryrec4, gotoX)
+memoryrecord_setValue(memoryrec5, gotoY)
+memoryrecord_setValue(memoryrec6, gotoZ)
+
+memoryrecord_setValue(memoryrec7, gotoX)
+memoryrecord_setValue(memoryrec8, gotoY)
+memoryrecord_setValue(memoryrec9, gotoZ)
+
+memoryrecord_setValue(memoryrec10, gotoX)
+memoryrecord_setValue(memoryrec11, gotoY)
+memoryrecord_setValue(memoryrec12, gotoZ)
+
+{$asm}
+</AssemblerScript>
+                  <Hotkeys>
+                    <Hotkey>
+                      <Action>Toggle Activation</Action>
+                      <Keys>
+                        <Key>103</Key>
+                      </Keys>
+                      <ID>0</ID>
+                    </Hotkey>
+                  </Hotkeys>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>226</ID>
+                  <Description>"Teleport to escape"</Description>
+                  <LastState Activated="0"/>
+                  <Color>80000008</Color>
+                  <VariableType>Auto Assembler Script</VariableType>
+                  <AssemblerScript>[ENABLE]
+
+{$lua}
+gotoX=282.4428711
+gotoY=-153.0445709
+gotoZ=22.38426781
+
+addresslist = getAddressList()
+description1= [[X1]]
+description2= [[Y1]]
+description3= [[Z1]]
+
+description4= [[X2]]
+description5= [[Y2]]
+description6= [[Z2]]
+
+description7= [[X3]]
+description8= [[Y3]]
+description9= [[Z3]]
+
+description10= [[X4]]
+description11= [[Y4]]
+description12= [[Z4]]
+
+memoryrec1 = addresslist_getMemoryRecordByDescription(addresslist, description1)
+memoryrec2 = addresslist_getMemoryRecordByDescription(addresslist, description2)
+memoryrec3 = addresslist_getMemoryRecordByDescription(addresslist, description3)
+
+memoryrec4 = addresslist_getMemoryRecordByDescription(addresslist, description4)
+memoryrec5 = addresslist_getMemoryRecordByDescription(addresslist, description5)
+memoryrec6 = addresslist_getMemoryRecordByDescription(addresslist, description6)
+
+memoryrec7 = addresslist_getMemoryRecordByDescription(addresslist, description7)
+memoryrec8 = addresslist_getMemoryRecordByDescription(addresslist, description8)
+memoryrec9 = addresslist_getMemoryRecordByDescription(addresslist, description9)
+
+memoryrec10 = addresslist_getMemoryRecordByDescription(addresslist, description10)
+memoryrec11 = addresslist_getMemoryRecordByDescription(addresslist, description11)
+memoryrec12 = addresslist_getMemoryRecordByDescription(addresslist, description12)
+
+memoryrecord_setValue(memoryrec1, gotoX)
+memoryrecord_setValue(memoryrec2, gotoY)
+memoryrecord_setValue(memoryrec3, gotoZ)
+
+memoryrecord_setValue(memoryrec4, gotoX)
+memoryrecord_setValue(memoryrec5, gotoY)
+memoryrecord_setValue(memoryrec6, gotoZ)
+
+memoryrecord_setValue(memoryrec7, gotoX)
+memoryrecord_setValue(memoryrec8, gotoY)
+memoryrecord_setValue(memoryrec9, gotoZ)
+
+memoryrecord_setValue(memoryrec10, gotoX)
+memoryrecord_setValue(memoryrec11, gotoY)
+memoryrecord_setValue(memoryrec12, gotoZ)
+
+
+
+{$asm}
+
+[DISABLE]
+
+{$lua}
+
+
+gotoX=282.4428711
+gotoY=-153.0445709
+gotoZ=22.38426781
+
+addresslist = getAddressList()
+description1= [[X1]]
+description2= [[Y1]]
+description3= [[Z1]]
+
+description4= [[X2]]
+description5= [[Y2]]
+description6= [[Z2]]
+
+description7= [[X3]]
+description8= [[Y3]]
+description9= [[Z3]]
+
+description10= [[X4]]
+description11= [[Y4]]
+description12= [[Z4]]
+
+memoryrec1 = addresslist_getMemoryRecordByDescription(addresslist, description1)
+memoryrec2 = addresslist_getMemoryRecordByDescription(addresslist, description2)
+memoryrec3 = addresslist_getMemoryRecordByDescription(addresslist, description3)
+
+memoryrec4 = addresslist_getMemoryRecordByDescription(addresslist, description4)
+memoryrec5 = addresslist_getMemoryRecordByDescription(addresslist, description5)
+memoryrec6 = addresslist_getMemoryRecordByDescription(addresslist, description6)
+
+memoryrec7 = addresslist_getMemoryRecordByDescription(addresslist, description7)
+memoryrec8 = addresslist_getMemoryRecordByDescription(addresslist, description8)
+memoryrec9 = addresslist_getMemoryRecordByDescription(addresslist, description9)
+
+memoryrec10 = addresslist_getMemoryRecordByDescription(addresslist, description10)
+memoryrec11 = addresslist_getMemoryRecordByDescription(addresslist, description11)
+memoryrec12 = addresslist_getMemoryRecordByDescription(addresslist, description12)
+
+memoryrecord_setValue(memoryrec1, gotoX)
+memoryrecord_setValue(memoryrec2, gotoY)
+memoryrecord_setValue(memoryrec3, gotoZ)
+
+memoryrecord_setValue(memoryrec4, gotoX)
+memoryrecord_setValue(memoryrec5, gotoY)
+memoryrecord_setValue(memoryrec6, gotoZ)
+
+memoryrecord_setValue(memoryrec7, gotoX)
+memoryrecord_setValue(memoryrec8, gotoY)
+memoryrecord_setValue(memoryrec9, gotoZ)
+
+memoryrecord_setValue(memoryrec10, gotoX)
+memoryrecord_setValue(memoryrec11, gotoY)
+memoryrecord_setValue(memoryrec12, gotoZ)
+
+{$asm}
+</AssemblerScript>
+                  <Hotkeys>
+                    <Hotkey>
+                      <Action>Toggle Activation</Action>
+                      <Keys>
+                        <Key>104</Key>
+                      </Keys>
+                      <ID>0</ID>
+                    </Hotkey>
+                  </Hotkeys>
+                </CheatEntry>
+              </CheatEntries>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>234</ID>
+              <Description>"Team positions"</Description>
+              <Options moHideChildren="1"/>
+              <LastState Value="" Activated="0" RealAddress="00000000"/>
+              <Color>808080</Color>
+              <GroupHeader>1</GroupHeader>
+              <CheatEntries>
+                <CheatEntry>
+                  <ID>220</ID>
+                  <Description>"X1"</Description>
+                  <LastState Value="-5.07914257" Activated="0" RealAddress="5A446BC4"/>
+                  <Color>80000008</Color>
+                  <VariableType>Float</VariableType>
+                  <Address>[_height1]-8</Address>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>221</ID>
+                  <Description>"Y1"</Description>
+                  <LastState Value="6.648486137" Activated="0" RealAddress="5A446BC8"/>
+                  <Color>80000008</Color>
+                  <VariableType>Float</VariableType>
+                  <Address>[_height1]-4</Address>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>219</ID>
+                  <Description>"Z1"</Description>
+                  <LastState Value="3.604201794" Activated="0" RealAddress="5A446BCC"/>
+                  <Color>80000008</Color>
+                  <VariableType>Float</VariableType>
+                  <Address>[_height1]</Address>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>235</ID>
+                  <Description>"X2"</Description>
+                  <LastState Value="??" Activated="0" RealAddress="FFFFFFFFFFFFFFF8"/>
+                  <Color>80000008</Color>
+                  <VariableType>Float</VariableType>
+                  <Address>[_height2]-8</Address>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>239</ID>
+                  <Description>"Y2"</Description>
+                  <LastState Value="??" Activated="0" RealAddress="FFFFFFFFFFFFFFFC"/>
+                  <Color>80000008</Color>
+                  <VariableType>Float</VariableType>
+                  <Address>[_height2]-4</Address>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>242</ID>
+                  <Description>"Z2"</Description>
+                  <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                  <Color>80000008</Color>
+                  <VariableType>Float</VariableType>
+                  <Address>[_height2]</Address>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>236</ID>
+                  <Description>"X3"</Description>
+                  <LastState Value="??" Activated="0" RealAddress="FFFFFFFFFFFFFFF8"/>
+                  <Color>80000008</Color>
+                  <VariableType>Float</VariableType>
+                  <Address>[_height3]-8</Address>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>240</ID>
+                  <Description>"Y3"</Description>
+                  <LastState Value="??" Activated="0" RealAddress="FFFFFFFFFFFFFFFC"/>
+                  <Color>80000008</Color>
+                  <VariableType>Float</VariableType>
+                  <Address>[_height3]-4</Address>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>241</ID>
+                  <Description>"Z3"</Description>
+                  <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                  <Color>80000008</Color>
+                  <VariableType>Float</VariableType>
+                  <Address>[_height3]</Address>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>237</ID>
+                  <Description>"X4"</Description>
+                  <LastState Value="??" Activated="0" RealAddress="FFFFFFFFFFFFFFF8"/>
+                  <Color>80000008</Color>
+                  <VariableType>Float</VariableType>
+                  <Address>[_height4]-8</Address>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>238</ID>
+                  <Description>"Y4"</Description>
+                  <LastState Value="??" Activated="0" RealAddress="FFFFFFFFFFFFFFFC"/>
+                  <Color>80000008</Color>
+                  <VariableType>Float</VariableType>
+                  <Address>[_height4]-4</Address>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>243</ID>
+                  <Description>"Z4"</Description>
+                  <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                  <Color>80000008</Color>
+                  <VariableType>Float</VariableType>
+                  <Address>[_height4]</Address>
+                </CheatEntry>
+              </CheatEntries>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>153</ID>
+          <Description>"Zero gravity (for you and bots) - Hotkey Numpad 1"</Description>
+          <LastState Activated="0"/>
+          <Color>80000008</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[ENABLE]
+{$lua}
+
+function giveZeroGravity()
+addresslist = getAddressList()
+description1= [[Gravity 1]]
+description2= [[Gravity 2]]
+description3= [[Gravity 3]]
+description4= [[Gravity 4]]
+
+memoryrec1 = addresslist_getMemoryRecordByDescription(addresslist, description1)
+memoryrec2 = addresslist_getMemoryRecordByDescription(addresslist, description2)
+memoryrec3 = addresslist_getMemoryRecordByDescription(addresslist, description3)
+memoryrec4 = addresslist_getMemoryRecordByDescription(addresslist, description4)
+
+  newvalue = -0.1
+  if (memoryrecord_getValue(memoryrec1) == "11") then
+    memoryrecord_setValue(memoryrec1, newvalue)   --sets value for the memoryrecord
+    memoryrecord_setColor(memoryrec1,0x228B22)
+  end
+  if memoryrecord_getValue(memoryrec2) == "11" then   --Gets the current value of the memory record.
+    memoryrecord_setValue(memoryrec2, newvalue)   --sets value for the memoryrecord
+    memoryrecord_setColor(memoryrec2,0x228B22)
+  end
+  if memoryrecord_getValue(memoryrec3) == "11"  then  --Gets the current value of the memory record.
+    memoryrecord_setValue(memoryrec3, newvalue)   --sets value for the memoryrecord
+    memoryrecord_setColor(memoryrec3,0x228B22)
+  end
+  if memoryrecord_getValue(memoryrec4) == "11"  then  --Gets the current value of the memory record.
+    memoryrecord_setValue(memoryrec4, newvalue)   --sets value for the memoryrecord
+    memoryrecord_setColor(memoryrec4,0x228B22)
+  end
+end
+
+giveZeroGravity()
+
+timer1 = createTimer(nil) -- Create a Timer
+timer_onTimer(timer1, giveZeroGravity)   -- The function giveGodMode will be called every 3 seconds.
+timer_setInterval(timer1,3000) --Call giveGodMode() every 3 seconds
+timer_setEnabled(timer1, true) -- Set timer to true. If false is passed as argument then it will disable timer object.
+
+
+{$asm}
+ 
+ 
+[DISABLE]
+
+{$lua}
+
+timer_setEnabled(timer1, false)
+addresslist = getAddressList()
+description1= [[Gravity 1]]
+description2= [[Gravity 2]]
+description3= [[Gravity 3]]
+description4= [[Gravity 4]]
+
+memoryrec1 = addresslist_getMemoryRecordByDescription(addresslist, description1)
+memoryrec2 = addresslist_getMemoryRecordByDescription(addresslist, description2)
+memoryrec3 = addresslist_getMemoryRecordByDescription(addresslist, description3)
+memoryrec4 = addresslist_getMemoryRecordByDescription(addresslist, description4)
+
+newvalue = 11
+memoryrecord_setValue(memoryrec1, newvalue)   --sets value for the memoryrecord
+memoryrecord_setValue(memoryrec2, newvalue)   --sets value for the memoryrecord
+memoryrecord_setValue(memoryrec3, newvalue)   --sets value for the memoryrecord
+memoryrecord_setValue(memoryrec4, newvalue)   --sets value for the memoryrecord
+
+memoryrecord_setColor(memoryrec1,0x0)
+memoryrecord_setColor(memoryrec2,0x0)
+memoryrecord_setColor(memoryrec3,0x0)
+memoryrecord_setColor(memoryrec4,0x0)
+
+</AssemblerScript>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Toggle Activation</Action>
+              <Keys>
+                <Key>97</Key>
+              </Keys>
+              <ID>0</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>166</ID>
+          <Description>"Speed x2 (for you and bots) - Hotkey Numpad 2"</Description>
+          <LastState Activated="0"/>
+          <Color>80000008</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[ENABLE]
+{$lua}
+
+function giveSpeed()
+addresslist = getAddressList()
+description1= [[Speed 1]]
+description2= [[Speed 2]]
+description3= [[Speed 3]]
+description4= [[Speed 4]]
+
+memoryrec1 = addresslist_getMemoryRecordByDescription(addresslist, description1)
+memoryrec2 = addresslist_getMemoryRecordByDescription(addresslist, description2)
+memoryrec3 = addresslist_getMemoryRecordByDescription(addresslist, description3)
+memoryrec4 = addresslist_getMemoryRecordByDescription(addresslist, description4)
+
+  newvalue = 2
+  if (memoryrecord_getValue(memoryrec1) == "1") then
+    memoryrecord_setValue(memoryrec1, newvalue)   --sets value for the memoryrecord
+    memoryrecord_setColor(memoryrec1,0x228B22)
+  end
+  if memoryrecord_getValue(memoryrec2) == "1" then   --Gets the current value of the memory record.
+    memoryrecord_setValue(memoryrec2, newvalue)   --sets value for the memoryrecord
+    memoryrecord_setColor(memoryrec2,0x228B22)
+  end
+  if memoryrecord_getValue(memoryrec3) == "1"  then  --Gets the current value of the memory record.
+    memoryrecord_setValue(memoryrec3, newvalue)   --sets value for the memoryrecord
+    memoryrecord_setColor(memoryrec3,0x228B22)
+  end
+  if memoryrecord_getValue(memoryrec4) == "1"  then  --Gets the current value of the memory record.
+    memoryrecord_setValue(memoryrec4, newvalue)   --sets value for the memoryrecord
+    memoryrecord_setColor(memoryrec4,0x228B22)
+  end
+end
+
+giveSpeed()
+
+timer2 = createTimer(nil) -- Create a Timer
+timer_onTimer(timer2, giveSpeed)   -- The function giveGodMode will be called every 3 seconds.
+timer_setInterval(timer2,3000) --Call giveGodMode() every 3 seconds
+timer_setEnabled(timer2, true) -- Set timer to true. If false is passed as argument then it will disable timer object.
+
+
+{$asm}
+
+
+[DISABLE]
+
+{$lua}
+
+timer_setEnabled(timer2, false)
+addresslist = getAddressList()
+description1= [[Speed 1]]
+description2= [[Speed 2]]
+description3= [[Speed 3]]
+description4= [[Speed 4]]
+
+memoryrec1 = addresslist_getMemoryRecordByDescription(addresslist, description1)
+memoryrec2 = addresslist_getMemoryRecordByDescription(addresslist, description2)
+memoryrec3 = addresslist_getMemoryRecordByDescription(addresslist, description3)
+memoryrec4 = addresslist_getMemoryRecordByDescription(addresslist, description4)
+
+newvalue = 1
+memoryrecord_setValue(memoryrec1, newvalue)   --sets value for the memoryrecord
+memoryrecord_setValue(memoryrec2, newvalue)   --sets value for the memoryrecord
+memoryrecord_setValue(memoryrec3, newvalue)   --sets value for the memoryrecord
+memoryrecord_setValue(memoryrec4, newvalue)   --sets value for the memoryrecord
+
+memoryrecord_setColor(memoryrec1,0x0)
+memoryrecord_setColor(memoryrec2,0x0)
+memoryrecord_setColor(memoryrec3,0x0)
+memoryrecord_setColor(memoryrec4,0x0)
+
+</AssemblerScript>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Toggle Activation</Action>
+              <Keys>
+                <Key>98</Key>
+              </Keys>
+              <ID>0</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>152</ID>
+          <Description>"Godmode (for you and bots)  - Hotkey Numpad 3"</Description>
+          <LastState Activated="0"/>
+          <Color>80000008</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[ENABLE]
+
+{$lua}
+
+function giveGodMode()
+
+  addresslist = getAddressList()
+  description1= [[Godmode 1]]
+  description2= [[Godmode 2]]
+  description3= [[Godmode 3]]
+  description4= [[Godmode 4]]
+
+  memoryrec1 = addresslist_getMemoryRecordByDescription(addresslist, description1)
+  memoryrec2 = addresslist_getMemoryRecordByDescription(addresslist, description2)
+  memoryrec3 = addresslist_getMemoryRecordByDescription(addresslist, description3)
+  memoryrec4 = addresslist_getMemoryRecordByDescription(addresslist, description4)
+--Gets the current value of the memory record.
+  newvalue = 1
+  if (memoryrecord_getValue(memoryrec1) == "-2") then
+    memoryrecord_setValue(memoryrec1, newvalue)   --sets value for the memoryrecord
+    memoryrecord_setColor(memoryrec1,0x228B22)
+  end
+  if memoryrecord_getValue(memoryrec2) == "-2" then   --Gets the current value of the memory record.
+    memoryrecord_setValue(memoryrec2, newvalue)   --sets value for the memoryrecord
+    memoryrecord_setColor(memoryrec2,0x228B22)
+  end
+  if memoryrecord_getValue(memoryrec3) == "-2"  then  --Gets the current value of the memory record.
+    memoryrecord_setValue(memoryrec3, newvalue)   --sets value for the memoryrecord
+    memoryrecord_setColor(memoryrec3,0x228B22)
+  end
+  if memoryrecord_getValue(memoryrec4) == "-2"  then  --Gets the current value of the memory record.
+    memoryrecord_setValue(memoryrec4, newvalue)   --sets value for the memoryrecord
+    memoryrecord_setColor(memoryrec4,0x228B22)
+  end
+
+end
+
+giveGodMode()
+
+timer = createTimer(nil) -- Create a Timer
+timer_onTimer(timer, giveGodMode)   -- The function giveGodMode will be called every 3 seconds.
+timer_setInterval(timer,3000) --Call giveGodMode() every 3 seconds
+timer_setEnabled(timer, true) -- Set timer to true. If false is passed as argument then it will disable timer object.
+
+{$asm}
+ 
+[DISABLE]
+
+{$lua}
+
+timer_setEnabled(timer, false)
+
+addresslist = getAddressList()
+description1= [[Godmode 1]]
+description2= [[Godmode 2]]
+description3= [[Godmode 3]]
+description4= [[Godmode 4]]
+
+memoryrec1 = addresslist_getMemoryRecordByDescription(addresslist, description1)
+memoryrec2 = addresslist_getMemoryRecordByDescription(addresslist, description2)
+memoryrec3 = addresslist_getMemoryRecordByDescription(addresslist, description3)
+memoryrec4 = addresslist_getMemoryRecordByDescription(addresslist, description4)
+
+newvalue = -2
+memoryrecord_setValue(memoryrec1, newvalue)   --sets value for the memoryrecord
+memoryrecord_setValue(memoryrec2, newvalue)   --sets value for the memoryrecord
+memoryrecord_setValue(memoryrec3, newvalue)   --sets value for the memoryrecord
+memoryrecord_setValue(memoryrec4, newvalue)   --sets value for the memoryrecord
+
+memoryrecord_setColor(memoryrec1,0x0)
+memoryrecord_setColor(memoryrec2,0x0)
+memoryrecord_setColor(memoryrec3,0x0)
+memoryrecord_setColor(memoryrec4,0x0)
+
+</AssemblerScript>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Toggle Activation</Action>
+              <Keys>
+                <Key>99</Key>
+              </Keys>
+              <ID>0</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>228</ID>
+          <Description>"Always 5 grimoires"</Description>
+          <LastState Activated="0"/>
+          <Color>80000008</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[ENABLE]
+{$lua}
+
+function givegrims()
+addresslist = getAddressList()
+description1= [[Grimoires]]
+
+memoryrec1 = addresslist_getMemoryRecordByDescription(addresslist, description1)
+
+  newvalue = 5
+  if (memoryrecord_getValue(memoryrec1) == "1" or memoryrecord_getValue(memoryrec1) == "2" or memoryrecord_getValue(memoryrec1) == "0") then
+    memoryrecord_setValue(memoryrec1, newvalue)   --sets value for the memoryrecord
+    memoryrecord_setColor(memoryrec1,0x228B22)
+  end
+end
+
+
+timer3 = createTimer(nil) -- Create a Timer
+timer_onTimer(timer3, givegrims)   -- The function giveGodMode will be called every 3 seconds.
+timer_setInterval(timer3,3000) --Call giveGodMode() every 3 seconds
+timer_setEnabled(timer3, true) -- Set timer to true. If false is passed as argument then it will disable timer object.
+
+
+{$asm}
+
+
+[DISABLE]
+
+{$lua}
+
+timer_setEnabled(timer3, false)
+</AssemblerScript>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>154</ID>
+      <Description>"Old stuff"</Description>
+      <Options moHideChildren="1"/>
+      <LastState Value="" Activated="1" RealAddress="00000000"/>
+      <Color>C0C0C0</Color>
+      <GroupHeader>1</GroupHeader>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>145</ID>
+          <Description>"Never have the 2 blue scripts activated at the same time"</Description>
+          <LastState Value="" Activated="0" RealAddress="00000000"/>
+          <Color>0000FF</Color>
+          <GroupHeader>1</GroupHeader>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>137</ID>
+              <Description>"Activate this and attack/block once in-game.  Then de-activate it when the values show up"</Description>
+              <LastState Activated="0"/>
+              <Color>C08000</Color>
+              <VariableType>Auto Assembler Script</VariableType>
+              <AssemblerScript>{ Game   : vermintide.exe
+  Version: 
+  Date   : 2015-11-03
+  Author : Wouter
+
+  This script does blah blah blah
+}
+
+[ENABLE]
+
+aobscanmodule(INJECT,vermintide.exe,89 69 04 89 01) // should be unique
+alloc(newmem,$1000)
+
+label(code)
+label(return)
+label(originalcode)
+
+globalalloc(_movespeed,4)
+globalalloc(_testspeed,4)
+globalalloc(_savedspeed,4)
+globalalloc(_savedstack,4)
+
+newmem:
+
+code:
+mov [_savedstack], esp
+pushfd
+pushad
+
+//cmp edi, 2DDD8E50
+//jne originalcode
+//cmp [_savedstack],0018FB1C
+//jne originalcode
+
+add [_testspeed],1
+mov [_savedspeed],ecx
+
+mov eax, [ecx+8]
+add eax,C
+push 00000004
+push eax
+call isbadreadptr   //make sure [ecx+8]+C points to valid memory
+cmp eax,0
+jne originalcode
+
+mov ecx, [_savedspeed]
+
+mov eax, [ecx+8]
+add eax,14
+push 00000004
+push eax
+call isbadreadptr   //make sure [ecx+8]+14 points to valid memory
+cmp eax,0
+jne originalcode
+
+mov ecx, [_savedspeed]
+
+mov eax, [ecx+8]   // value of ecx+8 into eax again
+
+cmp word ptr [eax+C],0000000A     //length of string is 10
+jne originalcode
+cmp dword ptr [eax+10],'move'
+jne originalcode
+cmp dword ptr [eax+14],'_spe'
+jne originalcode
+
+//mov eax, [ecx]
+mov eax, ecx
+add eax, 3c0
+cmp word ptr [eax+6], 4026
+jne originalcode
+
+mov [_movespeed], ecx
+jmp originalcode
+
+originalcode:
+popad
+popfd
+  mov [ecx+04],ebp
+  mov [ecx],eax
+  jmp return
+
+INJECT:
+  jmp code
+return:
+registersymbol(INJECT)
+
+[DISABLE]
+
+INJECT:
+  db 89 69 04 89 01
+
+unregistersymbol(INJECT)
+dealloc(newmem)
+
+
+{
+// ORIGINAL CODE - INJECTION POINT: "vermintide.exe"+558703
+
+"vermintide.exe"+5586E1: 75 53                    -  jne vermintide.exe+558736
+"vermintide.exe"+5586E3: 39 41 08                 -  cmp [ecx+08],eax
+"vermintide.exe"+5586E6: 75 4E                    -  jne vermintide.exe+558736
+"vermintide.exe"+5586E8: 83 79 04 FF              -  cmp dword ptr [ecx+04],-01
+"vermintide.exe"+5586EC: 74 2B                    -  je vermintide.exe+558719
+"vermintide.exe"+5586EE: F6 45 04 04              -  test byte ptr [ebp+04],04
+"vermintide.exe"+5586F2: 0F 85 93 00 00 00        -  jne vermintide.exe+55878B
+"vermintide.exe"+5586F8: 0F B6 46 FD              -  movzx eax,byte ptr [esi-03]
+"vermintide.exe"+5586FC: 8B 6C C2 04              -  mov ebp,[edx+eax*8+04]
+"vermintide.exe"+558700: 8B 04 C2                 -  mov eax,[edx+eax*8]
+// ---------- INJECTING HERE ----------
+"vermintide.exe"+558703: 89 69 04                 -  mov [ecx+04],ebp
+"vermintide.exe"+558706: 89 01                    -  mov [ecx],eax
+// ---------- DONE INJECTING  ----------
+"vermintide.exe"+558708: 8B 06                    -  mov eax,[esi]
+"vermintide.exe"+55870A: 0F B6 CC                 -  movzx ecx,ah
+"vermintide.exe"+55870D: 0F B6 E8                 -  movzx ebp,al
+"vermintide.exe"+558710: 83 C6 04                 -  add esi,04
+"vermintide.exe"+558713: C1 E8 10                 -  shr eax,10
+"vermintide.exe"+558716: FF 24 AB                 -  jmp dword ptr [ebx+ebp*4]
+"vermintide.exe"+558719: 83 7D 10 00              -  cmp dword ptr [ebp+10],00
+"vermintide.exe"+55871D: 74 CF                    -  je vermintide.exe+5586EE
+"vermintide.exe"+55871F: 89 4C 24 10              -  mov [esp+10],ecx
+"vermintide.exe"+558723: 8B 4D 10                 -  mov ecx,[ebp+10]
+}
+</AssemblerScript>
+              <CheatEntries>
+                <CheatEntry>
+                  <ID>143</ID>
+                  <Description>"Gravity"</Description>
+                  <LastState Value="??" Activated="0" RealAddress="808007C0"/>
+                  <Color>80000008</Color>
+                  <VariableType>Double</VariableType>
+                  <Address>[_movespeed]+3c0</Address>
+                  <Hotkeys>
+                    <Hotkey>
+                      <Action>Set Value</Action>
+                      <Keys>
+                        <Key>73</Key>
+                      </Keys>
+                      <Value>-2</Value>
+                      <ID>0</ID>
+                    </Hotkey>
+                    <Hotkey>
+                      <Action>Set Value</Action>
+                      <Keys>
+                        <Key>79</Key>
+                      </Keys>
+                      <Value>0</Value>
+                      <ID>1</ID>
+                    </Hotkey>
+                    <Hotkey>
+                      <Action>Set Value</Action>
+                      <Keys>
+                        <Key>80</Key>
+                      </Keys>
+                      <Value>11</Value>
+                      <ID>2</ID>
+                    </Hotkey>
+                  </Hotkeys>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>144</ID>
+                  <Description>"Speed"</Description>
+                  <LastState Value="??" Activated="0" RealAddress="80800850"/>
+                  <Color>80000008</Color>
+                  <VariableType>Double</VariableType>
+                  <Address>[_movespeed]+450</Address>
+                  <Hotkeys>
+                    <Hotkey>
+                      <Action>Increase Value</Action>
+                      <Keys>
+                        <Key>76</Key>
+                      </Keys>
+                      <Value>0.5</Value>
+                      <ID>0</ID>
+                    </Hotkey>
+                    <Hotkey>
+                      <Action>Decrease Value</Action>
+                      <Keys>
+                        <Key>75</Key>
+                      </Keys>
+                      <Value>0.5</Value>
+                      <ID>1</ID>
+                    </Hotkey>
+                  </Hotkeys>
+                </CheatEntry>
+              </CheatEntries>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>16</ID>
+              <Description>"Re-activate this every time when loading a new level"</Description>
+              <LastState Activated="0"/>
+              <Color>C08000</Color>
+              <VariableType>Auto Assembler Script</VariableType>
+              <AssemblerScript>{ Game   : vermintide.exe
+  Version: 1.0.1.2
+  Date   : 2015-11-01
+  Author : Nessin
+}
+
+[ENABLE]
+
+aobscanmodule(INJECT,vermintide.exe,39 6E FC 74 4F) // should be unique
+alloc(newmem,$1000)
+
+label(code)
+label(return)
+label(originalcode)
+label(grimoire)
+label(tome)
+label(cursed)
+label(dices)
+label(health)
+label(ammoclip)
+label(totalammo)
+label(mission)
+label(barrels)
+label(dmg1)
+label(dmg2)
+label(dmg3)
+label(dmg4)
+label(dmg5)
+label(dmg6)
+label(dmg7)
+label(dmg8)
+label(totalammo)
+label(mission)
+label(barrels)
+label(ammoch1)
+label(ammoch2)
+label(ammoch3)
+label(ammoch4)
+label(ammotot1)
+label(ammotot2)
+label(ammotot3)
+label(ammotot4)
+label(overheat)
+label(ukdice1)
+label(ukdice2)
+label(ukdice3)
+label(trybarrel)
+label(gravity)
+label(grav1)
+label(grav2)
+label(grav3)
+label(grav4)
+label(grav5)
+
+globalalloc(_tome2,4)
+globalalloc(_grimoire2,4)
+globalalloc(_cursed2,4)
+globalalloc(_unknownbook,4)
+globalalloc(_damagetaken,4)
+globalalloc(_ammoclip,4)
+globalalloc(_totalammo,4)
+globalalloc(_barrels,4)
+globalalloc(_damage1,4)
+globalalloc(_damage2,4)
+globalalloc(_damage3,4)
+globalalloc(_damage4,4)
+globalalloc(_damage5,4)
+globalalloc(_damage6,4)
+globalalloc(_damage7,4)
+globalalloc(_damage8,4)
+globalalloc(_ammochamber1,4)
+globalalloc(_ammochamber2,4)
+globalalloc(_ammochamber3,4)
+globalalloc(_ammochamber4,4)
+globalalloc(_ammototal1,4)
+globalalloc(_ammototal2,4)
+globalalloc(_ammototal3,4)
+globalalloc(_ammototal4,4)
+globalalloc(_unknowndice1,4)
+globalalloc(_unknowndice2,4)
+globalalloc(_unknowndice3,4)
+globalalloc(_overheat,4)
+globalalloc(_gravity1,4)
+globalalloc(_gravity2,4)
+globalalloc(_gravity3,4)
+globalalloc(_gravity4,4)
+globalalloc(_gravity5,4)
+
+globalalloc(_bookdebug1,4)
+globalalloc(_bookdebug2,4)
+globalalloc(_bookdebug3,4)
+globalalloc(_bookdebug4,4)
+globalalloc(_bookdebug5,4)
+globalalloc(_bookdebug6,4)
+globalalloc(_savedstackpointer,4)
+globalalloc(_testvalue,4)
+globalalloc(_testvalue2,4)
+globalalloc(_testvalue3,4)
+
+newmem:
+
+code:
+mov [_savedstackpointer],esp   //save stack pointer. It changes with the next 2 commands
+  pushfd
+  pushad
+cmp ebx,00000000   //some filtering because otherwise waaay too many things accesses my code
+jne originalcode
+cmp ebp,FFFFFFFF
+jne originalcode
+cmp edi,00000003   //health related call
+je health
+cmp edi,00000002   // mission related call (dices, barrels)
+je mission
+//cmp edi,0000000F   // ammo clip
+//je ammoclip
+cmp edi,00000012   // total ammo
+je totalammo
+cmp edi,00000027   //overheat
+je overheat
+cmp edi,0000000C  //gravity found by drewsk1 on cheat engine forums
+je gravity
+jmp originalcode
+
+
+mission:
+mov eax, [esi]
+add eax,C
+push 00000004
+push eax
+call isbadreadptr   //make sure [esi]+C points to valid memory
+cmp eax,0
+jne originalcode
+
+mov eax, [esi]
+add eax, 10
+push 00000004
+push eax
+call isbadreadptr   //make sure [esi]+10 points to valid memory
+cmp eax,0
+jne originalcode
+
+mov eax, [esi]
+add eax,1C
+push 00000004
+push eax
+call isbadreadptr   //make sure [esi]+1C points to valid memory
+cmp eax,0
+jne originalcode
+
+mov eax, [esi]   // value of esi into eax again
+{
+cmp [esi]+C,00010000       //Optional additional checks to make sure [esi] points to valid memory
+jb originalcode
+mov eax, [esi]+C
+test eax,eax
+je originalcode
+}
+
+{
+mov eax, [esi]   // value of esi into eax again
+mov [_testvalue],eax
+/// remove
+add eax,C
+push 00000004
+push eax
+call isbadreadptr
+cmp eax,0
+jne originalcode
+
+mov eax, [esi]   // value of esi into eax again
+///
+}
+
+cmp word ptr [eax+C],0000000E     //length of string is 14
+//jmp originalcode   //remove --------------------------------------
+jne trybarrel
+//jmp originalcode   //remove --------------------------------------
+cmp dword ptr [eax+10],'curr'
+jne trybarrel
+cmp dword ptr [eax+14],'ent_'       // these compares check if it belongs to a dice
+jne trybarrel
+cmp dword ptr [eax+18],'amou'
+jne trybarrel
+jmp dices
+
+trybarrel:
+cmp word ptr [eax+C],00000012     //length of string is 18
+jne originalcode
+cmp dword ptr [eax+10],'num_'
+jne originalcode
+cmp dword ptr [eax+14],'clos'
+jne originalcode
+cmp dword ptr [eax+18],'ed_s'
+jne originalcode
+cmp dword ptr [eax+1C],'ocke'
+jne originalcode
+jmp barrels
+
+
+//cmp word ptr [esi],A2BC    //mission equipment
+//je barrels
+//cmp word ptr [esi],DB80       // book/grimoire/cursed dice
+//je dices
+//jmp originalcode
+
+barrels:
+mov eax, esi
+add eax, -8       // store the address in eax
+mov [_barrels], eax
+jmp originalcode
+
+dices:
+add [_bookdebug1], 1
+//cmp [_savedstackpointer],0018FB7C    //You can remove this, it's another very effective filter unique to books, but it can change between updates
+//jne originalcode
+add [_bookdebug2], 1
+mov eax, esi
+add eax, -8       // store the address of  tome/grimoire/dice in eax
+cmp word ptr [esi+10],5B80    //its a tome
+je tome
+cmp word ptr [esi+10],5BA0     //its a grimoire
+je grimoire
+cmp word ptr [esi+10],5BC0     //its a cursed dice
+je cursed
+mov ebx,[esi+10]
+mov [_bookdebug6], ebx
+cmp [_unknowndice1], eax
+je originalcode
+cmp [_unknowndice2], eax
+je originalcode
+cmp [_unknowndice3], eax
+je originalcode
+cmp [_unknowndice1],0
+je ukdice1
+cmp [_unknowndice2],0
+je ukdice2
+cmp [_unknowndice3],0
+je ukdice3
+//mov [_unknownbook], eax
+jmp originalcode     //None of the above?  Shouldn't happen but still... it could
+
+tome:
+add [_bookdebug3], 1
+mov [_tome2], eax         //store the previously saved eax in [_tome2]
+jmp originalcode
+
+grimoire:
+add [_bookdebug4], 1
+mov [_grimoire2], eax      //store the previously saved eax in [_grimoire2]
+jmp originalcode
+
+cursed:
+add [_bookdebug5], 1
+mov [_cursed2], eax        //store the previously saved eax in [_cursed2]
+jmp originalcode
+
+ukdice1:
+mov [_unknowndice1], eax
+jmp originalcode
+
+ukdice2:
+mov [_unknowndice2], eax
+jmp originalcode
+
+ukdice3:
+mov [_unknowndice3], eax
+jmp originalcode
+
+health:
+mov eax, [esi]
+add eax,C
+push 00000004
+push eax
+call isbadreadptr   //make sure [esi]+C points to valid memory
+cmp eax,0
+jne originalcode
+mov eax, [esi]
+add eax,10
+push 00000004
+push eax
+call isbadreadptr   //make sure [esi]+10 points to valid memory
+cmp eax,0
+jne originalcode
+mov eax, [esi]
+cmp word ptr [eax+C],00000006     //length of string is 6
+jne originalcode
+cmp dword ptr [eax+10],'dama'
+jne originalcode
+
+mov eax, [esi-78]
+add eax,C
+push 00000004
+push eax
+call isbadreadptr   //make sure [esi-78]+C points to valid memory
+cmp eax,0
+jne originalcode
+mov eax, [esi-78]
+
+cmp word ptr [eax+C],00000006     //length of string is 6
+jne originalcode
+cmp dword ptr [eax+10],'play'
+jne originalcode
+cmp word ptr [esi-7C],FFFFFFF4   //is it a player?
+jne originalcode
+
+mov eax, esi
+add eax, -8                //this code is shared for 4 players.. so I try to separate addresses
+cmp [_damage1], eax
+je originalcode
+cmp [_damage2], eax
+je originalcode
+cmp [_damage3], eax
+je originalcode
+cmp [_damage4], eax
+je originalcode
+cmp [_damage5], eax
+je originalcode
+cmp [_damage6], eax
+je originalcode
+cmp [_damage7], eax
+je originalcode
+cmp [_damage8], eax
+je originalcode
+cmp [_damage1],0
+je dmg1
+cmp [_damage2],0
+je dmg2
+cmp [_damage3],0
+je dmg3
+cmp [_damage4],0
+je dmg4
+cmp [_damage5],0
+je dmg5
+cmp [_damage6],0
+je dmg6
+cmp [_damage7],0
+je dmg7
+cmp [_damage8],0
+je dmg8
+jmp originalcode
+
+dmg1:
+mov [_damage1], eax
+jmp originalcode
+
+dmg2:
+mov [_damage2], eax
+jmp originalcode
+
+dmg3:
+mov [_damage3], eax
+jmp originalcode
+
+dmg4:
+mov [_damage4], eax
+jmp originalcode
+
+dmg5:
+mov [_damage5], eax
+jmp originalcode
+
+dmg6:
+mov [_damage6], eax
+jmp originalcode
+
+dmg7:
+mov [_damage7], eax
+jmp originalcode
+
+dmg8:
+mov [_damage8], eax
+jmp originalcode
+
+
+ammoclip:
+cmp word ptr [esi],6A00    // is it the ammo clip?
+jne originalcode
+cmp word ptr [esi+4],FFFB    // another check just to be sure
+jne originalcode
+mov eax, esi
+add eax, -8
+cmp [_ammochamber1], eax
+je originalcode
+cmp [_ammochamber2], eax
+je originalcode
+cmp [_ammochamber3], eax
+je originalcode
+cmp [_ammochamber4], eax
+je originalcode
+cmp [_ammochamber1],0
+je ammoch1
+cmp [_ammochamber2],0
+je ammoch2
+cmp [_ammochamber3],0
+je ammoch3
+cmp [_ammochamber4],0
+je ammoch4
+//mov [_ammoclip], eax
+jmp originalcode
+
+
+ammoch1:
+mov [_ammochamber1], eax
+jmp originalcode
+
+ammoch2:
+mov [_ammochamber2], eax
+jmp originalcode
+
+ammoch3:
+mov [_ammochamber3], eax
+jmp originalcode
+
+ammoch4:
+mov [_ammochamber4], eax
+jmp originalcode
+
+totalammo:
+mov eax, [esi]
+add eax,C
+push 00000004
+push eax
+call isbadreadptr   //make sure [esi]+C points to valid memory
+cmp eax,0
+jne originalcode
+mov eax, [esi]
+add eax, 18
+push 00000004
+push eax
+call isbadreadptr   //make sure [esi]+18 points to valid memory
+cmp eax,0
+jne originalcode
+
+mov eax, [esi]   // value of esi into eax again
+
+cmp word ptr [eax+C],0000000E     //length of string is 18
+jne originalcode
+cmp dword ptr [eax+10],'avai'
+jne originalcode
+cmp dword ptr [eax+14],'labl'
+jne originalcode
+cmp dword ptr [eax+18],'e_am'
+jne originalcode
+
+mov eax, esi
+add eax, -8
+cmp [_ammototal1], eax
+je originalcode
+cmp [_ammototal2], eax
+je originalcode
+cmp [_ammototal3], eax
+je originalcode
+cmp [_ammototal4], eax
+je originalcode
+cmp [_ammototal1],0
+je ammotot1
+cmp [_ammototal2],0
+je ammotot2
+cmp [_ammototal3],0
+je ammotot3
+cmp [_ammototal4],0
+je ammotot4
+//mov [_totalammo], eax
+jmp originalcode
+
+ammotot1:
+mov [_ammototal1], eax
+jmp originalcode
+
+ammotot2:
+mov [_ammototal2], eax
+jmp originalcode
+
+ammotot3:
+mov [_ammototal3], eax
+jmp originalcode
+
+ammotot4:
+mov [_ammototal4], eax
+jmp originalcode
+
+overheat:
+mov eax, [esi]
+add eax,C
+push 00000004
+push eax
+call isbadreadptr   //make sure [esi]+C points to valid memory
+cmp eax,0
+jne originalcode
+mov eax, [esi]
+add eax, 18
+push 00000004
+push eax
+call isbadreadptr   //make sure [esi]+18 points to valid memory
+cmp eax,0
+jne originalcode
+
+mov eax, [esi]   // value of esi into eax again
+
+cmp word ptr [eax+C],00000010     //length of string is 18
+jne originalcode
+cmp dword ptr [eax+10],'over'
+jne originalcode
+cmp dword ptr [eax+14],'char'
+jne originalcode
+cmp dword ptr [eax+18],'ge_v'
+jne originalcode
+
+mov eax, esi
+add eax, -8
+mov [_overheat],eax
+jmp originalcode
+
+gravity:
+mov eax, [esi]
+add eax,C
+push 00000004
+push eax
+call isbadreadptr   //make sure [esi]+C points to valid memory
+cmp eax,0
+jne originalcode
+mov eax, [esi]
+add eax, 18
+push 00000004
+push eax
+call isbadreadptr   //make sure [esi]+18 points to valid memory
+cmp eax,0
+jne originalcode
+
+mov eax, [esi]   // value of esi into eax again
+
+cmp word ptr [eax+C],00000014     //length of string is 20
+jne originalcode
+cmp dword ptr [eax+10],'grav'
+jne originalcode
+cmp dword ptr [eax+14],'ity_'
+jne originalcode
+cmp dword ptr [eax+18],'acce'
+jne originalcode
+
+mov eax, esi
+add eax, -8
+cmp [_gravity1], eax
+je originalcode
+cmp [_gravity2], eax
+je originalcode
+cmp [_gravity3], eax
+je originalcode
+cmp [_gravity4], eax
+je originalcode
+cmp [_gravity5], eax
+je originalcode
+cmp [_gravity1],0
+je grav1
+cmp [_gravity2],0
+je grav2
+cmp [_gravity3],0
+je grav3
+cmp [_gravity4],0
+je grav4
+cmp [_gravity5],0
+je grav5
+jmp originalcode
+
+grav1:
+mov [_gravity1],eax
+jmp originalcode
+
+grav2:
+mov [_gravity2],eax
+jmp originalcode
+
+grav3:
+mov [_gravity3],eax
+jmp originalcode
+
+grav4:
+mov [_gravity4],eax
+jmp originalcode
+
+grav5:
+mov [_gravity5],eax
+jmp originalcode
+
+originalcode:
+  popad
+  popfd
+  cmp [esi-04],ebp
+  je vermintide.luaL_openlibs+559
+  jmp return
+
+
+INJECT:
+  jmp code
+return:
+registersymbol(INJECT)
+
+[DISABLE]
+
+INJECT:
+  db 39 6E FC 74 4F
+
+unregistersymbol(INJECT)
+dealloc(newmem)
+unregistersymbol(_damage1)
+unregistersymbol(_damage2)
+unregistersymbol(_damage3)
+unregistersymbol(_damage4)
+unregistersymbol(_damage5)
+unregistersymbol(_damage6)
+unregistersymbol(_damage7)
+unregistersymbol(_damage8)
+unregistersymbol(_ammochamber1)
+unregistersymbol(_ammochamber2)
+unregistersymbol(_ammochamber3)
+unregistersymbol(_ammochamber4)
+unregistersymbol(_ammototal1)
+unregistersymbol(_ammototal2)
+unregistersymbol(_ammototal3)
+unregistersymbol(_ammototal4)
+unregistersymbol(_unknowndice1)
+unregistersymbol(_unknowndice2)
+unregistersymbol(_unknowndice3)
+unregistersymbol(_gravity1)
+unregistersymbol(_gravity2)
+unregistersymbol(_gravity3)
+unregistersymbol(_gravity4)
+unregistersymbol(_gravity5)
+
+{
+// ORIGINAL CODE - INJECTION POINT: "vermintide.exe"+5553A5
+
+"vermintide.exe"+55538D: 46              -  inc esi
+"vermintide.exe"+55538E: 3B F7           -  cmp esi,edi
+"vermintide.exe"+555390: 72 D3           -  jb vermintide.exe+555365
+"vermintide.exe"+555392: 8B 45 1C        -  mov eax,[ebp+1C]
+"vermintide.exe"+555395: 85 C0           -  test eax,eax
+"vermintide.exe"+555397: 74 66           -  je vermintide.exe+5553FF
+"vermintide.exe"+555399: 8B 75 14        -  mov esi,[ebp+14]
+"vermintide.exe"+55539C: 83 C6 08        -  add esi,08
+"vermintide.exe"+55539F: 8D 78 01        -  lea edi,[eax+01]
+"vermintide.exe"+5553A2: 83 CD FF        -  or ebp,-01
+// ---------- INJECTING HERE ----------
+"vermintide.exe"+5553A5: 39 6E FC        -  cmp [esi-04],ebp
+"vermintide.exe"+5553A8: 74 4F           -  je vermintide.exe+5553F9
+// ---------- DONE INJECTING  ----------
+"vermintide.exe"+5553AA: F6 C3 08        -  test bl,08
+"vermintide.exe"+5553AD: 75 21           -  jne vermintide.exe+5553D0
+"vermintide.exe"+5553AF: 8B 46 04        -  mov eax,[esi+04]
+"vermintide.exe"+5553B2: 83 C0 04        -  add eax,04
+"vermintide.exe"+5553B5: 83 F8 F6        -  cmp eax,-0A
+"vermintide.exe"+5553B8: 76 16           -  jna vermintide.exe+5553D0
+"vermintide.exe"+5553BA: 8B 06           -  mov eax,[esi]
+"vermintide.exe"+5553BC: F6 40 04 03     -  test byte ptr [eax+04],03
+"vermintide.exe"+5553C0: 74 0E           -  je vermintide.exe+5553D0
+"vermintide.exe"+5553C2: 8B 4C 24 14     -  mov ecx,[esp+14]
+}
+</AssemblerScript>
+              <CheatEntries>
+                <CheatEntry>
+                  <ID>74</ID>
+                  <Description>"This script can easily take 30 seconds to populate new addresses"</Description>
+                  <LastState Value="" Activated="0" RealAddress="00000000"/>
+                  <Color>C0C0C0</Color>
+                  <GroupHeader>1</GroupHeader>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>146</ID>
+                  <Description>"You need to find a tome/grimoire/cursed dice before they show up in the list"</Description>
+                  <LastState Value="" Activated="0" RealAddress="00000000"/>
+                  <Color>C0C0C0</Color>
+                  <GroupHeader>1</GroupHeader>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>108</ID>
+                  <Description>"Weapons  - Work in progress"</Description>
+                  <LastState Value="" Activated="0" RealAddress="00000000"/>
+                  <Color>646464</Color>
+                  <GroupHeader>1</GroupHeader>
+                  <CheatEntries>
+                    <CheatEntry>
+                      <ID>109</ID>
+                      <Description>"Weapon1"</Description>
+                      <Options moHideChildren="1"/>
+                      <LastState Value="" Activated="0" RealAddress="00000000"/>
+                      <Color>80000008</Color>
+                      <GroupHeader>1</GroupHeader>
+                      <CheatEntries>
+                        <CheatEntry>
+                          <ID>103</ID>
+                          <Description>"Weapon name"</Description>
+                          <LastState Activated="0" RealAddress="00000000"/>
+                          <Color>80000008</Color>
+                          <VariableType>String</VariableType>
+                          <Length>30</Length>
+                          <Unicode>0</Unicode>
+                          <ZeroTerminate>1</ZeroTerminate>
+                          <Address>[_ammototal1]-A8</Address>
+                          <Offsets>
+                            <Offset>10</Offset>
+                          </Offsets>
+                        </CheatEntry>
+                        <CheatEntry>
+                          <ID>67</ID>
+                          <Description>"Ammo Chamber"</Description>
+                          <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                          <Color>80000008</Color>
+                          <VariableType>Double</VariableType>
+                          <Address>[_ammototal1]+48</Address>
+                        </CheatEntry>
+                        <CheatEntry>
+                          <ID>62</ID>
+                          <Description>"Total Ammo"</Description>
+                          <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                          <Color>80000008</Color>
+                          <VariableType>Double</VariableType>
+                          <Address>[_ammototal1]</Address>
+                        </CheatEntry>
+                        <CheatEntry>
+                          <ID>107</ID>
+                          <Description>"Destroy_when_out_of_ammo"</Description>
+                          <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                          <ShowAsSigned>1</ShowAsSigned>
+                          <Color>80000008</Color>
+                          <VariableType>4 Bytes</VariableType>
+                          <Address>[_ammototal1]+F4</Address>
+                        </CheatEntry>
+                      </CheatEntries>
+                    </CheatEntry>
+                    <CheatEntry>
+                      <ID>110</ID>
+                      <Description>"Weapon2"</Description>
+                      <Options moHideChildren="1"/>
+                      <LastState Value="" Activated="0" RealAddress="00000000"/>
+                      <Color>80000008</Color>
+                      <GroupHeader>1</GroupHeader>
+                      <CheatEntries>
+                        <CheatEntry>
+                          <ID>102</ID>
+                          <Description>"Weapon name"</Description>
+                          <LastState Activated="0" RealAddress="00000000"/>
+                          <Color>80000008</Color>
+                          <VariableType>String</VariableType>
+                          <Length>30</Length>
+                          <Unicode>0</Unicode>
+                          <ZeroTerminate>1</ZeroTerminate>
+                          <Address>[_ammototal2]-A8</Address>
+                          <Offsets>
+                            <Offset>10</Offset>
+                          </Offsets>
+                        </CheatEntry>
+                        <CheatEntry>
+                          <ID>68</ID>
+                          <Description>"Ammo Chamber"</Description>
+                          <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                          <Color>80000008</Color>
+                          <VariableType>Double</VariableType>
+                          <Address>[_ammototal2]+48</Address>
+                        </CheatEntry>
+                        <CheatEntry>
+                          <ID>63</ID>
+                          <Description>"Total Ammo"</Description>
+                          <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                          <Color>80000008</Color>
+                          <VariableType>Double</VariableType>
+                          <Address>[_ammototal2]</Address>
+                        </CheatEntry>
+                        <CheatEntry>
+                          <ID>106</ID>
+                          <Description>"Destroy_when_out_of_ammo"</Description>
+                          <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                          <ShowAsSigned>1</ShowAsSigned>
+                          <Color>80000008</Color>
+                          <VariableType>4 Bytes</VariableType>
+                          <Address>[_ammototal2]+F4</Address>
+                        </CheatEntry>
+                        <CheatEntry>
+                          <ID>104</ID>
+                          <Description>"Reload time"</Description>
+                          <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                          <Color>80000008</Color>
+                          <VariableType>Byte</VariableType>
+                          <Address>[_ammototal2]-119</Address>
+                        </CheatEntry>
+                      </CheatEntries>
+                    </CheatEntry>
+                    <CheatEntry>
+                      <ID>111</ID>
+                      <Description>"Weapon3"</Description>
+                      <Options moHideChildren="1"/>
+                      <LastState Value="" Activated="0" RealAddress="00000000"/>
+                      <Color>80000008</Color>
+                      <GroupHeader>1</GroupHeader>
+                      <CheatEntries>
+                        <CheatEntry>
+                          <ID>113</ID>
+                          <Description>"Weapon name"</Description>
+                          <LastState Activated="0" RealAddress="00000000"/>
+                          <Color>80000008</Color>
+                          <VariableType>String</VariableType>
+                          <Length>30</Length>
+                          <Unicode>0</Unicode>
+                          <ZeroTerminate>1</ZeroTerminate>
+                          <Address>[_ammototal3]-A8</Address>
+                          <Offsets>
+                            <Offset>10</Offset>
+                          </Offsets>
+                        </CheatEntry>
+                        <CheatEntry>
+                          <ID>69</ID>
+                          <Description>"Ammo Chamber"</Description>
+                          <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                          <Color>80000008</Color>
+                          <VariableType>Double</VariableType>
+                          <Address>[_ammototal3]+48</Address>
+                        </CheatEntry>
+                        <CheatEntry>
+                          <ID>64</ID>
+                          <Description>"Total Ammo"</Description>
+                          <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                          <Color>80000008</Color>
+                          <VariableType>Double</VariableType>
+                          <Address>[_ammototal3]</Address>
+                        </CheatEntry>
+                        <CheatEntry>
+                          <ID>115</ID>
+                          <Description>"Destroy_when_out_of_ammo"</Description>
+                          <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                          <ShowAsSigned>1</ShowAsSigned>
+                          <Color>80000008</Color>
+                          <VariableType>4 Bytes</VariableType>
+                          <Address>[_ammototal3]+F4</Address>
+                        </CheatEntry>
+                      </CheatEntries>
+                    </CheatEntry>
+                    <CheatEntry>
+                      <ID>112</ID>
+                      <Description>"Weapon4"</Description>
+                      <Options moHideChildren="1"/>
+                      <LastState Value="" Activated="0" RealAddress="00000000"/>
+                      <Color>80000008</Color>
+                      <GroupHeader>1</GroupHeader>
+                      <CheatEntries>
+                        <CheatEntry>
+                          <ID>114</ID>
+                          <Description>"Weapon name"</Description>
+                          <LastState Activated="0" RealAddress="00000000"/>
+                          <Color>80000008</Color>
+                          <VariableType>String</VariableType>
+                          <Length>30</Length>
+                          <Unicode>0</Unicode>
+                          <ZeroTerminate>1</ZeroTerminate>
+                          <Address>[_ammototal4]-A8</Address>
+                          <Offsets>
+                            <Offset>10</Offset>
+                          </Offsets>
+                        </CheatEntry>
+                        <CheatEntry>
+                          <ID>70</ID>
+                          <Description>"Ammo Chamber"</Description>
+                          <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                          <Color>80000008</Color>
+                          <VariableType>Double</VariableType>
+                          <Address>[_ammototal4]+48</Address>
+                        </CheatEntry>
+                        <CheatEntry>
+                          <ID>65</ID>
+                          <Description>"Total Ammo"</Description>
+                          <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                          <Color>80000008</Color>
+                          <VariableType>Double</VariableType>
+                          <Address>[_ammototal4]</Address>
+                        </CheatEntry>
+                        <CheatEntry>
+                          <ID>116</ID>
+                          <Description>"Destroy_when_out_of_ammo"</Description>
+                          <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                          <ShowAsSigned>1</ShowAsSigned>
+                          <Color>80000008</Color>
+                          <VariableType>4 Bytes</VariableType>
+                          <Address>[_ammototal4]+F4</Address>
+                        </CheatEntry>
+                      </CheatEntries>
+                    </CheatEntry>
+                  </CheatEntries>
+                </CheatEntry>
+              </CheatEntries>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>24</ID>
+              <Description>"DEBUG"</Description>
+              <Options moHideChildren="1"/>
+              <LastState Value="" Activated="0" RealAddress="00000000"/>
+              <Color>C0C0C0</Color>
+              <GroupHeader>1</GroupHeader>
+              <CheatEntries>
+                <CheatEntry>
+                  <ID>31</ID>
+                  <Description>"Grimoire descriptor"</Description>
+                  <LastState Activated="0" RealAddress="00000000"/>
+                  <Color>80000008</Color>
+                  <VariableType>String</VariableType>
+                  <Length>30</Length>
+                  <Unicode>0</Unicode>
+                  <ZeroTerminate>1</ZeroTerminate>
+                  <Address>[_grimoire2]+8</Address>
+                  <Offsets>
+                    <Offset>10</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>32</ID>
+                  <Description>"Cursed die descriptor"</Description>
+                  <LastState Activated="0" RealAddress="00000000"/>
+                  <Color>80000008</Color>
+                  <VariableType>String</VariableType>
+                  <Length>30</Length>
+                  <Unicode>0</Unicode>
+                  <ZeroTerminate>1</ZeroTerminate>
+                  <Address>[_cursed2]+8</Address>
+                  <Offsets>
+                    <Offset>10</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>13</ID>
+                  <Description>"Tome descriptor"</Description>
+                  <LastState Activated="0" RealAddress="00000000"/>
+                  <Color>80000008</Color>
+                  <VariableType>String</VariableType>
+                  <Length>30</Length>
+                  <Unicode>0</Unicode>
+                  <ZeroTerminate>1</ZeroTerminate>
+                  <Address>[_tome2]+8</Address>
+                  <Offsets>
+                    <Offset>10</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>43</ID>
+                  <Description>"Unknown book descriptor"</Description>
+                  <LastState Activated="0" RealAddress="00000000"/>
+                  <Color>808080</Color>
+                  <VariableType>String</VariableType>
+                  <Length>14</Length>
+                  <Unicode>0</Unicode>
+                  <ZeroTerminate>1</ZeroTerminate>
+                  <Address>[_unknownbook]+8</Address>
+                  <Offsets>
+                    <Offset>10</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>42</ID>
+                  <Description>"Unknown book address"</Description>
+                  <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                  <Color>808080</Color>
+                  <VariableType>Double</VariableType>
+                  <Address>[_unknownbook]</Address>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>27</ID>
+                  <Description>"_bookdebug5 (cursed calls)"</Description>
+                  <LastState Value="0" Activated="0" RealAddress="401602D0"/>
+                  <Color>80000008</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>_bookdebug5</Address>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>26</ID>
+                  <Description>"_bookdebug4 (grim calls)"</Description>
+                  <LastState Value="0" Activated="0" RealAddress="401602C0"/>
+                  <Color>80000008</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>_bookdebug4</Address>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>25</ID>
+                  <Description>"_bookdebug3 (tome calls)"</Description>
+                  <LastState Value="0" Activated="0" RealAddress="401602B0"/>
+                  <Color>80000008</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>_bookdebug3</Address>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>21</ID>
+                  <Description>"_bookdebug2  (filter2)"</Description>
+                  <LastState Value="0" Activated="0" RealAddress="401602A0"/>
+                  <Color>80000008</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>_bookdebug2</Address>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>20</ID>
+                  <Description>"_bookdebug1  (filter1)"</Description>
+                  <LastState Value="0" Activated="0" RealAddress="40160290"/>
+                  <Color>80000008</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>_bookdebug1</Address>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>28</ID>
+                  <Description>"_bookdebug6 (unknown book calls) book ID -&gt;"</Description>
+                  <LastState Value="0000" Activated="0" RealAddress="401602E0"/>
+                  <ShowAsHex>1</ShowAsHex>
+                  <Color>80000008</Color>
+                  <VariableType>2 Bytes</VariableType>
+                  <Address>_bookdebug6</Address>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>140</ID>
+                  <Description>"testspeed"</Description>
+                  <LastState Value="67928807" Activated="0" RealAddress="22DE0010"/>
+                  <Color>80000008</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>_testspeed</Address>
+                </CheatEntry>
+              </CheatEntries>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>173</ID>
+      <Description>"Debug"</Description>
+      <Options moHideChildren="1"/>
+      <LastState Value="" Activated="0" RealAddress="00000000"/>
+      <Color>C0C0C0</Color>
+      <GroupHeader>1</GroupHeader>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>171</ID>
+          <Description>"Amount of tome/grim/cursed calls"</Description>
+          <LastState Value="11" Activated="0" RealAddress="40160150"/>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>_debugvalue1</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>172</ID>
+          <Description>"Amount of Tome calls"</Description>
+          <LastState Value="0" Activated="0" RealAddress="40160160"/>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>_debugvalue2</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>167</ID>
+          <Description>"Descriptor of unknowndice 1"</Description>
+          <LastState Activated="0" RealAddress="00000000"/>
+          <Color>80000008</Color>
+          <VariableType>String</VariableType>
+          <Length>20</Length>
+          <Unicode>0</Unicode>
+          <ZeroTerminate>1</ZeroTerminate>
+          <Address>[_unknowndice1]-C0</Address>
+          <Offsets>
+            <Offset>10</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>170</ID>
+          <Description>"Descriptor of unknowndice 2"</Description>
+          <LastState Activated="0" RealAddress="00000000"/>
+          <Color>80000008</Color>
+          <VariableType>String</VariableType>
+          <Length>30</Length>
+          <Unicode>0</Unicode>
+          <ZeroTerminate>1</ZeroTerminate>
+          <Address>[_unknowndice2]-C0</Address>
+          <Offsets>
+            <Offset>10</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>168</ID>
+          <Description>"Descriptor of unknowndice 3"</Description>
+          <LastState Activated="0" RealAddress="00000000"/>
+          <Color>80000008</Color>
+          <VariableType>String</VariableType>
+          <Length>20</Length>
+          <Unicode>0</Unicode>
+          <ZeroTerminate>1</ZeroTerminate>
+          <Address>[_unknowndice3]-C0</Address>
+          <Offsets>
+            <Offset>10</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>218</ID>
+          <Description>"position"</Description>
+          <LastState Value="99533328" Activated="0" RealAddress="33FE0170"/>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>_height</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>230</ID>
+          <Description>"_height1"</Description>
+          <LastState Value="5A446BCC" Activated="0" RealAddress="40160180"/>
+          <ShowAsHex>1</ShowAsHex>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>_height1</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>231</ID>
+          <Description>"_height2"</Description>
+          <LastState Value="00000000" Activated="0" RealAddress="40160190"/>
+          <ShowAsHex>1</ShowAsHex>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>_height2</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>232</ID>
+          <Description>"_height3"</Description>
+          <LastState Value="00000000" Activated="0" RealAddress="401601A0"/>
+          <ShowAsHex>1</ShowAsHex>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>_height3</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>233</ID>
+          <Description>"_height4"</Description>
+          <LastState Value="00000000" Activated="0" RealAddress="401601B0"/>
+          <ShowAsHex>1</ShowAsHex>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>_height4</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>246</ID>
+          <Description>"INFINITE AMMO"</Description>
+          <LastState Value="0" Activated="0" RealAddress="40160020"/>
+          <Color>228B22</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>_infiniteammo</Address>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>229</ID>
+      <Description>"Author: Nessin"</Description>
+      <LastState Value="" Activated="0" RealAddress="00000000"/>
+      <Color>808080</Color>
+      <GroupHeader>1</GroupHeader>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols>
+    <SymbolEntry>
+      <Name>_tome2</Name>
+      <Address>40160120</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>_grimoires</Name>
+      <Address>7C4D3A50</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>_grimoire2</Name>
+      <Address>40160130</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>_cursed2</Name>
+      <Address>40160140</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>_bookdebug1</Name>
+      <Address>40160290</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>_bookdebug2</Name>
+      <Address>401602A0</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>_savedbookesp</Name>
+      <Address>288F0050</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>_tomes</Name>
+      <Address>7C94A0D0</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>_savedstackpointer</Name>
+      <Address>401602F0</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>_bookdebug3</Name>
+      <Address>401602B0</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>_bookdebug4</Name>
+      <Address>401602C0</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>_bookdebug5</Name>
+      <Address>401602D0</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>_bookdebug6</Name>
+      <Address>401602E0</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>_damagetaken</Name>
+      <Address>401601D0</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>_ammoclip</Name>
+      <Address>401601E0</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>_totalammo</Name>
+      <Address>401601F0</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>_unknownbook</Name>
+      <Address>401601C0</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>_barrels</Name>
+      <Address>40160000</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>_overheat</Name>
+      <Address>40160010</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>_testvalue</Name>
+      <Address>40160300</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>_testvalue2</Name>
+      <Address>40160310</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>_testvalue3</Name>
+      <Address>40160320</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>_gravity</Name>
+      <Address>0F3D01C0</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>_testspeed</Name>
+      <Address>22DE0010</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>_savedspeed</Name>
+      <Address>22DE0020</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>_movespeed</Name>
+      <Address>22DE0000</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>_savedstack</Name>
+      <Address>22DE0030</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>_debugvalue1</Name>
+      <Address>40160150</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>_debugvalue2</Name>
+      <Address>40160160</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>_debugvalue3</Name>
+      <Address>40160170</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>_height</Name>
+      <Address>33FE0170</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>_height1</Name>
+      <Address>40160180</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>_height2</Name>
+      <Address>40160190</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>_height3</Name>
+      <Address>401601A0</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>_height4</Name>
+      <Address>401601B0</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>_infiniteammo</Name>
+      <Address>40160020</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>INJECT2</Name>
+      <Address> 0061DB76</Address>
+    </SymbolEntry>
+  </UserdefinedSymbols>
+</CheatTable>

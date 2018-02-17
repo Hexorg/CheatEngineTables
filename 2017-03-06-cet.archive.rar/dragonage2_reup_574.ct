@@ -1,0 +1,409 @@
+<?xml version="1.0"?>
+<CheatTable CheatEngineTableVersion="10">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>62</ID>
+      <Description>"Dragon Age 2 V1.0 Script V2.0"</Description>
+      <Options moHideChildren="1"/>
+      <Color>80000008</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>{
+===========================================
+ Dragon Age 2
+ Game Version  : 1.0
+ Script Version: 2.0
+ CE Version    : 6.0
+ GodMode, Stamina/mana, Injury and Money
+ 08-Mar-2011 Adapted from DAOrigins V1.4
+ 10-Mar-2011 Added CoolDown
+ By Recifense
+===========================================
+}
+
+[ENABLE]
+//=========================================
+// Check if script is compatible to this game version
+// If false the script will not be loaded
+
+assert("DragonAge2.exe"+1bb3a9,d9 5e 2c 8b 76 14)
+assert("DragonAge2.exe"+15ef26,8b 8e e8 01 00 00)
+assert("DragonAge2.exe"+2769b3,8b 88 e8 01 00 00)
+assert("DragonAge2.exe"+08fad0,8b 80 c4 00 00 00)
+assert("DragonAge2.exe"+15ebea,d9 80 b0 00 00 00)
+
+//=========================================
+alloc(MyCode,1024)
+//=========================================
+// Declaration section
+label(_GodMode)
+label(_BackGM)
+label(_ExitGM)
+label(_MonSel)
+label(_BackMS)
+label(_ExitMS)
+label(_MonUnit)
+label(_BackMU)
+label(_MonMoney)
+label(_BackMM)
+label(_ExitMM)
+label(_MonCoolDown)
+label(_BackMC)
+label(_ExitMC)
+label(pHero)
+label(pUnit)
+label(pSel)
+label(pMoney)
+label(iEnableGM)
+label(iEnableMM)
+label(iEnableMI)
+label(iEnableMC)
+label(iEAX)
+label(fValue)
+label(iMinMoney)
+
+registersymbol(MyCode)
+registersymbol(pHero)
+registersymbol(pUnit)
+registersymbol(pSel)
+registersymbol(pMoney)
+registersymbol(iEnableGM)
+registersymbol(iEnableMM)
+registersymbol(iEnableMI)
+registersymbol(iEnableMC)
+registersymbol(iMinMoney)
+
+MyCode:
+//========================================= ok V1.0/1.2/1.4
+// Health and Mana
+_GodMode:
+ push eax
+
+ cmp dword ptr [iEnableGM],0
+ je _ExitGM                     // Jump if feature is disabled
+
+ mov eax,[esi+14]               // Get pointer to base+0190
+ or eax,eax                     // Null?
+ je _ExitGM                     // Jump if true
+
+ lea eax,[eax-1dc]              // Point to unit structure
+ mov [pHero],eax                // Save it for debugging
+
+ cmp dword ptr [eax+50],#10     // PlayerÂ´s unit?
+ jne _ExitGM                    // Jump if false
+
+ fst dword ptr [fValue]
+
+ mov eax,[fValue]               // Get next value
+ cmp eax,[esi+2c]               // Greater than current value?
+ jge _ExitGM                    // Jump if true
+
+ fstp st(0)                     // Discard value
+
+ fld dword ptr [esi+2c]         // Get current value
+
+_ExitGM:
+ pop eax
+
+ fstp dword ptr [esi+2c]        // Original code
+ mov esi,[esi+14]               // Original code
+ jmp _BackGM                    // Back to main code
+
+//========================================= ok V1.4
+// Selected Hero
+_MonSel:
+ mov [pUnit],esi                // Save pointer for debugging
+ mov ecx,[esi+000001E8]         // Original code
+
+ cmp dword ptr [esi+50],#10     // PlayerÂ´s unit?
+ jne _ExitMS                    // Jump if false
+
+ cmp dword ptr [iEnableMI],0
+ je _ExitMS                     // Jump if feature is disabled
+
+ mov eax,[ecx+20]               // Get ptr to Injury
+ test eax,eax
+ je _ExitMS
+
+ mov dword ptr [eax+24],0       // No injury
+
+_ExitMS:
+ jmp _BackMS                    // Back to main code
+
+//========================================= ok V1.4
+// Unit Undercursor on fighting
+_MonUnit:
+ mov [pSel],eax                 // Save pointer for debugging  // Changed
+
+ mov ecx,[eax+000001e8]         // Original code               // Changed
+ jmp _BackMU                    // Back to main code
+
+//========================================= ok V1.0/1.2/1.4
+_MonMoney:
+ mov [pMoney],eax               // Save pointer for debugging
+
+ cmp dword ptr [iEnableMM],0
+ je _ExitMM                     // Jump if feature is disabled
+
+ mov ecx,[iMinMoney]            // Get minimum value
+ cmp ecx,[eax+000000c4]         // Current value &gt; minimum?
+ jle _ExitMM                    // Jump if true
+
+ mov [eax+000000c4],ecx         // Money = minimum
+
+_ExitMM:
+ mov eax,[eax+000000C4]         // Original code
+ jmp _BackMM                    // Back to main code
+
+//========================================= ok V1.4
+// For Selected Hero
+_MonCoolDown:
+ push ecx
+
+ cmp dword ptr [iEnableMC],0
+ je _ExitMC                     // Jump if feature is disabled
+
+ or esi,esi
+ jz _ExitMC                     // Jump if invalid pointer
+
+ cmp dword ptr [esi+50],#10     // PlayerÂ´s unit?
+ jne _ExitMC                    // Jump if false
+
+ mov ecx,(float)0.5             // 1/2 second cooldown
+ cmp ecx,[eax+000000B0]
+ jge _ExitMC
+
+ mov [eax+000000B0],ecx
+
+_ExitMC:
+ pop ecx
+
+ fld dword ptr [eax+000000B0]
+ jmp _BackMC                    // Back to main code
+
+//=========================================
+// Variables
+pHero:
+ dd 0
+pUnit:
+ dd 0
+pSel:
+ dd 0
+pMoney:
+ dd 0
+iEnableGM:
+ dd 1
+iEnableMM:
+ dd 1
+iEnableMI:
+ dd 1
+iEnableMC:
+ dd 0
+iEAX:
+ dd 0
+fValue:
+ dd 0
+iMinMoney:
+ dd #400000
+
+//=========================================
+// Hacking Points
+"DragonAge2.exe"+1bb3a9: //v1.0
+ jmp _GodMode
+ nop
+_BackGM:
+
+"DragonAge2.exe"+15ef26: //v1.0
+ jmp _MonSel
+ nop
+_BackMS:
+
+"DragonAge2.exe"+2769b3: //v1.0
+ jmp _MonUnit
+ nop
+_BackMU:
+
+"DragonAge2.exe"+08fad0: //v1.0
+ jmp _MonMoney
+ nop
+_BackMM:
+
+"DragonAge2.exe"+15ebea: //v1.0
+ jmp _MonCoolDown
+ nop
+_BackMC:
+
+//=========================================
+// Original Codes
+[DISABLE]
+"DragonAge2.exe"+1bb3a9: //v1.0
+ fstp dword ptr [esi+2c]
+ mov esi,[esi+14]
+
+"DragonAge2.exe"+15ef26: //v1.0
+ mov ecx,[esi+000001E8]
+
+"DragonAge2.exe"+2769b3: //v1.0
+ mov ecx,[eax+000001e8]
+
+"DragonAge2.exe"+08fad0: //v1.0
+ mov eax,[eax+000000C4]
+
+"DragonAge2.exe"+15ebea: //v1.0
+ fld dword ptr [eax+000000B0]
+
+dealloc(MyCode)
+unregistersymbol(MyCode)
+unregistersymbol(pHero)
+unregistersymbol(pUnit)
+unregistersymbol(pSel)
+unregistersymbol(pMoney)
+unregistersymbol(iEnableGM)
+unregistersymbol(iEnableMM)
+unregistersymbol(iEnableMI)
+unregistersymbol(iEnableMC)
+unregistersymbol(iMinMoney)
+
+
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>1</ID>
+          <Description>"Enable/Disable God Mode"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableGM</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>46</ID>
+          <Description>"Enable/Disable Minimum Money"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMM</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>2</ID>
+          <Description>"Enable/Disable No Injury"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMI</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>63</ID>
+          <Description>"Enable/Disable Fast Cooldown"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMC</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>3</ID>
+          <Description>"Minimum Money Value"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iMinMoney</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>34</ID>
+          <Description>"Selected Unit XP"</Description>
+          <Color>80000008</Color>
+          <VariableType>Float</VariableType>
+          <Address>pUnit</Address>
+          <Offsets>
+            <Offset>1C</Offset>
+            <Offset>8C</Offset>
+            <Offset>1E8</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>36</ID>
+          <Description>"Selected Unit Attribute Points"</Description>
+          <Color>80000008</Color>
+          <VariableType>Float</VariableType>
+          <Address>pUnit</Address>
+          <Offsets>
+            <Offset>1C</Offset>
+            <Offset>98</Offset>
+            <Offset>1E8</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>37</ID>
+          <Description>"Selected Unit Skill Points"</Description>
+          <Color>80000008</Color>
+          <VariableType>Float</VariableType>
+          <Address>pUnit</Address>
+          <Offsets>
+            <Offset>1C</Offset>
+            <Offset>9C</Offset>
+            <Offset>1E8</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>47</ID>
+          <Description>"Selected Unit Specialization Points"</Description>
+          <Color>80000008</Color>
+          <VariableType>Float</VariableType>
+          <Address>pUnit</Address>
+          <Offsets>
+            <Offset>1C</Offset>
+            <Offset>A0</Offset>
+            <Offset>1E8</Offset>
+          </Offsets>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols>
+    <SymbolEntry>
+      <Name>MyCode</Name>
+      <Address>02240000</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>pHero</Name>
+      <Address>02240118</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>pUnit</Name>
+      <Address>0224011C</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>pSel</Name>
+      <Address>02240120</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>pMoney</Name>
+      <Address>02240124</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>iEnableGM</Name>
+      <Address>02240128</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>iEnableMM</Name>
+      <Address>0224012C</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>iEnableMI</Name>
+      <Address>02240130</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>iEnableMC</Name>
+      <Address>02240134</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>iMinMoney</Name>
+      <Address>02240140</Address>
+    </SymbolEntry>
+  </UserdefinedSymbols>
+  <Comments>===========================================
+ Dragon Age 2
+ Game Version  : 1.0
+ Script Version: 2.0
+ CE Version    : 6.0
+ GodMode, Stamina/mana, Injury and Money
+ 08-Mar-2011 Adapted from DAOrigins V1.4
+ 10-Mar-2011 Added CoolDown
+ By Recifense
+===========================================
+
+</Comments>
+</CheatTable>

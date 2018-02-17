@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="24">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>0</ID>
+      <Description>"Shadow Freeze sample"</Description>
+      <LastState/>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>globalalloc(__,$4000) // alloc some space for testing
+
+{$lua}
+if syntaxcheck then return end
+
+function shadowFreeze(ONoff, sDescID, tDescID)
+  if not readInteger(process) then return end
+  local fmt = string.format
+  local al = GetAddressList()
+  local smr = type( sDescID )=='string' and al.getMemoryRecordByDescription( sDescID ) or
+              type( sDescID )=='number' and al.getMemoryRecordByID( sDescID )
+  local tmr = type( tDescID )=='string' and al.getMemoryRecordByDescription( tDescID ) or
+              type( tDescID )=='number' and al.getMemoryRecordByID( tDescID )
+  if not smr or not tmr then error(fmt("shadow (%s) or target (%s) mr not valid",tostring(sDescID),tostring(tDescID))) end
+  if readInteger(smr.currentAddress) and readInteger(tmr.currentAddress) then -- make sure respective address is valid
+    if ONoff then
+      tmr.Active = true
+
+      local shadowDesc = smr.Description
+
+      tmr.Value = '('..tostring(shadowDesc)..')'
+    else
+      tmr.Active = false
+    end
+  end
+end
+
+[ENABLE]
+  shadowFreeze(true , "SHADOW", "TARGET")
+
+[DISABLE]
+
+  shadowFreeze(false, "SHADOW", "TARGET")
+
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>1</ID>
+          <Description>"SHADOW"</Description>
+          <LastState Value="4385" RealAddress="2B48C761010"/>
+          <VariableType>4 Bytes</VariableType>
+          <Address>__+10</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>2</ID>
+          <Description>"TARGET"</Description>
+          <LastState Value="4385" RealAddress="2B48C761020"/>
+          <VariableType>4 Bytes</VariableType>
+          <Address>__+20</Address>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols>
+    <SymbolEntry>
+      <Name>_SHADOW</Name>
+      <Address>2B48C760000</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>__</Name>
+      <Address>2B48C761000</Address>
+    </SymbolEntry>
+  </UserdefinedSymbols>
+</CheatTable>

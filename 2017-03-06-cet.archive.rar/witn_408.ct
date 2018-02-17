@@ -1,0 +1,573 @@
+<?xml version="1.0"?>
+<CheatTable CheatEngineTableVersion="11">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>51</ID>
+      <Description>"[X] &lt;== tLotR_WitN Script"</Description>
+      <Options moHideChildren="1"/>
+      <Color>80000008</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>{
+===========================================
+ Game Title    : The Lord of the Rings: War in the North
+ Game Version  : Unknown
+ Process Name  : witn.exe
+ Script Version: 1.0
+ CE Version    : 6.1
+ Release date  : 24-Nov-2011
+ Author        : Recifense
+ Features:
+ - Minimum Gold
+ - Minimum Item Quantity
+ - Maximum Durability
+ - God Mode
+ - pointer to XP
+ - pointers to Attributes
+===========================================
+}
+
+[ENABLE]
+//=========================================
+// Check if script is compatible to this game version
+// If false the script will not be loaded
+
+assert(witn.exe+1bcec8,d9 80 78 03 00 00)
+assert(witn.exe+209c66,89 94 24 88 00 00 00)
+assert(witn.exe+219351,f3 0f 10 80 d0 03 00 00)
+assert(witn.exe+2440ba,f3 0f 10 40 0c)
+assert(witn.exe+2d8483,f3 0f 11 40 0c)
+assert(witn.exe+2822a0,8b 41 10 d9 40 0c)
+assert(witn.exe+18830f,c7 03 00 00 00 00)
+assert(witn.exe+0eb99c,89 41 0c 85 f6)
+
+//=========================================
+alloc(MyCode,1024)
+//=========================================
+// Declaration section
+label(_MonGold)
+label(_MonG0)
+label(_BackMG)
+label(_ExitMG)
+label(_MonItems)
+label(_BackMI)
+label(_ExitMI)
+label(_MonDurability)
+label(_BackMD)
+label(_ExitMD)
+label(_MonUnits)
+label(_BackMU)
+label(_ExitMU)
+label(_GodMode)
+label(_GodM0)
+label(_BackGM)
+label(_ExitGM)
+label(_MonXP)
+label(_BackMX)
+label(_ExitMX)
+label(_MonAttribs)
+label(_BackMA)
+label(_ExitMA)
+label(_MonArrows)
+label(_BackMAr)
+label(_ExitMAr)
+label(pUnit1)
+label(pUnit2)
+label(pUnit3)
+label(pGold)
+label(pCommon)
+label(pXP)
+label(pAttribs)
+label(iIndex)
+label(iEnableGM)
+label(iEnableMI)
+label(iEnableMD)
+label(iEnableMG)
+label(iEnableMA)
+label(fMinGold)
+
+//=========================================
+// Registering Symbols
+registersymbol(MyCode)
+registersymbol(pUnit1)
+registersymbol(pGold)
+registersymbol(pCommon)
+registersymbol(pXP)
+registersymbol(pAttribs)
+registersymbol(iEnableMG)
+registersymbol(iEnableMA)
+registersymbol(iEnableMI)
+registersymbol(iEnableMD)
+registersymbol(iEnableGM)
+registersymbol(fMinGold)
+
+//=========================================
+MyCode:
+//=========================================
+// Activated On pressing TAB
+_MonGold:
+ push ecx
+
+ mov [pGold],eax
+ mov ecx,[eax+04]
+ lea ecx,[ecx+000041f0]
+ mov [pCommon],ecx
+
+ xor ecx,ecx
+ mov [pUnit1],ecx
+ mov [pUnit2],ecx
+ mov [pUnit3],ecx
+ mov [iIndex],ecx
+
+ cmp dword ptr [iEnableMG],0
+ je _MonG0                         // Jump if feature is disabled
+
+ mov ecx,[fMinGold]
+ cmp ecx,[eax+00000378]
+ jle _MonG0
+
+ mov [eax+00000378],ecx            // Upadte gold
+
+_MonG0:
+_ExitMG:
+ pop ecx
+
+ fld dword ptr [eax+00000378]      // Original code
+ jmp _BackMG                       // Back to main code
+
+//=========================================
+// Activated On Inventory or while Selling/Buying
+_MonItems:
+ cmp dword ptr [iEnableMI],0
+ je _ExitMI                        // Jump if feature is disabled
+
+ mov edx,[esp+10]
+ test edx,edx
+ jz _ExitMI
+
+ cmp dword ptr [edx+00000230],0
+ jne _ExitMI
+
+ mov edx,[ecx+04]
+ mov [ecx+0c],edx                  // Item = Maximum
+
+_ExitMI:
+ mov edx,[ecx+0C]
+
+ mov [esp+00000088],edx            // Original code
+ jmp _BackMI                       // Back to main code
+
+//=========================================
+// Activated On Inventory (selected item)
+_MonDurability:
+ cmp dword ptr [iEnableMD],0
+ je _ExitMD                        // Jump if feature is disabled
+
+// cmp dword ptr [eax+00000230],0
+// jne _ExitMD
+
+ movss xmm0,[eax+000003D4]
+ movss [eax+000003D0],xmm0         // Durability = Maximum
+
+_ExitMD:
+ movss xmm0,[eax+000003D0]         // Original code
+ jmp _BackMD                       // Back to main code
+
+//=========================================
+// Activated On Main Screen
+_MonUnits:
+ mov edx,[iIndex]
+ cmp edx,3
+ jge _ExitMU
+
+ mov [pUnit1+edx*4],eax
+
+ inc edx
+ mov [iIndex],edx
+
+_ExitMU:
+ movss xmm0,[eax+0C]               // Original code
+ jmp _BackMU                       // Back to main code
+
+//=========================================
+// Activated During Combat
+_GodMode:
+ cmp dword ptr [iEnableGM],0
+ je _ExitGM                        // Jump if feature is disabled
+
+ mov ecx,[iIndex]
+
+_GodM0:
+ test ecx,ecx
+ jz _ExitGM
+
+ dec ecx
+ cmp eax,[pUnit1+ecx*4]
+ jne _GodM0
+
+ movss xmm0,[eax+0C]               // Get current HP
+
+_ExitGM:
+ movss [eax+0C],xmm0               // Original code
+ jmp _BackGM                       // Back to main code
+
+//=========================================
+// Activated On Main Screen
+_MonXP:
+ mov eax,[ecx+10]                  // Original code
+
+ cmp dword ptr [eax+04],b79f5147
+ jne _ExitMX
+
+ mov [pXP],eax
+
+_ExitMX:
+ fld dword ptr [eax+0C]            // Original code
+ jmp _BackMX                       // Back to main code
+
+//=========================================
+// Activated On Status Screen
+_MonAttribs:
+ mov [pAttribs+edi*4],eax
+
+_ExitMA:
+ mov [ebx],00000000                // Original code
+ jmp _BackMA                       // Back to main code
+
+//=========================================
+// Activated On Using the BOW
+_MonArrows:
+ push ebx
+
+ cmp dword ptr [iEnableMA],0
+ je _ExitMAr                       // Jump if feature is disabled
+
+ mov ebx,[esp+1c]
+ cmp ebx,[pGold]
+ jne _ExitMAr
+
+ mov eax,[ecx+04]
+
+_ExitMAr:
+ pop ebx
+
+ mov [ecx+0C],eax                  // Original code
+ test esi,esi                      // Original code
+ jmp _BackMAr                      // Back to main code
+
+//=========================================
+ db '==================&gt;'
+ db 'CE6.1 Script by Recifense 112411'
+//=========================================
+// Variables
+iEnableMG:
+ dd 0
+iEnableMI:
+ dd 0
+iEnableMD:
+ dd 0
+iEnableGM:
+ dd 0
+iEnableMA:
+ dd 0
+pGold:
+ dd MyCode
+pCommon:
+ dd 0
+pXP:
+ dd 0
+fMinGold:
+ dd (float)5000.0
+iIndex:
+ dd 0
+pUnit1:
+ dd 0
+pUnit2:
+ dd 0
+pUnit3:
+ dd 0
+pAttribs:
+ dd 0
+ dd 0
+ dd 0
+ dd 0
+
+//=========================================
+// Hacking Points
+witn.exe+1bcec8:
+ jmp _MonGold
+ nop
+_BackMG:
+
+witn.exe+209c66:
+ jmp _MonItems
+ nop
+ nop
+_BackMI:
+
+witn.exe+219351:
+ jmp _MonDurability
+ nop
+ nop
+ nop
+_BackMD:
+
+witn.exe+2440ba:
+ jmp _MonUnits
+_BackMU:
+
+witn.exe+2d8483:
+ jmp _GodMode
+_BackGM:
+
+witn.exe+2822a0:
+ jmp _MonXP
+ nop
+_BackMX:
+
+witn.exe+18830f:
+ jmp _MonAttribs
+ nop
+_BackMA:
+
+witn.exe+0eb99c:
+ jmp _MonArrows
+_BackMAr:
+
+//=========================================
+// Script for Restoring Original Codes
+[DISABLE]
+witn.exe+1bcec8:
+// fld dword ptr [eax+00000378]
+ db d9 80 78 03 00 00
+
+witn.exe+209c66:
+// mov [esp+00000088],edx
+ db 89 94 24 88 00 00 00
+
+witn.exe+219351:
+// movss xmm0,[eax+000003D0]
+ db f3 0f 10 80 d0 03 00 00
+
+witn.exe+2440ba:
+// movss xmm0,[eax+0C]
+ db f3 0f 10 40 0c
+
+witn.exe+2d8483:
+// movss [eax+0C],xmm0
+ db f3 0f 11 40 0c
+
+witn.exe+2822a0:
+// mov eax,[ecx+10]
+// fld dword ptr [eax+0C]
+ db 8b 41 10 d9 40 0c
+
+witn.exe+18830f:
+// mov [ebx],00000000
+ db c7 03 00 00 00 00
+
+witn.exe+0eb99c:
+// mov [ecx+0C],eax
+// test esi,esi
+ db 89 41 0c 85 f6
+
+//=========================================
+// Unregistering Symbols
+unregistersymbol(MyCode)
+unregistersymbol(pUnit1)
+unregistersymbol(pGold)
+unregistersymbol(pCommon)
+unregistersymbol(pXP)
+unregistersymbol(pAttribs)
+unregistersymbol(iEnableMG)
+unregistersymbol(iEnableMA)
+unregistersymbol(iEnableMI)
+unregistersymbol(iEnableMD)
+unregistersymbol(iEnableGM)
+unregistersymbol(fMinGold)
+
+//=========================================
+dealloc(MyCode)
+//============= Scripts End ===============
+
+// ****************************************
+// NOTES
+// ****************************************
+{
+struct GOLD:
+0000 = 00E03450
+0004 = pOtherInfo
+0010 = ppBow
+001C = ppBow
+0134 = pHelmets
+01ac = pItemList
+0370 = pSelf
+0378 = fGold
+0380 = pSelf
+0390 = pSelf
+03A0 = pSelf
+03a8 = iArrows
+03B0 = pSelf
+03C0 = pSelf
+
+struct FLOAT_VALUES:
+0000 = i0
+0004 = iSignature
+0008 = i5
+000c = fValue
+
+iSignature:
+64df0361 = HP
+0c021c7b = Mana
+b79f5147 = XP
+
+f0de7061 = STR	0 (edi)
+b3c24d89 = WILL	1
+dba36abf = DEXT 2
+57c903a5 = STAM 3
+}
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>32</ID>
+          <Description>"Enable/Disable God Mode ==&gt; (1,0)"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableGM</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>33</ID>
+          <Description>"Enable/Disable Full Inventory Item ==&gt; (1,0)"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMI</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>34</ID>
+          <Description>"Enable/Disable Full Durability ==&gt; (1,0)"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMD</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>50</ID>
+          <Description>"Enable/Disable Full Ammo (Arrow) ==&gt; (1,0)"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMA</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>35</ID>
+          <Description>"Enable/Disable Minimum Gold ==&gt; (1,0)"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMG</Address>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>36</ID>
+              <Description>"Minimum Gold Value ==&gt;"</Description>
+              <Color>80000008</Color>
+              <VariableType>Float</VariableType>
+              <Address>fMinGold</Address>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>37</ID>
+          <Description>"Hero's Total XP ==&gt; "</Description>
+          <Color>80000008</Color>
+          <VariableType>Float</VariableType>
+          <Address>pXP</Address>
+          <Offsets>
+            <Offset>C</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>43</ID>
+          <Description>"Hero's Attribute Points ==&gt; "</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>pGold</Address>
+          <Offsets>
+            <Offset>C</Offset>
+            <Offset>420C</Offset>
+            <Offset>4</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>38</ID>
+          <Description>"Hero's Skill Points ==&gt; "</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>pGold</Address>
+          <Offsets>
+            <Offset>C</Offset>
+            <Offset>4210</Offset>
+            <Offset>4</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>39</ID>
+          <Description>"Hero's Strength"</Description>
+          <Color>80000008</Color>
+          <VariableType>Float</VariableType>
+          <Address>pAttribs</Address>
+          <Offsets>
+            <Offset>C</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>40</ID>
+          <Description>"Hero's Will"</Description>
+          <Color>80000008</Color>
+          <VariableType>Float</VariableType>
+          <Address>pAttribs+4</Address>
+          <Offsets>
+            <Offset>C</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>41</ID>
+          <Description>"Hero's Dexterity"</Description>
+          <Color>80000008</Color>
+          <VariableType>Float</VariableType>
+          <Address>pAttribs+8</Address>
+          <Offsets>
+            <Offset>C</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>42</ID>
+          <Description>"Hero's Stamina"</Description>
+          <Color>80000008</Color>
+          <VariableType>Float</VariableType>
+          <Address>pAttribs+0c</Address>
+          <Offsets>
+            <Offset>C</Offset>
+          </Offsets>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols/>
+  <Comments>===========================================
+ Game Title    : The Lord of the Rings: War in the North
+ Game Version  : Unknown
+ Process Name  : witn.exe
+ Script Version: 1.0
+ CE Version    : 6.1
+ Release date  : 24-Nov-2011
+ Author        : Recifense
+ Features:
+ - Minimum Gold [1]
+ - Minimum Item Quantity [2]
+ - Maximum Durability [4]
+ - God Mode [1]
+ - pointer to XP [3]
+ - pointers to Attributes [3]
+===========================================
+[1] Press TAB, at least, once per Check Point;
+[2] Item will fill up to maximum;
+[3] Valid to current selected hero;
+[4] Just click on the item in the inventory;
+  </Comments>
+</CheatTable>

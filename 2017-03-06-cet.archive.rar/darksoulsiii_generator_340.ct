@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="19">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>0</ID>
+      <Description>"Item ID-Name List Generator"</Description>
+      <LastState/>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>[ENABLE]
+{$lua}
+messageRepo = readQword('DarkSoulsIII.exe+46DC200')
+
+function listItemsFromGroup(group)
+  local messageRepoGroup = readQword(readQword(readQword(messageRepo+8))+group*8)
+  if messageRepoGroup==0 then return 0 end
+
+  local regionsCount =  readInteger(messageRepoGroup+0x0C)
+  if regionsCount==0 then return 0 end
+
+  local TableWithIndexesToStrings =  readQword(messageRepoGroup+0x18)
+
+  local counter=0
+
+  for i=0,regionsCount do
+    local ID_low  = readInteger(messageRepoGroup+i*16+0x2C)
+    local ID_hi   = readInteger(messageRepoGroup+i*16+0x30)
+    local offset  = readInteger(messageRepoGroup+i*16+0x28)
+
+    if ID_low~=0 then
+     for ID=ID_low,ID_hi do
+       local index=ID-ID_low+offset
+       local StringTableIndex = readQword(TableWithIndexesToStrings+index*8)
+       if StringTableIndex~=0 and ID~=0 then
+         print( string.format('%08X',ID),AnsiToUtf8(readString(messageRepoGroup+StringTableIndex,200,true)) )
+         counter=counter+1
+       end
+     end
+    end
+
+  end
+  return counter
+end
+
+function listIt()
+print('Goods List:')
+print( 'Count: '..listItemsFromGroup(0xA) )
+
+print('')
+
+print('Weapon List:')
+print( 'Count: '..listItemsFromGroup(0xB) )
+
+print('')
+
+print('Protector List:')
+print( 'Count: '..listItemsFromGroup(0xC) )
+
+print('')
+
+print('Accessory List:')
+print( 'Count: '..listItemsFromGroup(0xD) )
+
+print('')
+
+print('Magic List:')
+print( 'Count: '..listItemsFromGroup(0xE) )
+end
+
+if not syntaxcheck then listIt() end
+{$asm}
+
+[DISABLE]
+
+</AssemblerScript>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols/>
+</CheatTable>

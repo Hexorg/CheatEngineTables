@@ -1,0 +1,1225 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="19">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>36</ID>
+      <Description>"[X] &lt;== SoaSE Trinity v1.195 Script v4.0 AOB"</Description>
+      <Options moHideChildren="1" moDeactivateChildrenAsWell="1"/>
+      <LastState/>
+      <Color>FF0000</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>{
+===========================================
+ Game Title    : Sins of a Solar Empire Trinity
+ Game Version  : 1.195 (steam)
+ Game Sponsor  : MySelf
+ Proces Name   : Sins of a Solar Empire.exe
+ Relevant Info : 32bits/Space RTS
+ Script Version: 4.0
+ CE Version    : 6.5
+ Release date  : 19-May-2016
+ Author        : Recifense
+ History:
+ 27-Mar-10: First Release for version 1.00 (CE5.6)
+ 19-May-16: Release for version 1.195 AOB (STEAM)
+ Features:
+ - Minimum Resources
+ - God Mode
+   - Ships  (hull and shield)
+   - Planet (HP and Population)
+ - Quick Kill
+ - Full Antimatter
+ - Quick Research
+ - Unlimited Ships
+ - Quick Production (of Ships)
+ - Quick Construction
+ - Quick Planet Upgrade
+ - Quick Level Up
+===========================================
+}
+
+//=========================================
+// Checking CE version
+{$lua}
+  if(getCEVersion() &lt; 6.5) then
+    ShowMessage('Sorry. CE version should be 6.5 or above')
+  end
+{$asm}
+
+//=========================================
+// Checking Selected Process
+{$lua}
+  if(process == nil) then
+    ShowMessage('No process was selected')
+  elseif (process ~= "Sins of a Solar Empire.exe") then
+    ShowMessage('Error! Expected Process = Sins of a Solar Empire.exe')
+  end
+{$asm}
+
+//=========================================
+// Definitions
+define(LUDO,"Sins of a Solar Empire.exe")
+
+//=========================================
+[ENABLE]
+//=========================================
+//LuaCall(CheckVersion())
+//=========================================
+// Check if script is compatible to this game version
+// If false the script will not be loaded
+
+AOBScan(MORE,d8 c1 d9 59 20 ?? ?? d9 41 08 d8 c1 d9 59 08 8b 49 04 8b 01 8b)
+AOBScan(MKUN,8b 44 24 04 8b 51 08 8b 80 ec 15 00 00 e8 ?? ?? ?? ?? c2 04 00)
+AOBScan(GDMD,d9 5b 0c d9 1c 24 e8 ?? ?? ?? ?? 8b 4b 04 8b 11 8b 42 3c ff d0)
+AOBScan(MOSD,d9 5b 10 d9 1c 24 e8 ?? ?? ?? ?? d9 44 24 18 51 8b fb d9 1c 24)
+AOBScan(MOAM,d9 41 08 d8 64 24 04 d9 5c 24 04 d9 44 24 04 d9 51 08 d9 5c 24)
+AOBScan(PTPP,d9 41 10 d8 64 24 04 d9 5c 24 04 d9 44 24 04 d9 51 10 d9 5c 24)
+AOBScan(QKRH,d9 44 24 0c d9 56 2c dd 05 ?? ?? ?? ?? d9 5e 34 de d9 df e0 f6)
+AOBScan(GMDP,d9 9b 88 00 00 00 e8 ?? ?? ?? ?? 80 bb ec 00 00 00 00 d8 4d 0c)
+AOBScan(MOSY,d9 43 04 d9 5e 04 57 d9 43 08 8d 7b 10 d9 5e 08 8d 46 10 d9 43)
+AOBScan(MOPN,d9 9e 54 01 00 00 83 c4 0c c2 04 00 cc cc cc cc cc cc ?? ?? ??)
+AOBScan(MOCN,d9 44 24 10 d9 55 1c d9 e8 de d9 df e0 f6 c4 41 0f 8a ?? ?? ??)
+AOBScan(MOUP,d9 44 24 14 d9 56 2c dd 05 ?? ?? ?? ?? d9 5e 34 de d9 df e0 f6)
+AOBScan(MCN2,d9 40 0c d8 74 24 50 d9 5c 24 50 d9 e8 d9 44 24 50 d8 d1 df e0)
+AOBScan(MXP2,dc 5c 24 10 df e0 f6 c4 41 ?? ?? 8b 47 10 6a 00 83 c0 01 50 e8)
+
+//=========================================
+alloc(MyCode,4096,$process)
+//=========================================
+// Declaration section
+label(_MonResources)
+label(_MonR0)
+label(_MonR1)
+label(_BackMR)
+label(_ExitMR)
+label(_MarkUnits)
+label(_BackMU)
+label(_ExitMU)
+label(_GodMode)
+label(_GodM0)
+label(_BackGM)
+label(_ExitGM)
+label(_MonShield)
+label(_BackMS)
+label(_ExitMS)
+label(_MonAM)
+label(_BackMA)
+label(_ExitMA)
+label(_PlanetPop)
+label(_BackPP)
+label(_ExitPP)
+label(_QuickResearch)
+label(_BackQR)
+label(_ExitQR)
+label(_GodModeP)
+label(_BackGMP)
+label(_ExitGMP)
+label(_MonSupply)
+label(_BackMSp)
+label(_ExitMSp)
+label(_MonProduction)
+label(_BackMPr)
+label(_ExitMPr)
+label(_MonConstruction)
+label(_BackMCr)
+label(_ExitMCr)
+label(_MonUpgrade)
+label(_BackMUp)
+label(_ExitMUp)
+label(_MonConstruction2)
+label(_BackMCr2)
+label(_ExitMCr2)
+label(_MonXP2)
+label(_BackMX2)
+label(_ExitMX2)
+label(iEnableGM)
+label(iEnableMR)
+label(iEnableQR)
+label(iEnableMA)
+label(iEnableQK)
+label(iEnableMSp)
+label(iEnableQP)
+label(iEnableQC)
+label(iEnableQU)
+label(iEnableMX)
+label(pSupply)
+label(pConst)
+
+//=========================================
+// Registering Symbols
+registersymbol(MyCode)
+registersymbol(iEnableGM)
+registersymbol(iEnableMR)
+registersymbol(iEnableQR)
+registersymbol(iEnableMA)
+registersymbol(iEnableQK)
+registersymbol(iEnableMSp)
+registersymbol(iEnableQP)
+registersymbol(iEnableQC)
+registersymbol(iEnableQU)
+registersymbol(iEnableMX)
+
+registersymbol(MORE)
+registersymbol(MKUN)
+registersymbol(GDMD)
+registersymbol(MOSD)
+registersymbol(MOAM)
+registersymbol(PTPP)
+registersymbol(QKRH)
+registersymbol(GMDP)
+registersymbol(MOSY)
+registersymbol(MOPN)
+registersymbol(MOCN)
+registersymbol(MOUP)
+registersymbol(MCN2)
+registersymbol(MXP2)
+
+//=========================================
+MyCode:
+//========================================= 1.195 ok
+// At main screen
+_MonResources:
+ push eax
+
+ fadd st(0),st(1)               // Original code
+ fstp dword ptr [ecx+20]        // Original code
+
+ mov eax,[ecx+04]               // Get ptr to owner
+ test eax,eax
+ jz _ExitMR                     // Jump if null pointer
+
+ cmp dword ptr [eax+0c],0       // Is it player's resource?
+ jne _ExitMR                    // Jump if false
+
+ lea eax,[ecx+000001b4]
+ mov [pSupply],eax
+
+ cmp dword ptr [iEnableMR],0
+ je _ExitMR                     // Jump if feature is disabled
+
+ mov eax,(float)9900
+
+ cmp eax,[ecx+08]               // Credits &gt;= 9900.0?
+ jle _MonR0                     // Jump if true
+
+ mov [ecx+08],eax               // Credits = 9900.0
+
+_MonR0:
+ cmp eax,[ecx+20]               // Metals &gt;= 9900.0?
+ jle _MonR1                     // Jump if true
+
+ mov [ecx+20],eax               // Metals = 9900.0
+
+_MonR1:
+ cmp eax,[ecx+38]               // Crystals &gt;= 9900.0?
+ jle _ExitMR                    // Jump if true
+
+ mov [ecx+38],eax               // Crystals = 9900.0
+
+_ExitMR:
+ pop eax
+ jmp _BackMR                    // Back to main code
+
+//========================================= 1.195 ok
+// At main screen
+_MarkUnits:
+ mov edx,[ecx+08]               // Original code (get ID)
+ test edx,edx                   // Is it a Player's Unit?
+ jnz _ExitMU                    // Jump if false
+
+ mov eax,[ecx+04]               // Get ptr to Unit_Base
+ test eax,eax                   // Valid pointer?
+ jz _ExitMU                     // Jump if false
+
+ or byte ptr [eax+0f],01        // Mark it as player's unit
+
+_ExitMU:
+ mov eax,[esp+04]               // Original code
+ jmp _BackMU                    // Back to main code
+
+//========================================= 1.195 ok
+// During Battles
+_GodMode:
+ push eax
+
+ mov eax,[ebx+04]               // Get pointer to Unit_Base
+ test eax,eax                   // Valid pointer?
+ jz _ExitGM                     // Jump if false
+
+ and byte ptr [eax+0f],01       // Is it a player's unit?
+ jz _GodM0                      // Jump if false
+
+ cmp dword ptr [iEnableGM],0
+ je _ExitGM                     // Jump if feature is disabled
+
+ fstp st(0)                     // Discard value
+ fld  dword ptr [ebx+0c]        // Get current HP
+ jmp _ExitGM
+//--
+_GodM0:
+ cmp dword ptr [iEnableQK],0
+ je _ExitGM                     // Jump if feature is disabled
+
+ fstp st(0)                     // Discard value
+ fldz                           // Make new HP = 0
+
+_ExitGM:
+ pop eax
+
+ fstp dword ptr [ebx+0c]        // Original code
+ fstp dword ptr [esp]           // Original code
+ jmp _BackGM                    // Back to main code
+
+//========================================= 1.195 ok
+// During Battle
+_MonShield:
+ push eax
+
+ cmp dword ptr [iEnableGM],0
+ je _ExitMS                     // Jump if feature is disabled
+
+ mov eax,[ebx+04]               // Get pointer to Unit_Base
+ test eax,eax                   // Valid pointer?
+ jz _ExitMS                     // Jump if false
+
+ and byte ptr [eax+0f],01       // Is it a player's unit?
+ jz _ExitMS                     // Jump if false
+
+ fstp st(0)                     // Discard value
+ fld  dword ptr [ebx+10]        // Get current Shield Value
+
+_ExitMS:
+ pop eax
+
+ fstp dword ptr [ebx+10]        // Original code
+ fstp dword ptr [esp]           // Original code
+ jmp _BackMS                    // Back to main code
+
+//========================================= 1.195 ok
+//  This does not let the AntiMatter decrease
+_MonAM:
+ cmp dword ptr [iEnableMA],0
+ je _ExitMA                     // Jump if feature is disabled
+
+ push eax
+ mov eax,[ecx+04]               // Get ptr to owner
+ and byte ptr [eax+0f],01       // Is it a player's unit?...
+ pop eax
+ jz _ExitMA                     // ...Jump if false
+
+ mov dword ptr [esp+04],0       // Make value2decrease = 0
+
+_ExitMA:
+ fld dword ptr [ecx+08]         // Original code
+ fsub dword ptr [esp+04]        // Original code
+ jmp _BackMA                    // Back to main code
+
+//========================================= 1.195 ok
+//  This does not let the pop decrease
+_PlanetPop:
+ cmp dword ptr [iEnableGM],0
+ je _ExitPP                     // Jump if feature is disabled
+
+ push eax
+ mov eax,[ecx+04]               // Get ptr to owner
+ cmp dword ptr [eax+00000a64],1 // Is it a player's planet?...
+ pop eax
+ jne _ExitPP                    // ...Jump if false
+
+ mov dword ptr [esp+04],0       // Make value2decrease = 0
+
+_ExitPP:
+ fld dword ptr [ecx+10]         // Original code
+ fsub dword ptr [esp+04]        // Original code
+ jmp _BackPP                    // Back to main code
+
+//========================================= 1.195 ok
+// Start research at 90%
+ _QuickResearch:
+ fld dword ptr [esp+0c]         // Original code
+ fst dword ptr [esi+2c]         // Original code
+
+ push eax
+
+ mov eax,[esi+04]               // Get ptr ResearchOwner
+ cmp dword ptr [eax+28],0       // Is it a player's research ?
+ jne _ExitQR                    // Jump if false
+
+ cmp dword ptr [iEnableQR],0
+ je _ExitQR                     // Jump if feature is disabled
+
+ mov eax,(float)0.9
+ cmp eax,[esi+2c]               // Current research &gt;= 90%?
+ jle _ExitQR                    // Jump if true
+
+ mov [esi+2c],eax               // Current research = 90%
+
+_ExitQR:
+ pop eax
+ jmp _BackQR                    // Back to main code
+
+//========================================= 1.195 ok
+// God Mode for Planet
+_GodModeP:
+ push eax
+
+ cmp dword ptr [iEnableGM],0
+ je _ExitGMP                    // Jump if feature is disabled
+
+ mov eax,[ebx+08]               // Get ptr to owner
+
+ cmp dword ptr [eax+00000a64],1 // Is it a player's planet?
+ jne _ExitGMP                   // Jump if false
+
+ fstp st(0)                     // Discard value
+ fld  dword ptr [ebx+00000088]  // Get current HP
+
+_ExitGMP:
+ pop eax
+
+ fstp dword ptr [ebx+00000088]  // Original code
+ jmp _BackGMP                   // Back to main code
+
+//========================================= 1.195 ok *
+//  This makes the spent supply = 0
+_MonSupply:
+ push eax
+
+ cmp dword ptr [iEnableMSp],0
+ je _ExitMSp                    // Jump if feature is disabled
+
+ cmp ebx,[pSupply]
+ jne _ExitMSp
+
+ xor eax,eax
+ mov [ebx+0c],eax
+ mov [ebx+24],eax
+ mov [ebx+44],eax
+
+_ExitMSp:
+ pop eax
+
+ fld dword ptr [ebx+04]         // Original code
+ fstp dword ptr [esi+04]        // Original code
+ jmp _BackMSp                   // Back to main code
+
+//========================================= 1.195 ok *
+//  Production start at 90%
+// EBP = Factory and ECX = pPlanet
+_MonProduction:
+ push eax
+
+ fstp dword ptr [esi+00000154]  // Original code
+
+ cmp dword ptr [iEnableQP],0
+ je _ExitMPr                    // Jump if feature is disabled
+
+ and byte ptr [ebp+0f],01       // Is it a player's unit?...
+ jz _ExitMPr                    // ...Jump if false
+
+ mov eax,(float)0.9
+ cmp eax,[esi+00000154]
+ jle _ExitMPr
+
+ mov [esi+00000154],eax
+
+_ExitMPr:
+ pop eax
+ jmp _BackMPr                   // Back to main code
+
+//========================================= 1.195 ok *
+//  Construction start at 90%
+_MonConstruction:
+ cmp dword ptr [iEnableQC],0
+ je _ExitMCr                    // Jump if feature is disabled
+
+ mov eax,[ebp+04]               // Get ptr to owner
+ and byte ptr [eax+0f],01       // Is it a player's unit?...
+ jz _ExitMCr                    // ...Jump if false
+
+ mov [pConst],eax
+
+ mov eax,(float)0.9
+ cmp eax,[esp+10]
+ jle _ExitMCr
+
+ mov [esp+10],eax
+
+_ExitMCr:
+ fld dword ptr [esp+10]         // Original code
+ fst dword ptr [ebp+1C]         // Original code
+ jmp _BackMCr                   // Back to main code
+
+//========================================= 1.195 ok *
+//  Upgrade start at 90% (Planet)
+_MonUpgrade:
+ cmp dword ptr [iEnableQU],0
+ je _ExitMUp                    // Jump if feature is disabled
+
+ mov eax,[esi+04]               // Get ptr to Planet
+
+ cmp dword ptr [eax+00000a64],1 // Is it a player's planet?
+ jne _ExitMUp                   // Jump if false
+
+ mov eax,(float)0.9
+ cmp eax,[esp+14]
+ jle _ExitMUp
+
+ mov [esp+14],eax
+
+_ExitMUp:
+ fld dword ptr [esp+14]         // Original code
+ fst dword ptr [esi+2C]         // Original code
+ jmp _BackMUp                   // Back to main code
+
+//========================================= 1.195 ok
+//  Player's ships/structures under construction (Hull = 100%)
+_MonConstruction2:
+ cmp dword ptr [iEnableQC],0
+ je _ExitMCr2                   // Jump if feature is disabled
+
+ mov edx,[eax+04]               // Get ptr to owner
+ and byte ptr [edx+0f],01       // Is it a player's unit?...
+ jz _ExitMCr2                   // ...Jump if false
+
+ cmp edx,[pConst]
+ jne _ExitMCr2
+
+ mov edx,[esp+50]
+ mov [eax+0c],edx
+
+ mov [pConst],edx
+
+_ExitMCr2:
+ fld dword ptr [eax+0C]         // Original code
+ fdiv dword ptr [esp+50]        // Original code
+ jmp _BackMCr2                  // Back to main code
+
+//========================================= 1.195 ok
+//  During battle (other Ships)
+_MonXP2:
+ cmp dword ptr [iEnableMX],0
+ je _ExitMX2                    // Jump if feature is disabled
+
+ mov eax,[edi+04]               // Get ptr to owner
+ and byte ptr [eax+0f],01       // Is it a player's unit?...
+ jz _ExitMX2                    // ...Jump if false
+
+ fst dword ptr [edi+0c]
+ fst qword ptr [esp+10]
+
+_ExitMX2:
+ fcomp qword ptr [esp+10]       // Original code
+ fnstsw ax                      // Original code
+ jmp _BackMX2                   // Back to main code
+
+//=========================================
+ db '===========================================&gt;'
+ db 'CE6.5 Script by Recifense 051916'
+//=========================================
+// Variables
+iEnableGM:
+ dd 0
+iEnableMR:
+ dd 0
+iEnableQR:
+ dd 0
+iEnableMA:
+ dd 0
+iEnableQK:
+ dd 0
+iEnableMSp:
+ dd 0
+iEnableQP:
+ dd 0
+iEnableQC:
+ dd 0
+iEnableQU:
+ dd 0
+iEnableMX:
+ dd 0
+pSupply:
+ dd MyCode
+pConst:
+ dd MyCode
+
+//=========================================
+// Hacking Points
+MORE:
+ jmp _MonResources
+_BackMR:
+
+MKUN:
+ jmp _MarkUnits
+ nop
+ nop
+_BackMU:
+
+GDMD:
+ jmp _GodMode
+ nop
+_BackGM:
+
+MOSD:
+ jmp _MonShield
+ nop
+_BackMS:
+
+MOAM:
+ jmp _MonAM
+ nop
+ nop
+_BackMA:
+
+PTPP:
+ jmp _PlanetPop
+ nop
+ nop
+_BackPP:
+
+QKRH:
+ jmp _QuickResearch
+ nop
+ nop
+_BackQR:
+
+GMDP:
+ jmp _GodModeP
+ nop
+_BackGMP:
+
+MOSY:
+ jmp _MonSupply
+ nop
+_BackMSp:
+
+MOPN:
+ jmp _MonProduction
+ nop
+_BackMPr:
+
+MOCN:
+ jmp _MonConstruction
+ nop
+ nop
+_BackMCr:
+
+MOUP:
+ jmp _MonUpgrade
+ nop
+ nop
+_BackMUp:
+
+MCN2:
+ jmp _MonConstruction2
+ nop
+ nop
+_BackMCr2:
+
+MXP2:
+ jmp _MonXP2
+ nop
+_BackMX2:
+
+//=========================================
+// Script for Restoring Original Codes
+[DISABLE]
+MORE:
+// fadd st(0),st(1)
+// fstp dword ptr [ecx+20]
+ db d8 c1 d9 59 20
+
+MKUN:
+// mov eax,[esp+04]
+// mov edx,[ecx+08]
+ db 8b 44 24 04 8b 51 08
+
+GDMD:
+// fstp dword ptr [ebx+0C]
+// fstp dword ptr [esp]
+ db d9 5b 0c d9 1c 24
+
+MOSD:
+// fstp dword ptr [ebx+10]
+// fstp dword ptr [esp]
+ db d9 5b 10 d9 1c 24
+
+MOAM:
+// fld dword ptr [ecx+08]
+// fsub dword ptr [esp+04]
+ db d9 41 08 d8 64 24 04
+
+PTPP:
+// fld dword ptr [ecx+10]
+// fsub dword ptr [esp+04]
+ db d9 41 10 d8 64 24 04
+
+QKRH:
+// fld dword ptr [esp+0C]
+// fst dword ptr [esi+2C]
+ db d9 44 24 0c d9 56 2c
+
+GMDP:
+// fstp dword ptr [ebx+00000088]
+ db d9 9b 88 00 00 00
+
+MOSY:
+// fld dword ptr [ebx+04]
+// fstp dword ptr [esi+04]
+ db d9 43 04 d9 5e 04
+
+MOPN:
+// fstp dword ptr [esi+00000154]
+ db d9 9e 54 01 00 00
+
+MOCN:
+// fld dword ptr [esp+10]
+// fst dword ptr [ebp+1C]
+ db d9 44 24 10 d9 55 1c
+
+MOUP:
+// fld dword ptr [esp+14]
+// fst dword ptr [esi+2C]
+ db d9 44 24 14 d9 56 2c
+
+MCN2:
+// fld dword ptr [eax+0C]
+// fdiv dword ptr [esp+50]
+ db d9 40 0c d8 74 24 50
+
+MXP2:
+// fcomp qword ptr [esp+10]
+// fnstsw ax
+ db dc 5c 24 10 df e0
+
+//=========================================
+// Unregistering Symbols
+unregistersymbol(MyCode)
+unregistersymbol(iEnableGM)
+unregistersymbol(iEnableMR)
+unregistersymbol(iEnableQR)
+unregistersymbol(iEnableMA)
+unregistersymbol(iEnableQK)
+unregistersymbol(iEnableMSp)
+unregistersymbol(iEnableQP)
+unregistersymbol(iEnableQC)
+unregistersymbol(iEnableQU)
+unregistersymbol(iEnableMX)
+
+unregistersymbol(MORE)
+unregistersymbol(MKUN)
+unregistersymbol(GDMD)
+unregistersymbol(MOSD)
+unregistersymbol(MOAM)
+unregistersymbol(PTPP)
+unregistersymbol(QKRH)
+unregistersymbol(GMDP)
+unregistersymbol(MOSY)
+unregistersymbol(MOPN)
+unregistersymbol(MOCN)
+unregistersymbol(MOUP)
+unregistersymbol(MCN2)
+unregistersymbol(MXP2)
+
+//=========================================
+dealloc(MyCode)
+//============= Scripts End ===============
+
+// ****************************************
+// NOTES
+// ****************************************
+{
+
+}
+
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>229</ID>
+          <Description>"[X] &lt;== Minimum Resources"</Description>
+          <LastState/>
+          <Color>C08000</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[enable]
+define(test,LUDO)
+
+{$LUA}
+writeInteger("iEnableMR",1)
+getAddressList().getMemoryRecordByID(229).Color = 0x00008000
+{$ASM}
+
+[disable]
+{$LUA}
+writeInteger("iEnableMR",0)
+getAddressList().getMemoryRecordByID(229).Color = 0x00c08000
+{$ASM}
+
+</AssemblerScript>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Activate</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Deactivate</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>96</ID>
+          <Description>"[X] &lt;== God Mode"</Description>
+          <LastState/>
+          <Color>C08000</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[enable]
+define(test,LUDO)
+
+{$LUA}
+writeInteger("iEnableGM",1)
+getAddressList().getMemoryRecordByID(96).Color = 0x00008000
+{$ASM}
+
+[disable]
+{$LUA}
+writeInteger("iEnableGM",0)
+getAddressList().getMemoryRecordByID(96).Color = 0x00c08000
+{$ASM}
+
+</AssemblerScript>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Activate</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Deactivate</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>231</ID>
+          <Description>"[X] &lt;== Unlimited AntiMatter"</Description>
+          <LastState/>
+          <Color>C08000</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[enable]
+define(test,LUDO)
+
+{$LUA}
+writeInteger("iEnableMA",1)
+getAddressList().getMemoryRecordByID(231).Color = 0x00008000
+{$ASM}
+
+[disable]
+{$LUA}
+writeInteger("iEnableMA",0)
+getAddressList().getMemoryRecordByID(231).Color = 0x00c08000
+{$ASM}
+
+</AssemblerScript>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Activate</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Deactivate</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>237</ID>
+          <Description>"[X] &lt;== Quick Level Up"</Description>
+          <LastState/>
+          <Color>C08000</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[enable]
+define(test,LUDO)
+
+{$LUA}
+writeInteger("iEnableMX",1)
+getAddressList().getMemoryRecordByID(237).Color = 0x00008000
+{$ASM}
+
+[disable]
+{$LUA}
+writeInteger("iEnableMX",0)
+getAddressList().getMemoryRecordByID(237).Color = 0x00c08000
+{$ASM}
+
+</AssemblerScript>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Activate</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Deactivate</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>230</ID>
+          <Description>"[X] &lt;== Quick Research"</Description>
+          <LastState/>
+          <Color>C08000</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[enable]
+define(test,LUDO)
+
+{$LUA}
+writeInteger("iEnableQR",1)
+getAddressList().getMemoryRecordByID(230).Color = 0x00008000
+{$ASM}
+
+[disable]
+{$LUA}
+writeInteger("iEnableQR",0)
+getAddressList().getMemoryRecordByID(230).Color = 0x00c08000
+{$ASM}
+
+</AssemblerScript>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Activate</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Deactivate</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>234</ID>
+          <Description>"[X] &lt;== Quick Production"</Description>
+          <LastState/>
+          <Color>C08000</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[enable]
+define(test,LUDO)
+
+{$LUA}
+writeInteger("iEnableQP",1)
+getAddressList().getMemoryRecordByID(234).Color = 0x00008000
+{$ASM}
+
+[disable]
+{$LUA}
+writeInteger("iEnableQP",0)
+getAddressList().getMemoryRecordByID(234).Color = 0x00c08000
+{$ASM}
+
+</AssemblerScript>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Activate</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Deactivate</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>235</ID>
+          <Description>"[X] &lt;== Quick Construction"</Description>
+          <LastState/>
+          <Color>C08000</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[enable]
+define(test,LUDO)
+
+{$LUA}
+writeInteger("iEnableQC",1)
+getAddressList().getMemoryRecordByID(235).Color = 0x00008000
+{$ASM}
+
+[disable]
+{$LUA}
+writeInteger("iEnableQC",0)
+getAddressList().getMemoryRecordByID(235).Color = 0x00c08000
+{$ASM}
+
+</AssemblerScript>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Activate</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Deactivate</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>236</ID>
+          <Description>"[X] &lt;== Quick Planet Upgrade"</Description>
+          <LastState/>
+          <Color>C08000</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[enable]
+define(test,LUDO)
+
+{$LUA}
+writeInteger("iEnableQU",1)
+getAddressList().getMemoryRecordByID(236).Color = 0x00008000
+{$ASM}
+
+[disable]
+{$LUA}
+writeInteger("iEnableQU",0)
+getAddressList().getMemoryRecordByID(236).Color = 0x00c08000
+{$ASM}
+
+</AssemblerScript>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Activate</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Deactivate</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>233</ID>
+          <Description>"[X] &lt;== Unllimited Ships"</Description>
+          <LastState/>
+          <Color>C08000</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[enable]
+define(test,LUDO)
+
+{$LUA}
+writeInteger("iEnableMSp",1)
+getAddressList().getMemoryRecordByID(233).Color = 0x00008000
+{$ASM}
+
+[disable]
+{$LUA}
+writeInteger("iEnableMSp",0)
+getAddressList().getMemoryRecordByID(233).Color = 0x00c08000
+{$ASM}
+
+</AssemblerScript>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Activate</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>45</Key>
+              </Keys>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Deactivate</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>46</Key>
+              </Keys>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>232</ID>
+          <Description>"[X] &lt;== Quick Kill"</Description>
+          <LastState/>
+          <Color>C08000</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[enable]
+define(test,LUDO)
+
+{$LUA}
+writeInteger("iEnableQK",1)
+getAddressList().getMemoryRecordByID(232).Color = 0x00008000
+{$ASM}
+
+[disable]
+{$LUA}
+writeInteger("iEnableQK",0)
+getAddressList().getMemoryRecordByID(232).Color = 0x00c08000
+{$ASM}
+
+</AssemblerScript>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Activate</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>33</Key>
+              </Keys>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Deactivate</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>34</Key>
+              </Keys>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>228</ID>
+      <Description>"[X] &lt;== Table/Script Information"</Description>
+      <Options moHideChildren="1"/>
+      <LastState/>
+      <Color>0000FF</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>[enable]
+define(test,LUDO)
+
+{$LUA}
+getMainForm().CommentButton.doClick()
+{$ASM}
+
+[disable]
+
+</AssemblerScript>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols>
+    <SymbolEntry>
+      <Name>Recifense</Name>
+      <Address>20160519</Address>
+    </SymbolEntry>
+  </UserdefinedSymbols>
+  <Comments>===========================================
+ Game Title    : Sins of a Solar Empire Trinity
+ Game Version  : 1.195 (steam)
+ Game Sponsor  : MySelf
+ Proces Name   : Sins of a Solar Empire.exe
+ Relevant Info : 32bits/Space RTS
+ Script Version: 4.0
+ CE Version    : 6.5
+ Release date  : 19-May-2016
+ Author        : Recifense
+ History:
+ 27-Mar-10: First Release for version 1.00 (CE5.6)
+ 19-May-16: Release for version 1.195 AOB (STEAM)
+ Features:
+ - Minimum Resources           [1]
+ - God Mode                    [2]
+   - Ships  (hull and shield)
+   - Planet (HP and Population)
+ - Quick Kill                  [3]
+ - Full Antimatter,            [4]
+ - Quick Research              [5]
+ - Unlimited Ships             [6]
+ - Quick Production (of Ships) [5]
+ - Quick Construction          [5] 
+ - Quick Planet Upgrade        [5]
+ - Quick Level Up              [7]
+===========================================
+[1] Minimum resources = 9999
+[2] Ships and planets
+[3] It is, in fact, one hit kill. Use it wisely, because you are the only one protected. 
+[4] No need to wait to jump again or colonize
+[5] It will start with 90% progress.
+[6] That's it;
+[7] XP will be set to maximum;
+===========================================
+[USAGE]
+1) Run CE65;
+2) Run Game;
+3) Load the game process "Sins of a Solar Empire.exe" in CE;
+4) Load this table and activate the main script;
+5) Now Activate the script of each cheat you want to use;
+6) Game On;
+===========================================
+HOTKEYS:
+CTRL+Home = ENABLES  all cheats (expecpt for Quick Kill);
+CTRL+End  = DISABLES all cheats (expecpt for Quick Kill);
+-----------
+CTRL+PGUP = ENABLES  "Quick Kill"
+CTRL+PGDN = DISABLES "Quick Kill"
+-----------
+CTRL+Insert = ENABLES  "Unlimited Ships"
+CTRL+Delete = DISABLES "Unlimited Ships"
+===========================================
+[IMPORTANT]
+Save your game before unsing the cheats.
+===========================================
+[INFO]
+Tested on Win 10 64bits
+===========================================
+Have fun!
+</Comments>
+</CheatTable>

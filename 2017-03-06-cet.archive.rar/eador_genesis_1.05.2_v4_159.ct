@@ -1,0 +1,1073 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="14">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>18</ID>
+      <Description>"&lt;== Control Guards in Combat"</Description>
+      <Color>FF0000</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>[enable]
+alloc(mycode,1024)
+label(mycode2)
+aobscan(aob1,55 55 56 53 33 C9 E8)
+aobscan(aob2,55 55 56 50 8B CB E8)
+label(guards1)
+label(guards2)
+registersymbol(guards1)
+registersymbol(guards2)
+label(return)
+label(return2)
+
+//eador.exe+000B9C18:
+//push 1
+
+//eador.exe+0005BBD6:
+aob1:
+guards1:
+jmp mycode
+nop
+return:
+
+//Eador.exe+5BC73:
+aob2:
+guards2:
+jmp mycode2
+nop
+return2:
+
+mycode:  //for neutrals attacking you
+push    1
+push    ebp
+push    esi
+push    ebx
+xor     ecx, ecx
+
+jmp return
+
+mycode2: // for heroes attacking you
+push 1
+push ebp
+push esi
+push eax
+mov ecx,ebx
+
+jmp return2
+
+[disable]
+//eador.exe+000B9C18:
+//push 0
+
+//eador.exe+0005BBD6:
+guards1:
+db 55 55 56 53 33 C9 E8
+
+//Eador.exe+0005BC73:
+guards2:
+db 55 55 56 50 8B CB E8
+
+dealloc(mycode)
+unregistersymbol(guards1)
+unregistersymbol(guards2)
+</AssemblerScript>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>63</ID>
+      <Description>"&lt;== Reveal Map (Player 1)"</Description>
+      <Color>FF0000</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>[ENABLE]
+alloc(newmem,512)
+label(returnhere)
+label(originalcode)
+label(exit)
+
+newmem:
+cmp [esp+10], 1  //only reveal map for player 1
+jne originalcode
+jmp exit
+
+originalcode:
+cmp byte ptr [Eador.exe+11D756],00
+
+exit:
+jmp returnhere
+
+"Eador.exe"+75013:
+jmp newmem
+nop
+nop
+returnhere:
+
+ 
+[DISABLE]
+"Eador.exe"+75013:
+db 80 3D 56 D7 51 00 00
+dealloc(newmem)
+</AssemblerScript>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>118</ID>
+      <Description>"&lt;== Infinite Construction, Guards, Rituals"</Description>
+      <Color>FF0000</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>[ENABLE]
+// demesne
+"Eador.exe"+2B4EF:
+nop
+nop
+// province buildings
+"Eador.exe"+78529:
+db EB 1C
+// guards
+"Eador.exe"+7814A:
+db EB 1B
+// rituals
+"Eador.exe"+77DC2:
+db EB 1C
+
+[DISABLE]
+"Eador.exe"+2B4EF:
+db 7E 5D
+"Eador.exe"+78529:
+db 7F 1C
+"Eador.exe"+7814A:
+db 7F 1B
+"Eador.exe"+77DC2:
+db 7F 1C
+
+</AssemblerScript>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>117</ID>
+      <Description>"&lt;== No Ritual Cooldown"</Description>
+      <Color>FF0000</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>[ENABLE]
+"Eador.exe"+6CD77:
+xor ecx, ecx
+
+[DISABLE]
+"Eador.exe"+6CD77:
+db 29 C1
+</AssemblerScript>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>115</ID>
+      <Description>"&lt;== Make All Buildings, Guards, Rituals Available"</Description>
+      <Color>FF0000</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>[ENABLE]
+// all guards
+"Eador.exe"+78218:
+nop
+nop
+// all buildings
+"Eador.exe"+785B3:
+nop
+nop
+// all rituals
+"Eador.exe"+77E13:
+nop
+nop
+
+[DISABLE]
+"Eador.exe"+78218:
+db 74 37
+
+"Eador.exe"+785B3:
+db 74 34
+
+"Eador.exe"+77E13:
+db 74 48
+
+</AssemblerScript>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>47</ID>
+      <Description>"&lt;== Other Players' Income"</Description>
+      <Options moHideChildren="1"/>
+      <Color>FF0000</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>[enable]
+alloc(newmem,2048)
+label(returnhere)
+label(originalcode)
+label(exit)
+label(pointers)
+label(incomepointers)
+registersymbol(incomepointers)
+label(values)
+label(newmem2)
+label(returnhere2)
+
+newmem:
+pushfd
+pushad
+//esp+8 = player index
+//esp+2c = total gold income
+//esp+28 = total gold expenses
+//esp+24 = total gem income
+//esp+18 = total gem expenses
+//esi = sizeof(playerstruct)
+lea ebp, [esp+24]  //use ebp instead
+mov ecx, [ebp+8] //load index
+imul ecx, ecx, 6*4
+mov edi, values
+
+lea eax, [esi+Eador.exe+1584B8]
+mov [edi+ecx], eax     //gold ptr
+mov eax, [ebp+2c]
+mov [edi+ecx+4], eax
+mov eax, [ebp+28]
+mov [edi+ecx+8], eax
+
+lea eax, [esi+Eador.exe+1584BC]
+mov [edi+ecx+C], eax    //gem ptr
+mov eax, [ebp+24]
+mov [edi+ecx+10], eax
+mov eax, [ebp+18]
+mov [edi+ecx+14], eax
+popad
+popfd
+
+originalcode:
+mov edx,eax
+sub eax,ecx
+sub edx,ecx
+
+exit:
+jmp returnhere
+
+newmem2:
+pushfd
+pushad
+mov eax, [pointers]
+mov ebx, [pointers+4]
+imul eax, eax, 6*4
+imul ebx, ebx, 6*4
+add eax, values
+add ebx, values
+mov [pointers+8], eax
+mov [pointers+C], ebx
+popad
+popfd
+//original code
+push ebp
+mov ebp, [esp+08]
+jmp returnhere2
+
+pointers:
+incomepointers:
+dd 2
+dd 3
+dd 0
+dd 0
+values:
+
+"Eador.exe"+7FCBA:
+jmp newmem
+nop
+returnhere:
+
+"Eador.exe"+B4B80:
+jmp newmem2
+returnhere2:
+
+[disable]
+"Eador.exe"+7FCBA:
+db 8B D0 2B C1 2B D1
+"Eador.exe"+B4B80:
+db 55 8B 6C 24 08
+dealloc(newmem)
+unregistersymbol(incomepointers)
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>40</ID>
+          <Description>"First Selected Player #"</Description>
+          <Color>800000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>incomepointers</Address>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>41</ID>
+              <Description>"Gold"</Description>
+              <ShowAsSigned>1</ShowAsSigned>
+              <Color>00509F</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>incomepointers+8</Address>
+              <Offsets>
+                <Offset>0</Offset>
+                <Offset>0</Offset>
+              </Offsets>
+              <CheatEntries>
+                <CheatEntry>
+                  <ID>48</ID>
+                  <Description>"Gold Income"</Description>
+                  <ShowAsSigned>1</ShowAsSigned>
+                  <Color>008000</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>incomepointers+8</Address>
+                  <Offsets>
+                    <Offset>4</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>42</ID>
+                  <Description>"Gold Expenses"</Description>
+                  <ShowAsSigned>1</ShowAsSigned>
+                  <Color>0000D2</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>incomepointers+8</Address>
+                  <Offsets>
+                    <Offset>8</Offset>
+                  </Offsets>
+                </CheatEntry>
+              </CheatEntries>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>43</ID>
+              <Description>"Gems"</Description>
+              <ShowAsSigned>1</ShowAsSigned>
+              <Color>00509F</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>incomepointers+8</Address>
+              <Offsets>
+                <Offset>0</Offset>
+                <Offset>C</Offset>
+              </Offsets>
+              <CheatEntries>
+                <CheatEntry>
+                  <ID>49</ID>
+                  <Description>"Gem Income"</Description>
+                  <ShowAsSigned>1</ShowAsSigned>
+                  <Color>008000</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>incomepointers+8</Address>
+                  <Offsets>
+                    <Offset>10</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>44</ID>
+                  <Description>"Gem Expenses"</Description>
+                  <ShowAsSigned>1</ShowAsSigned>
+                  <Color>0000D2</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>incomepointers+8</Address>
+                  <Offsets>
+                    <Offset>14</Offset>
+                  </Offsets>
+                </CheatEntry>
+              </CheatEntries>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>50</ID>
+          <Description>"Second Selected Player #"</Description>
+          <Options moHideChildren="1"/>
+          <Color>800000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>incomepointers+4</Address>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>51</ID>
+              <Description>"Gold"</Description>
+              <ShowAsSigned>1</ShowAsSigned>
+              <Color>00509F</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>incomepointers+c</Address>
+              <Offsets>
+                <Offset>0</Offset>
+                <Offset>0</Offset>
+              </Offsets>
+              <CheatEntries>
+                <CheatEntry>
+                  <ID>52</ID>
+                  <Description>"Gold Income"</Description>
+                  <ShowAsSigned>1</ShowAsSigned>
+                  <Color>008000</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>incomepointers+c</Address>
+                  <Offsets>
+                    <Offset>4</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>53</ID>
+                  <Description>"Gold Expenses"</Description>
+                  <ShowAsSigned>1</ShowAsSigned>
+                  <Color>0000D2</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>incomepointers+c</Address>
+                  <Offsets>
+                    <Offset>8</Offset>
+                  </Offsets>
+                </CheatEntry>
+              </CheatEntries>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>54</ID>
+              <Description>"Gems"</Description>
+              <ShowAsSigned>1</ShowAsSigned>
+              <Color>00509F</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>incomepointers+c</Address>
+              <Offsets>
+                <Offset>0</Offset>
+                <Offset>C</Offset>
+              </Offsets>
+              <CheatEntries>
+                <CheatEntry>
+                  <ID>55</ID>
+                  <Description>"Gem Income"</Description>
+                  <ShowAsSigned>1</ShowAsSigned>
+                  <Color>008000</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>incomepointers+c</Address>
+                  <Offsets>
+                    <Offset>10</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>56</ID>
+                  <Description>"Gem Expenses"</Description>
+                  <ShowAsSigned>1</ShowAsSigned>
+                  <Color>0000D2</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>incomepointers+c</Address>
+                  <Offsets>
+                    <Offset>14</Offset>
+                  </Offsets>
+                </CheatEntry>
+              </CheatEntries>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>13</ID>
+      <Description>"Reversions"</Description>
+      <Color>80000008</Color>
+      <VariableType>4 Bytes</VariableType>
+      <Address>eador.exe+158434+4A34*1</Address>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>9</ID>
+      <Description>"Karma"</Description>
+      <ShowAsSigned>1</ShowAsSigned>
+      <Color>80000008</Color>
+      <VariableType>4 Bytes</VariableType>
+      <Address>eador.exe+1583DC+4A34*1</Address>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>19</ID>
+      <Description>"Corruption Modifier (Events)"</Description>
+      <ShowAsSigned>1</ShowAsSigned>
+      <Color>80000008</Color>
+      <VariableType>4 Bytes</VariableType>
+      <Address>Eador.exe+1583C8+4A34*1</Address>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>22</ID>
+      <Description>"Gold"</Description>
+      <ShowAsSigned>1</ShowAsSigned>
+      <Color>80000008</Color>
+      <VariableType>4 Bytes</VariableType>
+      <Address>eador.exe+1584B8+4A34*1</Address>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>23</ID>
+      <Description>"Gems"</Description>
+      <ShowAsSigned>1</ShowAsSigned>
+      <Color>80000008</Color>
+      <VariableType>4 Bytes</VariableType>
+      <Address>eador.exe+1584BC+4A34*1</Address>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>97</ID>
+      <Description>"Treasury Bottom Right Item ID"</Description>
+      <Color>80000008</Color>
+      <VariableType>4 Bytes</VariableType>
+      <Address>Eador.exe+158A80+4A34*1</Address>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>108</ID>
+      <Description>"Treasury Bottom Right Item Durability"</Description>
+      <Color>80000008</Color>
+      <VariableType>4 Bytes</VariableType>
+      <Address>Eador.exe+158A80+4+4A34*1</Address>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>66</ID>
+      <Description>"&lt;== Heroes"</Description>
+      <Options moHideChildren="1"/>
+      <Color>800000</Color>
+      <GroupHeader>1</GroupHeader>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>4</ID>
+          <Description>"1st Hero XP"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>eador.exe+159080+4A34*1</Address>
+          <Offsets>
+            <Offset>C</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>0</ID>
+          <Description>"1st Hero HP"</Description>
+          <ShowAsSigned>1</ShowAsSigned>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>eador.exe+159080+4A34*1</Address>
+          <Offsets>
+            <Offset>4</Offset>
+            <Offset>68</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>110</ID>
+          <Description>"1st Hero First Level 1 Slot Spell ID"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>eador.exe+159080+4A34*1</Address>
+          <Offsets>
+            <Offset>214</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>112</ID>
+          <Description>"1st Hero First Unit ID"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>eador.exe+159080+4A34*1</Address>
+          <Offsets>
+            <Offset>0</Offset>
+            <Offset>6C</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>113</ID>
+          <Description>"1st Hero First Unit HP"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>eador.exe+159080+4A34*1</Address>
+          <Offsets>
+            <Offset>4</Offset>
+            <Offset>6C</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>114</ID>
+          <Description>"1st Hero First Unit XP"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>eador.exe+159080+4A34*1</Address>
+          <Offsets>
+            <Offset>C</Offset>
+            <Offset>6C</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>5</ID>
+          <Description>"2nd Hero XP"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>eador.exe+159080+4A34*1+4*1</Address>
+          <Offsets>
+            <Offset>C</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>1</ID>
+          <Description>"2nd Hero HP"</Description>
+          <ShowAsSigned>1</ShowAsSigned>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>eador.exe+159080+4A34*1+4*1</Address>
+          <Offsets>
+            <Offset>4</Offset>
+            <Offset>68</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>6</ID>
+          <Description>"3rd Hero XP"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>eador.exe+159080+4A34*1+4*2</Address>
+          <Offsets>
+            <Offset>C</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>2</ID>
+          <Description>"3rd Hero HP"</Description>
+          <ShowAsSigned>1</ShowAsSigned>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>eador.exe+159080+4A34*1+4*2</Address>
+          <Offsets>
+            <Offset>4</Offset>
+            <Offset>68</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>7</ID>
+          <Description>"4th Hero XP"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>eador.exe+159080+4A34*1+4*3</Address>
+          <Offsets>
+            <Offset>C</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>3</ID>
+          <Description>"4th Hero HP"</Description>
+          <ShowAsSigned>1</ShowAsSigned>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>eador.exe+159080+4A34*1+4*3</Address>
+          <Offsets>
+            <Offset>4</Offset>
+            <Offset>68</Offset>
+          </Offsets>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>98</ID>
+      <Description>"&lt;== Player 2 Cheats"</Description>
+      <Options moHideChildren="1"/>
+      <Color>008000</Color>
+      <GroupHeader>1</GroupHeader>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>99</ID>
+          <Description>"Karma"</Description>
+          <ShowAsSigned>1</ShowAsSigned>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>eador.exe+1583DC+4A34*2</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>100</ID>
+          <Description>"Gold"</Description>
+          <ShowAsSigned>1</ShowAsSigned>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>eador.exe+1584B8+4A34*2</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>101</ID>
+          <Description>"Gems"</Description>
+          <ShowAsSigned>1</ShowAsSigned>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>eador.exe+1584BC+4A34*2</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>102</ID>
+          <Description>"Treasury Bottom Right Item ID"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>Eador.exe+158A80+4A34*2</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>146</ID>
+          <Description>"Treasury Bottom Right Item Durability"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>Eador.exe+158A80+4+4A34*2</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>88</ID>
+          <Description>"&lt;== Heroes"</Description>
+          <Options moHideChildren="1"/>
+          <Color>800000</Color>
+          <GroupHeader>1</GroupHeader>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>89</ID>
+              <Description>"1st Hero XP"</Description>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>eador.exe+159080+4A34*2</Address>
+              <Offsets>
+                <Offset>C</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>90</ID>
+              <Description>"1st Hero HP"</Description>
+              <ShowAsSigned>1</ShowAsSigned>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>eador.exe+159080+4A34*2</Address>
+              <Offsets>
+                <Offset>4</Offset>
+                <Offset>68</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>142</ID>
+              <Description>"1st Hero First Level 1 Slot Spell ID"</Description>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>eador.exe+159080+4A34*2</Address>
+              <Offsets>
+                <Offset>214</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>143</ID>
+              <Description>"1st Hero First Unit ID"</Description>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>eador.exe+159080+4A34*2</Address>
+              <Offsets>
+                <Offset>0</Offset>
+                <Offset>6C</Offset>
+              </Offsets>
+              <Hotkeys>
+                <Hotkey>
+                  <Action>Increase Value</Action>
+                  <Keys>
+                    <Key>16</Key>
+                    <Key>81</Key>
+                  </Keys>
+                  <Value>1</Value>
+                  <ID>0</ID>
+                </Hotkey>
+                <Hotkey>
+                  <Action>Decrease Value</Action>
+                  <Keys>
+                    <Key>16</Key>
+                    <Key>65</Key>
+                  </Keys>
+                  <Value>1</Value>
+                  <ID>1</ID>
+                </Hotkey>
+              </Hotkeys>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>144</ID>
+              <Description>"1st Hero First Unit HP"</Description>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>eador.exe+159080+4A34*2</Address>
+              <Offsets>
+                <Offset>4</Offset>
+                <Offset>6C</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>145</ID>
+              <Description>"1st Hero First Unit XP"</Description>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>eador.exe+159080+4A34*2</Address>
+              <Offsets>
+                <Offset>C</Offset>
+                <Offset>6C</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>91</ID>
+              <Description>"2nd Hero XP"</Description>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>eador.exe+159080+4A34*2+4*1</Address>
+              <Offsets>
+                <Offset>C</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>92</ID>
+              <Description>"2nd Hero HP"</Description>
+              <ShowAsSigned>1</ShowAsSigned>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>eador.exe+159080+4A34*2+4*1</Address>
+              <Offsets>
+                <Offset>4</Offset>
+                <Offset>68</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>93</ID>
+              <Description>"3rd Hero XP"</Description>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>eador.exe+159080+4A34*2+4*2</Address>
+              <Offsets>
+                <Offset>C</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>94</ID>
+              <Description>"3rd Hero HP"</Description>
+              <ShowAsSigned>1</ShowAsSigned>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>eador.exe+159080+4A34*2+4*2</Address>
+              <Offsets>
+                <Offset>4</Offset>
+                <Offset>68</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>95</ID>
+              <Description>"4th Hero XP"</Description>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>eador.exe+159080+4A34*2+4*3</Address>
+              <Offsets>
+                <Offset>C</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>96</ID>
+              <Description>"4th Hero HP"</Description>
+              <ShowAsSigned>1</ShowAsSigned>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>eador.exe+159080+4A34*2+4*3</Address>
+              <Offsets>
+                <Offset>4</Offset>
+                <Offset>68</Offset>
+              </Offsets>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>59</ID>
+      <Description>"&lt;== Campaign"</Description>
+      <Options moHideChildren="1"/>
+      <Color>800000</Color>
+      <GroupHeader>1</GroupHeader>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>58</ID>
+          <Description>"Energy"</Description>
+          <ShowAsSigned>1</ShowAsSigned>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>Eador.exe+133AEC</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>57</ID>
+          <Description>"Glory"</Description>
+          <ShowAsSigned>1</ShowAsSigned>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>Eador.exe+134B04</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>60</ID>
+          <Description>"Karma"</Description>
+          <ShowAsSigned>1</ShowAsSigned>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>Eador.exe+133B08</Address>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>67</ID>
+      <Description>"&lt;== Player Control (1=Human, 2=AI)"</Description>
+      <Options moHideChildren="1"/>
+      <Color>800000</Color>
+      <GroupHeader>1</GroupHeader>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>80</ID>
+          <Description>"!! Backup save folder before using these !!"</Description>
+          <Color>0000FF</Color>
+          <GroupHeader>1</GroupHeader>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>77</ID>
+          <Description>"Neutrals (Player 0)"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>Eador.exe+1583B8+4A34*0</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>65</ID>
+          <Description>"Player 1"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>Eador.exe+1583B8+4A34*1</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>64</ID>
+          <Description>"Player 2"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>Eador.exe+1583B8+4A34*2</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>69</ID>
+          <Description>"Player 3"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>Eador.exe+1583B8+4A34*3</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>70</ID>
+          <Description>"Player 4"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>Eador.exe+1583B8+4A34*4</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>71</ID>
+          <Description>"Player 5"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>Eador.exe+1583B8+4A34*5</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>72</ID>
+          <Description>"Player 6"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>Eador.exe+1583B8+4A34*6</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>73</ID>
+          <Description>"Player 7"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>Eador.exe+1583B8+4A34*7</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>74</ID>
+          <Description>"Player 8"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>Eador.exe+1583B8+4A34*8</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>75</ID>
+          <Description>"Player 9"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>Eador.exe+1583B8+4A34*9</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>76</ID>
+          <Description>"Player 10"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>Eador.exe+1583B8+4A34*A</Address>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>62</ID>
+      <Description>"Fog of War for all Players (0/1)"</Description>
+      <Color>80000008</Color>
+      <VariableType>Byte</VariableType>
+      <Address>Eador.exe+11D756</Address>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols>
+    <SymbolEntry>
+      <Name>r_autoBlock</Name>
+      <Address>004EB2BF</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>r_blockKeyCheck</Name>
+      <Address>00601B54</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>r_lastBlockSave</Name>
+      <Address>00601B64</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>r_cameraHeight</Name>
+      <Address>0062690E</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>r_maxCameraDist</Name>
+      <Address>006002C4</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>r_maxCameraDist2</Name>
+      <Address>006002D1</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>org_autoBlock</Name>
+      <Address>0C8B0000</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>org_blockKeyCheck</Name>
+      <Address>0C8B0040</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>org_cameraHeight</Name>
+      <Address>0C8B0080</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>org_maxCameraDist</Name>
+      <Address>0C8B00C0</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>pUnit</Name>
+      <Address>032B037C</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>pPlayer</Name>
+      <Address>032B0380</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>pCommon</Name>
+      <Address>032B0384</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>iEnableMMR</Name>
+      <Address>032B0370</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>iEnableMPU</Name>
+      <Address>032B0374</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>iEnableMXP</Name>
+      <Address>032B0378</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>p_MonHumanPlayer</Name>
+      <Address>005F8C58</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>p_MonPlayerUnits</Name>
+      <Address>0075062D</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>increaseX</Name>
+      <Address>070D0000</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>pstealth</Name>
+      <Address>070E0000</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>Countdown</Name>
+      <Address>30E70000</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>connorloc</Name>
+      <Address>070F0000</Address>
+    </SymbolEntry>
+  </UserdefinedSymbols>
+</CheatTable>

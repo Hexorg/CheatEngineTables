@@ -1,0 +1,478 @@
+<?xml version="1.0"?>
+<CheatTable CheatEngineTableVersion="11">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>44</ID>
+      <Description>"[X]&lt;== DS3 V1.0.0.0 Script"</Description>
+      <Options moHideChildren="1"/>
+      <Color>80000008</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>{
+===========================================
+ Game Name     : Dungeon Siege III
+ Game Version  : 1.0.0.0
+ Script Version: 1.0
+ CE Version    : 6.1
+ Release date  : 01-Jul-2011
+ Author        : Recifense
+ Features:
+ - God Mode (Include Companion)
+ - Unlimited Mana (Include Companion)
+ - Minimum Gold (default 50000)
+ - Pointers (for hero and companion)
+===========================================
+}
+
+[ENABLE]
+//=========================================
+// Check if script is compatible to this game version
+// If false the script will not be loaded
+
+assert("Dungeon Siege III.exe"+548d70,f3 0f 10 41 14)
+assert("Dungeon Siege III.exe"+5479d2,f3 0f 11 40 14)
+assert("Dungeon Siege III.exe"+5ccae3,8b 4d fc d9 44 ?? 18)
+assert("Dungeon Siege III.exe"+558e57,8b 45 fc 8b 40 14)
+
+//=========================================
+alloc(MyCode,1024)
+//=========================================
+// Declaration section
+label(_MonHero)
+label(_MonH0)
+label(_BackMH)
+label(_ExitMH)
+label(_GodMode)
+label(_GodM0)
+label(_BackGM)
+label(_ExitGM)
+label(_MonMana)
+label(_MonM0)
+label(_MonM1)
+label(_BackMM)
+label(_ExitMM)
+label(_MonGold)
+label(_BackMG)
+label(_ExitMG)
+label(pHero)
+label(pUnit)
+label(pMana)
+label(pMana1)
+label(pGold)
+label(pComp)
+label(iEnableGM)
+label(iEnableMM)
+label(iEnableMG)
+label(iMinGold)
+//=========================================
+// Registering Symbols
+registersymbol(MyCode)
+registersymbol(pHero)
+registersymbol(pUnit)
+registersymbol(pMana)
+registersymbol(pMana1)
+registersymbol(pGold)
+registersymbol(pComp)
+registersymbol(iEnableGM)
+registersymbol(iEnableMM)
+registersymbol(iEnableMG)
+registersymbol(iMinGold)
+
+//=========================================
+MyCode:
+//=========================================
+_MonHero:
+ push ebx
+
+ mov ebx,[ecx+0c]
+ test ebx,ebx
+ jz _ExitMH
+
+ mov ebx,[ebx+30]
+ cmp ebx,'_pla'
+ je _MonH0
+
+ mov ebx,[ecx+0c]
+ mov ebx,[ebx+30]
+ cmp ebx,'_com'
+ jne _ExitMH
+
+ mov [pComp],ecx                   // Save ptr for debugging
+ jmp _ExitMH
+
+_MonH0:
+ mov [pHero],ecx                   // Save ptr for debugging
+
+_ExitMH:
+ pop ebx
+
+ movss xmm0,[ecx+14]               // Original code
+ jmp _BackMH                       // Back to main code
+
+//=========================================
+_GodMode:
+ mov [pUnit],eax
+
+ cmp dword ptr [iEnableGM],0
+ je _ExitGM                        // Jump if feature is disabled
+
+ cmp eax,[pHero]
+ je _GodM0
+
+ cmp eax,[pComp]
+ jne _ExitGM
+
+_GodM0:
+ movss xmm0,[eax+18]
+
+_ExitGM:
+ movss [eax+14],xmm0               // Original code (upds HP)
+ jmp _BackGM                       // Back to main code
+
+//=========================================
+_MonMana:
+ push eax
+
+ mov ecx,[ebp-04]                  // Original code
+
+ mov eax,[ecx+0c]
+ test eax,eax
+ jz _ExitMM
+
+ mov eax,[eax+30]
+ cmp eax,'_pla'
+ jne _MonM0
+
+ mov [pMana],ecx                   // Save ptr for debugging
+ jmp _MonM1
+
+_MonM0:
+ mov eax,[ecx+0c]
+ mov eax,[eax+30]
+ cmp eax,'_com'
+ jne _ExitMH
+
+ mov [pMana1],ecx                  // Save ptr for debugging
+
+_MonM1:
+ cmp dword ptr [iEnableMM],0
+ je _ExitMM                        // Jump if feature is disabled
+
+ mov eax,[ecx+1c]
+ mov [ecx+18],eax
+
+_ExitMM:
+ pop eax
+
+ fld dword ptr [ecx+eax+18]        // Original code
+ jmp _BackMM                       // Back to main code
+
+//=========================================
+_MonGold:
+ push ebx
+
+ mov eax,[ebp-04]                  // Original code
+
+ mov ebx,[eax+0c]
+ test ebx,ebx
+ jz _ExitMG
+
+ mov ebx,[ebx+30]
+ cmp ebx,'_pla'
+ jne _ExitMG
+
+ mov [pGold],eax                   // Save ptr for debugging
+
+ cmp dword ptr [iEnableMG],0
+ je _ExitMG                        // Jump if feature is disabled
+
+ mov ebx,[iMinGold]
+ cmp ebx,[eax+14]
+ jle _ExitMG
+
+ mov [eax+14],ebx
+
+_ExitMG:
+ pop ebx
+
+ mov eax,[eax+14]                  // Original code
+ jmp _BackMG                       // Back to main code
+
+//=========================================
+ db '========&gt;'
+ db 'CE6.1 Script by Recifense 070111'
+//=========================================
+// Variables
+iEnableGM:
+ dd 1
+iEnableMM:
+ dd 1
+iEnableMG:
+ dd 1
+pHero:
+ dd MyCode
+pComp:
+ dd MyCode
+pUnit:
+ dd 0
+pMana:
+ dd 0
+pMana1:
+ dd 0
+pGold:
+ dd 0
+iMinGold:
+ dd #50000
+
+//=========================================
+// Hacking Points
+"Dungeon Siege III.exe"+548d70:
+ jmp _MonHero
+_BackMH:
+
+"Dungeon Siege III.exe"+5479d2:
+ jmp _GodMode
+_BackGM:
+
+"Dungeon Siege III.exe"+5ccae3:
+ jmp _MonMana
+ nop
+ nop
+_BackMM:
+
+"Dungeon Siege III.exe"+558e57:
+ jmp _MonGold
+ nop
+_BackMG:
+
+//=========================================
+// Script for Restoring Original Codes
+[DISABLE]
+"Dungeon Siege III.exe"+548d70:
+ movss xmm0,[ecx+14]
+
+"Dungeon Siege III.exe"+5479d2:
+ movss [eax+14],xmm0
+
+"Dungeon Siege III.exe"+5ccae3:
+ mov ecx,[ebp-04]
+ fld dword ptr [ecx+eax+18]
+
+"Dungeon Siege III.exe"+558e57:
+ mov eax,[ebp-04]
+ mov eax,[eax+14]
+
+//=========================================
+// Unregistering Symbols
+unregistersymbol(MyCode)
+unregistersymbol(pHero)
+unregistersymbol(pUnit)
+unregistersymbol(pMana)
+unregistersymbol(pMana1)
+unregistersymbol(pGold)
+unregistersymbol(pComp)
+unregistersymbol(iEnableGM)
+unregistersymbol(iEnableMM)
+unregistersymbol(iEnableMG)
+unregistersymbol(iMinGold)
+//=========================================
+dealloc(MyCode)
+//============= Scripts End ===============
+
+// ****************************************
+// NOTES
+// ****************************************
+{
+struct UNIT:
+0000 = 00dac034
+0004 = i0
+0030 = aID (_player_1, _comp_archon)
+0088 = pXP
+00A0 = pInfo
+00AC = pHP
+00B0 = pMana
+
+struct HP:
+0000 = 00db2e7c
+0004 = i19
+0008 = i-1
+000c = pUnit
+0010 = i4
+0014 = fcHP
+0018 = fmHP
+001c = f4
+0020 = f1
+
+struct MANA:
+0000 = 00db2d04|00e3880c
+0004 = i20
+0008 = i-1
+000c = pUnit
+0010 = i4
+0014 = i0
+0018 = fcMana
+001c = fmMana
+0020 = i0
+0050 = pXP
+
+struct XP:
+0000 = 00da1024
+0004 = i10
+0008 = i-1
+000c = pUnitInfo
+0010 = i4
+0014 = iGold (valid for main hero)
+0018 = i14
+001c = i0
+0020 = iLevel
+0024 = iXP
+0028 = i29
+002c = iAbilityPoints
+0030 = iProficiencyPoints
+0034 = iTalentPoints
+}
+
+
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>49</ID>
+          <Description>"Enable/Disable God Mode ==&gt;(1/0)"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableGM</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>50</ID>
+          <Description>"Enable/Disable Unlimited Mana ==&gt;(1/0)"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMM</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>51</ID>
+          <Description>"Enable/Disable Minimum Gold ==&gt;(1/0)"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMG</Address>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>52</ID>
+              <Description>"Minimum Gold Value ==&gt;(changeable)"</Description>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>iMinGold</Address>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>53</ID>
+          <Description>"Hero's Current Gold ==&gt;(changeable)"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>pMana</Address>
+          <Offsets>
+            <Offset>14</Offset>
+            <Offset>50</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>54</ID>
+          <Description>"Hero's Current XP ==&gt;(changeable)"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>pMana</Address>
+          <Offsets>
+            <Offset>24</Offset>
+            <Offset>50</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>55</ID>
+          <Description>"Hero's Ability Points ==&gt;(changeable)"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>pMana</Address>
+          <Offsets>
+            <Offset>2C</Offset>
+            <Offset>50</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>56</ID>
+          <Description>"Hero's Proficiency Points ==&gt;(changeable)"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>pMana</Address>
+          <Offsets>
+            <Offset>30</Offset>
+            <Offset>50</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>57</ID>
+          <Description>"Hero's Talent Points ==&gt;(changeable)"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>pMana</Address>
+          <Offsets>
+            <Offset>34</Offset>
+            <Offset>50</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>58</ID>
+          <Description>"Companion's Ability Points ==&gt;(changeable)"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>pMana1</Address>
+          <Offsets>
+            <Offset>2C</Offset>
+            <Offset>50</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>60</ID>
+          <Description>"Companion's Talent Points ==&gt;(changeable)"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>pMana1</Address>
+          <Offsets>
+            <Offset>34</Offset>
+            <Offset>50</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>59</ID>
+          <Description>"Companion's Proficiency Points ==&gt;(changeable)"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>pMana1</Address>
+          <Offsets>
+            <Offset>30</Offset>
+            <Offset>50</Offset>
+          </Offsets>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols/>
+  <Comments>===========================================
+ Game Name     : Dungeon Siege III
+ Game Version  : 1.0.0.0
+ Script Version: 1.0
+ CE Version    : 6.1
+ Release date  : 01-Jul-2011
+ Author        : Recifense
+ Features:
+ - God Mode (Include Companion)
+ - Unlimited Mana (Include Companion)
+ - Minimum Gold (default 50000)
+ - Pointers (for hero and companion)
+===========================================
+GOD MODE: For the player's hero and companion;
+UNLIMITED MANA:  For the player's hero and companion;
+MINIMUM GOLD: The minimum value can be changed;
+POINTERS: For the hero and companion structures;
+[note] Be prudent when changing any of the points. You will get stuck if cannot use them.
+</Comments>
+</CheatTable>

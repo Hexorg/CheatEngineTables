@@ -1,0 +1,2263 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="18">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>97</ID>
+      <Description>"&lt;---------- R E A D M E ----------&gt;"</Description>
+      <LastState Activated="0"/>
+      <Color>FF00FF</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>[enable]
+[disable]
+
+{ ****************************** README ******************************
+
+Activate all the scripts you can (see below), then activate the cheats you
+want and you can change values for many things.  If you want to experiment more,
+see below.  Scripts are blue, entries with a "+" sign will expand to show
+more values when you enable them.  There's a "+ Test" entry at the bottom with
+some other scripts and info.
+
+Cheats:
+  * Instant Stamina Regen
+  * No Enemy Stamina Regen (not sure if it does anything)
+  * God Mode
+  * One Hit Kill
+  * Slow Enemies (1/10th normal speed)
+  * Low Ability Stamina
+  * No Ability Cooldowns
+
+Interesting Values:
+  * SpeedMultiplier - 2.0 is nice, anything higher seems too fast
+  * DamageOutputMultiplier
+  * StaminaMoveCost (for planning)
+  * Invisible (set to 1)
+  * HealthFactorRegen (every frame, 1 is full health every frame)
+  * IsInvulnerable (should make you invulnerable)
+  * MaxStamina (works, but screws with planning undo)
+
+(Scripts)
+You may have to perform an action to be able to activate some scripts.  If
+you hit space to plan a few moves and attacks and let your stamina regen, then
+use an ability without planning then I think you can activate all the scripts.
+It may take 5 or 10 seconds to scan memory to find the injection point for
+each script.
+
+(More Values)
+If yu want to experiment, check out the pPlayerUnit and pAbility pointers
+under "+ Test".  Copy the value and then hit CTRL+M to open the memory viewer,
+and then CTRL+D to open the structure dissector.  Paste the value for an
+address and then define a new structure.  The new CE 6.4 can analyze .NET
+programs and you should see tons of goodies to experiment with.
+}
+
+</AssemblerScript>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>9</ID>
+      <Description>"Script: Globals"</Description>
+      <LastState Activated="1"/>
+      <Color>FF0000</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>{
+
+1000: bGodMode
+1004: bOneHitKill
+1008: bSlowEnemyUnits
+100C: bInstantStaminaRegen
+1010: bNoEnemyStaminaRegen
+1014: bLowAbilityStaminaCost
+1018: bNoAbilityCooldowns
+
+2000: pPlayerUnit
+2008: pPlayerUnit-&gt;pHealth
+2010: pLastAbility
+
+
+}
+
+[ENABLE]
+globalalloc(globals,$100000)
+
+[DISABLE]
+
+
+
+{
+
+PlayerUnit:
+  0010: (byte) IsEnabled)
+  0011: (byte) IsInvulnerable
+  0012: (byte) Targetable
+  0013: (byte) IsPlayerControlled
+  0014: (float) Health
+  0070: Ptr-&gt;Data
+        00D8: (float) Health (max)
+        00DC: (float) HealthRegen
+        00E0: (float) HealthFractionRegen
+        00E4: (float) HealthRegenDelay
+        00F0: (float) Armor
+        00F4: (float) ArmorCoverage
+        00F8: (float) Vulnerability
+        0154: (float) Reflection
+        0158: (float) ReflectionChance
+        015C: (float) ReflectionCooldown
+        0160: (float) ReflectionShieldHealth
+        0180: (float) Dodge
+        0197: (byte) Invulnerable
+
+  }
+</AssemblerScript>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>8</ID>
+      <Description>"Script: Damage"</Description>
+      <LastState Activated="1"/>
+      <Color>FF0000</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>{ Game   : Transistor.exe
+  Version: 
+  Date   : 2014-08-03
+  Author : Jason
+
+  Structure is pretty sweet.  We can tell if it's player controlled by byte
+  flag at offset 0013, health is float at 0014, full health is float
+  at 0070-&gt;00D8.
+}
+
+[ENABLE]
+
+aobscan(INJECT_TAKE_DAMAGE,F3 0F 11 43 14 48 8B CB) // should be unique
+alloc(newmem,$1000,7FFA7DC497F2)
+
+globalalloc(globals,$100000)
+
+label(code)
+label(skip)
+label(isPlayer)
+label(return)
+
+newmem:
+  dd 0
+
+code:
+  cmp byte ptr [rbx+13],1
+  je isPlayer
+  cmp dword ptr [globals+1004],1 // bOneHitKill
+  jne skip
+  movss xmm0,[newmem]
+  jmp skip
+
+isPlayer:
+  cmp dword ptr [globals+1000],1 // bGodMode
+  jne skip
+  movss xmm0,[rbx+14]
+
+skip:
+  movss [rbx+14],xmm0
+  jmp return
+
+INJECT_TAKE_DAMAGE:
+  jmp code
+return:
+registersymbol(INJECT_TAKE_DAMAGE)
+
+[DISABLE]
+
+INJECT_TAKE_DAMAGE:
+  db F3 0F 11 43 14
+
+unregistersymbol(INJECT_TAKE_DAMAGE)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: 7FFA7DC497F2
+
+7FFA7DC497C0: EB 08                    -  jmp 7FFA7DC497CA
+7FFA7DC497C2: 40 8A BC 24 C0 00 00 00  -  mov dil,[rsp+000000C0]
+7FFA7DC497CA: F3 0F 11 74 24 20        -  movss [rsp+20],xmm6
+7FFA7DC497D0: F3 0F 5A 43 14           -  cvtss2sd xmm0,[rbx+14]
+7FFA7DC497D5: F2 0F 5A C8              -  cvtsd2ss xmm1,xmm0
+7FFA7DC497D9: F3 0F 11 8B D8 00 00 00  -  movss [rbx+000000D8],xmm1
+7FFA7DC497E1: F3 0F 5A 4B 14           -  cvtss2sd xmm1,[rbx+14]
+7FFA7DC497E6: F3 0F 5A C6              -  cvtss2sd xmm0,xmm6
+7FFA7DC497EA: F2 0F 5C C8              -  subsd xmm1,xmm0
+7FFA7DC497EE: F2 0F 5A C1              -  cvtsd2ss xmm0,xmm1
+// ---------- INJECTING HERE ----------
+7FFA7DC497F2: F3 0F 11 43 14           -  movss [rbx+14],xmm0
+// ---------- DONE INJECTING  ----------
+7FFA7DC497F7: 48 8B CB                 -  mov rcx,rbx
+7FFA7DC497FA: E8 59 FA C6 FF           -  call 7FFA7D8B9258
+7FFA7DC497FF: 0F B6 C8                 -  movzx ecx,al
+7FFA7DC49802: 85 C9                    -  test ecx,ecx
+7FFA7DC49804: 74 24                    -  je 7FFA7DC4982A
+7FFA7DC49806: 48 8B 43 50              -  mov rax,[rbx+50]
+7FFA7DC4980A: 48 85 C0                 -  test rax,rax
+7FFA7DC4980D: 74 0A                    -  je 7FFA7DC49819
+7FFA7DC4980F: 48 8B D3                 -  mov rdx,rbx
+7FFA7DC49812: 48 8B 48 08              -  mov rcx,[rax+08]
+}
+</AssemblerScript>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>14</ID>
+      <Description>"Script: Find Player Unit"</Description>
+      <LastState Activated="1"/>
+      <Color>FF0000</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>{ Game   : Transistor.exe
+  Version: 
+  Date   : 2014-08-03
+  Author : Jason
+
+  This accesses the pointer to a player's health each frame.  The class that is
+  at rdi is called PlayerUnit so it's pretty good I'm sure.
+
+  PlayerUnit:
+    0418: pHealth (LifeComponent type with health at 0014)
+    0430: pData
+          0240: pUpgrades
+          0248: PlayerUnitData
+          0250: Speed
+          02EC: (float) DamageOutputMultiplier
+          02F0: (float) LifeSteal
+          032C: (float) MaxStamina
+          0334: (float) CompleteStaminaRegen
+          0344: (float) StaminaMoveCost
+          0364: (byte) PlayerControlled
+*         0365: (byte) PlayerOwned
+          0376: (byte) ImmuneToStun
+          0377: (byte) ImmutneToDoTs
+          0378: (byte) ImmuneToDeathWeaponSuppression
+          0379: (byte) ImmuneToCharm
+          037A: (byte) ImmuneToSizeEffects
+
+    04F0: (floag) m_speedMultiplier (nice, setting to 2.0 speeds you up)
+    0510: (float) m_criticalFireChanceModifier
+    0534: (float) LifeSteal
+    0538: (float) DamageOutputModifier
+    053C: (float) RangeModifier
+    0540: (float) TargetRangeModifier
+    0544: (float) ChargeTimeModifier
+    0550: (float) ChargeDuration
+    055C: (float) Stamina
+
+
+}
+
+[ENABLE]
+
+aobscan(INJECT_FIND_PLAYER_UNIT,48 8B 87 18 04 00 00 F3 0F 10) // should be unique
+alloc(newmem,$1000,7FFA7DBDAEA7)
+
+globalalloc(globals,$100000)
+
+label(code)
+label(skip)
+label(return)
+
+newmem:
+
+code:
+{
+  // offset 0430 is m_data, offset 8 of that is m_name, offset c of that is the string, "_PlayerUnit", hex 0061006C0050005F for "_Pla"
+  mov rax,[rdi+430]
+  test rax,rax
+  jz skip
+  mov rax,[rax+8]
+  test rax,rax
+  jz skip
+  mov rax,[rax+c]
+  test rax,rax
+  jz skip
+  cmp qword ptr [rax],0061006C0050005F
+  jne skip
+  cmp qword ptr [rax+8],0055007200650079
+  jne skip
+  cmp dword ptr [rax+10],0069006e
+  jne skip
+  // 5F 00 50 00 6C 00 61 00 | 79 00 65 00 72 00 55 00 | 6E 00 69 00 74 00 00 00
+  jne skip
+  mov [globals+2000],rdi
+}
+  mov rax,[rdi+00000418]
+  cmp byte ptr [rax+00000013],1 // IsPlayerControlled
+  jne skip
+  cmp byte ptr [rax+00000012],1 // Targetable
+  jne skip
+  mov [globals+2000],rdi
+  mov [globals+2008],rax
+
+skip:
+  mov rax,[rdi+00000418]
+  jmp return
+
+INJECT_FIND_PLAYER_UNIT:
+  jmp code
+  nop
+  nop
+return:
+registersymbol(INJECT_FIND_PLAYER_UNIT)
+
+[DISABLE]
+
+INJECT_FIND_PLAYER_UNIT:
+  db 48 8B 87 18 04 00 00
+
+unregistersymbol(INJECT_FIND_PLAYER_UNIT)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: 7FFA7DBDAEA7
+
+7FFA7DBDAE75: E8 86 1C C1 FF           -  call 7FFA7D7ECB00
+7FFA7DBDAE7A: 66 0F 1F 44 00 00        -  nop [rax+rax+00]
+7FFA7DBDAE80: 48 8D 15 41 BE B1 FF     -  lea rdx,[7FFA7D6F6CC8]
+7FFA7DBDAE87: 48 8D 8D 80 00 00 00     -  lea rcx,[rbp+00000080]
+7FFA7DBDAE8E: E8 BD F4 98 5D           -  call mscorlib.ni.dll+47A350
+7FFA7DBDAE93: 0F B6 C8                 -  movzx ecx,al
+7FFA7DBDAE96: 85 C9                    -  test ecx,ecx
+7FFA7DBDAE98: 75 B6                    -  jne 7FFA7DBDAE50
+7FFA7DBDAE9A: 66 0F 1F 44 00 00        -  nop [rax+rax+00]
+7FFA7DBDAEA0: 48 8B BD F0 00 00 00     -  mov rdi,[rbp+000000F0]
+// ---------- INJECTING HERE ----------
+7FFA7DBDAEA7: 48 8B 87 18 04 00 00     -  mov rax,[rdi+00000418]
+// ---------- DONE INJECTING  ----------
+7FFA7DBDAEAE: F3 0F 10 80 B8 00 00 00  -  movss xmm0,[rax+000000B8]
+7FFA7DBDAEB6: F3 0F 5A C8              -  cvtss2sd xmm1,xmm0
+7FFA7DBDAEBA: 66 0F 2E 0D 36 07 00 00  -  ucomisd xmm1,[7FFA7DBDB5F8]
+7FFA7DBDAEC2: 76 4C                    -  jna 7FFA7DBDAF10
+7FFA7DBDAEC4: F2 0F 10 05 34 07 00 00  -  movsd xmm0,[7FFA7DBDB600]
+7FFA7DBDAECC: F2 0F 5C C1              -  subsd xmm0,xmm1
+7FFA7DBDAED0: F2 0F 5A C8              -  cvtsd2ss xmm1,xmm0
+7FFA7DBDAED4: F3 0F 10 87 20 05 00 00  -  movss xmm0,[rdi+00000520]
+7FFA7DBDAEDC: 48 8B 87 30 04 00 00     -  mov rax,[rdi+00000430]
+7FFA7DBDAEE3: F3 0F 5A C9              -  cvtss2sd xmm1,xmm1
+}
+</AssemblerScript>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>50</ID>
+      <Description>"Script: Stamina Regen"</Description>
+      <LastState Activated="1"/>
+      <Color>FF0000</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>{ Game   : Transistor.exe
+  Version: 
+  Date   : 2014-08-03
+  Author : Jason
+
+  This script does blah blah blah
+}
+
+[ENABLE]
+
+aobscan(INJECT_STAMINA_REGEN,F3 0F 5A 89 5C 05 00 00 48) // should be unique
+assert(INJECT_STAMINA_REGEN,F3 0F 5A 89 5C 05 00 00 48 8B 81 30 04 00 00 F3 0F 5A 80 2C 03 00 00)
+
+alloc(newmem,$1000,7FFA7DBC094C)
+
+label(code)
+label(skip)
+label(return)
+
+newmem:
+
+code:
+  // only care if flag is set
+  cmp dword ptr [globals+100c],1
+  jne skip
+
+  // only care if player unit
+  cmp rcx,[globals+2000]
+  jne skip
+
+  mov rax,[rcx+00000430] // get max stamina pointer (next instruction on return anyway, so changing rax doesn't matter)
+  movss xmm0,[rax+0000032C] // load max stamina (second instruction after return has the offset and reloads xmm0 so we're good
+  movss [rcx+0000055C],xmm0 // store max stamina in current stamina
+
+skip:
+  cvtss2sd xmm1,[rcx+0000055C] // original code
+  jmp return
+
+INJECT_STAMINA_REGEN:
+  jmp code
+  nop
+  nop
+  nop
+return:
+registersymbol(INJECT_STAMINA_REGEN)
+
+[DISABLE]
+
+INJECT_STAMINA_REGEN:
+  db F3 0F 5A 89 5C 05 00 00
+
+unregistersymbol(INJECT_STAMINA_REGEN)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: 7FFA7DBC094C
+
+7FFA7DBC091F: 00 0F                    -  add [rdi],cl
+7FFA7DBC0921: 2E 0D 91 00 00 00        -  or eax,0091
+7FFA7DBC0927: 7A 07                    -  jp 7FFA7DBC0930
+7FFA7DBC0929: 0F 84 86 00 00 00        -  je 7FFA7DBC09B5
+7FFA7DBC092F: 90                       -  nop 
+7FFA7DBC0930: F3 0F 5A 81 5C 05 00 00  -  cvtss2sd xmm0,[rcx+0000055C]
+7FFA7DBC0938: F3 0F 5A C9              -  cvtss2sd xmm1,xmm1
+7FFA7DBC093C: F2 0F 58 C8              -  addsd xmm1,xmm0
+7FFA7DBC0940: F2 0F 5A C1              -  cvtsd2ss xmm0,xmm1
+7FFA7DBC0944: F3 0F 11 81 5C 05 00 00  -  movss [rcx+0000055C],xmm0
+// ---------- INJECTING HERE ----------
+7FFA7DBC094C: F3 0F 5A 89 5C 05 00 00  -  cvtss2sd xmm1,[rcx+0000055C] // load current stamina into xmm1
+// ---------- DONE INJECTING  ----------
+7FFA7DBC0954: 48 8B 81 30 04 00 00     -  mov rax,[rcx+00000430] // m_data, MaxStamina is at 032C
+7FFA7DBC095B: F3 0F 5A 80 2C 03 00 00  -  cvtss2sd xmm0,[rax+0000032C]
+7FFA7DBC0963: F2 0F 5A D9              -  cvtsd2ss xmm3,xmm1
+7FFA7DBC0967: F3 0F 10 15 51 00 00 00  -  movss xmm2,[7FFA7DBC09C0]
+7FFA7DBC096F: F2 0F 5A C8              -  cvtsd2ss xmm1,xmm0
+7FFA7DBC0973: 0F 2E D9                 -  ucomiss xmm3,xmm1
+7FFA7DBC0976: 77 08                    -  ja 7FFA7DBC0980
+7FFA7DBC0978: F3 0F 5A C3              -  cvtss2sd xmm0,xmm3
+7FFA7DBC097C: EB 06                    -  jmp 7FFA7DBC0984
+7FFA7DBC097E: 66 90                    -  nop 
+}
+</AssemblerScript>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>58</ID>
+      <Description>"Script: Stamina Regen Delay"</Description>
+      <LastState Activated="1"/>
+      <Color>FF0000</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>{ Game   : Transistor.exe
+  Version: 
+  Date   : 2014-08-03
+  Author : Jason
+
+  This is where every frame it checks the delay remaining before stamina
+  can be regenerated.
+}
+
+[ENABLE]
+
+aobscan(INJECT_STAMINA_REGEN_DELAY,F3 0F 10 83 60 05 00 00) // should be unique
+alloc(newmem,$1000,7FFA7DBD53C3)
+
+globalalloc(globals,$100000)
+
+label(code)
+label(isPlayerControlled)
+label(skip)
+label(return)
+
+newmem:
+  dd 0 // 0 for instant if player
+  dd (float)5.0 // keep
+
+code:
+  push rax
+  mov rax,[rbx+418]
+  cmp byte ptr [rax+13],1
+  pop rax
+  je isPlayerControlled
+
+  // so it's enemy controlled, do we want to keep them from regenerating stamina?
+  cmp dword ptr [globals+1010],1
+  jne skip
+  movss xmm0,[newmem+4]
+  movss [rbx+00000560],xmm0
+  jmp skip
+
+isPlayerControlled:
+  // flag set?
+  cmp dword ptr [globals+100c],1
+  jne skip
+  movss xmm0,[newmem]
+  movss [rbx+00000560],xmm0
+
+skip:
+  movss xmm0,[rbx+00000560]
+  jmp return
+
+INJECT_STAMINA_REGEN_DELAY:
+  jmp code
+  nop
+  nop
+  nop
+return:
+registersymbol(INJECT_STAMINA_REGEN_DELAY)
+
+[DISABLE]
+
+INJECT_STAMINA_REGEN_DELAY:
+  db F3 0F 10 83 60 05 00 00
+
+unregistersymbol(INJECT_STAMINA_REGEN_DELAY)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: 7FFA7DBD53C3
+
+7FFA7DBD5392: 48 83 EC 48              -  sub rsp,48
+7FFA7DBD5396: 0F 29 74 24 30           -  movaps [rsp+30],xmm6
+7FFA7DBD539B: 0F 29 7C 24 20           -  movaps [rsp+20],xmm7
+7FFA7DBD53A0: 0F 28 F9                 -  movaps xmm7,xmm1
+7FFA7DBD53A3: 48 8B D9                 -  mov rbx,rcx
+7FFA7DBD53A6: 48 8B 83 30 04 00 00     -  mov rax,[rbx+00000430]
+7FFA7DBD53AD: F3 0F 5A 88 2C 03 00 00  -  cvtss2sd xmm1,[rax+0000032C]
+7FFA7DBD53B5: 66 0F 57 C0              -  xorpd xmm0,xmm0
+7FFA7DBD53B9: 66 0F 2E C1              -  ucomisd xmm0,xmm1
+7FFA7DBD53BD: 0F 87 63 02 00 00        -  ja 7FFA7DBD5626
+// ---------- INJECTING HERE ----------
+7FFA7DBD53C3: F3 0F 10 83 60 05 00 00  -  movss xmm0,[rbx+00000560]
+// ---------- DONE INJECTING  ----------
+7FFA7DBD53CB: F3 0F 5A C8              -  cvtss2sd xmm1,xmm0
+7FFA7DBD53CF: 66 0F 2E 0D 61 02 00 00  -  ucomisd xmm1,[7FFA7DBD5638]
+7FFA7DBD53D7: 76 2A                    -  jna 7FFA7DBD5403
+7FFA7DBD53D9: F3 0F 5A C7              -  cvtss2sd xmm0,xmm7
+7FFA7DBD53DD: F2 0F 5C C8              -  subsd xmm1,xmm0
+7FFA7DBD53E1: F2 0F 5A C1              -  cvtsd2ss xmm0,xmm1
+7FFA7DBD53E5: F3 0F 11 83 60 05 00 00  -  movss [rbx+00000560],xmm0
+7FFA7DBD53ED: F3 0F 5A 83 60 05 00 00  -  cvtss2sd xmm0,[rbx+00000560]
+7FFA7DBD53F5: 66 0F 2E 05 3B 02 00 00  -  ucomisd xmm0,[7FFA7DBD5638]
+7FFA7DBD53FD: 0F 87 23 02 00 00        -  ja 7FFA7DBD5626
+}
+</AssemblerScript>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>64</ID>
+      <Description>"Script: Speed Multiplier"</Description>
+      <LastState Activated="1"/>
+      <Color>FF0000</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>{ Game   : Transistor.exe
+  Version: 
+  Date   : 2014-08-03
+  Author : Jason
+
+  Used to calculate final speed
+}
+
+[ENABLE]
+
+aobscan(INJECT_SPEED_MULTIPLIER,F3 0F 59 B1 F0 04 00 00) // should be unique
+alloc(newmem,$1000,7FFA7DBD3990)
+
+label(code)
+label(skip)
+label(return)
+
+newmem:
+  dd (float)0.1
+
+code:
+  cmp dword ptr [globals+1008],1
+  jne skip
+  push rax
+  mov rax,[rcx+418]
+  cmp byte ptr [rax+13],1 // IsPlayerControlled
+  pop rax
+  je skip
+
+  // ok, not player controlled, so slow it down
+  mulss xmm6,[newmem]
+  jmp return
+
+skip:
+  mulss xmm6,[rcx+000004F0]
+  jmp return
+
+INJECT_SPEED_MULTIPLIER:
+  jmp code
+  nop
+  nop
+  nop
+return:
+registersymbol(INJECT_SPEED_MULTIPLIER)
+
+[DISABLE]
+
+INJECT_SPEED_MULTIPLIER:
+  db F3 0F 59 B1 F0 04 00 00
+
+unregistersymbol(INJECT_SPEED_MULTIPLIER)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: 7FFA7DBD3990
+
+7FFA7DBD3967: 0F B6 40 39              -  movzx eax,byte ptr [rax+39]
+7FFA7DBD396B: 0F B6 C0                 -  movzx eax,al
+7FFA7DBD396E: 66 90                    -  nop 
+7FFA7DBD3970: 85 C0                    -  test eax,eax
+7FFA7DBD3972: 75 0C                    -  jne 7FFA7DBD3980
+7FFA7DBD3974: 0F 57 C0                 -  xorps xmm0,xmm0
+7FFA7DBD3977: EB 50                    -  jmp 7FFA7DBD39C9
+7FFA7DBD3979: 0F 1F 80 00 00 00 00     -  nop [rax+00000000]
+7FFA7DBD3980: F3 0F 10 B1 E8 04 00 00  -  movss xmm6,[rcx+000004E8] // load m_speed
+7FFA7DBD3988: F3 0F 58 B1 F4 04 00 00  -  addss xmm6,[rcx+000004F4] // add m_speedAddition
+// ---------- INJECTING HERE ----------
+7FFA7DBD3990: F3 0F 59 B1 F0 04 00 00  -  mulss xmm6,[rcx+000004F0] // multiply by m_speedMultiplier
+// ---------- DONE INJECTING  ----------
+7FFA7DBD3998: 0F B6 05 18 55 4C FF     -  movzx eax,byte ptr [7FFA7D098EB7]
+7FFA7DBD399F: 85 C0                    -  test eax,eax
+7FFA7DBD39A1: 74 23                    -  je 7FFA7DBD39C6
+7FFA7DBD39A3: 48 8B 01                 -  mov rax,[rcx]
+7FFA7DBD39A6: 48 8B 90 90 00 00 00     -  mov rdx,[rax+00000090]
+7FFA7DBD39AD: FF 52 38                 -  call qword ptr [rdx+38]
+7FFA7DBD39B0: 0F B6 C8                 -  movzx ecx,al
+7FFA7DBD39B3: 85 C9                    -  test ecx,ecx
+7FFA7DBD39B5: 74 0F                    -  je 7FFA7DBD39C6
+7FFA7DBD39B7: F3 0F 10 05 29 00 00 00  -  movss xmm0,[7FFA7DBD39E8]
+}
+</AssemblerScript>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>80</ID>
+      <Description>"Script: Use Ability Stamina"</Description>
+      <LastState Activated="1"/>
+      <Color>FF0000</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>{ Game   : Transistor.exe
+  Version: 
+  Date   : 2014-08-03
+  Author : Jason
+
+  Called to load the stamina cost for an ability when using it outside of
+  planning or execution of a plan.
+
+  Interesting offsets:
+       019C: Cooldown
+       01FC: ChargeTime (0.73)
+       0260: DisableOwnerForDuration (0.45)
+       0264: RootOwnerWhileFiringDuration (0.02)
+       0268: DisableAttackForDuration (0)
+       026C: ArsenalCooldown (0)
+       0284: CriticalFireChance (0)
+       0294: WeaponRange (0)
+       029C: AutoLockRange (350)
+       02CC: ObstacleDamageMultiplier (2.0)
+       02D0: StaminaCost (20.0)
+       02D4: StaminaRegenDelay (0)
+       02D8: FocusCooldown (0.1)
+       02F6: (byte) RootOwnerWhileFiring (1)
+}
+
+[ENABLE]
+
+aobscan(INJECT_ABILITY_USE,F3 0F 5A 81 D0 02 00 00) // should be unique
+alloc(newmem,$1000,7FFA7DC2DD37)
+
+globalalloc(globals,$100000)
+
+label(code)
+label(skip)
+label(skip1)
+label(skip2)
+label(skip3)
+label(skipStamina)
+label(skipCooldowns)
+label(return)
+
+newmem:
+  dd (float)2.0
+  dd (float)0.02
+
+code:
+  // make sure it's player
+  push rax
+  mov rax,[rdi+10] // m_owner
+  mov rax,[rax+418] // Life
+  cmp byte ptr [rax+13],1
+  pop rax
+  jne skip // PlayerControlled is not 1
+
+  mov [globals+2010],rcx
+  mov [globals+2018],rdi
+  cmp dword ptr [globals+1014],1
+  jne skipStamina
+  movss xmm0,[newmem]
+  comiss xmm0,[rcx+2d0]
+  ja skipStamina
+  movss [rcx+000002D0],xmm0
+
+skipStamina:
+  cmp dword ptr [globals+1018],1
+  jne skipCooldowns
+
+  movss xmm0,[newmem+4]
+
+  comiss xmm0,[rcx+19c]
+  jae skip1
+  movss [rcx+19c],xmm0 // Cooldown
+skip1:
+
+  comiss xmm0,[rcx+1fc]
+  jae skip2
+  movss [rcx+1fc],xmm0 // ChargeTime
+skip2:
+
+  comiss xmm0,[rcx+260]
+  jae skip3
+  movss [rcx+260],xmm0 // DisableOwnerForDuration
+skip3:
+
+skipCooldowns:
+skip:
+  cvtss2sd xmm0,[rcx+000002D0]
+  jmp return
+
+INJECT_ABILITY_USE:
+  jmp code
+  nop
+  nop
+  nop
+return:
+registersymbol(INJECT_ABILITY_USE)
+
+[DISABLE]
+
+INJECT_ABILITY_USE:
+  db F3 0F 5A 81 D0 02 00 00
+
+unregistersymbol(INJECT_ABILITY_USE)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: 7FFA7DC2DD37
+
+7FFA7DC2DD03: 48 89 85 90 00 00 00           -  mov [rbp+00000090],rax
+7FFA7DC2DD0A: 48 8B 41 18                    -  mov rax,[rcx+18]
+7FFA7DC2DD0E: 48 89 85 98 00 00 00           -  mov [rbp+00000098],rax
+7FFA7DC2DD15: 48 8B 41 20                    -  mov rax,[rcx+20]
+7FFA7DC2DD19: 48 89 85 A0 00 00 00           -  mov [rbp+000000A0],rax
+7FFA7DC2DD20: 48 8D 8D 80 00 00 00           -  lea rcx,[rbp+00000080]
+7FFA7DC2DD27: E8 E4 3B F0 FF                 -  call 7FFA7DB31910
+7FFA7DC2DD2C: 32 C0                          -  xor al,al
+7FFA7DC2DD2E: E9 14 04 00 00                 -  jmp 7FFA7DC2E147
+7FFA7DC2DD33: 48 8B 4F 08                    -  mov rcx,[rdi+08]
+// ---------- INJECTING HERE ----------
+7FFA7DC2DD37: F3 0F 5A 81 D0 02 00 00        -  cvtss2sd xmm0,[rcx+000002D0]
+// ---------- DONE INJECTING  ----------
+7FFA7DC2DD3F: 66 0F 2E 05 A1 04 00 00        -  ucomisd xmm0,[7FFA7DC2E1E8]
+7FFA7DC2DD47: 0F 86 05 01 00 00              -  jbe 7FFA7DC2DE52
+7FFA7DC2DD4D: 48 8B 81 48 01 00 00           -  mov rax,[rcx+00000148]
+7FFA7DC2DD54: 48 85 C0                       -  test rax,rax
+7FFA7DC2DD57: 0F 85 F5 00 00 00              -  jne 7FFA7DC2DE52
+7FFA7DC2DD5D: 8B 83 80 00 00 00              -  mov eax,[rbx+00000080]
+7FFA7DC2DD63: 83 F8 03                       -  cmp eax,03
+7FFA7DC2DD66: 0F 85 E6 00 00 00              -  jne 7FFA7DC2DE52
+7FFA7DC2DD6C: 0F B6 81 17 03 00 00           -  movzx eax,byte ptr [rcx+00000317]
+7FFA7DC2DD73: 85 C0                          -  test eax,eax
+}
+</AssemblerScript>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>51</ID>
+      <Description>"+ Cheats"</Description>
+      <Options moHideChildren="1"/>
+      <LastState Value="" Activated="1" RealAddress="00000000"/>
+      <Color>80000008</Color>
+      <GroupHeader>1</GroupHeader>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>53</ID>
+          <Description>"Instant Stamina Regen"</Description>
+          <LastState Activated="0"/>
+          <Color>80000008</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>globalalloc(globals,$100000)
+
+[ENABLE]
+globals+100C:
+  dd 1
+
+[DISABLE]
+globals+100C:
+  dd 0
+
+</AssemblerScript>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>60</ID>
+          <Description>"No Enemy Stamina Regen"</Description>
+          <LastState Activated="0"/>
+          <Color>80000008</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>globalalloc(globals,$100000)
+
+[ENABLE]
+globals+1010:
+  dd 1
+
+[DISABLE]
+globals+1010:
+  dd 0
+
+</AssemblerScript>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>59</ID>
+          <Description>"God Mode"</Description>
+          <LastState Activated="1"/>
+          <Color>80000008</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>globalalloc(globals,$100000)
+
+[ENABLE]
+globals+1000:
+  dd 1
+
+[DISABLE]
+globals+1000:
+  dd 0
+
+</AssemblerScript>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>61</ID>
+          <Description>"One Hit Kill"</Description>
+          <LastState Activated="0"/>
+          <Color>80000008</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>globalalloc(globals,$100000)
+
+[ENABLE]
+globals+1004:
+  dd 1
+
+[DISABLE]
+globals+1004:
+  dd 0
+
+</AssemblerScript>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>62</ID>
+          <Description>"Slow Enemies"</Description>
+          <LastState Activated="0"/>
+          <Color>80000008</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>globalalloc(globals,$100000)
+
+[ENABLE]
+globals+1008:
+  dd 1
+
+[DISABLE]
+globals+1008:
+  dd 0
+
+</AssemblerScript>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>81</ID>
+          <Description>"Low Ability Stamina Cost (Risky)"</Description>
+          <LastState Activated="1"/>
+          <Color>80000008</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>globalalloc(globals,$100000)
+
+[ENABLE]
+globals+1014:
+  dd 1
+
+[DISABLE]
+globals+1014:
+  dd 0
+
+</AssemblerScript>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>91</ID>
+          <Description>"No Ability Cooldowns (Risky)"</Description>
+          <LastState Activated="1"/>
+          <Color>80000008</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>globalalloc(globals,$100000)
+
+[ENABLE]
+globals+1018:
+  dd 1
+
+[DISABLE]
+globals+1018:
+  dd 0
+
+</AssemblerScript>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>65</ID>
+      <Description>"+ Values"</Description>
+      <Options moHideChildren="1"/>
+      <LastState Value="" Activated="1" RealAddress="00000000"/>
+      <Color>80000008</Color>
+      <GroupHeader>1</GroupHeader>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>82</ID>
+          <Description>"+ Last Used Ability"</Description>
+          <Options moHideChildren="1"/>
+          <LastState Value="" Activated="1" RealAddress="00000000"/>
+          <Color>80000008</Color>
+          <GroupHeader>1</GroupHeader>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>87</ID>
+              <Description>"pAbilityData-&gt;Stamina Cost"</Description>
+              <LastState Value="2" Activated="0" RealAddress="08C91208"/>
+              <Color>80000008</Color>
+              <VariableType>Float</VariableType>
+              <Address>globals+2010</Address>
+              <Offsets>
+                <Offset>2D0</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>89</ID>
+              <Description>"pAbilityData-&gt;Cooldown"</Description>
+              <LastState Value="0.01999999955" Activated="0" RealAddress="08C910D4"/>
+              <Color>80000008</Color>
+              <VariableType>Float</VariableType>
+              <Address>globals+2010</Address>
+              <Offsets>
+                <Offset>19C</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>88</ID>
+              <Description>"pAbilityData-&gt;ChargeTime"</Description>
+              <LastState Value="0" Activated="0" RealAddress="08C91134"/>
+              <Color>80000008</Color>
+              <VariableType>Float</VariableType>
+              <Address>globals+2010</Address>
+              <Offsets>
+                <Offset>1FC</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>84</ID>
+              <Description>"pAbilityData-&gt;RootOwnerWhileFiring"</Description>
+              <LastState Value="1" Activated="0" RealAddress="08C9122E"/>
+              <Color>80000008</Color>
+              <VariableType>Byte</VariableType>
+              <Address>globals+2010</Address>
+              <Offsets>
+                <Offset>2F6</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>85</ID>
+              <Description>"pAbilityData-&gt;DisableOwnerForDuration"</Description>
+              <LastState Value="0.01999999955" Activated="0" RealAddress="08C91198"/>
+              <Color>80000008</Color>
+              <VariableType>Float</VariableType>
+              <Address>globals+2010</Address>
+              <Offsets>
+                <Offset>260</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>86</ID>
+              <Description>"pAbilityData-&gt;RootOwnerWhileFiringDuration"</Description>
+              <LastState Value="0.01999999955" Activated="0" RealAddress="08C9119C"/>
+              <Color>80000008</Color>
+              <VariableType>Float</VariableType>
+              <Address>globals+2010</Address>
+              <Offsets>
+                <Offset>264</Offset>
+              </Offsets>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>66</ID>
+          <Description>"SpeedMultiplier"</Description>
+          <LastState Value="2" Activated="0" RealAddress="0E35FE70"/>
+          <Color>80000008</Color>
+          <VariableType>Float</VariableType>
+          <Address>globals+2000</Address>
+          <Offsets>
+            <Offset>4F0</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>92</ID>
+          <Description>"StaminaMoveCost"</Description>
+          <LastState Value="0.05624999851" Activated="0" RealAddress="0E360A24"/>
+          <Color>80000008</Color>
+          <VariableType>Float</VariableType>
+          <Address>globals+2000</Address>
+          <Offsets>
+            <Offset>344</Offset>
+            <Offset>430</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>67</ID>
+          <Description>"DamageOutputMultiplier"</Description>
+          <LastState Value="1" Activated="0" RealAddress="0E3609CC"/>
+          <Color>80000008</Color>
+          <VariableType>Float</VariableType>
+          <Address>globals+2000</Address>
+          <Offsets>
+            <Offset>2EC</Offset>
+            <Offset>430</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>68</ID>
+          <Description>"Invisible"</Description>
+          <LastState Value="0" Activated="0" RealAddress="0E3613BF"/>
+          <Color>80000008</Color>
+          <VariableType>Byte</VariableType>
+          <Address>globals+2000</Address>
+          <Offsets>
+            <Offset>1D7</Offset>
+            <Offset>20</Offset>
+            <Offset>430</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>69</ID>
+          <Description>"HealthFractionRegen"</Description>
+          <LastState Value="0" Activated="0" RealAddress="0E3615F8"/>
+          <Color>80000008</Color>
+          <VariableType>Float</VariableType>
+          <Address>globals+2000</Address>
+          <Offsets>
+            <Offset>E0</Offset>
+            <Offset>70</Offset>
+            <Offset>418</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>70</ID>
+          <Description>"IsInvulnerable"</Description>
+          <LastState Value="0" Activated="0" RealAddress="0E361E19"/>
+          <Color>80000008</Color>
+          <VariableType>Byte</VariableType>
+          <Address>globals+2000</Address>
+          <Offsets>
+            <Offset>11</Offset>
+            <Offset>418</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>71</ID>
+          <Description>"MaxStamina"</Description>
+          <LastState Value="100" Activated="0" RealAddress="0E360A0C"/>
+          <Color>80000008</Color>
+          <VariableType>Float</VariableType>
+          <Address>globals+2000</Address>
+          <Offsets>
+            <Offset>32C</Offset>
+            <Offset>430</Offset>
+          </Offsets>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>15</ID>
+      <Description>"+ More Values"</Description>
+      <Options moHideChildren="1"/>
+      <LastState Value="" Activated="0" RealAddress="00000000"/>
+      <Color>80000008</Color>
+      <GroupHeader>1</GroupHeader>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>44</ID>
+          <Description>"+ PlayerUnit"</Description>
+          <Options moHideChildren="1"/>
+          <LastState Value="" Activated="0" RealAddress="00000000"/>
+          <Color>80000008</Color>
+          <GroupHeader>1</GroupHeader>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>18</ID>
+              <Description>"SpeedMultiplier"</Description>
+              <LastState Value="2" Activated="0" RealAddress="0E35FE70"/>
+              <Color>80000008</Color>
+              <VariableType>Float</VariableType>
+              <Address>globals+2000</Address>
+              <Offsets>
+                <Offset>4F0</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>49</ID>
+              <Description>"Stamina"</Description>
+              <LastState Value="100" Activated="0" RealAddress="0E35FEDC"/>
+              <Color>80000008</Color>
+              <VariableType>Float</VariableType>
+              <Address>globals+2000</Address>
+              <Offsets>
+                <Offset>55C</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>57</ID>
+              <Description>"StaminaRegenDelay"</Description>
+              <LastState Value="0" Activated="0" RealAddress="0E35FEE0"/>
+              <Color>80000008</Color>
+              <VariableType>Float</VariableType>
+              <Address>globals+2000</Address>
+              <Offsets>
+                <Offset>560</Offset>
+              </Offsets>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>45</ID>
+          <Description>"+ PlayerUnit.m_Data"</Description>
+          <Options moHideChildren="1"/>
+          <LastState Value="" Activated="0" RealAddress="00000000"/>
+          <Color>80000008</Color>
+          <GroupHeader>1</GroupHeader>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>39</ID>
+              <Description>"ReloadStaminaRegenDelay"</Description>
+              <LastState Value="1.5" Activated="0" RealAddress="0E360A18"/>
+              <Color>80000008</Color>
+              <VariableType>Float</VariableType>
+              <Address>globals+2000</Address>
+              <Offsets>
+                <Offset>338</Offset>
+                <Offset>430</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>36</ID>
+              <Description>"MaxStamina"</Description>
+              <LastState Value="100" Activated="0" RealAddress="0E360A0C"/>
+              <Color>80000008</Color>
+              <VariableType>Float</VariableType>
+              <Address>globals+2000</Address>
+              <Offsets>
+                <Offset>32C</Offset>
+                <Offset>430</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>29</ID>
+              <Description>"Speed"</Description>
+              <LastState Value="335" Activated="0" RealAddress="0E360930"/>
+              <Color>80000008</Color>
+              <VariableType>Float</VariableType>
+              <Address>globals+2000</Address>
+              <Offsets>
+                <Offset>250</Offset>
+                <Offset>430</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>30</ID>
+              <Description>"VisionRange"</Description>
+              <LastState Value="1000" Activated="0" RealAddress="0E36097C"/>
+              <Color>80000008</Color>
+              <VariableType>Float</VariableType>
+              <Address>globals+2000</Address>
+              <Offsets>
+                <Offset>29C</Offset>
+                <Offset>430</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>32</ID>
+              <Description>"LifeSteal"</Description>
+              <LastState Value="0" Activated="0" RealAddress="0E3609D0"/>
+              <Color>80000008</Color>
+              <VariableType>Float</VariableType>
+              <Address>globals+2000</Address>
+              <Offsets>
+                <Offset>2F0</Offset>
+                <Offset>430</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>31</ID>
+              <Description>"DamageOutputMultiplier"</Description>
+              <LastState Value="1" Activated="0" RealAddress="0E3609CC"/>
+              <Color>80000008</Color>
+              <VariableType>Float</VariableType>
+              <Address>globals+2000</Address>
+              <Offsets>
+                <Offset>2EC</Offset>
+                <Offset>430</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>72</ID>
+              <Description>"DamageOutputMultiplier"</Description>
+              <LastState Value="1" Activated="0" RealAddress="0E3609CC"/>
+              <Color>80000008</Color>
+              <VariableType>Float</VariableType>
+              <Address>globals+2000</Address>
+              <Offsets>
+                <Offset>2EC</Offset>
+                <Offset>430</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>33</ID>
+              <Description>"CritAddition"</Description>
+              <LastState Value="0" Activated="0" RealAddress="0E3609D8"/>
+              <Color>80000008</Color>
+              <VariableType>Float</VariableType>
+              <Address>globals+2000</Address>
+              <Offsets>
+                <Offset>2F8</Offset>
+                <Offset>430</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>34</ID>
+              <Description>"FullHealthCritAddition"</Description>
+              <LastState Value="0" Activated="0" RealAddress="0E3609DC"/>
+              <Color>80000008</Color>
+              <VariableType>Float</VariableType>
+              <Address>globals+2000</Address>
+              <Offsets>
+                <Offset>2FC</Offset>
+                <Offset>430</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>35</ID>
+              <Description>"ObstacleDamageMultiplier"</Description>
+              <LastState Value="1" Activated="0" RealAddress="0E3609E0"/>
+              <Color>80000008</Color>
+              <VariableType>Float</VariableType>
+              <Address>globals+2000</Address>
+              <Offsets>
+                <Offset>300</Offset>
+                <Offset>430</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>37</ID>
+              <Description>"StaminaRegen (no good?)"</Description>
+              <LastState Value="0" Activated="0" RealAddress="0E360A10"/>
+              <Color>80000008</Color>
+              <VariableType>Float</VariableType>
+              <Address>globals+2000</Address>
+              <Offsets>
+                <Offset>330</Offset>
+                <Offset>430</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>38</ID>
+              <Description>"CompleteStaminaRegen"</Description>
+              <LastState Value="30" Activated="0" RealAddress="0E360A14"/>
+              <Color>80000008</Color>
+              <VariableType>Float</VariableType>
+              <Address>globals+2000</Address>
+              <Offsets>
+                <Offset>334</Offset>
+                <Offset>430</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>40</ID>
+              <Description>"StaminaMoveCost"</Description>
+              <LastState Value="0.05624999851" Activated="0" RealAddress="0E360A24"/>
+              <Color>80000008</Color>
+              <VariableType>Float</VariableType>
+              <Address>globals+2000</Address>
+              <Offsets>
+                <Offset>344</Offset>
+                <Offset>430</Offset>
+              </Offsets>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>46</ID>
+          <Description>"+ PlayerUnit.m_data.m_thingData"</Description>
+          <Options moHideChildren="1"/>
+          <LastState Value="" Activated="0" RealAddress="00000000"/>
+          <Color>80000008</Color>
+          <GroupHeader>1</GroupHeader>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>41</ID>
+              <Description>"Invisible"</Description>
+              <LastState Value="0" Activated="0" RealAddress="0E3613BF"/>
+              <Color>80000008</Color>
+              <VariableType>Byte</VariableType>
+              <Address>globals+2000</Address>
+              <Offsets>
+                <Offset>1D7</Offset>
+                <Offset>20</Offset>
+                <Offset>430</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>43</ID>
+              <Description>"FallDamageFraction"</Description>
+              <LastState Value="0.150000006" Activated="0" RealAddress="0E361320"/>
+              <Color>80000008</Color>
+              <VariableType>Float</VariableType>
+              <Address>globals+2000</Address>
+              <Offsets>
+                <Offset>138</Offset>
+                <Offset>20</Offset>
+                <Offset>430</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>42</ID>
+              <Description>"ImmuneToVacuum"</Description>
+              <LastState Value="0" Activated="0" RealAddress="0E3613C2"/>
+              <Color>80000008</Color>
+              <VariableType>Byte</VariableType>
+              <Address>globals+2000</Address>
+              <Offsets>
+                <Offset>1DA</Offset>
+                <Offset>20</Offset>
+                <Offset>430</Offset>
+              </Offsets>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>47</ID>
+          <Description>"+ PlayerUnit.Life"</Description>
+          <Options moHideChildren="1"/>
+          <LastState Value="" Activated="0" RealAddress="00000000"/>
+          <Color>80000008</Color>
+          <GroupHeader>1</GroupHeader>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>25</ID>
+              <Description>"Health"</Description>
+              <LastState Value="100" Activated="0" RealAddress="0E361E1C"/>
+              <Color>80000008</Color>
+              <VariableType>Float</VariableType>
+              <Address>globals+2000</Address>
+              <Offsets>
+                <Offset>14</Offset>
+                <Offset>418</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>26</ID>
+              <Description>"Health (Max)"</Description>
+              <LastState Value="100" Activated="0" RealAddress="0E3615F0"/>
+              <Color>80000008</Color>
+              <VariableType>Float</VariableType>
+              <Address>globals+2000</Address>
+              <Offsets>
+                <Offset>D8</Offset>
+                <Offset>70</Offset>
+                <Offset>418</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>28</ID>
+              <Description>"HealthRegen"</Description>
+              <LastState Value="0" Activated="0" RealAddress="0E3615F4"/>
+              <Color>80000008</Color>
+              <VariableType>Float</VariableType>
+              <Address>globals+2000</Address>
+              <Offsets>
+                <Offset>DC</Offset>
+                <Offset>70</Offset>
+                <Offset>418</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>27</ID>
+              <Description>"HealthFractionRegen"</Description>
+              <LastState Value="0" Activated="0" RealAddress="0E3615F8"/>
+              <Color>80000008</Color>
+              <VariableType>Float</VariableType>
+              <Address>globals+2000</Address>
+              <Offsets>
+                <Offset>E0</Offset>
+                <Offset>70</Offset>
+                <Offset>418</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>24</ID>
+              <Description>"IsInvulnerable"</Description>
+              <LastState Value="0" Activated="0" RealAddress="0E361E19"/>
+              <Color>80000008</Color>
+              <VariableType>Byte</VariableType>
+              <Address>globals+2000</Address>
+              <Offsets>
+                <Offset>11</Offset>
+                <Offset>418</Offset>
+              </Offsets>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>16</ID>
+      <Description>"+ Test"</Description>
+      <Options moHideChildren="1"/>
+      <LastState Value="" Activated="0" RealAddress="00000000"/>
+      <Color>80000008</Color>
+      <GroupHeader>1</GroupHeader>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>17</ID>
+          <Description>"pPlayerUnit"</Description>
+          <LastState Value="000000000E35F980" Activated="0" RealAddress="1D812000"/>
+          <ShowAsHex>1</ShowAsHex>
+          <Color>80000008</Color>
+          <VariableType>8 Bytes</VariableType>
+          <Address>globals+2000</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>23</ID>
+          <Description>"pPlayerUnit-&gt;pHealth"</Description>
+          <LastState Value="000000000E361E08" Activated="0" RealAddress="1D812008"/>
+          <ShowAsHex>1</ShowAsHex>
+          <Color>80000008</Color>
+          <VariableType>8 Bytes</VariableType>
+          <Address>globals+2008</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>83</ID>
+          <Description>"pAbility"</Description>
+          <LastState Value="0000000008C90DB0" Activated="0" RealAddress="1D812018"/>
+          <ShowAsHex>1</ShowAsHex>
+          <Color>80000008</Color>
+          <VariableType>8 Bytes</VariableType>
+          <Address>globals+2018</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>93</ID>
+          <Description>"pAbilityData"</Description>
+          <LastState Value="0000000008C90F38" Activated="0" RealAddress="1D812010"/>
+          <ShowAsHex>1</ShowAsHex>
+          <Color>80000008</Color>
+          <VariableType>8 Bytes</VariableType>
+          <Address>globals+2010</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>2</ID>
+          <Description>"Test: Health1"</Description>
+          <LastState Activated="0"/>
+          <Color>000080</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>{ Game   : Transistor.exe
+  Version: 
+  Date   : 2014-08-03
+  Author : Jason
+
+  This loads health into xmm0 when visible I think for monsters, i.e.
+  when space is pressed and you're planning moves.
+
+  Fields:
+  0010: (byte) IsEnabled)
+  0011: (byte) IsInvulnerable
+  0012: (byte) Targetable
+  0013: (byte) IsPlayerControlled
+  0014: (float) Health
+  0070: Ptr-&gt;Data
+        00D8: (float) Health (max)
+        00DC: (float) HealthRegen
+        00E0: (float) HealthFractionRegen
+        00E4: (float) HealthRegenDelay
+        00F0: (float) Armor
+        00F4: (float) ArmorCoverage
+        00F8: (float) Vulnerability
+        0154: (float) Reflection
+        0158: (float) ReflectionChance
+        015C: (float) ReflectionCooldown
+        0160: (float) ReflectionShieldHealth
+        0180: (float) Dodge
+        0197: (byte) Invulnerable
+
+}
+
+[ENABLE]
+
+aobscan(TEST_HEALTH1,F3 0F 5A 40 14 F2 0F 5A F0 E8) // should be unique
+alloc(newmem,$1000,7FFA7DCB505A)
+
+label(code)
+label(return)
+
+newmem:
+
+code:
+  cvtss2sd xmm0,[rax+14]
+  jmp return
+
+TEST_HEALTH1:
+  jmp code
+return:
+registersymbol(TEST_HEALTH1)
+
+[DISABLE]
+
+TEST_HEALTH1:
+  db F3 0F 5A 40 14
+
+unregistersymbol(TEST_HEALTH1)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: 7FFA7DCB505A
+
+7FFA7DCB5029: 80 3B 00                       -  cmp byte ptr [rbx],00
+7FFA7DCB502C: 48 8B D0                       -  mov rdx,rax
+7FFA7DCB502F: 48 8B CB                       -  mov rcx,rbx
+7FFA7DCB5032: E8 79 DE B2 FF                 -  call 7FFA7D7E2EB0
+7FFA7DCB5037: 49 8B 8C 24 18 04 00 00        -  mov rcx,[r12+00000418]
+7FFA7DCB503F: 80 39 00                       -  cmp byte ptr [rcx],00
+7FFA7DCB5042: E8 F9 80 F1 FF                 -  call 7FFA7DBCD140
+7FFA7DCB5047: 0F 28 F8                       -  movaps xmm7,xmm0
+7FFA7DCB504A: F3 0F 11 BD 98 05 00 00        -  movss [rbp+00000598],xmm7
+7FFA7DCB5052: 49 8B 84 24 18 04 00 00        -  mov rax,[r12+00000418]
+// ---------- INJECTING HERE ----------
+7FFA7DCB505A: F3 0F 5A 40 14                 -  cvtss2sd xmm0,[rax+14]
+// ---------- DONE INJECTING  ----------
+7FFA7DCB505F: F2 0F 5A F0                    -  cvtsd2ss xmm6,xmm0
+7FFA7DCB5063: E8 A8 A6 D6 FF                 -  call 7FFA7DA1F710
+7FFA7DCB5068: 48 8B 40 40                    -  mov rax,[rax+40]
+7FFA7DCB506C: 4C 3B E0                       -  cmp r12,rax
+7FFA7DCB506F: 74 15                          -  je 7FFA7DCB5086
+7FFA7DCB5071: E8 9A A6 D6 FF                 -  call 7FFA7DA1F710
+7FFA7DCB5076: 80 38 00                       -  cmp byte ptr [rax],00
+7FFA7DCB5079: 48 8B C8                       -  mov rcx,rax
+7FFA7DCB507C: E8 DF F8 EE FF                 -  call 7FFA7DBA4960
+7FFA7DCB5081: 4C 3B E0                       -  cmp r12,rax
+}
+</AssemblerScript>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>13</ID>
+          <Description>"Test: Stamina Charge"</Description>
+          <LastState Activated="0"/>
+          <Color>000080</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>{ Game   : Transistor.exe
+  Version: 
+  Date   : 2014-08-03
+  Author : Jason
+
+  This script does blah blah blah
+}
+
+[ENABLE]
+
+aobscan(TEST_STAMINA_CHARGE,F3 0F 5A 89 5C 05 00 00 48) // should be unique
+assert(TEST_STAMINA_CHARGE,F3 0F 5A 89 5C 05 00 00 48 8B 81 30 04 00 00 F3 0F 5A 80 2C 03 00 00)
+
+alloc(newmem,$1000,7FFA7DBC094C)
+
+label(code)
+label(return)
+
+newmem:
+
+code:
+  mov rax,[rcx+00000430] // get max stamina pointer (next instruction on return anyway, so changing rax doesn't matter)
+  movss xmm0,[rax+0000032C] // load max stamina (instruction after last should make sure offset hasn't changed)
+  movss [rcx+0000055C],xmm0
+  cvtss2sd xmm1,[rcx+0000055C] // original code
+  jmp return
+
+TEST_STAMINA_CHARGE:
+  jmp code
+  nop
+  nop
+  nop
+return:
+registersymbol(TEST_STAMINA_CHARGE)
+
+[DISABLE]
+
+TEST_STAMINA_CHARGE:
+  db F3 0F 5A 89 5C 05 00 00
+
+unregistersymbol(TEST_STAMINA_CHARGE)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: 7FFA7DBC094C
+
+7FFA7DBC091F: 00 0F                    -  add [rdi],cl
+7FFA7DBC0921: 2E 0D 91 00 00 00        -  or eax,0091
+7FFA7DBC0927: 7A 07                    -  jp 7FFA7DBC0930
+7FFA7DBC0929: 0F 84 86 00 00 00        -  je 7FFA7DBC09B5
+7FFA7DBC092F: 90                       -  nop 
+7FFA7DBC0930: F3 0F 5A 81 5C 05 00 00  -  cvtss2sd xmm0,[rcx+0000055C]
+7FFA7DBC0938: F3 0F 5A C9              -  cvtss2sd xmm1,xmm1
+7FFA7DBC093C: F2 0F 58 C8              -  addsd xmm1,xmm0
+7FFA7DBC0940: F2 0F 5A C1              -  cvtsd2ss xmm0,xmm1
+7FFA7DBC0944: F3 0F 11 81 5C 05 00 00  -  movss [rcx+0000055C],xmm0
+// ---------- INJECTING HERE ----------
+7FFA7DBC094C: F3 0F 5A 89 5C 05 00 00  -  cvtss2sd xmm1,[rcx+0000055C] // load current stamina into xmm1
+// ---------- DONE INJECTING  ----------
+7FFA7DBC0954: 48 8B 81 30 04 00 00     -  mov rax,[rcx+00000430] // m_data, MaxStamina is at 032C
+7FFA7DBC095B: F3 0F 5A 80 2C 03 00 00  -  cvtss2sd xmm0,[rax+0000032C]
+7FFA7DBC0963: F2 0F 5A D9              -  cvtsd2ss xmm3,xmm1
+7FFA7DBC0967: F3 0F 10 15 51 00 00 00  -  movss xmm2,[7FFA7DBC09C0]
+7FFA7DBC096F: F2 0F 5A C8              -  cvtsd2ss xmm1,xmm0
+7FFA7DBC0973: 0F 2E D9                 -  ucomiss xmm3,xmm1
+7FFA7DBC0976: 77 08                    -  ja 7FFA7DBC0980
+7FFA7DBC0978: F3 0F 5A C3              -  cvtss2sd xmm0,xmm3
+7FFA7DBC097C: EB 06                    -  jmp 7FFA7DBC0984
+7FFA7DBC097E: 66 90                    -  nop 
+}
+</AssemblerScript>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>63</ID>
+          <Description>"Test: Speed Multiplier (can't find unique)"</Description>
+          <LastState Activated="0"/>
+          <Color>000080</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>{ Game   : Transistor.exe
+  Version: 
+  Date   : 2014-08-03
+  Author : Jason
+
+  This accesses speed multiplier for enemies and player every frame, so we
+  have the cheat that allows us to slow down enemies.
+}
+
+[ENABLE]
+
+aobscan(INJECT_SPEED_MULTIPLIER,ERROR: Could not find unique AOB, tried code "F3 0F 5A 81 F0 04 00 00") // should be unique
+alloc(newmem,$1000,7FFA7DBD2593)
+
+label(code)
+label(skip)
+label(return)
+
+newmem:
+  dd (float)0.1
+
+code:
+  cmp dword ptr [globals+1008],1
+  jne skip
+  push rax
+  mov rax,[rcx+418]
+  cmp byte ptr [rax+13],1 // IsPlayerControlled
+  pop rax
+  je skip
+
+  // ok, not player controlled, so slow it down
+  movss xmm0,[newmem]
+  movss [rcx+000004F0],xmm0
+
+skip:
+  cvtss2sd xmm0,[rcx+000004F0]
+  jmp return
+
+INJECT_SPEED_MULTIPLIER+01:
+  jmp code
+  nop
+  nop
+  nop
+return:
+registersymbol(INJECT_SPEED_MULTIPLIER)
+
+[DISABLE]
+
+INJECT_SPEED_MULTIPLIER+01:
+  db F3 0F 5A 81 F0 04 00 00
+
+unregistersymbol(INJECT_SPEED_MULTIPLIER)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: 7FFA7DBD2593
+
+7FFA7DBD256B: 0F B6 C0                 -  movzx eax,al
+7FFA7DBD256E: 66 90                    -  nop 
+7FFA7DBD2570: 85 C0                    -  test eax,eax
+7FFA7DBD2572: 74 04                    -  je 7FFA7DBD2578
+7FFA7DBD2574: 33 C0                    -  xor eax,eax
+7FFA7DBD2576: EB 48                    -  jmp 7FFA7DBD25C0
+7FFA7DBD2578: 48 8B 81 30 04 00 00     -  mov rax,[rcx+00000430]
+7FFA7DBD257F: F3 0F 5A 80 50 02 00 00  -  cvtss2sd xmm0,[rax+00000250]
+7FFA7DBD2587: F3 0F 5A 89 F4 04 00 00  -  cvtss2sd xmm1,[rcx+000004F4]
+7FFA7DBD258F: F2 0F 58 C8              -  addsd xmm1,xmm0
+// ---------- INJECTING HERE ----------
+7FFA7DBD2593: F3 0F 5A 81 F0 04 00 00  -  cvtss2sd xmm0,[rcx+000004F0]
+// ---------- DONE INJECTING  ----------
+7FFA7DBD259B: F2 0F 59 C8              -  mulsd xmm1,xmm0
+7FFA7DBD259F: F2 0F 5A C1              -  cvtsd2ss xmm0,xmm1
+7FFA7DBD25A3: F3 0F 5A C8              -  cvtss2sd xmm1,xmm0
+7FFA7DBD25A7: 66 0F 57 C0              -  xorpd xmm0,xmm0
+7FFA7DBD25AB: 66 0F 2E C1              -  ucomisd xmm0,xmm1
+7FFA7DBD25AF: 72 04                    -  jb 7FFA7DBD25B5
+7FFA7DBD25B1: 32 C0                    -  xor al,al
+7FFA7DBD25B3: EB 0B                    -  jmp 7FFA7DBD25C0
+7FFA7DBD25B5: 48 8B 81 B8 04 00 00     -  mov rax,[rcx+000004B8]
+7FFA7DBD25BC: 0F B6 40 39              -  movzx eax,byte ptr [rax+39]
+}
+</AssemblerScript>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>79</ID>
+          <Description>"Test: Ability Stamina Use"</Description>
+          <LastState Activated="0"/>
+          <Color>000080</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>{ Game   : Transistor.exe
+  Version: 
+  Date   : 2014-08-03
+  Author : Jason
+
+  TEST_PLAN_GUN_STAMINA1, TEST_PLAN_GUN_STAMINA2: Two times gun stamina cost is
+  loaded during planning
+
+  TEST_IMMEDIATE_GUN_STAMINA: When gun stamina cost is loaded when using an
+  ability immediately (not during planning or the execution of a planned
+  attack)
+
+  TEST_EXECUTE_GUN_STAMINA: When gun stamina cost is read when executing moves
+  planned out using TURN()
+}
+
+
+[ENABLE]
+
+aobscan(TEST_PLAN_GUN_STAMINA1,F3 0F 5A 80 D0 02 00 00 F2 0F 5A C8) // should be unique
+alloc(newmem,$1000,7FFA7DD10606)
+
+label(code)
+label(return)
+
+newmem:
+
+code:
+  cvtss2sd xmm0,[rax+000002D0]
+  jmp return
+
+TEST_PLAN_GUN_STAMINA1:
+  jmp code
+  nop
+  nop
+  nop
+return:
+registersymbol(TEST_PLAN_GUN_STAMINA1)
+
+aobscan(TEST_PLAN_GUN_STAMINA2,F3 0F 5A 80 D0 02 00 00 80) // should be unique
+alloc(newmem2,$1000,7FFA7DD101B9)
+
+label(code2)
+label(return2)
+
+newmem2:
+
+code2:
+  cvtss2sd xmm0,[rax+000002D0]
+  jmp return2
+
+TEST_PLAN_GUN_STAMINA2:
+  jmp code2
+  nop
+  nop
+  nop
+return2:
+registersymbol(TEST_PLAN_GUN_STAMINA2)
+
+aobscan(TEST_IMMEDIATE_GUN_STAMINA,F3 0F 5A 81 D0 02 00 00) // should be unique
+alloc(newmem5,$1000,7FFA7DC2DD37)
+
+label(code5)
+label(return5)
+
+newmem5:
+
+code5:
+  cvtss2sd xmm0,[rcx+000002D0]
+  jmp return5
+
+TEST_IMMEDIATE_GUN_STAMINA:
+  jmp code5
+  nop
+  nop
+  nop
+return5:
+registersymbol(TEST_IMMEDIATE_GUN_STAMINA)
+
+aobscan(TEST_EXECUTE_GUN_STAMINA,F3 0F 10 82 D0 02 00 00) // should be unique
+alloc(newmem9,$1000,7FFA7DC3EB83)
+
+label(code9)
+label(return9)
+
+newmem9:
+
+code9:
+  movss xmm0,[rdx+000002D0]
+  jmp return9
+
+TEST_EXECUTE_GUN_STAMINA:
+  jmp code9
+  nop
+  nop
+  nop
+return9:
+registersymbol(TEST_EXECUTE_GUN_STAMINA)
+
+[DISABLE]
+
+TEST_PLAN_GUN_STAMINA1:
+  db F3 0F 5A 80 D0 02 00 00
+
+unregistersymbol(TEST_PLAN_GUN_STAMINA1)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: 7FFA7DD10606
+
+7FFA7DD105D6: 49 8B 4E 10                    -  mov rcx,[r14+10]
+7FFA7DD105DA: 80 39 00                       -  cmp byte ptr [rcx],00
+7FFA7DD105DD: 48 8B D7                       -  mov rdx,rdi
+7FFA7DD105E0: E8 2B 23 85 5D                 -  call mscorlib.ni.dll+472910
+7FFA7DD105E5: 4C 8D B5 A8 02 00 00           -  lea r14,[rbp+000002A8]
+7FFA7DD105EC: 48 8B 46 10                    -  mov rax,[rsi+10]
+7FFA7DD105F0: F3 0F 5A 80 5C 05 00 00        -  cvtss2sd xmm0,[rax+0000055C]
+7FFA7DD105F8: F2 0F 5A C8                    -  cvtsd2ss xmm1,xmm0
+7FFA7DD105FC: F3 41 0F 11 4E 58              -  movss [r14+58],xmm1
+7FFA7DD10602: 48 8B 46 08                    -  mov rax,[rsi+08]
+// ---------- INJECTING HERE ----------
+7FFA7DD10606: F3 0F 5A 80 D0 02 00 00        -  cvtss2sd xmm0,[rax+000002D0]
+// ---------- DONE INJECTING  ----------
+7FFA7DD1060E: F2 0F 5A C8                    -  cvtsd2ss xmm1,xmm0
+7FFA7DD10612: F3 41 0F 11 4E 5C              -  movss [r14+5C],xmm1
+7FFA7DD10618: 4C 89 AD 50 02 00 00           -  mov [rbp+00000250],r13
+7FFA7DD1061F: 48 8B 85 50 02 00 00           -  mov rax,[rbp+00000250]
+7FFA7DD10626: 49 89 86 80 00 00 00           -  mov [r14+00000080],rax
+7FFA7DD1062D: 48 8B 7E 08                    -  mov rdi,[rsi+08]
+7FFA7DD10631: 0F B6 87 1D 03 00 00           -  movzx eax,byte ptr [rdi+0000031D]
+7FFA7DD10638: 41 88 46 66                    -  mov [r14+66],al
+7FFA7DD1063C: 49 8B 44 24 58                 -  mov rax,[r12+58]
+7FFA7DD10641: 48 89 85 A0 02 00 00           -  mov [rbp+000002A0],rax
+}
+TEST_PLAN_GUN_STAMINA2:
+  db F3 0F 5A 80 D0 02 00 00
+
+unregistersymbol(TEST_PLAN_GUN_STAMINA2)
+dealloc(newmem2)
+
+{
+// ORIGINAL CODE - INJECTION POINT: 7FFA7DD101B9
+
+7FFA7DD1018A: F3 0F 11 0D 6A 8B 38 FF        -  movss [7FFA7D098CFC],xmm1
+7FFA7DD10192: 48 8B 4E 30                    -  mov rcx,[rsi+30]
+7FFA7DD10196: 80 39 00                       -  cmp byte ptr [rcx],00
+7FFA7DD10199: 48 89 6C 24 20                 -  mov [rsp+20],rbp
+7FFA7DD1019E: 4C 8B 8C 24 B0 00 00 00        -  mov r9,[rsp+000000B0]
+7FFA7DD101A6: 4C 8B C7                       -  mov r8,rdi
+7FFA7DD101A9: 0F 28 CE                       -  movaps xmm1,xmm6
+7FFA7DD101AC: E8 0F F6 98 FF                 -  call 7FFA7D69F7C0
+7FFA7DD101B1: 48 8B 4E 30                    -  mov rcx,[rsi+30]
+7FFA7DD101B5: 48 8B 45 08                    -  mov rax,[rbp+08]
+// ---------- INJECTING HERE ----------
+7FFA7DD101B9: F3 0F 5A 80 D0 02 00 00        -  cvtss2sd xmm0,[rax+000002D0]
+// ---------- DONE INJECTING  ----------
+7FFA7DD101C1: 80 39 00                       -  cmp byte ptr [rcx],00
+7FFA7DD101C4: F2 0F 5A C8                    -  cvtsd2ss xmm1,xmm0
+7FFA7DD101C8: 0F 57 D2                       -  xorps xmm2,xmm2
+7FFA7DD101CB: E8 E0 B2 FC FF                 -  call 7FFA7DCDB4B0
+7FFA7DD101D0: F3 0F 5A 05 EC 8D 38 FF        -  cvtss2sd xmm0,[7FFA7D098FC4]
+7FFA7DD101D8: F2 0F 5A C0                    -  cvtsd2ss xmm0,xmm0
+7FFA7DD101DC: F3 0F 11 46 48                 -  movss [rsi+48],xmm0
+7FFA7DD101E1: 48 8B 4E 30                    -  mov rcx,[rsi+30]
+7FFA7DD101E5: 48 8B 01                       -  mov rax,[rcx]
+7FFA7DD101E8: 48 8B 90 98 00 00 00           -  mov rdx,[rax+00000098]
+}
+TEST_IMMEDIATE_GUN_STAMINA:
+  db F3 0F 5A 81 D0 02 00 00
+
+unregistersymbol(TEST_IMMEDIATE_GUN_STAMINA)
+dealloc(newmem5)
+
+{
+// ORIGINAL CODE - INJECTION POINT: 7FFA7DC2DD37
+
+7FFA7DC2DD03: 48 89 85 90 00 00 00           -  mov [rbp+00000090],rax
+7FFA7DC2DD0A: 48 8B 41 18                    -  mov rax,[rcx+18]
+7FFA7DC2DD0E: 48 89 85 98 00 00 00           -  mov [rbp+00000098],rax
+7FFA7DC2DD15: 48 8B 41 20                    -  mov rax,[rcx+20]
+7FFA7DC2DD19: 48 89 85 A0 00 00 00           -  mov [rbp+000000A0],rax
+7FFA7DC2DD20: 48 8D 8D 80 00 00 00           -  lea rcx,[rbp+00000080]
+7FFA7DC2DD27: E8 E4 3B F0 FF                 -  call 7FFA7DB31910
+7FFA7DC2DD2C: 32 C0                          -  xor al,al
+7FFA7DC2DD2E: E9 14 04 00 00                 -  jmp 7FFA7DC2E147
+7FFA7DC2DD33: 48 8B 4F 08                    -  mov rcx,[rdi+08]
+// ---------- INJECTING HERE ----------
+7FFA7DC2DD37: F3 0F 5A 81 D0 02 00 00        -  cvtss2sd xmm0,[rcx+000002D0]
+// ---------- DONE INJECTING  ----------
+7FFA7DC2DD3F: 66 0F 2E 05 A1 04 00 00        -  ucomisd xmm0,[7FFA7DC2E1E8]
+7FFA7DC2DD47: 0F 86 05 01 00 00              -  jbe 7FFA7DC2DE52
+7FFA7DC2DD4D: 48 8B 81 48 01 00 00           -  mov rax,[rcx+00000148]
+7FFA7DC2DD54: 48 85 C0                       -  test rax,rax
+7FFA7DC2DD57: 0F 85 F5 00 00 00              -  jne 7FFA7DC2DE52
+7FFA7DC2DD5D: 8B 83 80 00 00 00              -  mov eax,[rbx+00000080]
+7FFA7DC2DD63: 83 F8 03                       -  cmp eax,03
+7FFA7DC2DD66: 0F 85 E6 00 00 00              -  jne 7FFA7DC2DE52
+7FFA7DC2DD6C: 0F B6 81 17 03 00 00           -  movzx eax,byte ptr [rcx+00000317]
+7FFA7DC2DD73: 85 C0                          -  test eax,eax
+}
+TEST_EXECUTE_GUN_STAMINA:
+  db F3 0F 10 82 D0 02 00 00
+
+unregistersymbol(TEST_EXECUTE_GUN_STAMINA)
+dealloc(newmem9)
+
+{
+// ORIGINAL CODE - INJECTION POINT: 7FFA7DC3EB83
+
+7FFA7DC3EB5A: 48 8B D5                 -  mov rdx,rbp
+7FFA7DC3EB5D: E8 EE C9 BF FF           -  call 7FFA7D83B550
+7FFA7DC3EB62: 48 8B 45 08              -  mov rax,[rbp+08]
+7FFA7DC3EB66: 48 8B 50 08              -  mov rdx,[rax+08]
+7FFA7DC3EB6A: 41 B0 01                 -  mov al,01
+7FFA7DC3EB6D: B9 0D 00 00 00           -  mov ecx,0000000D
+7FFA7DC3EB72: E8 F9 0E EF FF           -  call 7FFA7DB2FA70
+7FFA7DC3EB77: 48 8B CD                 -  mov rcx,rbp
+7FFA7DC3EB7A: E8 C1 55 AD FF           -  call 7FFA7D714140
+7FFA7DC3EB7F: 48 8B 55 08              -  mov rdx,[rbp+08]
+// ---------- INJECTING HERE ----------
+7FFA7DC3EB83: F3 0F 10 82 D0 02 00 00  -  movss xmm0,[rdx+000002D0]
+// ---------- DONE INJECTING  ----------
+7FFA7DC3EB8B: F3 0F 5A C8              -  cvtss2sd xmm1,xmm0
+7FFA7DC3EB8F: 66 0F 2E 0D 61 00 00 00  -  ucomisd xmm1,[7FFA7DC3EBF8]
+7FFA7DC3EB97: 76 38                    -  jna 7FFA7DC3EBD1
+7FFA7DC3EB99: 4D 85 E4                 -  test rsp,r12
+7FFA7DC3EB9C: 74 33                    -  je 7FFA7DC3EBD1
+7FFA7DC3EB9E: 41 8B 84 24 80 00 00 00  -  mov eax,[r12+00000080]
+7FFA7DC3EBA6: 85 C0                    -  test eax,eax
+7FFA7DC3EBA8: 75 27                    -  jne 7FFA7DC3EBD1
+7FFA7DC3EBAA: 0F B6 05 09 A3 45 FF     -  movzx eax,byte ptr [7FFA7D098EBA]
+7FFA7DC3EBB1: 85 C0                    -  test eax,eax
+}
+</AssemblerScript>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>78</ID>
+          <Description>"Test: Planning Weapon Stamina"</Description>
+          <LastState Activated="0"/>
+          <Color>000080</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>{ Game   : Transistor.exe
+  Version: 
+  Date   : 2014-08-03
+  Author : Jason
+
+  When planning, this loads a weapon's stamina use each frame.
+
+  r13: GSGE.Code.Combat.GunWeapon
+       ... some things here like m_ammo, m_lastCooldown, but...
+       0008: m_data is rcx, rdx - type GSGE.WeaponData
+  rcx, rdx: (GSGE.Code.Combat.GunWeapon).m_data (GSGE.WeaponData)
+       019C: Cooldown
+       01FC: ChargeTime (0.73)
+       0260: DisableOwnerForDuration (0.45)
+       0264: RootOwnerWhileFiringDuration (0.02)
+       0268: DisableAttackForDuration (0)
+       026C: ArsenalCooldown (0)
+       0284: CriticalFireChance (0)
+       0294: WeaponRange (0)
+       029C: AutoLockRange (350)
+       02CC: ObstacleDamageMultiplier (2.0)
+       02D0: StaminaCost (20.0)
+       02D4: StaminaRegenDelay (0)
+       02D8: FocusCooldown (0.1)
+       02F6: (byte) RootOwnerWhileFiring (1)
+}
+
+[ENABLE]
+
+aobscan(INJECT_TURN_STAMINA_USE,48 05 D0 02 00 00 F3) // should be unique
+alloc(newmem,$1000,7FFA7DBC6C63)
+
+label(code)
+label(return)
+
+newmem:
+
+code:
+  add rax,000002D0
+  jmp return
+
+INJECT_TURN_STAMINA_USE:
+  jmp code
+  nop
+return:
+registersymbol(INJECT_TURN_STAMINA_USE)
+
+[DISABLE]
+
+INJECT_TURN_STAMINA_USE:
+  db 48 05 D0 02 00 00
+
+unregistersymbol(INJECT_TURN_STAMINA_USE)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: 7FFA7DBC6C63
+
+7FFA7DBC6C3F: 80 38 00                    -  cmp byte ptr [rax],00
+7FFA7DBC6C42: E8 39 79 AD FF              -  call 7FFA7D69E580
+7FFA7DBC6C47: 4C 8B E8                    -  mov r13,rax
+7FFA7DBC6C4A: 4D 85 ED                    -  test r13,r13
+7FFA7DBC6C4D: 0F 84 70 14 00 00           -  je 7FFA7DBC80C3
+7FFA7DBC6C53: 49 8B D5                    -  mov rdx,r13
+7FFA7DBC6C56: 48 83 C2 08                 -  add rdx,08
+7FFA7DBC6C5A: 48 8B 12                    -  mov rdx,[rdx]
+7FFA7DBC6C5D: 48 8B CA                    -  mov rcx,rdx
+7FFA7DBC6C60: 48 8B C1                    -  mov rax,rcx
+// ---------- INJECTING HERE ----------
+7FFA7DBC6C63: 48 05 D0 02 00 00           -  add rax,000002D0
+// ---------- DONE INJECTING  ----------
+7FFA7DBC6C69: F3 0F 10 00                 -  movss xmm0,[rax]
+7FFA7DBC6C6D: F3 0F 5A D0                 -  cvtss2sd xmm2,xmm0
+7FFA7DBC6C71: 66 0F 28 CA                 -  movapd xmm1,xmm2
+7FFA7DBC6C75: 66 0F 57 C0                 -  xorpd xmm0,xmm0
+7FFA7DBC6C79: 66 0F 2E C1                 -  ucomisd xmm0,xmm1
+7FFA7DBC6C7D: 0F 83 40 14 00 00           -  jae 7FFA7DBC80C3
+7FFA7DBC6C83: 66 0F 28 C2                 -  movapd xmm0,xmm2
+7FFA7DBC6C87: F3 0F 5A 8D 60 01 00 00     -  cvtss2sd xmm1,[rbp+00000160]
+7FFA7DBC6C8F: F2 0F 5E C1                 -  divsd xmm0,xmm1
+7FFA7DBC6C93: F2 0F 5A C0                 -  cvtsd2ss xmm0,xmm0
+}
+</AssemblerScript>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>90</ID>
+          <Description>"Test: GetAsyncKeyState"</Description>
+          <LastState Activated="0"/>
+          <Color>000080</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[enable]
+globalalloc(test,$100000)
+
+// calling convention: http://msdn.microsoft.com/en-us/library/ms235286.aspx
+// arguments in  RCX, RDX, R8, and R9
+// float arguments in  XMM0L, XMM1L, XMM2L, and XMM3L
+// anything not 1, 2, 4 or 8 bytes MUST be passed by reference
+// RAX, R10, R11, XMM4, and XMM5 are volatile, all others non-volatile
+
+
+test+1000:
+  mov rax,1111111111111111
+  mov [test],rax
+  mov rbx,rax
+  mov rcx,rax
+  mov rdx,rax
+  mov rsi,rax
+  mov rdi,rax
+  mov r8,rax
+  mov r9,rax
+  mov r10,rax
+  mov r11,rax
+  mov r12,rax
+  mov r13,rax
+  mov r14,rax
+  mov r15,rax
+
+  mov rcx,000000A0 // VK_LSHIFT - http://msdn.microsoft.com/en-us/library/windows/desktop/dd375731(v=vs.85).aspx
+  call GetAsyncKeyState
+  ret
+  mov [test],rax    // 0
+  mov [test+8],rbx  // PRESERVED
+  mov [test+10],rcx // pointer
+  mov [test+18],rdx // 0
+  mov [test+20],rsi // PRESERVED
+  mov [test+28],rdi // PRESERVED
+  mov [test+30],r8  // pointer
+  mov [test+38],r9  // 0
+  mov [test+40],r10 // 0
+  mov [test+48],r11 // flags
+  mov [test+50],r12 // PRESERVED
+  mov [test+58],r13 // PRESERVED
+  mov [test+60],r14 // PRESERVED
+  mov [test+68],r15 // PRESERVED
+  ret
+
+// CreateThread(test+1000)
+
+[disable]
+</AssemblerScript>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>95</ID>
+          <Description>"Script: Set Cooldown"</Description>
+          <LastState Activated="0"/>
+          <Color>FF0000</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>{ Game   : Transistor.exe
+  Version: 
+  Date   : 2014-08-04
+  Author : Jason
+
+  Set cooldown when using ability.  This is type GSGE.Code.Combat.GunWeapon.
+  This code is called for enemies and allies.  To see if it is the player,
+  you can check m_owner at offset 0010.  This has Life at 418, which has
+  byte flag IsPlayerControlled at 0013
+}
+
+[ENABLE]
+
+aobscan(INJECT_COOLDOWN_SET,F3 0F 11 83 C8 00 00 00 48 83) // should be unique
+alloc(newmem,$1000,7FFA7DC5EA80)
+
+label(code)
+label(return)
+
+newmem:
+
+code:
+  movss [rbx+000000C8],xmm0
+  jmp return
+
+INJECT_COOLDOWN_SET:
+  jmp code
+  nop
+  nop
+  nop
+return:
+registersymbol(INJECT_COOLDOWN_SET)
+
+[DISABLE]
+
+INJECT_COOLDOWN_SET:
+  db F3 0F 11 83 C8 00 00 00
+
+unregistersymbol(INJECT_COOLDOWN_SET)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: 7FFA7DC5EA80
+
+7FFA7DC5EA60: 33 C0                    -  xor eax,eax
+7FFA7DC5EA62: 81 F9 00 00 80 7F        -  cmp ecx,7F800000
+7FFA7DC5EA68: 0F 9F C0                 -  setg al
+7FFA7DC5EA6B: 0F B6 C0                 -  movzx eax,al
+7FFA7DC5EA6E: 85 C0                    -  test eax,eax
+7FFA7DC5EA70: 74 06                    -  je 7FFA7DC5EA78
+7FFA7DC5EA72: F3 0F 5A C1              -  cvtss2sd xmm0,xmm1
+7FFA7DC5EA76: EB 04                    -  jmp 7FFA7DC5EA7C
+7FFA7DC5EA78: F3 0F 5A C2              -  cvtss2sd xmm0,xmm2
+7FFA7DC5EA7C: F2 0F 5A C0              -  cvtsd2ss xmm0,xmm0
+// ---------- INJECTING HERE ----------
+7FFA7DC5EA80: F3 0F 11 83 C8 00 00 00  -  movss [rbx+000000C8],xmm0
+// ---------- DONE INJECTING  ----------
+7FFA7DC5EA88: 48 83 C4 30              -  add rsp,30
+7FFA7DC5EA8C: 5B                       -  pop rbx
+7FFA7DC5EA8D: C3                       -  ret 
+7FFA7DC5EA8E: 00 00                    -  add [rax],al
+7FFA7DC5EA90: 00 00                    -  add [rax],al
+7FFA7DC5EA92: 00 00                    -  add [rax],al
+7FFA7DC5EA94: 19 05 02 00 05 52        -  sbb [7FFACFCAEA9C],eax
+7FFA7DC5EA9A: 01 30                    -  add [rax],esi
+7FFA7DC5EA9C: 56                       -  push rsi
+7FFA7DC5EA9D: 00 00                    -  add [rax],al
+}
+</AssemblerScript>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>96</ID>
+          <Description>"pAbility-&gt;Owner-&gt;IsPlayerControlled"</Description>
+          <LastState Value="1" Activated="0" RealAddress="0E361E1B"/>
+          <Color>80000008</Color>
+          <VariableType>Byte</VariableType>
+          <Address>globals+2018</Address>
+          <Offsets>
+            <Offset>13</Offset>
+            <Offset>418</Offset>
+            <Offset>10</Offset>
+          </Offsets>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols>
+    <SymbolEntry>
+      <Name>globals</Name>
+      <Address>1D810000</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>test</Name>
+      <Address>45970000</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>INJECT_TAKE_DAMAGE</Name>
+      <Address> 7FFA7DC5B3F2</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>INJECT_FIND_PLAYER_UNIT</Name>
+      <Address> 7FFA7DC3B047</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>INJECT_STAMINA_REGEN</Name>
+      <Address> 7FFA7DBCA25C</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>INJECT_STAMINA_REGEN_DELAY</Name>
+      <Address> 7FFA7DBC9F63</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>INJECT_SPEED_MULTIPLIER</Name>
+      <Address> 7FFA7DBC8530</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>INJECT_ABILITY_USE</Name>
+      <Address> 7FFA7DC4A927</Address>
+    </SymbolEntry>
+  </UserdefinedSymbols>
+  <Comments>****************************** README ******************************
+
+Activate all the scripts you can (see below), then activate the cheats you
+want and you can change values for many things.  If you want to experiment more,
+see below.  Scripts are blue, entries with a "+" sign will expand to show
+more values when you enable them.  There's a "+ Test" entry at the bottom with
+some other scripts and info.
+
+Cheats:
+  * Instant Stamina Regen
+  * No Enemy Stamina Regen (not sure if it does anything)
+  * God Mode
+  * One Hit Kill
+  * Slow Enemies (1/10th normal speed)
+  * Low Ability Stamina
+  * No Ability Cooldowns
+
+Interesting Values:
+  * SpeedMultiplier - 2.0 is nice, anything higher seems too fast
+  * DamageOutputMultiplier
+  * StaminaMoveCost (for planning)
+  * Invisible (set to 1)
+  * HealthFactorRegen (every frame, 1 is full health every frame)
+  * IsInvulnerable (should make you invulnerable)
+  * MaxStamina (works, but screws with planning undo)
+
+(Scripts)
+You may have to perform an action to be able to activate some scripts.  If
+you hit space to plan a few moves and attacks and let your stamina regen, then
+use an ability without planning then I think you can activate all the scripts.
+It may take 5 or 10 seconds to scan memory to find the injection point for
+each script.
+
+(More Values)
+If yu want to experiment, check out the pPlayerUnit and pAbility pointers
+under "+ Test".  Copy the value and then hit CTRL+M to open the memory viewer,
+and then CTRL+D to open the structure dissector.  Paste the value for an
+address and then define a new structure.  The new CE 6.4 can analyze .NET
+programs and you should see tons of goodies to experiment with.
+</Comments>
+</CheatTable>

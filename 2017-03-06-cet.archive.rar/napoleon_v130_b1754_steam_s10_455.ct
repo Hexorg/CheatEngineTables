@@ -1,0 +1,960 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="14">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>34</ID>
+      <Description>"[X] &lt;== Napoleon - Total War v130 b1754 (STEAM) RTS Script 1.0"</Description>
+      <Options moHideChildren="1"/>
+      <Color>FF0000</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>{
+===========================================
+ Game Title    : Napoleon - Total War (RTS)
+ Game Version  : 1.3.0 (1754) STEAM
+ Proces Name   : Napoleon.exe
+ Script Version: 1.0
+ CE Version    : 6.2
+ Release date  : 10-Jul-2012
+ Author        : Recifense
+ History:
+ 10-Jul-12: First Release
+ Features:
+ - God Mode
+ - Unlimited Ammo
+===========================================
+}
+
+//=========================================
+// Definitions
+//define(LUDO,"game.exe")
+
+//=========================================
+[ENABLE]
+//=========================================
+//LuaCall(CheckVersion())
+//=========================================
+// Check if script is compatible to this game version
+// If false the script will not be loaded
+
+assert(Napoleon.exe+00d791c0,8b 01 52 8b 90 04 01 00 00 ff d2)         //_GMT
+assert(Napoleon.exe+00d79285,8b 01 8b 7d 08 8b 90 04 01 00 00 57 ff d2)//_GMC
+assert(Napoleon.exe+00dc5a98,e8 73 00 00 00 8b 07 8b 90 ec 00 00 00)   //_GMS
+assert(Napoleon.exe+00dc5b10,51 8b 8f 8c 03 00 00 85 c9 56 8b f0)      //_GMS1
+assert(Napoleon.exe+00ddb439,01 88 f4 1d 00 00 db 80 f4 1d 00 00)      //_MD
+assert(Napoleon.exe+00ddfbf2,8b 4f 40 db 47 40 85 c9)                  //_MH
+assert(Napoleon.exe+00b07ac7,89 86 10 0e 00 00)                        //_MonAmmo
+
+//=========================================
+alloc(MyCodeR,2048,Napoleon.exe)
+//=========================================
+// Declaration section
+label(_GodModeT)
+label(_BackGMT)
+label(_ExitGMT)
+label(_GodM0)
+label(_GodM1)
+label(_GodModeC)
+label(_BackGMC)
+label(_ExitGMC)
+label(_GodMC0)
+label(_GodMC1)
+label(_GodModeS)
+label(_BackGMS)
+label(_ExitGMS)
+label(_GodMS0)
+label(_GodModeS1)
+label(_BackGMS1)
+label(_ExitGMS1)
+label(_MonDamage)
+label(_BackMD)
+label(_ExitMD)
+label(_MonHull)
+label(_BackMH)
+label(_ExitMH)
+label(_MonAmmo)
+label(_BackMA)
+label(_ExitMA)
+label(iEnableGM)
+label(iEnableMA)
+label(iMinPart)
+
+//=========================================
+// Registering Symbols
+registersymbol(MyCodeR)
+registersymbol(iEnableGM)
+registersymbol(iEnableMA)
+
+//=========================================
+MyCodeR:
+//========================================= ok
+// Troops  (ECX = pUnit)
+_GodModeT:
+ cmp dword ptr [iEnableGM],0
+ je _GodM1                     // Jump if feature is disabled
+
+ mov eax,[ecx+000001f0]        // Get first level pointer (pTroopInfo) ok
+ or eax,eax                    // Valid?
+ jz _GodM0                     // Jump if false
+
+ mov eax,[eax+000001ec]        // Get second level pointer (pOwnerInfo) ok
+ cmp dword ptr [eax+00000240],0 // Player's unit? **
+ je _ExitGMT                   // Jump if true
+
+_GodM0:                        // Ship Crew  &lt;----
+ mov eax,[ecx+000001f8]        // Get first level pointer ok
+ or eax,eax                    // Valid?
+ jz _GodM1                     // Jump if false
+
+ cmp byte ptr [eax+00001c84],0 // Player's unit? ok
+ je _ExitGMT                   // Jump if true
+
+_GodM1:
+ mov eax,[ecx]                 // Original code
+ push edx                      // Original code
+ mov edx,[eax+00000104]        // Original code
+ call edx                      // Original code
+
+_ExitGMT:
+ jmp _BackGMT                  // Back to main code
+
+//========================================= ok
+// Cannons
+_GodModeC:
+ cmp dword ptr [iEnableGM],0
+ je _GodMC1                    // Jump if feature is disabled
+
+ mov eax,[ecx+000001f0]        // Get first level pointer ok
+ or eax,eax                    // Valid?
+ jz _GodMC0                    // Jump if false
+
+ mov eax,[eax+000001ec]        // Get second level pointer ok
+ cmp dword ptr [eax+240],0     // Player's unit? ok
+ je _ExitGMC                   // Jump if true
+
+_GodMC0:
+ mov eax,[ecx+000001f8]        // Get second level pointer ok
+ or eax,eax                    // Valid?
+ jz _GodMC1                    // Jump if false
+
+ cmp byte ptr [eax+00001c84],0 // Player's unit? ok
+ je _ExitGMC                   // Jump if true
+
+_GodMC1:
+ mov eax,[ecx]                 // Original code
+ mov edi,[ebp+08]              // Original code
+ mov edx,[eax+00000104]        // Original code
+ push edi                      // Original code
+ call edx                      // Original code
+
+_ExitGMC:
+ jmp _BackGMC                  // Back to main code
+
+//========================================= ok
+// Ship Crew
+_GodModeS:
+ cmp dword ptr [iEnableGM],0
+ je _GodMS0                    // Jump if feature is disabled
+
+ cmp byte ptr [esi+00001c84],0 // Player's unit?
+ je _ExitGMS                   // Jump if true
+
+_GodMS0:
+ call Napoleon.exe+00dc5b10    // Original code**
+
+_ExitGMS:
+ jmp _BackGMS                  // Back to main code
+
+//========================================= ok
+// Ship Crew
+_GodModeS1:
+ cmp dword ptr [iEnableGM],0
+ je _ExitGMS1                  // Jump if feature is disabled
+
+ or eax,eax                    // Valid pointer
+ jz _ExitGMS1                  // Jump if false
+
+ cmp byte ptr [eax+00001c84],0 // Player's unit?
+ jne _ExitGMS1                 // Jump if false
+
+ ret                           // Return to main code
+//-----
+_ExitGMS1:
+ push ecx                      // Original code
+ mov ecx,[edi+0000038c]        // Original code
+ jmp _BackGMS1                 // Back to main code
+
+//========================================= ok
+// Ship
+_MonDamage:
+ cmp dword ptr [iEnableGM],0
+ je _ExitMD                    // Jump if feature is disabled
+
+ cmp byte ptr [eax+00001c84],0 // Player's unit?
+ jne _ExitMD                   // Jump if false
+
+ xor ecx,ecx                   // Make Damage = 0
+
+_ExitMD:
+ add [eax+00001df4],ecx        // Original code
+ jmp _BackMD                   // Back to main code
+
+//========================================= ok
+// Ship
+_MonHull:
+ mov ecx,[esp+28]
+ cmp ecx,Napoleon.exe+00dc1aab
+ jne _ExitMH
+
+ cmp dword ptr [iEnableGM],0
+ je _ExitMH                    // Jump if feature is disabled
+
+ mov ecx,[edi+24]              // ok
+ cmp byte ptr [ecx+00001c84],0 // Player's unit? ok
+ jne _ExitMH                   // Jump if false
+
+ push eax
+ push edx
+
+ mov edx,[iMinPart]            // Get part minimum value
+ mov eax,[ecx+00001cd4]        // Get number of parts ok
+ mul edx
+ mov [ecx+00001d98],eax        // Update total hull value ok
+
+ mov eax,[iMinPart]            // Get part minimum value
+ mov [edi+1c],eax              // Update part value ok
+ mov [edi+40],eax              // Update part value ok
+
+ pop edx
+ pop eax
+
+_ExitMH:
+ mov ecx,[edi+40]              // Original code
+ fild dword ptr [edi+40]       // Original code
+ jmp _BackMH                   // Back to main code
+
+//========================================= ok
+// Troops  (ESI = pTroop)
+_MonAmmo:
+ pushfd
+ push ebx
+
+ mov [esi+00000E10],eax        // Original code
+
+ cmp dword ptr [iEnableMA],0
+ je _ExitMA                    // Jump if feature is disabled
+
+ mov ebx,[esi+000001ec]        // Get (pOwnerInfo) ok
+ cmp dword ptr [ebx+00000240],0 // Player's unit? **
+ jne _ExitMA                   // Jump if false
+
+ mov eax,[esi+00000E14]
+ mov [esi+00000E10],eax
+
+_ExitMA:
+ pop ebx
+ popfd
+ jmp _BackMA                   // Back to main code
+
+//=========================================
+ db '==========================&gt;'
+ db 'CE6.2 Script by Recifense 071012'
+//=========================================
+// Variables
+iEnableGM:
+ dd 1
+iEnableMA:
+ dd 1
+iMinPart:
+ dd #10000
+
+//=========================================
+// Hacking Points
+//Napoleon.exe+00d781c0:
+Napoleon.exe+00d791c0:
+ jmp _GodModeT
+ db 90,90,90,90,90,90
+_BackGMT:
+
+//Napoleon.exe+00d78285:
+Napoleon.exe+00d79285:
+ jmp _GodModeC
+ db 90,90,90,90,90,90,90,90,90
+_BackGMC:
+
+//Napoleon.exe+00dc48d8:
+Napoleon.exe+00dc5a98:
+ jmp _GodModeS
+_BackGMS:
+
+//Napoleon.exe+00dc4950:
+Napoleon.exe+00dc5b10:
+ jmp _GodModeS1
+ nop
+ nop
+_BackGMS1:
+
+//Napoleon.exe+00dda2b9:
+Napoleon.exe+00ddb439:
+ jmp _MonDamage
+ nop
+_BackMD:
+
+//Napoleon.exe+00ddea72:
+Napoleon.exe+00ddfbf2:
+ jmp _MonHull
+ nop
+_BackMH:
+
+//Napoleon.exe+00b07687:
+Napoleon.exe+00b07ac7:
+ jmp _MonAmmo
+ nop
+_BackMA:
+
+//=========================================
+// Script for Restoring Original Codes
+[DISABLE]
+//Napoleon.exe+00d781c0:
+Napoleon.exe+00d791c0:
+// mov eax,[ecx]
+// push edx
+// mov edx,[eax+00000104]
+// call eax
+ db 8b 01 52 8b 90 04 01 00 00 ff d2
+
+//Napoleon.exe+00d78285:
+Napoleon.exe+00d79285:
+// mov eax,[ecx]
+// mov edi,[ebp+08]
+// mov edx,[eax+00000104]
+// push edi
+// call edx
+ db 8b 01 8b 7d 08 8b 90 04 01 00 00 57 ff d2
+
+//Napoleon.exe+00dc48d8:
+Napoleon.exe+00dc5a98:
+// call Napoleon.exe+00dc4950
+ db e8 73 00 00 00
+
+//Napoleon.exe+00dc4950:
+Napoleon.exe+00dc5b10:
+// push ecx
+// mov ecx,[edi+0000038c]
+ db 51 8b 8f 8c 03 00 00
+
+//Napoleon.exe+00dda2b9:
+Napoleon.exe+00ddb439:
+// add [eax+00001df4],ecx
+ db 01 88 f4 1d 00 00
+
+//Napoleon.exe+00ddea72:
+Napoleon.exe+00ddfbf2:
+// mov ecx,[edi+40]
+// fild dword ptr [edi+40]
+ db 8b 4f 40 db 47 40
+
+//Napoleon.exe+00b07687:
+Napoleon.exe+00b07ac7:
+// mov [esi+00000E10],eax
+ db 89 86 10 0e 00 00
+
+//=========================================
+// Unregistering Symbols
+unregistersymbol(MyCodeR)
+unregistersymbol(iEnableGM)
+unregistersymbol(iEnableMA)
+
+//=========================================
+dealloc(MyCodeR)
+//============= Scripts End ===============
+
+// ****************************************
+// NOTES
+// ****************************************
+{
+}
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>1</ID>
+          <Description>"Enable/Disable God Mode =&gt; (1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableGM</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>2</ID>
+          <Description>"Enable/Disable Unlimited Ammo =&gt; (1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMA</Address>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>35</ID>
+      <Description>"[X] &lt;== Napoleon - Total War v130 b1754 (STEAM) TBS Script 1.0"</Description>
+      <Options moHideChildren="1"/>
+      <Color>FF0000</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>{
+===========================================
+ Game Title    : Napoleon - Total War (TBS)
+ Game Version  : 1.3.0 (1754) STEAM
+ Proces Name   : Napoleon.exe
+ Script Version: 1.0
+ CE Version    : 6.2
+ Release date  : 10-Jul-2012
+ Author        : Recifense
+ History:
+ 10-Jul-12: First Release
+ Features:
+ - Minimum Gold
+ - Unlimited Movement Points (for selected army/ship/agent)
+ - Recover troop size (when moving)
+ - Research in 1 day
+ - Reinforcement in 1 day
+ - Construction/Improvement in 1 day
+===========================================
+}
+
+//=========================================
+// Definitions
+//define(LUDO,"game.exe")
+
+//=========================================
+[ENABLE]
+//=========================================
+//LuaCall(CheckVersion())
+//=========================================
+// Check if script is compatible to this game version
+// If false the script will not be loaded
+
+assert(Napoleon.exe+008688d8,8b 87 a4 02 00 00 85 c0)       //_MGMP
+assert(Napoleon.exe+005efea4,8b 48 6c 3b cf ?? ?? 2b cf)    //_InfMPT
+assert(Napoleon.exe+007ed1cf,8b 46 1c 3b f8 ?? ?? 2b c7)    //_InfMPA
+assert(Napoleon.exe+00856d0d,8b 8a a0 04 00 00 56)          //_MG
+assert(Napoleon.exe+005deaec,f3 0f 11 4f 08 f3 0f 2a 41 1c) //_MR
+assert(Napoleon.exe+0062b830,8b 41 1c 85 c0 ?? ?? 83 c0 ff 89 41 1c) //_MonProd
+assert(Napoleon.exe+0060c214,83 45 0c 01 8b 45 0c 3b 45 10) //_MonConst
+assert(Napoleon.exe+0060bdf4,83 45 0c 01 8b 45 0c 3b 45 10) //_MonConst1
+
+//=========================================
+alloc(MyCodeT,2048,Napoleon.exe)
+//=========================================
+// Declaration section
+label(_MonGMP)
+label(_BackGMP)
+label(_InfMPT)
+label(_InfT0)
+label(_BackIMPT)
+label(_ExitIMPT)
+label(_InfMPA)
+label(_BackIMPA)
+label(_ExitIMPA)
+label(_MonGold)
+label(_BackMG)
+label(_ExitMG)
+label(_MonResearch)
+label(_BackMR)
+label(_ExitMR)
+label(_MonProd)
+label(_BackMPr)
+label(_ExitMPr)
+label(_MonConst)
+label(_BackMC)
+label(_ExitMC)
+label(_MonConst1)
+label(_BackMC1)
+label(_ExitMC1)
+label(iEnableIMP)
+label(iEnableMG)
+label(iEnableMT)
+label(iEnableMR)
+label(iEnableMP)
+label(iEnableMC)
+label(iMinGold)
+label(pCurGMP)
+label(pGold)
+label(pTown)
+
+//=========================================
+// Registering Symbols
+registersymbol(MyCodeT)
+registersymbol(iEnableIMP)
+registersymbol(iEnableMG)
+registersymbol(iEnableMT)
+registersymbol(iEnableMR)
+registersymbol(iEnableMP)
+registersymbol(iEnableMC)
+registersymbol(iMinGold)
+registersymbol(pCurGMP)
+registersymbol(pGold)
+registersymbol(pTown)
+
+//=========================================
+MyCodeT:
+//========================================= ok
+// Current selected group or troop
+// Troop or Ship on Turn Base screen
+// It just to avoid a unit from keep on moving
+_MonGMP:
+ mov [pCurGMP],edi             // Save ptr for further use
+ mov eax,[edi+000002a4]        // Original code
+ jmp _BackGMP                  // Back to main code
+
+//========================================= ok
+// Move point (Troop)
+_InfMPT:
+ cmp ebx,[pCurGMP]             // Current select group?
+ jne _ExitIMPT                 // Jump if false
+
+ cmp dword ptr [iEnableMT],0
+ je _InfT0                     // Jump if feature is disabled
+
+ mov ecx,[eax+50]
+ mov [eax+4c],ecx
+
+_InfT0:
+ cmp dword ptr [iEnableIMP],0
+ je _ExitIMPT                  // Jump if feature is disabled
+
+// mov edi,[ebx+18]              // Get Army maximum MP ok
+// mov [ebx+1c],edi              // Update Army current MP ok
+// mov [eax+6c],edi              // Update Troop MP  ok
+
+ xor edi,edi                   // Make Decreasing MP = 0
+
+_ExitIMPT:
+ mov ecx,[eax+6c]              // Original code ok
+ cmp ecx,edi                   // Original code
+ jmp _BackIMPT                 // Back to main code
+
+//========================================= ok
+// Move point (Army)
+_InfMPA:
+ cmp dword ptr [iEnableIMP],0
+ je _ExitIMPA                  // Jump if feature is disabled
+
+ cmp esi,[pCurGMP]             // Current select troop?
+ jne _ExitIMPA                 // Jump if false
+
+ mov edi,[esi+18]              // Get maximum MP ok
+ mov [esi+1c],edi              // Update Troop MP ok
+
+ xor edi,edi                   // Make Decreasing MP = 0
+
+_ExitIMPA:
+ mov eax,[esi+1c]              // Original code ok
+ cmp edi,eax                   // Original code
+ jmp _BackIMPA                 // Back to main code
+
+//========================================= ok
+_MonGold:
+ mov [pGold],edx               // Save pointer for debugging
+
+ cmp dword ptr [iEnableMG],0
+ je _ExitMG                    // Jump if feature is disabled
+
+ mov ecx,[iMinGold]            // Get minimum gold value
+ cmp ecx,[edx+000004a0]        // Gold &lt;= minimum?
+ jle _ExitMG                   // Jump if false
+
+ mov [edx+000004a0],ecx        // Make gold = minimum
+
+_ExitMG:
+ mov ecx,[edx+000004a0]        // Original code
+ jmp _BackMG                   // Back to main code
+
+//========================================= New
+// EBX = pGold
+// ECX = pResearch_Info
+// EDI = pResearch_Progress
+// ESI = ppResearch_Progress (+88) = pGold
+_MonResearch:
+ cmp dword ptr [iEnableMR],0
+ je _ExitMR                    // Jump if feature is disabled
+
+ test esi,esi
+ jz _ExitMR
+
+ cmp ebx,[pGold]
+ jne _ExitMR
+
+ cvtsi2ss xmm1,[ecx+1C]        // Get points needed and convert it to float ok
+
+_ExitMR:
+ movss [edi+08],xmm1           // Original code ok
+ jmp _BackMR                   // Back to main code
+
+//========================================= new
+// TBS Troop Production of selected Town
+_MonProd:
+ mov eax,[ecx+14]                  // Get pointer to Town ok
+ test eax,eax
+ jz _ExitMPr
+
+ mov [pTown],eax
+
+ mov eax,[eax+40]                  // Get pointer to ptr to Owner ok
+ test eax,eax
+ jz _ExitMPr
+
+ cmp eax,[pGold]                   // Is it a player's Town?
+ jne _ExitMPr
+
+ cmp dword ptr [iEnableMP],0
+ je _ExitMPr                       // Jump if feature is disabled
+
+ mov eax,1
+ cmp eax,[ecx+1C]
+ jge _ExitMPr
+
+ mov [ecx+1c],eax                  // Make it one turn production
+
+_ExitMPr:
+ mov eax,[ecx+1C]                  // Original code
+ test eax,eax                      // Original code
+ jmp _BackMPr                      // Back to main code
+
+//========================================= new
+// TBS Buiding Construction or Improvement
+_MonConst:
+ cmp ebx,[pGold]                   // Is it a player's Construction?
+ jne _ExitMC
+
+ cmp dword ptr [iEnableMC],0
+ je _ExitMC                        // Jump if feature is disabled
+
+ mov eax,[ebp+10]                  // Get # needed turns
+ dec eax
+ mov [ebp+0c],eax                  // Make it one turn construction
+
+_ExitMC:
+ add dword ptr [ebp+0C],01         // Original code
+ mov eax,[ebp+0C]                  // Original code
+ jmp _BackMC                       // Back to main code
+
+//========================================= new
+// TBS Buiding Construction or Improvement
+_MonConst1:
+ cmp ebx,[pGold]                   // Is it a player's Construction?
+ jne _ExitMC1
+
+ cmp dword ptr [iEnableMC],0
+ je _ExitMC1                       // Jump if feature is disabled
+
+ mov eax,[ebp+10]                  // Get # needed turns
+ dec eax
+ mov [ebp+0c],eax                  // Make it one turn construction
+
+_ExitMC1:
+ add dword ptr [ebp+0C],01         // Original code
+ mov eax,[ebp+0C]                  // Original code
+ jmp _BackMC1                      // Back to main code
+
+//=========================================
+ db '=============================&gt;'
+ db 'CE6.2 Script by Recifense 071012'
+//=========================================
+// Variables
+iEnableIMP:
+ dd 1
+iEnableMG:
+ dd 1
+iEnableMT:
+ dd 1
+iEnableMR:
+ dd 1
+iEnableMP:
+ dd 1
+iEnableMC:
+ dd 1
+iMinGold:
+ dd #162000
+pCurGMP:
+ dd 0
+pGold:
+ dd 0
+pTown:
+ dd 0
+
+//=========================================
+// Hacking Points
+//Napoleon.exe+00868418:
+Napoleon.exe+008688d8:
+ jmp _MonGMP
+ nop
+_BackGMP:
+
+//Napoleon.exe+005ef224:
+Napoleon.exe+005efea4:
+ jmp _InfMPT
+_BackIMPT:
+
+//Napoleon.exe+007ecccf:
+Napoleon.exe+007ed1cf:
+ jmp _InfMPA
+_BackIMPA:
+
+//Napoleon.exe+0085682d:
+Napoleon.exe+00856d0d:
+ jmp _MonGold
+ nop
+_BackMG:
+
+//Napoleon.exe+005de4dc:
+Napoleon.exe+005deaec:
+ jmp _MonResearch
+_BackMR:
+
+//Napoleon.exe+0062ab50:
+Napoleon.exe+0062b830:
+ jmp _MonProd
+_BackMPr:
+
+//Napoleon.exe+0060b694:
+Napoleon.exe+0060c214:
+ jmp _MonConst
+ nop
+ nop
+_BackMC:
+
+//Napoleon.exe+0060b274:
+Napoleon.exe+0060bdf4:
+ jmp _MonConst1
+ nop
+ nop
+_BackMC1:
+
+//=========================================
+// Script for Restoring Original Codes
+[DISABLE]
+//Napoleon.exe+00868418:
+Napoleon.exe+008688d8:
+// mov eax,[edi+000002a4]
+ db 8b 87 a4 02 00 00
+
+//Napoleon.exe+005ef224:
+Napoleon.exe+005efea4:
+// mov ecx,[eax+6c]
+// cmp ecx,edi
+ db 8b 48 6c 3b cf
+
+//Napoleon.exe+007ecccf:
+Napoleon.exe+007ed1cf:
+// mov eax,[esi+1c]
+// cmp edi,eax
+ db 8b 46 1c 3b f8
+
+//Napoleon.exe+0085682d:
+Napoleon.exe+00856d0d:
+// mov ecx,[edx+000004A0]
+ db 8b 8a a0 04 00 00
+
+//Napoleon.exe+005de4dc:
+Napoleon.exe+005deaec:
+// movss [edi+08],xmm1
+ db f3 0f 11 4f 08
+
+//Napoleon.exe+0062ab50:
+Napoleon.exe+0062b830:
+// mov eax,[ecx+1C]
+// test eax,eax
+ db 8b 41 1c 85 c0
+
+//Napoleon.exe+0060b694:
+Napoleon.exe+0060c214:
+// add dword ptr [ebp+0C],01
+// mov eax,[ebp+0C]
+ db 83 45 0c 01 8b 45 0c
+
+//Napoleon.exe+0060b274:
+Napoleon.exe+0060bdf4:
+// add dword ptr [ebp+0C],01
+// mov eax,[ebp+0C]
+ db 83 45 0c 01 8b 45 0c
+
+//=========================================
+// Unregistering Symbols
+unregistersymbol(MyCodeT)
+unregistersymbol(iEnableIMP)
+unregistersymbol(iEnableMG)
+unregistersymbol(iEnableMT)
+unregistersymbol(iEnableMR)
+unregistersymbol(iEnableMP)
+unregistersymbol(iEnableMC)
+unregistersymbol(iMinGold)
+unregistersymbol(pCurGMP)
+unregistersymbol(pGold)
+unregistersymbol(pTown)
+
+//=========================================
+dealloc(MyCodeT)
+//============= Scripts End ===============
+
+// ****************************************
+// NOTES
+// ****************************************
+{
+}
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>33</ID>
+          <Description>"Enable/Disable Unlimited Move Points"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableIMP</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>22</ID>
+          <Description>"Enable/Disable Recover Troop Size"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMT</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>23</ID>
+          <Description>"Enable/Disable Research in 1 Day"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMR</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>24</ID>
+          <Description>"Enable/Disable Reinforcement in 1 Day"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMP</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>25</ID>
+          <Description>"Enable/Disable Construction in 1 Day"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMC</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>3</ID>
+          <Description>"Enable/Disable Minimum Gold"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMG</Address>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>4</ID>
+              <Description>"Minimum Gold Value"</Description>
+              <Color>0080FF</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>iMinGold</Address>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols>
+    <SymbolEntry>
+      <Name>pUnit</Name>
+      <Address>03D00554</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>pPlayer</Name>
+      <Address>03D00558</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>pOwner</Name>
+      <Address>03D0055C</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>pCapital</Name>
+      <Address>03D00560</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>pProvince</Name>
+      <Address>03D00564</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>iEnableMU</Name>
+      <Address>03D00524</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>iEnableMB</Name>
+      <Address>03D00528</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>iEnableMM</Name>
+      <Address>03D0052C</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>iEnableMMo</Name>
+      <Address>03D00534</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>iEnableMD</Name>
+      <Address>03D00538</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>iEnableMDe</Name>
+      <Address>03D00550</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>iEnableMS</Name>
+      <Address>03D0053C</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>iEnableSR</Name>
+      <Address>03D00540</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>iEnableRR</Name>
+      <Address>03D00544</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>iEnableMTP</Name>
+      <Address>03D00548</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>iEnableMTL</Name>
+      <Address>03D0054C</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>iMinTech</Name>
+      <Address>03D0056C</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>MyCode</Name>
+      <Address>0B210000</Address>
+    </SymbolEntry>
+  </UserdefinedSymbols>
+  <Comments>===========================================
+ Game Title    : Napoleon - Total War (RTS/TBS)
+ Game Version  : 1.3.0 (1754) STEAM
+ Proces Name   : Napoleon.exe
+ Script Version: 1.0
+ CE Version    : 6.2
+ Release date  : 10-Jul-2012
+ Author        : Recifense
+ History:
+ - God Mode [1]
+ - Unlimited Ammo (Range Troops during combat) [1]
+ - Minimum Gold [2]
+ - Unlimited Movement Points (for selected army/ship/agent) [2]
+ - Recover troop size (when moving) [2]
+ - Research in 1 day [3]
+ - Reinforcement in 1 day [3](*)
+ - Construction/Improvement in 1 day [3]
+===========================================
+[1] RTS - During combat
+[2] TBS - While moving
+[3] TBS - During TURN. 
+(*) Only those on the active production slots will be recruited in one day. The remaining ones will be produced on next turns.
+===========================================
+[NOTE] There is no need to deactivate the scripts
+===========================================
+[THANKS]This update was possible thanks to the funds that were transfered to me. A courtesy of Aloha2994
+===========================================
+Cheers!
+</Comments>
+</CheatTable>

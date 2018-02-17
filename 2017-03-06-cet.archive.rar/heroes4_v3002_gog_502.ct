@@ -1,0 +1,458 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="14">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>30</ID>
+      <Description>"Heroes of MnM 4 v3002 GOG Script "</Description>
+      <Options moHideChildren="1"/>
+      <Color>FF0000</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>{
+===========================================
+ Game Title    : Heroes of Might &amp; Magic 4
+ Game Version  : 3.0.0.2 (GOG)
+ Process Name  : heroes4.exe
+ Script Version: 1.0
+ CE Version    : 6.2
+ Release date  : 17-Jul-2012
+ Author        : Recifense
+ Features:
+ - Minimum Resources
+ - Unlimited Movement
+ - Minimum Troop Size
+ - Hero Status:
+   - Attack    &gt;= 20
+   - Defense   &gt;= 20
+   - Power     &gt;= 20
+   - Knowledge &gt;= 20
+   - Full Mana
+ - God Mode
+ - Pointers
+ ==========================================
+}
+
+[ENABLE]
+//=========================================
+// Check if script is compatible to this game version
+// If false the script will not be loaded
+
+assert(heroes4.exe+3904bb,2b c2 8b 17 50)
+assert(heroes4.exe+241dd7,d8 46 70 d9 56 70)
+assert(heroes4.exe+1ef4b6,8b 94 32 a0 00 00 00)
+
+//=========================================
+alloc(MyCode,2048,heroes4.exe)
+//=========================================
+// Declaration section
+label(_MonPlayer)
+label(_MonP00)
+label(_BackMP)
+label(_ExitMP)
+label(_MonMovement)
+label(_MonM00)
+label(_MonM01)
+label(_BackMM)
+label(_ExitMM)
+label(_GodMode)
+label(_BackGM)
+label(_ExitGM)
+label(pUnit)
+label(pPlayer)
+label(iPlayerID)
+label(iEnableMR)
+label(iEnableMM)
+label(iEnableTS)
+label(iEnableMH)
+label(iEnableGM)
+label(iMinSize)
+
+//=========================================
+// Registering Symbols
+registersymbol(MyCode)
+registersymbol(pUnit)
+registersymbol(pPlayer)
+registersymbol(iPlayerID)
+registersymbol(iEnableMR)
+registersymbol(iEnableMM)
+registersymbol(iEnableTS)
+registersymbol(iEnableMH)
+registersymbol(iEnableGM)
+registersymbol(iMinSize)
+
+//=========================================
+MyCode:
+//=========================================
+_MonPlayer:
+ push eax
+ push ebx
+ push ecx
+
+ mov eax,[ebx+1c]
+ lea ecx,[eax+ebp*4+000000c8]
+ cmp ecx,edi
+ jne _ExitMP
+
+ mov [pPlayer],eax
+ mov ecx,[eax+64]
+ mov [iPlayerID],ecx
+
+ cmp dword ptr [iEnableMR],0
+ je _ExitMP                        // Jump if feature is disabled
+
+ mov ecx,#620000
+
+ test ebp,ebp
+ jz _MonP00
+
+ mov ecx,#50000
+
+_MonP00:
+ cmp ecx,[edi]
+ jle _ExitMP
+
+ mov [edi],ecx
+
+_ExitMP:
+ pop ecx
+ pop ebx
+ pop eax
+
+ sub eax,edx                       // Original code
+ mov edx,[edi]                     // Original code
+ push eax                          // Original code
+ jmp _BackMP                       // Back to main code
+
+//=========================================
+_MonMovement:
+ mov eax,[esp+04]
+
+ push ebx
+ push ecx
+
+ mov ecx,[eax+78]
+ cmp ecx,[iPlayerID]
+ jne _ExitMM
+
+ mov [pUnit],eax
+
+ cmp dword ptr [iEnableMM],0
+ je _MonM00                        // Jump if feature is disabled
+
+ fstp st(0)
+ fldz
+
+_MonM00:
+ mov ecx,[esi+000000a0]
+ test ecx,ecx
+ js _MonM01
+
+ cmp dword ptr [iEnableTS],0
+ je _ExitMM                        // Jump if feature is disabled
+
+ mov ebx,[iMinSize]
+
+ cmp ebx,ecx
+ jle _ExitMM
+
+ mov [esi+000000A0],ebx
+ jmp _ExitMM
+//==
+_MonM01:
+ cmp dword ptr [iEnableMH],0
+ je _ExitMM                        // Jump if feature is disabled
+
+ mov ecx,[esi+00000798]
+ test ecx,ecx
+ js _ExitMM
+ jz _ExitMM
+
+ mov ecx,#200
+ cmp ecx,[esi+00000798]
+ jle _ExitMM
+
+ mov [esi+00000798],ecx
+
+_ExitMM:
+ pop ecx
+ pop ebx
+
+ fadd dword ptr [esi+70]           // Original code
+ fst dword ptr [esi+70]            // Original code
+ jmp _BackMM                       // Back to main code
+
+//=========================================
+_GodMode:
+ cmp dword ptr [iEnableGM],0
+ je _ExitGM                        // Jump if feature is disabled
+
+ cmp byte ptr [esi+000000a0],00
+ jne _ExitGM
+
+ xor ecx,ecx
+ mov [eax],ecx
+
+_ExitGM:
+ mov edx,[edx+esi+000000A0]        // Original code
+ jmp _BackGM                       // Back to main code
+
+//=========================================
+ db '======================================&gt;'
+ db 'CE6.2 Script by Recifense 071712'
+//=========================================
+// Variables
+iEnableMR:
+ dd 0
+iEnableMM:
+ dd 0
+iEnableTS:
+ dd 0
+iEnableMH:
+ dd 0
+iEnableGM:
+ dd 0
+pUnit:
+ dd 0
+pPlayer:
+ dd 0
+iMinSize:
+ dd #900
+iPlayerID:
+ dd 55555555
+
+//=========================================
+// Hacking Points
+heroes4.exe+3904bb:
+ jmp _MonPlayer
+_BackMP:
+
+heroes4.exe+241dd7:
+ jmp _MonMovement
+ nop
+_BackMM:
+
+heroes4.exe+1ef4b6:
+ jmp _GodMode
+ nop
+ nop
+_BackGM:
+
+//=========================================
+// Script for Restoring Original Codes
+[DISABLE]
+heroes4.exe+3904bb:
+// sub eax,edx
+// mov edx,[edi]
+// push eax
+ db 2b c2 8b 17 50
+
+heroes4.exe+241dd7:
+// fadd dword ptr [esi+70]
+// fst dword ptr [esi+70]
+ db d8 46 70 d9 56 70
+
+heroes4.exe+1ef4b6:
+// mov edx,[edx+esi+000000A0]
+ db 8b 94 32 a0 00 00 00
+
+//=========================================
+// Unregistering Symbols
+unregistersymbol(MyCode)
+unregistersymbol(pPlayer)
+unregistersymbol(iPlayerID)
+unregistersymbol(pUnit)
+unregistersymbol(iEnableMR)
+unregistersymbol(iEnableMM)
+unregistersymbol(iEnableTS)
+unregistersymbol(iEnableMH)
+unregistersymbol(iEnableGM)
+unregistersymbol(iMinSize)
+
+//=========================================
+dealloc(MyCode)
+//============= Scripts End ===============
+
+// ****************************************
+// NOTES
+// ****************************************
+{
+}
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>7</ID>
+          <Description>"Enable/Disable Minimum Resources =&gt; (1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMR</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>32</ID>
+          <Description>"Enable/Disable Unlimited Movement Points =&gt; (1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMM</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>33</ID>
+          <Description>"Enable/Disable Minimum Troop Size =&gt; (1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableTS</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>18</ID>
+              <Description>"Minimum Troop Size Value =&gt;"</Description>
+              <Color>0080FF</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>iMinSize</Address>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>34</ID>
+          <Description>"Enable/Disable Hero's Minimum Skill =&gt; (1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMH</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>35</ID>
+          <Description>"Enable/Disable God Model =&gt; (1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableGM</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols/>
+  <Comments>===========================================
+ Game Title    : Heroes of Might &amp; Magic 3
+ Game Version  : 4.0.0.0 (GOG)
+ Process Name  : Heroes3.exe
+ Script Version: 1.0
+ CE Version    : 6.2
+ Release date  : 17-Jul-2012
+ Author        : Recifense
+ Features:
+ - Minimum Resources  [1]
+ - Unlimited Movement [2]
+ - Minimum Troop Size [3]
+ - Hero Status:       [4]
+   - Full Mana (200)
+ - God Mode           [5]
+ - Pointers
+ ==========================================
+[1] Gold &gt;= 620000 and other resources &gt;= 50000;
+[2] Selected player's army can move freely;
+[3] Troop size &gt;= minimum (when moving);
+[4] Full mana =  200
+[5] God Mode :)
+===========================================
+HOTKEYS:
+CTRL+Home = ENABLE  cheats;
+CTRL+End  = DISABLE cheats;
+===========================================
+Cheers!
+</Comments>
+</CheatTable>

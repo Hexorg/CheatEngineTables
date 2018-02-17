@@ -1,0 +1,322 @@
+<?xml version="1.0"?>
+<CheatTable CheatEngineTableVersion="11">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>6</ID>
+      <Description>"[X]&lt;== WH40K DoW DC Script"</Description>
+      <Options moHideChildren="1"/>
+      <Color>80000008</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>{
+===========================================
+ Game Title    : Warhammer 40k - DoW - Dark Crusade
+ Game Version  : 1.2
+ Script Version: 1.0
+ CE Version    : 6.1
+ Release date  : 06-Jul-2011
+ Author        : Recifense
+ Features:
+ - God Mode
+ - Minimum Resources
+ - Unlimited Squads/Vehicles
+ - Minimum Requisition (on campaign map)
+===========================================
+}
+
+[ENABLE]
+//=========================================
+// Check if script is compatible to this game version
+// If false the script will not be loaded
+
+assert(WXPMod.dll+1849bD,3b 81 84 00 00 00)
+assert(WXPMod.dll+08e73f,d9 56 14 d9 e8)
+assert(WXPMod.dll+060b84,d8 14 91 df e0)
+assert(WXPMod.dll+12e613,8b 4c 24 04 8b 04 88)
+
+//=========================================
+alloc(MyCode,1024)
+//=========================================
+// Declaration section
+label(_MonPlayer)
+label(_BackMP)
+label(_ExitMP)
+label(_GodMode)
+label(_BackGM)
+label(_ExitGM)
+label(_MonRes)
+label(_MonR0)
+label(_BackMR)
+label(_ExitMR)
+label(_MonReq)
+label(_BackMRq)
+label(_ExitMRq)
+label(iEnableGM)
+label(iEnableMR)
+label(iEnableUU)
+label(iEnableMRq)
+label(pPlayerStr)
+label(pPlayerGM)
+
+//=========================================
+// Registering Symbols
+registersymbol(MyCode)
+registersymbol(iEnableGM)
+registersymbol(iEnableMR)
+registersymbol(iEnableMRq)
+registersymbol(iEnableUU)
+registersymbol(pPlayerStr)
+
+//=========================================
+MyCode:
+//===========================================
+// This piece of code copies to a known place
+// the Player Structure Address
+
+_MonPlayer:
+ push ebx
+ mov ebx,[ecx+00000084]            // Get pPlayer
+ mov [pPlayerStr],ebx              // Save pointer for debugging
+
+ cmp dword ptr [iEnableUU],0
+ je _ExitMP                        // Jump if feature is disabled
+
+ mov dword ptr [ebx+0000022c],0    // Orks
+ mov dword ptr [ebx+00000230],0    // Squads
+ mov dword ptr [ebx+00000234],0    // Vehicles
+
+_ExitMP:
+ pop ebx
+ cmp eax,[ecx+00000084]            // Original code
+ jmp _BackMP                       // Back to main code
+
+//===========================================
+// This piece of code checks if the current unit
+// belongs to the player. If so, %HP = 1.00
+
+_GodMode:
+ push ebx
+
+ fst dword ptr [esi+14]            // Original code
+ fld1                              // Original code
+
+ cmp dword ptr [iEnableGM],0
+ je _ExitGM                        // Jump if feature is disabled
+
+ cmp edi,[pPlayerStr]
+ jne _ExitGM
+
+ mov ebx,(float)1.0
+ mov [esi+14],ebx                  // %HP = 100
+
+_ExitGM:
+ pop ebx
+ jmp _BackGM                       // Back to main code
+
+//===========================================
+// This one checks if the current resource belongs
+// to the player. If so, it does not let it go under
+// 5000.
+
+_MonRes:
+ cmp dword ptr [iEnableMR],0
+ je _ExitMR                        // Jump if feature is disabled
+
+ cmp esi,[pPlayerStr]
+ jne _ExitMR
+
+ mov eax,(float)5000               // Minimum Resource value
+ cmp edx,#2
+ jl _MonR0
+
+ mov eax,(float)100                // Minimum Resource value for OrcResource
+
+_MonR0:
+ cmp eax,[ecx+edx*4]
+ jl _ExitMR
+
+ mov [ecx+edx*4],eax
+
+_ExitMR:
+ fcom dword ptr [ecx+edx*4]        // Original code
+ fnstsw ax                         // Original code
+ jmp _BackMR                       // Back to main code
+
+//===========================================
+// This one checks if the current Requisition belongs
+// to the player on the campaign map. If so, it does not let it go under
+// 5000.
+
+_MonReq:
+ mov ecx,[esp+04]                  // Original code
+
+ push ebx
+
+ cmp edi,esi                       // Is it requisition?
+ jne _ExitMRq                      // Jump if false
+
+ cmp dword ptr [iEnableMRq],0
+ je _ExitMRq                       // Jump if feature is disabled
+
+ mov ebx,#5000
+ cmp ebx,[eax+ecx*4]
+
+ mov [eax+ecx*4],ebx
+
+_ExitMRq:
+ pop ebx
+ mov eax,[eax+ecx*4]               // Original code
+ jmp _BackMRq                      // Back to main code
+
+//=========================================
+ db '==============&gt;'
+ db 'CE6.1 Script by Recifense 070611'
+//=========================================
+// Variables
+iEnableGM:
+ dd 1
+iEnableMR:
+ dd 1
+iEnableUU:
+ dd 1
+iEnableMRq:
+ dd 1
+pPlayerStr:
+ dd MyCode
+pPlayerGM:
+ dd 0
+
+//=========================================
+// Hacking Points
+WXPMod.dll+1849bD:
+ jmp _MonPlayer
+ nop
+_BackMP:
+
+WXPMod.dll+08e73f:
+ jmp _GodMode
+_BackGM:
+
+WXPMod.dll+060b84:
+ jmp _MonRes
+_BackMR:
+
+WXPMod.dll+12e613:
+ jmp _MonReq
+ nop
+ nop
+_BackMRq:
+
+//=========================================
+// Script for Restoring Original Codes
+[DISABLE]
+WXPMod.dll+1849bD:
+ cmp eax,[ecx+00000084]
+
+WXPMod.dll+08e73f:
+ fst dword ptr [esi+14]
+ fld1
+
+WXPMod.dll+060b84:
+ fcom dword ptr [ecx+edx*4]
+ fnstsw ax
+
+WXPMod.dll+12e613:
+ mov ecx,[esp+04]
+ mov eax,[eax+ecx*4]
+
+//=========================================
+// Unregistering Symbols
+unregistersymbol(iEnableGM)
+unregistersymbol(iEnableMR)
+unregistersymbol(iEnableUU)
+unregistersymbol(iEnableMRq)
+unregistersymbol(pPlayerStr)
+
+//=========================================
+dealloc(MyCode)
+//============= Scripts End ===============
+
+// ****************************************
+// NOTES
+// ****************************************
+{
+struct PLAYER:
+0000 = 0F3F75C4
+0004 = i1001
+01f4 = fRequisition
+01f8 = fPower
+01fc = fOrkResource
+022c = fcOrks
+0230 = icSquads
+0234 = icVehicles
+
+struct UNITHP:
+0000 = 0f3fa880
+0004 = ppOwner
+0014 = f%HP (1.0 = 100%)
+0018 = fHP
+
+struct ppOWNER:
+0000 = 0f3f577c
+0004 = pOwner
+0010 = pUnitHP
+
+struct pOWNER:
+0008 = pPlayer
+0010 = ppOwner
+}
+
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>7</ID>
+          <Description>"Enable/Disable God Mode ==&gt; (1/0)"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableGM</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>8</ID>
+          <Description>"Enable/Disable Minimum Resources ==&gt; (1/0)"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMR</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>9</ID>
+          <Description>"Enable/Disable Unlimited Units ==&gt; (1/0)"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableUU</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>10</ID>
+          <Description>"Enable/Disable Minimum Requisition ==&gt; (1/0)"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMRq</Address>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols>
+    <SymbolEntry>
+      <Name>MyCode</Name>
+      <Address>025F0000</Address>
+    </SymbolEntry>
+  </UserdefinedSymbols>
+  <Comments>===========================================
+ Game Title    : Warhammer 40k - DoW - Dark Crusade
+ Game Version  : 1.2
+ Script Version: 1.0
+ CE Version    : 6.1
+ Release date  : 06-Jul-2011
+ Author        : Recifense
+ Features:
+ - God Mode
+ - Minimum Resources
+ - Unlimited Squads/Vehicles
+ - Minimum Requisition (on campaign map)
+===========================================
+</Comments>
+</CheatTable>

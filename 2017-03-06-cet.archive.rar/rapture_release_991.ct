@@ -1,0 +1,4258 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="19">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>72343</ID>
+      <Description>"Move Speed Mod"</Description>
+      <Options moHideChildren="1"/>
+      <LastState Activated="1"/>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>[ENABLE]
+//code from here to '[DISABLE]' will be used to enable the cheat
+aobscanmodule(moveForceWriteAOB,Rapture_Release.exe,F3 0F 11 4D C8 F3 44 0F 10 45 C8)
+registersymbol(moveForceWriteAOB)
+
+label(fMoveSpeedMultiplierCal)
+registersymbol(fMoveSpeedMultiplierCal)
+label(fMoveSpeedMultiplier)
+registersymbol(fMoveSpeedMultiplier)
+label(fMoveSpeedMultiplierMod1)
+registersymbol(fMoveSpeedMultiplierMod1)
+label(fMoveSpeedMultiplierMod2)
+registersymbol(fMoveSpeedMultiplierMod2)
+label(bUseSpeedModKey)
+registersymbol(bUseSpeedModKey)
+label(bSpeedModKeyPressed)
+registersymbol(bSpeedModKeyPressed)
+
+alloc(newmem,2048,moveForceWriteAOB) //"Rapture_Release.exe"+C673A8)
+label(returnhere)
+label(originalcode)
+label(exit)
+
+newmem: //this is allocated memory, you have read,write,execute access
+//place your code here
+//cmp byte ptr [bSpeedModKeyPressed],1
+//jne originalcode
+mulss xmm0,[fMoveSpeedMultiplierCal]
+movss [rbp-34],xmm0
+mulss xmm1,[fMoveSpeedMultiplierCal]
+
+originalcode:
+movss [rbp-38],xmm1
+
+exit:
+jmp returnhere
+
+///
+fMoveSpeedMultiplierCal:
+dd (float)1
+fMoveSpeedMultiplier:     //no mod key pressed
+dd (float)1
+fMoveSpeedMultiplierMod1: //shift key pressed
+dd (float)3
+fMoveSpeedMultiplierMod2: //alt key pressed
+dd (float)0.5
+bUseSpeedModKey:
+dd 0
+bSpeedModKeyPressed:
+dd 0
+///
+
+moveForceWriteAOB: //"Rapture_Release.exe"+C673A8:
+jmp newmem
+returnhere:
+
+///***************************************************///
+
+label(bEndThread_Rapture_Release_keylistener2_mem)
+registersymbol(bEndThread_Rapture_Release_keylistener2_mem)
+label(fMoveSpeedMultiplierCalTmp)
+
+alloc(Rapture_Release_keylistener2_mem,2048,"Rapture_Release.exe")
+registersymbol(Rapture_Release_keylistener2_mem)
+createthread(Rapture_Release_keylistener2_mem)
+label(keylistenerstart)
+label(keylistenerend)
+label(keylistenerexit)
+
+Rapture_Release_keylistener2_mem:
+sub rsp,28
+
+keylistenerstart:
+
+movss xmm0,[fMoveSpeedMultiplier]
+movss [fMoveSpeedMultiplierCalTmp],xmm0
+
+mov rcx,10 //SHIFT key //11 //CTRL key
+push rcx
+call GetAsyncKeyState
+add rsp,08
+shr ax,#15
+cmp ax,1
+jne @f
+movss xmm0,[fMoveSpeedMultiplierMod1]
+movss [fMoveSpeedMultiplierCalTmp],xmm0
+jmp keylistenerend
+
+@@:
+mov rcx,12 //ALT key
+push rcx
+call GetAsyncKeyState
+add rsp,08
+shr ax,#15
+cmp ax,1
+jne @f
+movss xmm0,[fMoveSpeedMultiplierMod2]
+movss [fMoveSpeedMultiplierCalTmp],xmm0
+jmp keylistenerend
+
+@@:
+
+keylistenerend:
+movss xmm0,[fMoveSpeedMultiplierCalTmp]
+movss [fMoveSpeedMultiplierCal],xmm0
+mov rcx,#100
+call Sleep
+cmp dword ptr [bEndThread_Rapture_Release_keylistener2_mem],1
+jne keylistenerstart
+
+keylistenerexit:
+add rsp,28
+mov dword ptr [bEndThread_Rapture_Release_keylistener2_mem],2
+ret
+
+///
+bEndThread_Rapture_Release_keylistener2_mem:
+dd 0
+fMoveSpeedMultiplierCalTmp:
+dd (float)1
+///
+
+
+ 
+ 
+[DISABLE]
+//code from here till the end of the code will be used to disable the cheat
+//obtained from SubBeam's ACS script - start//
+{$lua}
+
+if( syntaxcheck == false ) then --actual execution
+  local starttime = getTickCount()
+
+if readInteger( "bEndThread_Rapture_Release_keylistener2_mem" ) == 0 then --could be 2 already
+  writeInteger( "bEndThread_Rapture_Release_keylistener2_mem", 1 ) --tell the thread to kill itself
+end
+
+while( getTickCount() &lt; starttime + 1000 ) and ( readInteger( "bEndThread_Rapture_Release_keylistener2_mem" ) ~=2 ) do --wait till it has finished
+  sleep( 20 )
+end
+
+if( getTickCount() &gt; starttime + 1000 ) then --could happen when the window is shown
+  showMessage( 'Disabling the thread failed!' )
+  error( 'Thread disabling failed!' )
+end
+  sleep( 1 )
+end
+
+{$asm}
+//obtained from SubBeam's ACS script - end//
+
+//bEndThread_Rapture_Release_keylistener2_mem:
+//dd 1
+
+///***************************************************///
+
+dealloc(newmem)
+moveForceWriteAOB: //"Rapture_Release.exe"+C673A8:
+db F3 0F 11 4D C8
+//Alt: movss [rbp-38],xmm1
+unregistersymbol(moveForceWriteAOB)
+
+unregistersymbol(fMoveSpeedMultiplierCal)
+unregistersymbol(fMoveSpeedMultiplier)
+unregistersymbol(fMoveSpeedMultiplierMod1)
+unregistersymbol(fMoveSpeedMultiplierMod2)
+unregistersymbol(bUseSpeedModKey)
+unregistersymbol(bSpeedModKeyPressed)
+
+///***************************************************///
+
+unregistersymbol(bEndThread_Rapture_Release_keylistener2_mem)
+
+dealloc(Rapture_Release_keylistener2_mem)
+unregistersymbol(Rapture_Release_keylistener2_mem)
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>72344</ID>
+          <Description>"x?"</Description>
+          <LastState Value="1" RealAddress="136FF002C"/>
+          <VariableType>Float</VariableType>
+          <Address>fMoveSpeedMultiplier</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>72385</ID>
+          <Description>"Shift Key x?"</Description>
+          <LastState Value="3" RealAddress="136FF0030"/>
+          <VariableType>Float</VariableType>
+          <Address>fMoveSpeedMultiplierMod1</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>72386</ID>
+          <Description>"Alt Key x?"</Description>
+          <LastState Value="0.5" RealAddress="136FF0034"/>
+          <VariableType>Float</VariableType>
+          <Address>fMoveSpeedMultiplierMod2</Address>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>72324</ID>
+      <Description>"NoClip .4"</Description>
+      <Options moHideChildren="1"/>
+      <LastState Activated="1"/>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>[ENABLE]
+//code from here to '[DISABLE]' will be used to enable the cheat
+aobscanmodule(snvRead2AOB,Rapture_Release.exe,F3 0F 59 81 08 01 00 00 F3 0F 59 89 10 01 00 00 F3 0F 10)
+registersymbol(snvRead2AOB)
+
+label(bFlyMode)
+registersymbol(bFlyMode)
+label(vx)
+registersymbol(vx)
+
+alloc(newmem,2048,snvRead2AOB) //"Rapture_Release.exe"+63147)
+label(returnhere)
+label(originalcode)
+label(exit)
+
+newmem: //this is allocated memory, you have read,write,execute access
+//place your code here
+test r9,r9
+jnz originalcode
+
+//
+push rax
+sub rsp,16
+movdqu dqword [rsp],xmm15
+//
+
+movss xmm15,[rcx]
+movss [vx],xmm15
+movss xmm15,[rcx+10]
+movss [vx+4],xmm15
+
+//
+movdqu xmm15,dqword [rsp]
+add rsp,16
+pop rax
+//
+
+originalcode:
+mulss xmm0,[rcx+00000108]
+
+exit:
+jmp returnhere
+
+///
+bFlyMode:
+dd 0
+vx:
+///
+
+
+snvRead2AOB: //"Rapture_Release.exe"+63147:
+jmp newmem
+nop
+nop
+nop
+returnhere:
+
+///*******************************************************///
+
+aobscanmodule(someReturn1AOB,Rapture_Release.exe,48 8B 0D ** ** ** ** 48 8B 01 FF 50 68 ** ** ** ** ** ** 41 ** ** ** ** ** ** 4C)
+registersymbol(someReturn1AOB)
+aobscanmodule(snvRead1AOB,Rapture_Release.exe,F3 0F 11 A9 18 01 00 00)
+registersymbol(snvRead1AOB)
+
+label(pSomeCamInfo1)
+registersymbol(pSomeCamInfo1)
+
+alloc(newmem1,2048,snvRead1AOB) //"Rapture_Release.exe"+957EC)
+label(returnhere1)
+label(originalcode1)
+label(exit1)
+
+newmem1: //this is allocated memory, you have read,write,execute access
+//place your code here
+mov rax,someReturn1AOB //
+cmp [rsp+e8],rax
+jne originalcode1
+mov [pSomeCamInfo1],rcx
+movss [rcx+00000118],xmm5
+
+originalcode1:
+movss [rcx+00000118],xmm5
+
+exit1:
+jmp returnhere1
+
+///
+pSomeCamInfo1:
+///
+
+snvRead1AOB: //"Rapture_Release.exe"+957EC:
+jmp newmem1
+nop
+nop
+nop
+returnhere1:
+
+///*******************************************************///
+
+aobscanmodule(playerCoordReadConstAOB,Rapture_Release.exe,8B 81 A8 00 00 00 48 8B D9 4C)
+registersymbol(playerCoordReadConstAOB)
+
+label(pPlayerCoord)
+registersymbol(pPlayerCoord)
+
+alloc(newmem2,2048,playerCoordReadConstAOB) //"Rapture_Release.exe"+C65219)
+label(returnhere2)
+label(originalcode2)
+label(exit2)
+
+newmem2: //this is allocated memory, you have read,write,execute access
+//place your code here
+mov [pPlayerCoord],rcx
+
+originalcode2:
+mov eax,[rcx+000000A8]
+
+exit2:
+jmp returnhere2
+
+///
+pPlayerCoord:
+///
+
+playerCoordReadConstAOB: //"Rapture_Release.exe"+C65219:
+jmp newmem2
+nop
+returnhere2:
+
+///*******************************************************///
+
+aobscanmodule(movementYReadAOB,Rapture_Release.exe,F3 0F 10 9F 34 03 00 00)
+registersymbol(movementYReadAOB)
+
+label(pMovementInfo)
+registersymbol(pMovementInfo)
+
+alloc(newmem3,2048,movementYReadAOB) //"Rapture_Release.exe"+13D3908)
+label(returnhere3)
+label(originalcode3)
+label(exit3)
+
+newmem3: //this is allocated memory, you have read,write,execute access
+//place your code here
+mov [pMovementInfo],rdi
+
+originalcode3:
+movss xmm3,[rdi+00000334]
+
+exit3:
+jmp returnhere3
+
+///
+pMovementInfo:
+///
+
+movementYReadAOB: //"Rapture_Release.exe"+13D3908:
+jmp newmem3
+nop
+nop
+nop
+returnhere3:
+
+///*******************************************************///
+
+aobscanmodule(highestZReadInAirAOB,Rapture_Release.exe,F3 0F 10 93 90 04 00 00)
+registersymbol(highestZReadInAirAOB)
+
+label(pHighestZ)
+registersymbol(pHighestZ)
+
+alloc(newmem4,2048,highestZReadInAirAOB) //"Rapture_Release.exe"+12EB13C)
+label(returnhere4)
+label(originalcode4)
+label(exit4)
+
+newmem4: //this is allocated memory, you have read,write,execute access
+//place your code here
+lea rcx,[rbx+490]
+mov [pHighestZ],rcx
+
+cmp byte ptr [bFlyMode],1
+je originalcode4
+
+//
+push rax
+sub rsp,16
+movdqu dqword [rsp],xmm15
+//
+
+mov rcx,[pPlayerCoord]
+test rcx,rcx
+jz @f
+
+mov eax,(float)2
+movd xmm15,eax
+addss xmm15,[rcx+b0]
+
+movss [rbx+490],xmm15
+
+@@:
+//
+movdqu xmm15,dqword [rsp]
+add rsp,16
+pop rax
+//
+
+originalcode4:
+movss xmm2,[rbx+00000490]
+
+exit4:
+jmp returnhere4
+
+///
+pHighestZ:
+///
+
+highestZReadInAirAOB: //"Rapture_Release.exe"+12EB13C:
+jmp newmem4
+nop
+nop
+nop
+returnhere4:
+
+///*******************************************************///
+
+aobscanmodule(playerCoordWriteOnMoveAOB,Rapture_Release.exe,8B 02 89 81 A8 00 00 00 ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** 83)
+registersymbol(playerCoordWriteOnMoveAOB)
+
+label(fZDirection)
+registersymbol(fZDirection)
+label(fFlySpeedMultiplier)
+registersymbol(fFlySpeedMultiplier)
+
+alloc(newmem5,2048,playerCoordWriteOnMoveAOB) //"Rapture_Release.exe"+C6646E)
+label(returnhere5)
+label(originalcode5)
+label(exit5)
+
+newmem5: //this is allocated memory, you have read,write,execute access
+//place your code here
+cmp byte ptr [bFlyMode],1
+je @f
+jmp originalcode5
+
+@@:
+//freeze coord
+mov eax,[rcx+a8]
+mov [rdx],eax
+mov eax,[rcx+ac]
+mov [rdx+4],eax
+mov eax,[rcx+b0]
+mov [rdx+8],eax
+
+//store registers, xmms
+push r8
+push r9
+sub rsp,16
+movdqu dqword [rsp],xmm3
+sub rsp,16
+movdqu dqword [rsp],xmm4
+
+//do y
+//get y direction
+mov r8,[pMovementInfo]
+test r8,r8
+jz @f
+movss xmm4,[r8+334]
+shufps xmm4,xmm4,c0 //broadcast to all but most sigificant
+
+//apply speed
+mov eax,(float)0.25
+movd xmm3,eax
+shufps xmm3,xmm3,00 //broadcast
+mulps xmm4,xmm3
+movss xmm3,[fFlySpeedMultiplier]
+shufps xmm3,xmm3,00 //broadcast
+mulps xmm4,xmm3
+
+//apply vector
+mov r9,[pSomeCamInfo1]
+test r9,r9
+jz @f
+movups xmm3,[r9+118]
+mulps xmm4,xmm3
+
+//update new coord
+movups xmm3,[rdx]
+addps xmm4,xmm3
+movups [rdx],xmm4
+
+//do x
+//get x direction
+movss xmm4,[r8+330]
+shufps xmm4,xmm4,e0 //copy to 2nd
+
+//apply speed
+mov eax,(float)0.25
+movd xmm3,eax
+shufps xmm3,xmm3,e0 //copy to 2nd
+mulps xmm4,xmm3
+movss xmm3,[fFlySpeedMultiplier]
+shufps xmm3,xmm3,00 //broadcast
+mulps xmm4,xmm3
+
+//apply vector
+mov r9,vx
+test r9,r9
+jz @f
+movups xmm3,[vx]
+//shufps xmm3,xmm3,e1 //swap least and 2nd
+mulps xmm4,xmm3
+
+//update new coord
+movups xmm3,[rdx]
+addps xmm4,xmm3
+movups [rdx],xmm4
+
+//do z
+//get z direction
+movss xmm4,[fZDirection]
+shufps xmm4,xmm4,c6 //place z direction to 3rd element
+
+//apply speed
+mov eax,(float)0.25
+movd xmm3,eax
+shufps xmm3,xmm3,00
+mulps xmm4,xmm3
+movss xmm3,[fFlySpeedMultiplier]
+shufps xmm3,xmm3,00 //broadcast
+mulps xmm4,xmm3
+
+//update new coord
+movups xmm3,[rdx]
+addps xmm4,xmm3
+movups [rdx],xmm4
+
+@@:
+//update highest z
+mov r8,[pHighestZ]
+test r8,r8
+jz @f
+movss xmm4,[rdx+8]
+movss [r8],xmm4
+
+@@:
+//restore registers, xmms
+//end
+movdqu xmm4,dqword [rsp]
+add rsp,16
+movdqu xmm3,dqword [rsp]
+add rsp,16
+pop r9
+pop r8
+
+originalcode5:
+mov eax,[rdx]
+mov [rcx+000000A8],eax
+
+exit5:
+jmp returnhere5
+
+///
+fZDirection:
+dd 0
+fFlySpeedMultiplier:
+dd (float)1
+///
+
+playerCoordWriteOnMoveAOB: //"Rapture_Release.exe"+C6646E:
+jmp newmem5
+nop
+nop
+nop
+returnhere5:
+
+///*******************************************************///
+
+label(bEndThread_Rapture_Release_keylistener_mem)
+registersymbol(bEndThread_Rapture_Release_keylistener_mem)
+
+alloc(Rapture_Release_keylistener_mem,2048,"Rapture_Release.exe")
+registersymbol(Rapture_Release_keylistener_mem)
+createthread(Rapture_Release_keylistener_mem)
+label(keylistenerstart)
+label(keylistenerend)
+label(keylistenerexit)
+label(fTempZDirection)
+label(fTempFlySpeedMultiplier)
+label(fFlySpeedMultiplierMod1)
+registersymbol(fFlySpeedMultiplierMod1)
+label(fFlySpeedMultiplierMod2)
+registersymbol(fFlySpeedMultiplierMod2)
+
+Rapture_Release_keylistener_mem:
+sub rsp,28
+
+keylistenerstart:
+
+cmp byte ptr [bFlyMode],1
+je @f
+jmp keylistenerend
+
+@@:
+mov dword ptr [fTempFlySpeedMultiplier],(float)1
+
+mov rcx,10 //SHIFT key
+push rcx
+call GetAsyncKeyState
+add rsp,08
+shr ax,#15
+cmp ax,1
+jne @f
+mov ecx,[fFlySpeedMultiplierMod1]
+mov [fTempFlySpeedMultiplier],ecx
+
+@@:
+mov rcx,12 //ALT key
+push rcx
+call GetAsyncKeyState
+add rsp,08
+shr ax,#15
+cmp ax,1
+jne @f
+mov ecx,[fFlySpeedMultiplierMod2]
+mov [fTempFlySpeedMultiplier],ecx
+
+@@:
+mov dword ptr [fTempZDirection],0
+
+mov rcx,20 //SPACEBAR
+push rcx
+call GetAsyncKeyState
+add rsp,08
+shr ax,#15
+cmp ax,1
+jne @f
+mov dword ptr [fTempZDirection],(float)1
+jmp keylistenerend
+
+@@:
+
+mov rcx,04 //Middle mouse button (three-button mouse)
+push rcx
+call GetAsyncKeyState
+add rsp,08
+shr ax,#15
+cmp ax,1
+jne @f
+mov dword ptr [fTempZDirection],(float)-1
+jmp keylistenerend
+
+keylistenerend:
+mov ecx,[fTempFlySpeedMultiplier]
+mov [fFlySpeedMultiplier],ecx
+mov ecx,[fTempZDirection]
+mov [fZDirection],ecx
+mov rcx,#100
+call Sleep
+cmp dword ptr [bEndThread_Rapture_Release_keylistener_mem],1
+jne keylistenerstart
+
+keylistenerexit:
+add rsp,28
+mov dword ptr [bEndThread_Rapture_Release_keylistener_mem],2
+ret
+
+///
+bEndThread_Rapture_Release_keylistener_mem:
+dd 0
+fTempZDirection:
+dd 0
+fTempFlySpeedMultiplier:
+dd 1
+fFlySpeedMultiplierMod1: //shift key pressed
+dd (float)3
+fFlySpeedMultiplierMod2: //alt key pressed
+dd (float)0.5
+///
+
+
+
+
+[DISABLE]
+//code from here till the end of the code will be used to disable the cheat
+//obtained from SubBeam's ACS script - start//
+{$lua}
+
+if( syntaxcheck == false ) then --actual execution
+  local starttime = getTickCount()
+
+if readInteger( "bEndThread_Rapture_Release_keylistener_mem" ) == 0 then --could be 2 already
+  writeInteger( "bEndThread_Rapture_Release_keylistener_mem", 1 ) --tell the thread to kill itself
+end
+
+while( getTickCount() &lt; starttime + 1000 ) and ( readInteger( "bEndThread_Rapture_Release_keylistener_mem" ) ~=2 ) do --wait till it has finished
+  sleep( 20 )
+end
+
+if( getTickCount() &gt; starttime + 1000 ) then --could happen when the window is shown
+  showMessage( 'Disabling the thread failed!' )
+  error( 'Thread disabling failed!' )
+end
+  sleep( 1 )
+end
+
+{$asm}
+//obtained from SubBeam's ACS script - end//
+
+//bEndThread_Rapture_Release_keylistener_mem:
+//dd 1
+
+///*******************************************************///
+
+dealloc(newmem)
+snvRead2AOB: //"Rapture_Release.exe"+63147:
+db F3 0F 59 81 08 01 00 00
+//Alt: mulss xmm0,[rcx+00000108]
+unregistersymbol(snvRead2AOB)
+
+unregistersymbol(vx)
+
+///*******************************************************///
+
+unregistersymbol(someReturn1AOB)
+dealloc(newmem1)
+snvRead1AOB: //"Rapture_Release.exe"+957EC:
+db F3 0F 11 A9 18 01 00 00
+//Alt: movss [rcx+00000118],xmm5
+unregistersymbol(snvRead1AOB)
+
+unregistersymbol(pSomeCamInfo1)
+
+///*******************************************************///
+
+dealloc(newmem2)
+playerCoordReadConstAOB: //"Rapture_Release.exe"+C65219:
+db 8B 81 A8 00 00 00
+//Alt: mov eax,[rcx+000000A8]
+unregistersymbol(playerCoordReadConstAOB)
+
+unregistersymbol(pPlayerCoord)
+
+///*******************************************************///
+
+dealloc(newmem3)
+movementYReadAOB: //"Rapture_Release.exe"+13D3908:
+db F3 0F 10 9F 34 03 00 00
+//Alt: movss xmm3,[rdi+00000334]
+unregistersymbol(movementYReadAOB)
+
+unregistersymbol(pMovementInfo)
+
+///*******************************************************///
+
+dealloc(newmem4)
+highestZReadInAirAOB: //"Rapture_Release.exe"+12EB13C:
+db F3 0F 10 93 90 04 00 00
+//Alt: movss xmm2,[rbx+00000490]
+unregistersymbol(highestZReadInAirAOB)
+
+unregistersymbol(pHighestZ)
+
+///*******************************************************///
+
+dealloc(newmem5)
+playerCoordWriteOnMoveAOB: //"Rapture_Release.exe"+C6646E:
+db 8B 02 89 81 A8 00 00 00
+//Alt: mov eax,[rdx]
+//Alt: mov [rcx+000000A8],eax
+unregistersymbol(playerCoordWriteOnMoveAOB)
+
+unregistersymbol(bFlyMode)
+unregistersymbol(fZDirection)
+
+///*******************************************************///
+
+unregistersymbol(bEndThread_DarkSoulsIII_keylistener_mem)
+
+dealloc(Rapture_Release_keylistener_mem)
+unregistersymbol(Rapture_Release_keylistener_mem)
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>72325</ID>
+          <Description>"Status (Alt+E: NoClip, Alt+Q: Disable)"</Description>
+          <DropDownList ReadOnly="1" DescriptionOnly="1" DisplayValueAsItem="1">0:Disable
+1:NoClip
+</DropDownList>
+          <LastState Value="1" RealAddress="136FD0052"/>
+          <VariableType>Byte</VariableType>
+          <Address>bFlyMode</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>18</Key>
+                <Key>69</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>18</Key>
+                <Key>81</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>72389</ID>
+          <Description>"Shift Key x?"</Description>
+          <LastState Value="3" RealAddress="136F70189"/>
+          <VariableType>Float</VariableType>
+          <Address>fFlySpeedMultiplierMod1</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>72390</ID>
+          <Description>"Alt Key x?"</Description>
+          <LastState Value="0.5" RealAddress="136F7018D"/>
+          <VariableType>Float</VariableType>
+          <Address>fFlySpeedMultiplierMod2</Address>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>72326</ID>
+      <Description>""</Description>
+      <Options moHideChildren="1"/>
+      <LastState Value="" RealAddress="00000000"/>
+      <GroupHeader>1</GroupHeader>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>247</ID>
+          <Description>"for y"</Description>
+          <VariableType>Float</VariableType>
+          <Address>002F5818</Address>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>249</ID>
+              <Description>"for y"</Description>
+              <ShowAsHex>1</ShowAsHex>
+              <VariableType>Float</VariableType>
+              <Address>002F5818</Address>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>248</ID>
+          <Description>"for x"</Description>
+          <VariableType>Float</VariableType>
+          <Address>002F5700</Address>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>250</ID>
+              <Description>"for x"</Description>
+              <ShowAsHex>1</ShowAsHex>
+              <VariableType>Float</VariableType>
+              <Address>002F5700</Address>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>266</ID>
+          <Description>"* for vx"</Description>
+          <LastState/>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[ENABLE]
+//code from here to '[DISABLE]' will be used to enable the cheat
+aobscanmodule(snvRead2AOB,Rapture_Release.exe,F3 0F 59 81 08 01 00 00 F3 0F 59 89 10 01 00 00 F3 0F 10)
+registersymbol(snvRead2AOB)
+
+label(vy)
+registersymbol(vy)
+label(vx)
+registersymbol(vx)
+
+alloc(newmem,2048,snvRead2AOB) //"Rapture_Release.exe"+63147)
+label(returnhere)
+label(originalcode)
+label(exit)
+
+newmem: //this is allocated memory, you have read,write,execute access
+//place your code here
+test r9,r9
+jnz originalcode
+push rax
+sub rsp,16
+movdqu dqword [rsp],xmm15
+
+mulss xmm0,[rcx+00000108]
+movups xmm15,[rcx+108]
+movups [vy],xmm15
+
+movss xmm15,[rcx]
+movss [vx],xmm15
+movss xmm15,[rcx+10]
+movss [vx+4],xmm15
+
+//movups xmm15,[rcx+10]
+//movups [vx],xmm15
+//mov eax,(float)-1
+//movd xmm15,eax
+//mulss xmm15,[vx]
+//movss [vx],xmm15
+
+movdqu xmm15,dqword [rsp]
+add rsp,16
+pop rax
+jmp exit
+
+originalcode:
+mulss xmm0,[rcx+00000108]
+
+exit:
+jmp returnhere
+
+///
+vy:
+dq 0
+dq 0
+vx:
+dq 0
+dq 0
+///
+
+
+snvRead2AOB: //"Rapture_Release.exe"+63147:
+jmp newmem
+nop
+nop
+nop
+returnhere:
+
+
+ 
+ 
+[DISABLE]
+//code from here till the end of the code will be used to disable the cheat
+dealloc(newmem)
+snvRead2AOB: //"Rapture_Release.exe"+63147:
+db F3 0F 59 81 08 01 00 00
+//Alt: mulss xmm0,[rcx+00000108]
+unregistersymbol(snvRead2AOB)
+
+unregistersymbol(vy)
+unregistersymbol(vx)
+</AssemblerScript>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>267</ID>
+              <Description>"vy"</Description>
+              <LastState Value="" RealAddress="00000000"/>
+              <ShowAsHex>1</ShowAsHex>
+              <VariableType>Array of byte</VariableType>
+              <ByteLength>0</ByteLength>
+              <Address>vy</Address>
+              <CheatEntries>
+                <CheatEntry>
+                  <ID>269</ID>
+                  <Description>"+0"</Description>
+                  <VariableType>Float</VariableType>
+                  <Address>+0</Address>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>270</ID>
+                  <Description>"+4"</Description>
+                  <VariableType>Float</VariableType>
+                  <Address>+4</Address>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>271</ID>
+                  <Description>"+8"</Description>
+                  <VariableType>Float</VariableType>
+                  <Address>+8</Address>
+                </CheatEntry>
+              </CheatEntries>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>268</ID>
+              <Description>"vx"</Description>
+              <LastState Value="" RealAddress="136FD0056"/>
+              <ShowAsHex>1</ShowAsHex>
+              <VariableType>Array of byte</VariableType>
+              <ByteLength>0</ByteLength>
+              <Address>vx</Address>
+              <CheatEntries>
+                <CheatEntry>
+                  <ID>273</ID>
+                  <Description>"+0"</Description>
+                  <LastState Value="0.9987702966" RealAddress="136FD0056"/>
+                  <VariableType>Float</VariableType>
+                  <Address>+0</Address>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>274</ID>
+                  <Description>"+4"</Description>
+                  <LastState Value="-0.04957621545" RealAddress="136FD005A"/>
+                  <VariableType>Float</VariableType>
+                  <Address>+4</Address>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>275</ID>
+                  <Description>"+8"</Description>
+                  <LastState Value="0" RealAddress="136FD005E"/>
+                  <VariableType>Float</VariableType>
+                  <Address>+8</Address>
+                </CheatEntry>
+              </CheatEntries>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>294</ID>
+          <Description>"* for vy"</Description>
+          <LastState/>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[ENABLE]
+//code from here to '[DISABLE]' will be used to enable the cheat
+aobscanmodule(someReturn1AOB,Rapture_Release.exe,48 8B 0D ** ** ** ** 48 8B 01 FF 50 68 ** ** ** ** ** ** 41 ** ** ** ** ** ** 4C)
+registersymbol(someReturn1AOB)
+aobscanmodule(snvRead1AOB,Rapture_Release.exe,F3 0F 11 A9 18 01 00 00)
+registersymbol(snvRead1AOB)
+
+label(pSomeCamInfo1)
+registersymbol(pSomeCamInfo1)
+
+alloc(newmem,2048,snvRead1AOB) //"Rapture_Release.exe"+957EC)
+label(returnhere)
+label(originalcode)
+label(exit)
+
+newmem: //this is allocated memory, you have read,write,execute access
+//place your code here
+mov rax,someReturn1AOB //
+cmp [rsp+e8],rax
+jne originalcode
+mov [pSomeCamInfo1],rcx
+movss [rcx+00000118],xmm5
+
+originalcode:
+movss [rcx+00000118],xmm5
+
+exit:
+jmp returnhere
+
+///
+pSomeCamInfo1:
+///
+
+snvRead1AOB: //"Rapture_Release.exe"+957EC:
+jmp newmem
+nop
+nop
+nop
+returnhere:
+
+
+ 
+ 
+[DISABLE]
+//code from here till the end of the code will be used to disable the cheat
+unregistersymbol(someReturn1AOB)
+dealloc(newmem)
+snvRead1AOB: //"Rapture_Release.exe"+957EC:
+db F3 0F 11 A9 18 01 00 00
+//Alt: movss [rcx+00000118],xmm5
+unregistersymbol(snvRead1AOB)
+
+unregistersymbol(pSomeCamInfo1)
+
+
+</AssemblerScript>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>300</ID>
+              <Description>"vy"</Description>
+              <LastState Value="" RealAddress="7BA67CF0"/>
+              <ShowAsHex>1</ShowAsHex>
+              <VariableType>Array of byte</VariableType>
+              <ByteLength>0</ByteLength>
+              <Address>pSomeCamInfo1</Address>
+              <Offsets>
+                <Offset>118</Offset>
+              </Offsets>
+              <CheatEntries>
+                <CheatEntry>
+                  <ID>301</ID>
+                  <Description>"+0"</Description>
+                  <LastState Value="0.04777077213" RealAddress="7BA67CF0"/>
+                  <VariableType>Float</VariableType>
+                  <Address>+0</Address>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>302</ID>
+                  <Description>"+4"</Description>
+                  <LastState Value="0.9623981714" RealAddress="7BA67CF4"/>
+                  <VariableType>Float</VariableType>
+                  <Address>+4</Address>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>303</ID>
+                  <Description>"+8"</Description>
+                  <LastState Value="-0.267408967" RealAddress="7BA67CF8"/>
+                  <VariableType>Float</VariableType>
+                  <Address>+8</Address>
+                </CheatEntry>
+              </CheatEntries>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>304</ID>
+              <Description>"vx"</Description>
+              <LastState Value="" RealAddress="136FD0056"/>
+              <ShowAsHex>1</ShowAsHex>
+              <VariableType>Array of byte</VariableType>
+              <ByteLength>0</ByteLength>
+              <Address>vx</Address>
+              <CheatEntries>
+                <CheatEntry>
+                  <ID>305</ID>
+                  <Description>"+0"</Description>
+                  <LastState Value="0.9987702966" RealAddress="136FD0056"/>
+                  <VariableType>Float</VariableType>
+                  <Address>+0</Address>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>306</ID>
+                  <Description>"+4"</Description>
+                  <LastState Value="-0.04957621545" RealAddress="136FD005A"/>
+                  <VariableType>Float</VariableType>
+                  <Address>+4</Address>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>307</ID>
+                  <Description>"+8"</Description>
+                  <LastState Value="0" RealAddress="136FD005E"/>
+                  <VariableType>Float</VariableType>
+                  <Address>+8</Address>
+                </CheatEntry>
+              </CheatEntries>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>564</ID>
+          <Description>"* player coord read"</Description>
+          <LastState/>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[ENABLE]
+//code from here to '[DISABLE]' will be used to enable the cheat
+aobscanmodule(playerCoordReadConstAOB,Rapture_Release.exe,8B 81 A8 00 00 00 48 8B D9 4C)
+registersymbol(playerCoordReadConstAOB)
+
+label(pPlayerCoord)
+registersymbol(pPlayerCoord)
+
+alloc(newmem,2048,playerCoordReadConstAOB) //"Rapture_Release.exe"+C65219)
+label(returnhere)
+label(originalcode)
+label(exit)
+
+newmem: //this is allocated memory, you have read,write,execute access
+//place your code here
+mov [pPlayerCoord],rcx
+
+originalcode:
+mov eax,[rcx+000000A8]
+
+exit:
+jmp returnhere
+
+///
+pPlayerCoord:
+///
+
+playerCoordReadConstAOB: //"Rapture_Release.exe"+C65219:
+jmp newmem
+nop
+returnhere:
+
+
+ 
+ 
+[DISABLE]
+//code from here till the end of the code will be used to disable the cheat
+dealloc(newmem)
+playerCoordReadConstAOB: //"Rapture_Release.exe"+C65219:
+db 8B 81 A8 00 00 00
+//Alt: mov eax,[rcx+000000A8]
+unregistersymbol(playerCoordReadConstAOB)
+
+unregistersymbol(pPlayerCoord)
+</AssemblerScript>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>565</ID>
+              <Description>"pPlayerCoord"</Description>
+              <LastState Value="" RealAddress="32980CE8"/>
+              <VariableType>Array of byte</VariableType>
+              <ByteLength>0</ByteLength>
+              <Address>pPlayerCoord</Address>
+              <Offsets>
+                <Offset>A8</Offset>
+              </Offsets>
+              <CheatEntries>
+                <CheatEntry>
+                  <ID>566</ID>
+                  <Description>"+0"</Description>
+                  <LastState Value="813.9128418" RealAddress="32980CE8"/>
+                  <VariableType>Float</VariableType>
+                  <Address>+0</Address>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>567</ID>
+                  <Description>"+4"</Description>
+                  <LastState Value="802.5592041" RealAddress="32980CEC"/>
+                  <VariableType>Float</VariableType>
+                  <Address>+4</Address>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>568</ID>
+                  <Description>"+8"</Description>
+                  <LastState Value="80.10450745" RealAddress="32980CF0"/>
+                  <VariableType>Float</VariableType>
+                  <Address>+8</Address>
+                  <CheatEntries>
+                    <CheatEntry>
+                      <ID>72309</ID>
+                      <Description>""</Description>
+                      <LastState Value="42A03582" RealAddress="32980CF0"/>
+                      <ShowAsHex>1</ShowAsHex>
+                      <VariableType>Float</VariableType>
+                      <Address>+0</Address>
+                    </CheatEntry>
+                  </CheatEntries>
+                </CheatEntry>
+              </CheatEntries>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>574</ID>
+          <Description>"* movement info"</Description>
+          <LastState/>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[ENABLE]
+//code from here to '[DISABLE]' will be used to enable the cheat
+aobscanmodule(movementYReadAOB,Rapture_Release.exe,F3 0F 10 9F 34 03 00 00)
+registersymbol(movementYReadAOB)
+
+label(pMovementInfo)
+registersymbol(pMovementInfo)
+
+alloc(newmem,2048,movementYReadAOB) //"Rapture_Release.exe"+13D3908)
+label(returnhere)
+label(originalcode)
+label(exit)
+
+newmem: //this is allocated memory, you have read,write,execute access
+//place your code here
+mov [pMovementInfo],rdi
+
+originalcode:
+movss xmm3,[rdi+00000334]
+
+exit:
+jmp returnhere
+
+///
+pMovementInfo:
+///
+
+movementYReadAOB: //"Rapture_Release.exe"+13D3908:
+jmp newmem
+nop
+nop
+nop
+returnhere:
+
+
+ 
+ 
+[DISABLE]
+//code from here till the end of the code will be used to disable the cheat
+dealloc(newmem)
+movementYReadAOB: //"Rapture_Release.exe"+13D3908:
+db F3 0F 10 9F 34 03 00 00
+//Alt: movss xmm3,[rdi+00000334]
+unregistersymbol(movementYReadAOB)
+
+unregistersymbol(pMovementInfo)
+</AssemblerScript>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>575</ID>
+              <Description>"x"</Description>
+              <LastState Value="0" RealAddress="791B0BA0"/>
+              <VariableType>Float</VariableType>
+              <Address>pMovementInfo</Address>
+              <Offsets>
+                <Offset>330</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>576</ID>
+              <Description>"y"</Description>
+              <LastState Value="0" RealAddress="791B0BA4"/>
+              <VariableType>Float</VariableType>
+              <Address>pMovementInfo</Address>
+              <Offsets>
+                <Offset>334</Offset>
+              </Offsets>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>72313</ID>
+          <Description>"* get highest z"</Description>
+          <LastState/>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[ENABLE]
+//code from here to '[DISABLE]' will be used to enable the cheat
+aobscanmodule(highestZReadInAirAOB,Rapture_Release.exe,F3 0F 10 93 90 04 00 00)
+registersymbol(highestZReadInAirAOB)
+
+label(pHighestZ)
+registersymbol(pHighestZ)
+
+alloc(newmem,2048,highestZReadInAirAOB) //"Rapture_Release.exe"+12EB13C)
+label(returnhere)
+label(originalcode)
+label(exit)
+
+newmem: //this is allocated memory, you have read,write,execute access
+//place your code here
+lea rcx,[rbx+490]
+mov [pHighestZ],rcx
+
+originalcode:
+movss xmm2,[rbx+00000490]
+
+exit:
+jmp returnhere
+
+///
+pHighestZ:
+///
+
+highestZReadInAirAOB: //"Rapture_Release.exe"+12EB13C:
+jmp newmem
+nop
+nop
+nop
+returnhere:
+
+
+ 
+ 
+[DISABLE]
+//code from here till the end of the code will be used to disable the cheat
+dealloc(newmem)
+highestZReadInAirAOB: //"Rapture_Release.exe"+12EB13C:
+db F3 0F 10 93 90 04 00 00
+//Alt: movss xmm2,[rbx+00000490]
+unregistersymbol(highestZReadInAirAOB)
+
+unregistersymbol(pHighestZ)
+</AssemblerScript>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>72314</ID>
+              <Description>"highest z"</Description>
+              <LastState Value="80.10450745" RealAddress="10A2C40F0"/>
+              <VariableType>Float</VariableType>
+              <Address>pHighestZ</Address>
+              <Offsets>
+                <Offset>0</Offset>
+              </Offsets>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>569</ID>
+          <Description>"* player coord write"</Description>
+          <LastState/>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[ENABLE]
+//code from here to '[DISABLE]' will be used to enable the cheat
+aobscanmodule(playerCoordWriteOnMoveAOB,Rapture_Release.exe,8B 02 89 81 A8 00 00 00 ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** 83)
+registersymbol(playerCoordWriteOnMoveAOB)
+
+label(bFlyMode)
+registersymbol(bFlyMode)
+
+alloc(newmem,2048,playerCoordWriteOnMoveAOB) //"Rapture_Release.exe"+C6646E)
+label(returnhere)
+label(originalcode)
+label(exit)
+
+newmem: //this is allocated memory, you have read,write,execute access
+//place your code here
+cmp byte ptr [bFlyMode],1
+je @f
+jmp originalcode
+
+@@:
+//freeze coord
+mov eax,[rcx+a8]
+mov [rdx],eax
+mov eax,[rcx+ac]
+mov [rdx+4],eax
+mov eax,[rcx+b0]
+mov [rdx+8],eax
+
+//store registers
+push r8
+push r9
+
+//do y
+//get y direction
+mov r8,[pMovementInfo]
+test r8,r8
+jz @f
+movss xmm4,[r8+334]
+shufps xmm4,xmm4,c0 //broadcast to all but most sigificant
+
+//apply speed
+mov eax,(float)0.25
+movd xmm3,eax
+shufps xmm3,xmm3,00 //broadcast
+mulps xmm4,xmm3
+
+//apply vector
+mov r9,[pSomeCamInfo1]
+test r9,r9
+jz @f
+mulps xmm4,[r9+118]
+
+//update new coord
+movups xmm3,[rdx]
+addps xmm4,xmm3
+movups [rdx],xmm4
+
+//do x
+//get x direction
+movss xmm4,[r8+330]
+shufps xmm4,xmm4,e0 //copy to 2nd
+
+//apply speed
+mov eax,(float)0.25
+movd xmm3,eax
+shufps xmm3,xmm3,e0 //copy to 2nd
+mulps xmm4,xmm3
+
+//apply vector
+mov r9,vx
+test r9,r9
+jz @f
+movups xmm3,[vx]
+//shufps xmm3,xmm3,e1 //swap least and 2nd
+mulps xmm4,xmm3
+
+//update new coord
+movups xmm3,[rdx]
+addps xmm4,xmm3
+movups [rdx],xmm4
+
+@@:
+//update highest z
+mov r8,[pHighestZ]
+test r8,r8
+jz @f
+//mov r9d,(float)1
+//movd xmm4,r9d
+//addss xmm4,[rdx+8]
+movss xmm4,[rdx+8]
+movss [r8],xmm4
+
+@@:
+//restore registers, reset xmms
+//end
+pop r9
+pop r8
+xorps xmm3,xmm3
+xorps xmm4,xmm4
+
+originalcode:
+mov eax,[rdx]
+mov [rcx+000000A8],eax
+
+exit:
+jmp returnhere
+
+///
+bFlyMode:
+dd 1
+///
+
+playerCoordWriteOnMoveAOB: //"Rapture_Release.exe"+C6646E:
+jmp newmem
+nop
+nop
+nop
+returnhere:
+
+
+ 
+ 
+[DISABLE]
+//code from here till the end of the code will be used to disable the cheat
+dealloc(newmem)
+playerCoordWriteOnMoveAOB: //"Rapture_Release.exe"+C6646E:
+db 8B 02 89 81 A8 00 00 00
+//Alt: mov eax,[rdx]
+//Alt: mov [rcx+000000A8],eax
+unregistersymbol(playerCoordWriteOnMoveAOB)
+
+unregistersymbol(bFlyMode)
+</AssemblerScript>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>72316</ID>
+          <Description>"1"</Description>
+          <LastState/>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[ENABLE]
+//code from here to '[DISABLE]' will be used to enable the cheat
+aobscanmodule(snvRead2AOB,Rapture_Release.exe,F3 0F 59 81 08 01 00 00 F3 0F 59 89 10 01 00 00 F3 0F 10)
+registersymbol(snvRead2AOB)
+
+label(vx)
+registersymbol(vx)
+
+alloc(newmem,2048,snvRead2AOB) //"Rapture_Release.exe"+63147)
+label(returnhere)
+label(originalcode)
+label(exit)
+
+newmem: //this is allocated memory, you have read,write,execute access
+//place your code here
+test r9,r9
+jnz originalcode
+
+//
+push rax
+sub rsp,16
+movdqu dqword [rsp],xmm15
+//
+
+movss xmm15,[rcx]
+movss [vx],xmm15
+movss xmm15,[rcx+10]
+movss [vx+4],xmm15
+
+//
+movdqu xmm15,dqword [rsp]
+add rsp,16
+pop rax
+//
+
+originalcode:
+mulss xmm0,[rcx+00000108]
+
+exit:
+jmp returnhere
+
+///
+vx:
+///
+
+
+snvRead2AOB: //"Rapture_Release.exe"+63147:
+jmp newmem
+nop
+nop
+nop
+returnhere:
+
+
+
+
+[DISABLE]
+//code from here till the end of the code will be used to disable the cheat
+dealloc(newmem)
+snvRead2AOB: //"Rapture_Release.exe"+63147:
+db F3 0F 59 81 08 01 00 00
+//Alt: mulss xmm0,[rcx+00000108]
+unregistersymbol(snvRead2AOB)
+
+unregistersymbol(vx)
+</AssemblerScript>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>72317</ID>
+          <Description>"2"</Description>
+          <LastState/>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[ENABLE]
+//code from here to '[DISABLE]' will be used to enable the cheat
+aobscanmodule(someReturn1AOB,Rapture_Release.exe,48 8B 0D ** ** ** ** 48 8B 01 FF 50 68 ** ** ** ** ** ** 41 ** ** ** ** ** ** 4C)
+registersymbol(someReturn1AOB)
+aobscanmodule(snvRead1AOB,Rapture_Release.exe,F3 0F 11 A9 18 01 00 00)
+registersymbol(snvRead1AOB)
+
+label(pSomeCamInfo1)
+registersymbol(pSomeCamInfo1)
+
+alloc(newmem1,2048,snvRead1AOB) //"Rapture_Release.exe"+957EC)
+label(returnhere1)
+label(originalcode1)
+label(exit1)
+
+newmem1: //this is allocated memory, you have read,write,execute access
+//place your code here
+mov rax,someReturn1AOB //
+cmp [rsp+e8],rax
+jne originalcode1
+mov [pSomeCamInfo1],rcx
+movss [rcx+00000118],xmm5
+
+originalcode1:
+movss [rcx+00000118],xmm5
+
+exit1:
+jmp returnhere1
+
+///
+pSomeCamInfo1:
+///
+
+snvRead1AOB: //"Rapture_Release.exe"+957EC:
+jmp newmem1
+nop
+nop
+nop
+returnhere1:
+
+
+
+
+[DISABLE]
+//code from here till the end of the code will be used to disable the cheat
+unregistersymbol(someReturn1AOB)
+dealloc(newmem1)
+snvRead1AOB: //"Rapture_Release.exe"+957EC:
+db F3 0F 11 A9 18 01 00 00
+//Alt: movss [rcx+00000118],xmm5
+unregistersymbol(snvRead1AOB)
+
+unregistersymbol(pSomeCamInfo1)
+
+
+</AssemblerScript>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>72318</ID>
+          <Description>"3"</Description>
+          <LastState/>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[ENABLE]
+//code from here to '[DISABLE]' will be used to enable the cheat
+aobscanmodule(playerCoordReadConstAOB,Rapture_Release.exe,8B 81 A8 00 00 00 48 8B D9 4C)
+registersymbol(playerCoordReadConstAOB)
+
+label(pPlayerCoord)
+registersymbol(pPlayerCoord)
+
+alloc(newmem2,2048,playerCoordReadConstAOB) //"Rapture_Release.exe"+C65219)
+label(returnhere2)
+label(originalcode2)
+label(exit2)
+
+newmem2: //this is allocated memory, you have read,write,execute access
+//place your code here
+mov [pPlayerCoord],rcx
+
+originalcode2:
+mov eax,[rcx+000000A8]
+
+exit2:
+jmp returnhere2
+
+///
+pPlayerCoord:
+///
+
+playerCoordReadConstAOB: //"Rapture_Release.exe"+C65219:
+jmp newmem2
+nop
+returnhere2:
+
+
+
+
+[DISABLE]
+//code from here till the end of the code will be used to disable the cheat
+dealloc(newmem2)
+playerCoordReadConstAOB: //"Rapture_Release.exe"+C65219:
+db 8B 81 A8 00 00 00
+//Alt: mov eax,[rcx+000000A8]
+unregistersymbol(playerCoordReadConstAOB)
+
+unregistersymbol(pPlayerCoord)
+</AssemblerScript>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>72319</ID>
+          <Description>"4"</Description>
+          <LastState/>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[ENABLE]
+//code from here to '[DISABLE]' will be used to enable the cheat
+aobscanmodule(movementYReadAOB,Rapture_Release.exe,F3 0F 10 9F 34 03 00 00)
+registersymbol(movementYReadAOB)
+
+label(pMovementInfo)
+registersymbol(pMovementInfo)
+
+alloc(newmem3,2048,movementYReadAOB) //"Rapture_Release.exe"+13D3908)
+label(returnhere3)
+label(originalcode3)
+label(exit3)
+
+newmem3: //this is allocated memory, you have read,write,execute access
+//place your code here
+mov [pMovementInfo],rdi
+
+originalcode3:
+movss xmm3,[rdi+00000334]
+
+exit3:
+jmp returnhere3
+
+///
+pMovementInfo:
+///
+
+movementYReadAOB: //"Rapture_Release.exe"+13D3908:
+jmp newmem3
+nop
+nop
+nop
+returnhere3:
+
+
+
+
+[DISABLE]
+//code from here till the end of the code will be used to disable the cheat
+dealloc(newmem3)
+movementYReadAOB: //"Rapture_Release.exe"+13D3908:
+db F3 0F 10 9F 34 03 00 00
+//Alt: movss xmm3,[rdi+00000334]
+unregistersymbol(movementYReadAOB)
+
+unregistersymbol(pMovementInfo)
+</AssemblerScript>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>72320</ID>
+          <Description>"5"</Description>
+          <LastState/>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[ENABLE]
+//code from here to '[DISABLE]' will be used to enable the cheat
+aobscanmodule(highestZReadInAirAOB,Rapture_Release.exe,F3 0F 10 93 90 04 00 00)
+registersymbol(highestZReadInAirAOB)
+
+label(pHighestZ)
+registersymbol(pHighestZ)
+
+alloc(newmem4,2048,highestZReadInAirAOB) //"Rapture_Release.exe"+12EB13C)
+label(returnhere4)
+label(originalcode4)
+label(exit4)
+
+newmem4: //this is allocated memory, you have read,write,execute access
+//place your code here
+lea rcx,[rbx+490]
+mov [pHighestZ],rcx
+
+originalcode4:
+movss xmm2,[rbx+00000490]
+
+exit4:
+jmp returnhere4
+
+///
+pHighestZ:
+///
+
+highestZReadInAirAOB: //"Rapture_Release.exe"+12EB13C:
+jmp newmem4
+nop
+nop
+nop
+returnhere4:
+
+
+
+
+[DISABLE]
+//code from here till the end of the code will be used to disable the cheat
+dealloc(newmem4)
+highestZReadInAirAOB: //"Rapture_Release.exe"+12EB13C:
+db F3 0F 10 93 90 04 00 00
+//Alt: movss xmm2,[rbx+00000490]
+unregistersymbol(highestZReadInAirAOB)
+
+unregistersymbol(pHighestZ)
+</AssemblerScript>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>72321</ID>
+          <Description>"6"</Description>
+          <LastState/>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[ENABLE]
+//code from here to '[DISABLE]' will be used to enable the cheat
+aobscanmodule(playerCoordWriteOnMoveAOB,Rapture_Release.exe,8B 02 89 81 A8 00 00 00 ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** 83)
+registersymbol(playerCoordWriteOnMoveAOB)
+
+label(bFlyMode)
+registersymbol(bFlyMode)
+label(fZDirection)
+registersymbol(fZDirection)
+
+alloc(newmem5,2048,playerCoordWriteOnMoveAOB) //"Rapture_Release.exe"+C6646E)
+label(returnhere5)
+label(originalcode5)
+label(exit5)
+
+newmem5: //this is allocated memory, you have read,write,execute access
+//place your code here
+cmp byte ptr [bFlyMode],1
+je @f
+jmp originalcode5
+
+@@:
+//freeze coord
+mov eax,[rcx+a8]
+mov [rdx],eax
+mov eax,[rcx+ac]
+mov [rdx+4],eax
+mov eax,[rcx+b0]
+mov [rdx+8],eax
+
+//store registers, xmms
+push r8
+push r9
+sub rsp,16
+movdqu dqword [rsp],xmm3
+sub rsp,16
+movdqu dqword [rsp],xmm4
+
+//do y
+//get y direction
+mov r8,[pMovementInfo]
+test r8,r8
+jz @f
+movss xmm4,[r8+334]
+shufps xmm4,xmm4,c0 //broadcast to all but most sigificant
+
+//apply speed
+mov eax,(float)0.25
+movd xmm3,eax
+shufps xmm3,xmm3,00 //broadcast
+mulps xmm4,xmm3
+
+//apply vector
+mov r9,[pSomeCamInfo1]
+test r9,r9
+jz @f
+movups xmm3,[r9+118]
+mulps xmm4,xmm3
+
+//update new coord
+movups xmm3,[rdx]
+addps xmm4,xmm3
+movups [rdx],xmm4
+
+//do x
+//get x direction
+movss xmm4,[r8+330]
+shufps xmm4,xmm4,e0 //copy to 2nd
+
+//apply speed
+mov eax,(float)0.25
+movd xmm3,eax
+shufps xmm3,xmm3,e0 //copy to 2nd
+mulps xmm4,xmm3
+
+//apply vector
+mov r9,vx
+test r9,r9
+jz @f
+movups xmm3,[vx]
+//shufps xmm3,xmm3,e1 //swap least and 2nd
+mulps xmm4,xmm3
+
+//update new coord
+movups xmm3,[rdx]
+addps xmm4,xmm3
+movups [rdx],xmm4
+
+//do z
+//get z direction
+movss xmm4,[fZDirection]
+shufps xmm4,xmm4,c6 //place z direction to 3rd element
+
+//apply speed
+mov eax,(float)0.25
+movd xmm3,eax
+shufps xmm3,xmm3,00
+mulps xmm4,xmm3
+
+//update new coord
+movups xmm3,[rdx]
+addps xmm4,xmm3
+movups [rdx],xmm4
+
+@@:
+//update highest z
+mov r8,[pHighestZ]
+test r8,r8
+jz @f
+movss xmm4,[rdx+8]
+movss [r8],xmm4
+
+@@:
+//restore registers, xmms
+//end
+movdqu xmm4,dqword [rsp]
+add rsp,16
+movdqu xmm3,dqword [rsp]
+add rsp,16
+pop r9
+pop r8
+
+originalcode5:
+mov eax,[rdx]
+mov [rcx+000000A8],eax
+
+exit5:
+jmp returnhere5
+
+///
+bFlyMode:
+dd 0
+fZDirection:
+dd 0
+///
+
+playerCoordWriteOnMoveAOB: //"Rapture_Release.exe"+C6646E:
+jmp newmem5
+nop
+nop
+nop
+returnhere5:
+
+
+
+
+[DISABLE]
+//code from here till the end of the code will be used to disable the cheat
+dealloc(newmem5)
+playerCoordWriteOnMoveAOB: //"Rapture_Release.exe"+C6646E:
+db 8B 02 89 81 A8 00 00 00
+//Alt: mov eax,[rdx]
+//Alt: mov [rcx+000000A8],eax
+unregistersymbol(playerCoordWriteOnMoveAOB)
+
+unregistersymbol(bFlyMode)
+unregistersymbol(fZDirection)
+</AssemblerScript>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>72322</ID>
+          <Description>"7"</Description>
+          <LastState/>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[ENABLE]
+//code from here to '[DISABLE]' will be used to enable the cheat
+label(bEndThread_Rapture_Release_keylistener_mem)
+registersymbol(bEndThread_Rapture_Release_keylistener_mem)
+
+alloc(Rapture_Release_keylistener_mem,2048,"Rapture_Release.exe")
+registersymbol(Rapture_Release_keylistener_mem)
+createthread(Rapture_Release_keylistener_mem)
+label(keylistenerstart)
+label(keylistenerend)
+label(keylistenerexit)
+label(fTempZDirection)
+
+Rapture_Release_keylistener_mem:
+sub rsp,28
+
+keylistenerstart:
+
+cmp byte ptr [bFlyMode],1
+je @f
+jmp keylistenerend
+
+@@:
+mov dword ptr [fTempZDirection],0
+
+mov rcx,20 //SPACEBAR
+push rcx
+call GetAsyncKeyState
+add rsp,08
+shr ax,#15
+cmp ax,1
+jne @f
+mov dword ptr [fTempZDirection],(float)1
+jmp keylistenerend
+
+@@:
+
+mov rcx,04 //Middle mouse button (three-button mouse)
+push rcx
+call GetAsyncKeyState
+add rsp,08
+shr ax,#15
+cmp ax,1
+jne @f
+mov dword ptr [fTempZDirection],(float)-1
+jmp keylistenerend
+
+keylistenerend:
+mov ecx,[fTempZDirection]
+mov [fZDirection],ecx
+mov rcx,#100
+call Sleep
+cmp dword ptr [bEndThread_Rapture_Release_keylistener_mem],1
+jne keylistenerstart
+
+keylistenerexit:
+add rsp,28
+mov dword ptr [bEndThread_Rapture_Release_keylistener_mem],2
+ret
+
+///
+bEndThread_Rapture_Release_keylistener_mem:
+dd 0
+fTempZDirection:
+dd 0
+///
+
+
+ 
+ 
+[DISABLE]
+//code from here till the end of the code will be used to disable the cheat
+//obtained from SubBeam's ACS script - start//
+{$lua}
+
+if( syntaxcheck == false ) then --actual execution
+  local starttime = getTickCount()
+
+if readInteger( "bEndThread_Rapture_Release_keylistener_mem" ) == 0 then --could be 2 already
+  writeInteger( "bEndThread_Rapture_Release_keylistener_mem", 1 ) --tell the thread to kill itself
+end
+
+while( getTickCount() &lt; starttime + 1000 ) and ( readInteger( "bEndThread_Rapture_Release_keylistener_mem" ) ~=2 ) do --wait till it has finished
+  sleep( 20 )
+end
+
+if( getTickCount() &gt; starttime + 1000 ) then --could happen when the window is shown
+  showMessage( 'Disabling the thread failed!' )
+  error( 'Thread disabling failed!' )
+end
+  sleep( 1 )
+end
+
+{$asm}
+//obtained from SubBeam's ACS script - end//
+
+//bEndThread_Rapture_Release_keylistener_mem:
+//dd 1
+
+unregistersymbol(bEndThread_DarkSoulsIII_keylistener_mem)
+
+dealloc(DarkSoulsIII_keylistener_mem)
+unregistersymbol(DarkSoulsIII_keylistener_mem)
+</AssemblerScript>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>72323</ID>
+          <Description>"bFlyMode"</Description>
+          <LastState Value="1" RealAddress="136FD0052"/>
+          <VariableType>Byte</VariableType>
+          <Address>bFlyMode</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>72327</ID>
+          <Description>"No Description"</Description>
+          <LastState Value="1" RealAddress="138C995D4"/>
+          <VariableType>Float</VariableType>
+          <Address>138C995D4</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>72328</ID>
+          <Description>"Rapture_Release.exe+1EBAD20"</Description>
+          <LastState Value="381A2FF0" RealAddress="138EBAD20"/>
+          <ShowAsHex>1</ShowAsHex>
+          <VariableType>4 Bytes</VariableType>
+          <Address>Rapture_Release.exe+1EBAD20</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>72329</ID>
+          <Description>"No description"</Description>
+          <LastState Value="0" RealAddress="72E9AC70"/>
+          <VariableType>Float</VariableType>
+          <Address>72E9AC70</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>72330</ID>
+          <Description>"No description"</Description>
+          <LastState Value="0" RealAddress="7906E264"/>
+          <VariableType>Float</VariableType>
+          <Address>7906E264</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>72331</ID>
+          <Description>"No description"</Description>
+          <LastState Value="0" RealAddress="7906E304"/>
+          <VariableType>Float</VariableType>
+          <Address>7906E304</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>72332</ID>
+          <Description>"No description"</Description>
+          <LastState Value="0.1481582522" RealAddress="7A6BAF48"/>
+          <VariableType>Float</VariableType>
+          <Address>7A6BAF48</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>72333</ID>
+          <Description>"No Description"</Description>
+          <VariableType>Float</VariableType>
+          <Address>1482E950</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>72334</ID>
+          <Description>"No description"</Description>
+          <VariableType>Float</VariableType>
+          <Address>1482e9a0</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>72335</ID>
+          <Description>"No Description"</Description>
+          <VariableType>Float</VariableType>
+          <Address>148BE9A0</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>72336</ID>
+          <Description>"Auto Assemble script"</Description>
+          <LastState/>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[ENABLE]
+//code from here to '[DISABLE]' will be used to enable the cheat
+alloc(newmem,2048,"Rapture_Release.exe"+C675AF) 
+label(returnhere)
+label(originalcode)
+label(exit)
+
+newmem: //this is allocated memory, you have read,write,execute access
+//place your code here
+//
+push rax
+sub rsp,16
+movdqu dqword [rsp],xmm15
+//
+
+mov eax,(float)4
+movd xmm15,eax
+mulss xmm2,xmm15
+
+//
+movdqu xmm15,dqword [rsp]
+add rsp,16
+pop rax
+//
+
+originalcode:
+movss [rbp-10],xmm2
+
+exit:
+jmp returnhere
+
+///
+
+"Rapture_Release.exe"+C675AF:
+jmp newmem
+returnhere:
+
+
+ 
+ 
+[DISABLE]
+//code from here till the end of the code will be used to disable the cheat
+dealloc(newmem)
+"Rapture_Release.exe"+C675AF:
+db F3 0F 11 55 F0
+//Alt: movss [rbp-10],xmm2
+</AssemblerScript>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>72337</ID>
+          <Description>"Auto Assemble script"</Description>
+          <LastState/>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[ENABLE]
+//code from here to '[DISABLE]' will be used to enable the cheat
+alloc(newmem,2048,"Rapture_Release.exe"+C6D33A) 
+label(returnhere)
+label(originalcode)
+label(exit)
+
+newmem: //this is allocated memory, you have read,write,execute access
+//place your code here
+//
+push rax
+sub rsp,16
+movdqu dqword [rsp],xmm15
+//
+
+mov eax,(float)4
+movd xmm15,eax
+mulss xmm10,xmm15
+
+//
+movdqu xmm15,dqword [rsp]
+add rsp,16
+pop rax
+//
+
+originalcode:
+movss [rbp-10],xmm10
+
+exit:
+jmp returnhere
+
+///
+
+"Rapture_Release.exe"+C6D33A:
+jmp newmem
+nop
+returnhere:
+
+
+ 
+ 
+[DISABLE]
+//code from here till the end of the code will be used to disable the cheat
+dealloc(newmem)
+"Rapture_Release.exe"+C6D33A:
+db F3 44 0F 11 55 F0
+//Alt: movss [rbp-10],xmm10
+</AssemblerScript>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>72338</ID>
+          <Description>"Auto Assemble script"</Description>
+          <LastState/>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[ENABLE]
+//code from here to '[DISABLE]' will be used to enable the cheat
+alloc(newmem,2048,"Rapture_Release.exe"+CC74E8) 
+label(returnhere)
+label(originalcode)
+label(exit)
+
+newmem: //this is allocated memory, you have read,write,execute access
+//place your code here
+//
+push rax
+sub rsp,16
+movdqu dqword [rsp],xmm15
+//
+
+mov eax,(float)4
+movd xmm15,eax
+mulss xmm1,xmm15
+
+//
+movdqu xmm15,dqword [rsp]
+add rsp,16
+pop rax
+//
+
+originalcode:
+movss [rsp+30],xmm1
+
+exit:
+jmp returnhere
+
+///
+
+"Rapture_Release.exe"+CC74E8:
+jmp newmem
+nop
+returnhere:
+
+
+ 
+ 
+[DISABLE]
+//code from here till the end of the code will be used to disable the cheat
+dealloc(newmem)
+"Rapture_Release.exe"+CC74E8:
+db F3 0F 11 4C 24 30
+//Alt: movss [rsp+30],xmm1
+</AssemblerScript>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>72341</ID>
+          <Description>"No description"</Description>
+          <VariableType>Float</VariableType>
+          <Address>148BE978</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>72342</ID>
+          <Description>"No description"</Description>
+          <VariableType>Float</VariableType>
+          <Address>148BE97c</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>72339</ID>
+          <Description>"Move Faster .1"</Description>
+          <Options moHideChildren="1"/>
+          <LastState/>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[ENABLE]
+//code from here to '[DISABLE]' will be used to enable the cheat
+aobscanmodule(tpMoveSpeedReadAOB,Rapture_Release.exe,F3 0F 10 55 F0 F3 0F 10 ** ** ** ** ** F3)
+registersymbol(tpMoveSpeedReadAOB)
+
+label(fMoveSpeedMultiplier)
+registersymbol(fMoveSpeedMultiplier)
+
+alloc(newmem,2048,tpMoveSpeedReadAOB) //"Rapture_Release.exe"+C6D3E7)
+label(returnhere)
+label(originalcode)
+label(exit)
+
+newmem: //this is allocated memory, you have read,write,execute access
+//place your code here
+movss xmm2,[rbp-10]
+mulss xmm2,[fMoveSpeedMultiplier]
+movss [rbp-10],xmm2
+
+originalcode:
+movss xmm2,[rbp-10]
+
+exit:
+jmp returnhere
+
+///
+fMoveSpeedMultiplier:
+dd (float)2
+///
+
+tpMoveSpeedReadAOB: //"Rapture_Release.exe"+C6D3E7:
+jmp newmem
+returnhere:
+
+
+ 
+ 
+[DISABLE]
+//code from here till the end of the code will be used to disable the cheat
+dealloc(newmem)
+tpMoveSpeedReadAOB: //"Rapture_Release.exe"+C6D3E7:
+db F3 0F 10 55 F0
+//Alt: movss xmm2,[rbp-10]
+unregistersymbol(tpMoveSpeedReadAOB)
+
+unregistersymbol(fMoveSpeedMultiplier)
+</AssemblerScript>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>72340</ID>
+              <Description>"x?"</Description>
+              <LastState Value="1" RealAddress="136FF002C"/>
+              <VariableType>Float</VariableType>
+              <Address>fMoveSpeedMultiplier</Address>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>72345</ID>
+          <Description>"Auto Assemble script"</Description>
+          <LastState/>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[ENABLE]
+//code from here to '[DISABLE]' will be used to enable the cheat
+label(bEndThread_Rapture_Release_keylistener2_mem)
+registersymbol(bEndThread_Rapture_Release_keylistener2_mem)
+
+alloc(Rapture_Release_keylistener2_mem,2048,"Rapture_Release.exe")
+registersymbol(Rapture_Release_keylistener2_mem)
+createthread(Rapture_Release_keylistener2_mem)
+label(keylistenerstart)
+label(keylistenerend)
+label(keylistenerexit)
+
+Rapture_Release_keylistener2_mem:
+sub rsp,28
+
+keylistenerstart:
+
+cmp byte ptr [bUseSpeedModKey],1
+je @f
+mov byte ptr [bSpeedModKeyPressed],1
+jmp keylistenerend
+
+@@:
+mov rcx,11 //CTRL key
+push rcx
+call GetAsyncKeyState
+add rsp,08
+shr ax,#15
+cmp ax,1
+jne @f
+mov byte ptr [bSpeedModKeyPressed],1
+jmp keylistenerend
+
+@@:
+mov byte ptr [bSpeedModKeyPressed],0
+
+keylistenerend:
+mov rcx,#100
+call Sleep
+cmp dword ptr [bEndThread_Rapture_Release_keylistener2_mem],1
+jne keylistenerstart
+
+keylistenerexit:
+add rsp,28
+mov dword ptr [bEndThread_Rapture_Release_keylistener2_mem],2
+ret
+
+///
+bEndThread_Rapture_Release_keylistener2_mem:
+dd 0
+///
+
+
+ 
+ 
+[DISABLE]
+//code from here till the end of the code will be used to disable the cheat
+//obtained from SubBeam's ACS script - start//
+{$lua}
+
+if( syntaxcheck == false ) then --actual execution
+  local starttime = getTickCount()
+
+if readInteger( "bEndThread_Rapture_Release_keylistener2_mem" ) == 0 then --could be 2 already
+  writeInteger( "bEndThread_Rapture_Release_keylistener2_mem", 1 ) --tell the thread to kill itself
+end
+
+while( getTickCount() &lt; starttime + 1000 ) and ( readInteger( "bEndThread_Rapture_Release_keylistener2_mem" ) ~=2 ) do --wait till it has finished
+  sleep( 20 )
+end
+
+if( getTickCount() &gt; starttime + 1000 ) then --could happen when the window is shown
+  showMessage( 'Disabling the thread failed!' )
+  error( 'Thread disabling failed!' )
+end
+  sleep( 1 )
+end
+
+{$asm}
+//obtained from SubBeam's ACS script - end//
+
+//bEndThread_Rapture_Release_keylistener2_mem:
+//dd 1
+
+unregistersymbol(bEndThread_Rapture_Release_keylistener2_mem)
+
+dealloc(Rapture_Release_keylistener2_mem)
+unregistersymbol(Rapture_Release_keylistener2_mem)
+</AssemblerScript>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>72372</ID>
+          <Description>"No description"</Description>
+          <VariableType>4 Bytes</VariableType>
+          <Address>1489E898</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>72373</ID>
+          <Description>"No description"</Description>
+          <VariableType>4 Bytes</VariableType>
+          <Address>1489E8C0</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>72374</ID>
+          <Description>"No description"</Description>
+          <VariableType>4 Bytes</VariableType>
+          <Address>1489E938</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>72375</ID>
+          <Description>"No description"</Description>
+          <VariableType>4 Bytes</VariableType>
+          <Address>1489E980</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>72376</ID>
+          <Description>"No description"</Description>
+          <VariableType>4 Bytes</VariableType>
+          <Address>1489EC68</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>72377</ID>
+          <Description>"No description"</Description>
+          <LastState Value="358" RealAddress="7B35CE2C"/>
+          <VariableType>4 Bytes</VariableType>
+          <Address>7B35CE2C</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>72378</ID>
+          <Description>"No description"</Description>
+          <LastState Value="3172401566" RealAddress="7BE6C6A0"/>
+          <VariableType>4 Bytes</VariableType>
+          <Address>7BE6C6A0</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>72379</ID>
+          <Description>"Auto Assemble script"</Description>
+          <LastState/>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[ENABLE]
+//code from here to '[DISABLE]' will be used to enable the cheat
+label(pCharInAirFlag)
+registersymbol(pCharInAirFlag)
+
+alloc(newmem,2048,"Rapture_Release.exe"+12EADCA) 
+label(returnhere)
+label(originalcode)
+label(exit)
+
+newmem: //this is allocated memory, you have read,write,execute access
+//place your code here
+lea rcx,[r8+f7c]
+mov [pCharInAirFlag],rcx
+
+originalcode:
+mov eax,[r8+00000F7C]
+
+exit:
+jmp returnhere
+
+///
+pCharInAirFlag:
+///
+
+"Rapture_Release.exe"+12EADCA:
+jmp newmem
+nop
+nop
+returnhere:
+
+
+ 
+ 
+[DISABLE]
+//code from here till the end of the code will be used to disable the cheat
+dealloc(newmem)
+"Rapture_Release.exe"+12EADCA:
+db 41 8B 80 7C 0F 00 00
+//Alt: mov eax,[r8+00000F7C]
+
+unregistersymbol(pCharInAirFlag)
+</AssemblerScript>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>72380</ID>
+          <Description>"NoClip .2"</Description>
+          <Options moHideChildren="1"/>
+          <LastState/>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[ENABLE]
+//code from here to '[DISABLE]' will be used to enable the cheat
+aobscanmodule(snvRead2AOB,Rapture_Release.exe,F3 0F 59 81 08 01 00 00 F3 0F 59 89 10 01 00 00 F3 0F 10)
+registersymbol(snvRead2AOB)
+
+label(vx)
+registersymbol(vx)
+
+alloc(newmem,2048,snvRead2AOB) //"Rapture_Release.exe"+63147)
+label(returnhere)
+label(originalcode)
+label(exit)
+
+newmem: //this is allocated memory, you have read,write,execute access
+//place your code here
+test r9,r9
+jnz originalcode
+
+//
+push rax
+sub rsp,16
+movdqu dqword [rsp],xmm15
+//
+
+movss xmm15,[rcx]
+movss [vx],xmm15
+movss xmm15,[rcx+10]
+movss [vx+4],xmm15
+
+//
+movdqu xmm15,dqword [rsp]
+add rsp,16
+pop rax
+//
+
+originalcode:
+mulss xmm0,[rcx+00000108]
+
+exit:
+jmp returnhere
+
+///
+vx:
+///
+
+
+snvRead2AOB: //"Rapture_Release.exe"+63147:
+jmp newmem
+nop
+nop
+nop
+returnhere:
+
+///*******************************************************///
+
+aobscanmodule(someReturn1AOB,Rapture_Release.exe,48 8B 0D ** ** ** ** 48 8B 01 FF 50 68 ** ** ** ** ** ** 41 ** ** ** ** ** ** 4C)
+registersymbol(someReturn1AOB)
+aobscanmodule(snvRead1AOB,Rapture_Release.exe,F3 0F 11 A9 18 01 00 00)
+registersymbol(snvRead1AOB)
+
+label(pSomeCamInfo1)
+registersymbol(pSomeCamInfo1)
+
+alloc(newmem1,2048,snvRead1AOB) //"Rapture_Release.exe"+957EC)
+label(returnhere1)
+label(originalcode1)
+label(exit1)
+
+newmem1: //this is allocated memory, you have read,write,execute access
+//place your code here
+mov rax,someReturn1AOB //
+cmp [rsp+e8],rax
+jne originalcode1
+mov [pSomeCamInfo1],rcx
+movss [rcx+00000118],xmm5
+
+originalcode1:
+movss [rcx+00000118],xmm5
+
+exit1:
+jmp returnhere1
+
+///
+pSomeCamInfo1:
+///
+
+snvRead1AOB: //"Rapture_Release.exe"+957EC:
+jmp newmem1
+nop
+nop
+nop
+returnhere1:
+
+///*******************************************************///
+
+aobscanmodule(playerCoordReadConstAOB,Rapture_Release.exe,8B 81 A8 00 00 00 48 8B D9 4C)
+registersymbol(playerCoordReadConstAOB)
+
+label(pPlayerCoord)
+registersymbol(pPlayerCoord)
+
+alloc(newmem2,2048,playerCoordReadConstAOB) //"Rapture_Release.exe"+C65219)
+label(returnhere2)
+label(originalcode2)
+label(exit2)
+
+newmem2: //this is allocated memory, you have read,write,execute access
+//place your code here
+mov [pPlayerCoord],rcx
+
+originalcode2:
+mov eax,[rcx+000000A8]
+
+exit2:
+jmp returnhere2
+
+///
+pPlayerCoord:
+///
+
+playerCoordReadConstAOB: //"Rapture_Release.exe"+C65219:
+jmp newmem2
+nop
+returnhere2:
+
+///*******************************************************///
+
+aobscanmodule(movementYReadAOB,Rapture_Release.exe,F3 0F 10 9F 34 03 00 00)
+registersymbol(movementYReadAOB)
+
+label(pMovementInfo)
+registersymbol(pMovementInfo)
+
+alloc(newmem3,2048,movementYReadAOB) //"Rapture_Release.exe"+13D3908)
+label(returnhere3)
+label(originalcode3)
+label(exit3)
+
+newmem3: //this is allocated memory, you have read,write,execute access
+//place your code here
+mov [pMovementInfo],rdi
+
+originalcode3:
+movss xmm3,[rdi+00000334]
+
+exit3:
+jmp returnhere3
+
+///
+pMovementInfo:
+///
+
+movementYReadAOB: //"Rapture_Release.exe"+13D3908:
+jmp newmem3
+nop
+nop
+nop
+returnhere3:
+
+///*******************************************************///
+
+aobscanmodule(highestZReadInAirAOB,Rapture_Release.exe,F3 0F 10 93 90 04 00 00)
+registersymbol(highestZReadInAirAOB)
+
+label(pHighestZ)
+registersymbol(pHighestZ)
+
+alloc(newmem4,2048,highestZReadInAirAOB) //"Rapture_Release.exe"+12EB13C)
+label(returnhere4)
+label(originalcode4)
+label(exit4)
+
+newmem4: //this is allocated memory, you have read,write,execute access
+//place your code here
+lea rcx,[rbx+490]
+mov [pHighestZ],rcx
+
+originalcode4:
+movss xmm2,[rbx+00000490]
+
+exit4:
+jmp returnhere4
+
+///
+pHighestZ:
+///
+
+highestZReadInAirAOB: //"Rapture_Release.exe"+12EB13C:
+jmp newmem4
+nop
+nop
+nop
+returnhere4:
+
+///*******************************************************///
+
+aobscanmodule(playerCoordWriteOnMoveAOB,Rapture_Release.exe,8B 02 89 81 A8 00 00 00 ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** 83)
+registersymbol(playerCoordWriteOnMoveAOB)
+
+label(bFlyMode)
+registersymbol(bFlyMode)
+label(fZDirection)
+registersymbol(fZDirection)
+
+alloc(newmem5,2048,playerCoordWriteOnMoveAOB) //"Rapture_Release.exe"+C6646E)
+label(returnhere5)
+label(originalcode5)
+label(exit5)
+
+newmem5: //this is allocated memory, you have read,write,execute access
+//place your code here
+cmp byte ptr [bFlyMode],1
+je @f
+jmp originalcode5
+
+@@:
+//freeze coord
+mov eax,[rcx+a8]
+mov [rdx],eax
+mov eax,[rcx+ac]
+mov [rdx+4],eax
+mov eax,[rcx+b0]
+mov [rdx+8],eax
+
+//store registers, xmms
+push r8
+push r9
+sub rsp,16
+movdqu dqword [rsp],xmm3
+sub rsp,16
+movdqu dqword [rsp],xmm4
+
+//do y
+//get y direction
+mov r8,[pMovementInfo]
+test r8,r8
+jz @f
+movss xmm4,[r8+334]
+shufps xmm4,xmm4,c0 //broadcast to all but most sigificant
+
+//apply speed
+mov eax,(float)0.25
+movd xmm3,eax
+shufps xmm3,xmm3,00 //broadcast
+mulps xmm4,xmm3
+
+//apply vector
+mov r9,[pSomeCamInfo1]
+test r9,r9
+jz @f
+movups xmm3,[r9+118]
+mulps xmm4,xmm3
+
+//update new coord
+movups xmm3,[rdx]
+addps xmm4,xmm3
+movups [rdx],xmm4
+
+//do x
+//get x direction
+movss xmm4,[r8+330]
+shufps xmm4,xmm4,e0 //copy to 2nd
+
+//apply speed
+mov eax,(float)0.25
+movd xmm3,eax
+shufps xmm3,xmm3,e0 //copy to 2nd
+mulps xmm4,xmm3
+
+//apply vector
+mov r9,vx
+test r9,r9
+jz @f
+movups xmm3,[vx]
+//shufps xmm3,xmm3,e1 //swap least and 2nd
+mulps xmm4,xmm3
+
+//update new coord
+movups xmm3,[rdx]
+addps xmm4,xmm3
+movups [rdx],xmm4
+
+//do z
+//get z direction
+movss xmm4,[fZDirection]
+shufps xmm4,xmm4,c6 //place z direction to 3rd element
+
+//apply speed
+mov eax,(float)0.25
+movd xmm3,eax
+shufps xmm3,xmm3,00
+mulps xmm4,xmm3
+
+//update new coord
+movups xmm3,[rdx]
+addps xmm4,xmm3
+movups [rdx],xmm4
+
+@@:
+//update highest z
+mov r8,[pHighestZ]
+test r8,r8
+jz @f
+movss xmm4,[rdx+8]
+movss [r8],xmm4
+
+@@:
+//restore registers, xmms
+//end
+movdqu xmm4,dqword [rsp]
+add rsp,16
+movdqu xmm3,dqword [rsp]
+add rsp,16
+pop r9
+pop r8
+
+originalcode5:
+mov eax,[rdx]
+mov [rcx+000000A8],eax
+
+exit5:
+jmp returnhere5
+
+///
+bFlyMode:
+dd 0
+fZDirection:
+dd 0
+///
+
+playerCoordWriteOnMoveAOB: //"Rapture_Release.exe"+C6646E:
+jmp newmem5
+nop
+nop
+nop
+returnhere5:
+
+///*******************************************************///
+
+label(bEndThread_Rapture_Release_keylistener_mem)
+registersymbol(bEndThread_Rapture_Release_keylistener_mem)
+
+alloc(Rapture_Release_keylistener_mem,2048,"Rapture_Release.exe")
+registersymbol(Rapture_Release_keylistener_mem)
+createthread(Rapture_Release_keylistener_mem)
+label(keylistenerstart)
+label(keylistenerend)
+label(keylistenerexit)
+label(fTempZDirection)
+
+Rapture_Release_keylistener_mem:
+sub rsp,28
+
+keylistenerstart:
+
+cmp byte ptr [bFlyMode],1
+je @f
+jmp keylistenerend
+
+@@:
+mov dword ptr [fTempZDirection],0
+
+mov rcx,20 //SPACEBAR
+push rcx
+call GetAsyncKeyState
+add rsp,08
+shr ax,#15
+cmp ax,1
+jne @f
+mov dword ptr [fTempZDirection],(float)1
+jmp keylistenerend
+
+@@:
+
+mov rcx,04 //Middle mouse button (three-button mouse)
+push rcx
+call GetAsyncKeyState
+add rsp,08
+shr ax,#15
+cmp ax,1
+jne @f
+mov dword ptr [fTempZDirection],(float)-1
+jmp keylistenerend
+
+keylistenerend:
+mov ecx,[fTempZDirection]
+mov [fZDirection],ecx
+mov rcx,#100
+call Sleep
+cmp dword ptr [bEndThread_Rapture_Release_keylistener_mem],1
+jne keylistenerstart
+
+keylistenerexit:
+add rsp,28
+mov dword ptr [bEndThread_Rapture_Release_keylistener_mem],2
+ret
+
+///
+bEndThread_Rapture_Release_keylistener_mem:
+dd 0
+fTempZDirection:
+dd 0
+///
+
+
+
+
+[DISABLE]
+//code from here till the end of the code will be used to disable the cheat
+//obtained from SubBeam's ACS script - start//
+{$lua}
+
+if( syntaxcheck == false ) then --actual execution
+  local starttime = getTickCount()
+
+if readInteger( "bEndThread_Rapture_Release_keylistener_mem" ) == 0 then --could be 2 already
+  writeInteger( "bEndThread_Rapture_Release_keylistener_mem", 1 ) --tell the thread to kill itself
+end
+
+while( getTickCount() &lt; starttime + 1000 ) and ( readInteger( "bEndThread_Rapture_Release_keylistener_mem" ) ~=2 ) do --wait till it has finished
+  sleep( 20 )
+end
+
+if( getTickCount() &gt; starttime + 1000 ) then --could happen when the window is shown
+  showMessage( 'Disabling the thread failed!' )
+  error( 'Thread disabling failed!' )
+end
+  sleep( 1 )
+end
+
+{$asm}
+//obtained from SubBeam's ACS script - end//
+
+//bEndThread_Rapture_Release_keylistener_mem:
+//dd 1
+
+///*******************************************************///
+
+dealloc(newmem)
+snvRead2AOB: //"Rapture_Release.exe"+63147:
+db F3 0F 59 81 08 01 00 00
+//Alt: mulss xmm0,[rcx+00000108]
+unregistersymbol(snvRead2AOB)
+
+unregistersymbol(vx)
+
+///*******************************************************///
+
+unregistersymbol(someReturn1AOB)
+dealloc(newmem1)
+snvRead1AOB: //"Rapture_Release.exe"+957EC:
+db F3 0F 11 A9 18 01 00 00
+//Alt: movss [rcx+00000118],xmm5
+unregistersymbol(snvRead1AOB)
+
+unregistersymbol(pSomeCamInfo1)
+
+///*******************************************************///
+
+dealloc(newmem2)
+playerCoordReadConstAOB: //"Rapture_Release.exe"+C65219:
+db 8B 81 A8 00 00 00
+//Alt: mov eax,[rcx+000000A8]
+unregistersymbol(playerCoordReadConstAOB)
+
+unregistersymbol(pPlayerCoord)
+
+///*******************************************************///
+
+dealloc(newmem3)
+movementYReadAOB: //"Rapture_Release.exe"+13D3908:
+db F3 0F 10 9F 34 03 00 00
+//Alt: movss xmm3,[rdi+00000334]
+unregistersymbol(movementYReadAOB)
+
+unregistersymbol(pMovementInfo)
+
+///*******************************************************///
+
+dealloc(newmem4)
+highestZReadInAirAOB: //"Rapture_Release.exe"+12EB13C:
+db F3 0F 10 93 90 04 00 00
+//Alt: movss xmm2,[rbx+00000490]
+unregistersymbol(highestZReadInAirAOB)
+
+unregistersymbol(pHighestZ)
+
+///*******************************************************///
+
+dealloc(newmem5)
+playerCoordWriteOnMoveAOB: //"Rapture_Release.exe"+C6646E:
+db 8B 02 89 81 A8 00 00 00
+//Alt: mov eax,[rdx]
+//Alt: mov [rcx+000000A8],eax
+unregistersymbol(playerCoordWriteOnMoveAOB)
+
+unregistersymbol(bFlyMode)
+unregistersymbol(fZDirection)
+
+///*******************************************************///
+
+unregistersymbol(bEndThread_DarkSoulsIII_keylistener_mem)
+
+dealloc(Rapture_Release_keylistener_mem)
+unregistersymbol(Rapture_Release_keylistener_mem)
+</AssemblerScript>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>72381</ID>
+              <Description>"Status (Alt+E: NoClip, Alt+Q: Disable)"</Description>
+              <DropDownList ReadOnly="1" DescriptionOnly="1" DisplayValueAsItem="1">0:Disable
+1:NoClip
+</DropDownList>
+              <LastState Value="1" RealAddress="136FD0052"/>
+              <VariableType>Byte</VariableType>
+              <Address>bFlyMode</Address>
+              <Hotkeys>
+                <Hotkey>
+                  <Action>Set Value</Action>
+                  <Keys>
+                    <Key>18</Key>
+                    <Key>69</Key>
+                  </Keys>
+                  <Value>1</Value>
+                  <ID>0</ID>
+                </Hotkey>
+                <Hotkey>
+                  <Action>Set Value</Action>
+                  <Keys>
+                    <Key>18</Key>
+                    <Key>81</Key>
+                  </Keys>
+                  <Value>0</Value>
+                  <ID>1</ID>
+                </Hotkey>
+              </Hotkeys>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>72382</ID>
+          <Description>"Move Faster .2"</Description>
+          <Options moHideChildren="1"/>
+          <LastState/>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[ENABLE]
+//code from here to '[DISABLE]' will be used to enable the cheat
+aobscanmodule(moveForceWriteAOB,Rapture_Release.exe,F3 0F 11 4D C8 F3 44 0F 10 45 C8)
+registersymbol(moveForceWriteAOB)
+
+label(fMoveSpeedMultiplier)
+registersymbol(fMoveSpeedMultiplier)
+label(bUseSpeedModKey)
+registersymbol(bUseSpeedModKey)
+label(bSpeedModKeyPressed)
+registersymbol(bSpeedModKeyPressed)
+
+alloc(newmem,2048,moveForceWriteAOB) //"Rapture_Release.exe"+C673A8)
+label(returnhere)
+label(originalcode)
+label(exit)
+
+newmem: //this is allocated memory, you have read,write,execute access
+//place your code here
+cmp byte ptr [bSpeedModKeyPressed],1
+jne originalcode
+mulss xmm0,[fMoveSpeedMultiplier]
+movss [rbp-34],xmm0
+mulss xmm1,[fMoveSpeedMultiplier]
+
+originalcode:
+movss [rbp-38],xmm1
+
+exit:
+jmp returnhere
+
+///
+fMoveSpeedMultiplier:
+dd (float)3
+bUseSpeedModKey:
+dd 0
+bSpeedModKeyPressed:
+dd 0
+///
+
+moveForceWriteAOB: //"Rapture_Release.exe"+C673A8:
+jmp newmem
+returnhere:
+
+///***************************************************///
+
+label(bEndThread_Rapture_Release_keylistener2_mem)
+registersymbol(bEndThread_Rapture_Release_keylistener2_mem)
+
+alloc(Rapture_Release_keylistener2_mem,2048,"Rapture_Release.exe")
+registersymbol(Rapture_Release_keylistener2_mem)
+createthread(Rapture_Release_keylistener2_mem)
+label(keylistenerstart)
+label(keylistenerend)
+label(keylistenerexit)
+
+Rapture_Release_keylistener2_mem:
+sub rsp,28
+
+keylistenerstart:
+
+cmp byte ptr [bUseSpeedModKey],1
+je @f
+mov byte ptr [bSpeedModKeyPressed],1
+jmp keylistenerend
+
+@@:
+mov rcx,11 //CTRL key
+push rcx
+call GetAsyncKeyState
+add rsp,08
+shr ax,#15
+cmp ax,1
+jne @f
+mov byte ptr [bSpeedModKeyPressed],1
+jmp keylistenerend
+
+@@:
+mov byte ptr [bSpeedModKeyPressed],0
+
+keylistenerend:
+mov rcx,#100
+call Sleep
+cmp dword ptr [bEndThread_Rapture_Release_keylistener2_mem],1
+jne keylistenerstart
+
+keylistenerexit:
+add rsp,28
+mov dword ptr [bEndThread_Rapture_Release_keylistener2_mem],2
+ret
+
+///
+bEndThread_Rapture_Release_keylistener2_mem:
+dd 0
+///
+
+
+ 
+ 
+[DISABLE]
+//code from here till the end of the code will be used to disable the cheat
+//obtained from SubBeam's ACS script - start//
+{$lua}
+
+if( syntaxcheck == false ) then --actual execution
+  local starttime = getTickCount()
+
+if readInteger( "bEndThread_Rapture_Release_keylistener2_mem" ) == 0 then --could be 2 already
+  writeInteger( "bEndThread_Rapture_Release_keylistener2_mem", 1 ) --tell the thread to kill itself
+end
+
+while( getTickCount() &lt; starttime + 1000 ) and ( readInteger( "bEndThread_Rapture_Release_keylistener2_mem" ) ~=2 ) do --wait till it has finished
+  sleep( 20 )
+end
+
+if( getTickCount() &gt; starttime + 1000 ) then --could happen when the window is shown
+  showMessage( 'Disabling the thread failed!' )
+  error( 'Thread disabling failed!' )
+end
+  sleep( 1 )
+end
+
+{$asm}
+//obtained from SubBeam's ACS script - end//
+
+//bEndThread_Rapture_Release_keylistener2_mem:
+//dd 1
+
+///***************************************************///
+
+dealloc(newmem)
+moveForceWriteAOB: //"Rapture_Release.exe"+C673A8:
+db F3 0F 11 4D C8
+//Alt: movss [rbp-38],xmm1
+unregistersymbol(moveForceWriteAOB)
+
+unregistersymbol(fMoveSpeedMultiplier)
+unregistersymbol(bUseSpeedModKey)
+unregistersymbol(bSpeedModKeyPressed)
+
+///***************************************************///
+
+unregistersymbol(bEndThread_Rapture_Release_keylistener2_mem)
+
+dealloc(Rapture_Release_keylistener2_mem)
+unregistersymbol(Rapture_Release_keylistener2_mem)
+</AssemblerScript>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>72383</ID>
+              <Description>"Use Mod Key? (Ctrl)"</Description>
+              <DropDownList ReadOnly="1" DescriptionOnly="1" DisplayValueAsItem="1">0:No
+1:Yes
+</DropDownList>
+              <LastState Value="0" RealAddress="136FF0038"/>
+              <VariableType>Byte</VariableType>
+              <Address>bUseSpeedModKey</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>72384</ID>
+              <Description>"x?"</Description>
+              <LastState Value="1" RealAddress="136FF002C"/>
+              <VariableType>Float</VariableType>
+              <Address>fMoveSpeedMultiplier</Address>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>72387</ID>
+          <Description>"NoClip .3"</Description>
+          <Options moHideChildren="1"/>
+          <LastState/>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[ENABLE]
+//code from here to '[DISABLE]' will be used to enable the cheat
+aobscanmodule(snvRead2AOB,Rapture_Release.exe,F3 0F 59 81 08 01 00 00 F3 0F 59 89 10 01 00 00 F3 0F 10)
+registersymbol(snvRead2AOB)
+
+label(bFlyMode)
+registersymbol(bFlyMode)
+label(vx)
+registersymbol(vx)
+
+alloc(newmem,2048,snvRead2AOB) //"Rapture_Release.exe"+63147)
+label(returnhere)
+label(originalcode)
+label(exit)
+
+newmem: //this is allocated memory, you have read,write,execute access
+//place your code here
+test r9,r9
+jnz originalcode
+
+//
+push rax
+sub rsp,16
+movdqu dqword [rsp],xmm15
+//
+
+movss xmm15,[rcx]
+movss [vx],xmm15
+movss xmm15,[rcx+10]
+movss [vx+4],xmm15
+
+//
+movdqu xmm15,dqword [rsp]
+add rsp,16
+pop rax
+//
+
+originalcode:
+mulss xmm0,[rcx+00000108]
+
+exit:
+jmp returnhere
+
+///
+bFlyMode:
+dd 0
+vx:
+///
+
+
+snvRead2AOB: //"Rapture_Release.exe"+63147:
+jmp newmem
+nop
+nop
+nop
+returnhere:
+
+///*******************************************************///
+
+aobscanmodule(someReturn1AOB,Rapture_Release.exe,48 8B 0D ** ** ** ** 48 8B 01 FF 50 68 ** ** ** ** ** ** 41 ** ** ** ** ** ** 4C)
+registersymbol(someReturn1AOB)
+aobscanmodule(snvRead1AOB,Rapture_Release.exe,F3 0F 11 A9 18 01 00 00)
+registersymbol(snvRead1AOB)
+
+label(pSomeCamInfo1)
+registersymbol(pSomeCamInfo1)
+
+alloc(newmem1,2048,snvRead1AOB) //"Rapture_Release.exe"+957EC)
+label(returnhere1)
+label(originalcode1)
+label(exit1)
+
+newmem1: //this is allocated memory, you have read,write,execute access
+//place your code here
+mov rax,someReturn1AOB //
+cmp [rsp+e8],rax
+jne originalcode1
+mov [pSomeCamInfo1],rcx
+movss [rcx+00000118],xmm5
+
+originalcode1:
+movss [rcx+00000118],xmm5
+
+exit1:
+jmp returnhere1
+
+///
+pSomeCamInfo1:
+///
+
+snvRead1AOB: //"Rapture_Release.exe"+957EC:
+jmp newmem1
+nop
+nop
+nop
+returnhere1:
+
+///*******************************************************///
+
+aobscanmodule(playerCoordReadConstAOB,Rapture_Release.exe,8B 81 A8 00 00 00 48 8B D9 4C)
+registersymbol(playerCoordReadConstAOB)
+
+label(pPlayerCoord)
+registersymbol(pPlayerCoord)
+
+alloc(newmem2,2048,playerCoordReadConstAOB) //"Rapture_Release.exe"+C65219)
+label(returnhere2)
+label(originalcode2)
+label(exit2)
+
+newmem2: //this is allocated memory, you have read,write,execute access
+//place your code here
+mov [pPlayerCoord],rcx
+
+originalcode2:
+mov eax,[rcx+000000A8]
+
+exit2:
+jmp returnhere2
+
+///
+pPlayerCoord:
+///
+
+playerCoordReadConstAOB: //"Rapture_Release.exe"+C65219:
+jmp newmem2
+nop
+returnhere2:
+
+///*******************************************************///
+
+aobscanmodule(movementYReadAOB,Rapture_Release.exe,F3 0F 10 9F 34 03 00 00)
+registersymbol(movementYReadAOB)
+
+label(pMovementInfo)
+registersymbol(pMovementInfo)
+
+alloc(newmem3,2048,movementYReadAOB) //"Rapture_Release.exe"+13D3908)
+label(returnhere3)
+label(originalcode3)
+label(exit3)
+
+newmem3: //this is allocated memory, you have read,write,execute access
+//place your code here
+mov [pMovementInfo],rdi
+
+originalcode3:
+movss xmm3,[rdi+00000334]
+
+exit3:
+jmp returnhere3
+
+///
+pMovementInfo:
+///
+
+movementYReadAOB: //"Rapture_Release.exe"+13D3908:
+jmp newmem3
+nop
+nop
+nop
+returnhere3:
+
+///*******************************************************///
+
+aobscanmodule(highestZReadInAirAOB,Rapture_Release.exe,F3 0F 10 93 90 04 00 00)
+registersymbol(highestZReadInAirAOB)
+
+label(pHighestZ)
+registersymbol(pHighestZ)
+
+alloc(newmem4,2048,highestZReadInAirAOB) //"Rapture_Release.exe"+12EB13C)
+label(returnhere4)
+label(originalcode4)
+label(exit4)
+
+newmem4: //this is allocated memory, you have read,write,execute access
+//place your code here
+lea rcx,[rbx+490]
+mov [pHighestZ],rcx
+
+cmp byte ptr [bFlyMode],1
+je originalcode4
+
+//
+push rax
+sub rsp,16
+movdqu dqword [rsp],xmm15
+//
+
+mov rcx,[pPlayerCoord]
+test rcx,rcx
+jz @f
+
+mov eax,(float)2
+movd xmm15,eax
+addss xmm15,[rcx+b0]
+
+movss [rbx+490],xmm15
+
+@@:
+//
+movdqu xmm15,dqword [rsp]
+add rsp,16
+pop rax
+//
+
+originalcode4:
+movss xmm2,[rbx+00000490]
+
+exit4:
+jmp returnhere4
+
+///
+pHighestZ:
+///
+
+highestZReadInAirAOB: //"Rapture_Release.exe"+12EB13C:
+jmp newmem4
+nop
+nop
+nop
+returnhere4:
+
+///*******************************************************///
+
+aobscanmodule(playerCoordWriteOnMoveAOB,Rapture_Release.exe,8B 02 89 81 A8 00 00 00 ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** 83)
+registersymbol(playerCoordWriteOnMoveAOB)
+
+label(fZDirection)
+registersymbol(fZDirection)
+
+alloc(newmem5,2048,playerCoordWriteOnMoveAOB) //"Rapture_Release.exe"+C6646E)
+label(returnhere5)
+label(originalcode5)
+label(exit5)
+
+newmem5: //this is allocated memory, you have read,write,execute access
+//place your code here
+cmp byte ptr [bFlyMode],1
+je @f
+jmp originalcode5
+
+@@:
+//freeze coord
+mov eax,[rcx+a8]
+mov [rdx],eax
+mov eax,[rcx+ac]
+mov [rdx+4],eax
+mov eax,[rcx+b0]
+mov [rdx+8],eax
+
+//store registers, xmms
+push r8
+push r9
+sub rsp,16
+movdqu dqword [rsp],xmm3
+sub rsp,16
+movdqu dqword [rsp],xmm4
+
+//do y
+//get y direction
+mov r8,[pMovementInfo]
+test r8,r8
+jz @f
+movss xmm4,[r8+334]
+shufps xmm4,xmm4,c0 //broadcast to all but most sigificant
+
+//apply speed
+mov eax,(float)0.25
+movd xmm3,eax
+shufps xmm3,xmm3,00 //broadcast
+mulps xmm4,xmm3
+
+//apply vector
+mov r9,[pSomeCamInfo1]
+test r9,r9
+jz @f
+movups xmm3,[r9+118]
+mulps xmm4,xmm3
+
+//update new coord
+movups xmm3,[rdx]
+addps xmm4,xmm3
+movups [rdx],xmm4
+
+//do x
+//get x direction
+movss xmm4,[r8+330]
+shufps xmm4,xmm4,e0 //copy to 2nd
+
+//apply speed
+mov eax,(float)0.25
+movd xmm3,eax
+shufps xmm3,xmm3,e0 //copy to 2nd
+mulps xmm4,xmm3
+
+//apply vector
+mov r9,vx
+test r9,r9
+jz @f
+movups xmm3,[vx]
+//shufps xmm3,xmm3,e1 //swap least and 2nd
+mulps xmm4,xmm3
+
+//update new coord
+movups xmm3,[rdx]
+addps xmm4,xmm3
+movups [rdx],xmm4
+
+//do z
+//get z direction
+movss xmm4,[fZDirection]
+shufps xmm4,xmm4,c6 //place z direction to 3rd element
+
+//apply speed
+mov eax,(float)0.25
+movd xmm3,eax
+shufps xmm3,xmm3,00
+mulps xmm4,xmm3
+
+//update new coord
+movups xmm3,[rdx]
+addps xmm4,xmm3
+movups [rdx],xmm4
+
+@@:
+//update highest z
+mov r8,[pHighestZ]
+test r8,r8
+jz @f
+movss xmm4,[rdx+8]
+movss [r8],xmm4
+
+@@:
+//restore registers, xmms
+//end
+movdqu xmm4,dqword [rsp]
+add rsp,16
+movdqu xmm3,dqword [rsp]
+add rsp,16
+pop r9
+pop r8
+
+originalcode5:
+mov eax,[rdx]
+mov [rcx+000000A8],eax
+
+exit5:
+jmp returnhere5
+
+///
+fZDirection:
+dd 0
+///
+
+playerCoordWriteOnMoveAOB: //"Rapture_Release.exe"+C6646E:
+jmp newmem5
+nop
+nop
+nop
+returnhere5:
+
+///*******************************************************///
+
+label(bEndThread_Rapture_Release_keylistener_mem)
+registersymbol(bEndThread_Rapture_Release_keylistener_mem)
+
+alloc(Rapture_Release_keylistener_mem,2048,"Rapture_Release.exe")
+registersymbol(Rapture_Release_keylistener_mem)
+createthread(Rapture_Release_keylistener_mem)
+label(keylistenerstart)
+label(keylistenerend)
+label(keylistenerexit)
+label(fTempZDirection)
+
+Rapture_Release_keylistener_mem:
+sub rsp,28
+
+keylistenerstart:
+
+cmp byte ptr [bFlyMode],1
+je @f
+jmp keylistenerend
+
+@@:
+mov dword ptr [fTempZDirection],0
+
+mov rcx,20 //SPACEBAR
+push rcx
+call GetAsyncKeyState
+add rsp,08
+shr ax,#15
+cmp ax,1
+jne @f
+mov dword ptr [fTempZDirection],(float)1
+jmp keylistenerend
+
+@@:
+
+mov rcx,04 //Middle mouse button (three-button mouse)
+push rcx
+call GetAsyncKeyState
+add rsp,08
+shr ax,#15
+cmp ax,1
+jne @f
+mov dword ptr [fTempZDirection],(float)-1
+jmp keylistenerend
+
+keylistenerend:
+mov ecx,[fTempZDirection]
+mov [fZDirection],ecx
+mov rcx,#100
+call Sleep
+cmp dword ptr [bEndThread_Rapture_Release_keylistener_mem],1
+jne keylistenerstart
+
+keylistenerexit:
+add rsp,28
+mov dword ptr [bEndThread_Rapture_Release_keylistener_mem],2
+ret
+
+///
+bEndThread_Rapture_Release_keylistener_mem:
+dd 0
+fTempZDirection:
+dd 0
+///
+
+
+
+
+[DISABLE]
+//code from here till the end of the code will be used to disable the cheat
+//obtained from SubBeam's ACS script - start//
+{$lua}
+
+if( syntaxcheck == false ) then --actual execution
+  local starttime = getTickCount()
+
+if readInteger( "bEndThread_Rapture_Release_keylistener_mem" ) == 0 then --could be 2 already
+  writeInteger( "bEndThread_Rapture_Release_keylistener_mem", 1 ) --tell the thread to kill itself
+end
+
+while( getTickCount() &lt; starttime + 1000 ) and ( readInteger( "bEndThread_Rapture_Release_keylistener_mem" ) ~=2 ) do --wait till it has finished
+  sleep( 20 )
+end
+
+if( getTickCount() &gt; starttime + 1000 ) then --could happen when the window is shown
+  showMessage( 'Disabling the thread failed!' )
+  error( 'Thread disabling failed!' )
+end
+  sleep( 1 )
+end
+
+{$asm}
+//obtained from SubBeam's ACS script - end//
+
+//bEndThread_Rapture_Release_keylistener_mem:
+//dd 1
+
+///*******************************************************///
+
+dealloc(newmem)
+snvRead2AOB: //"Rapture_Release.exe"+63147:
+db F3 0F 59 81 08 01 00 00
+//Alt: mulss xmm0,[rcx+00000108]
+unregistersymbol(snvRead2AOB)
+
+unregistersymbol(vx)
+
+///*******************************************************///
+
+unregistersymbol(someReturn1AOB)
+dealloc(newmem1)
+snvRead1AOB: //"Rapture_Release.exe"+957EC:
+db F3 0F 11 A9 18 01 00 00
+//Alt: movss [rcx+00000118],xmm5
+unregistersymbol(snvRead1AOB)
+
+unregistersymbol(pSomeCamInfo1)
+
+///*******************************************************///
+
+dealloc(newmem2)
+playerCoordReadConstAOB: //"Rapture_Release.exe"+C65219:
+db 8B 81 A8 00 00 00
+//Alt: mov eax,[rcx+000000A8]
+unregistersymbol(playerCoordReadConstAOB)
+
+unregistersymbol(pPlayerCoord)
+
+///*******************************************************///
+
+dealloc(newmem3)
+movementYReadAOB: //"Rapture_Release.exe"+13D3908:
+db F3 0F 10 9F 34 03 00 00
+//Alt: movss xmm3,[rdi+00000334]
+unregistersymbol(movementYReadAOB)
+
+unregistersymbol(pMovementInfo)
+
+///*******************************************************///
+
+dealloc(newmem4)
+highestZReadInAirAOB: //"Rapture_Release.exe"+12EB13C:
+db F3 0F 10 93 90 04 00 00
+//Alt: movss xmm2,[rbx+00000490]
+unregistersymbol(highestZReadInAirAOB)
+
+unregistersymbol(pHighestZ)
+
+///*******************************************************///
+
+dealloc(newmem5)
+playerCoordWriteOnMoveAOB: //"Rapture_Release.exe"+C6646E:
+db 8B 02 89 81 A8 00 00 00
+//Alt: mov eax,[rdx]
+//Alt: mov [rcx+000000A8],eax
+unregistersymbol(playerCoordWriteOnMoveAOB)
+
+unregistersymbol(bFlyMode)
+unregistersymbol(fZDirection)
+
+///*******************************************************///
+
+unregistersymbol(bEndThread_DarkSoulsIII_keylistener_mem)
+
+dealloc(Rapture_Release_keylistener_mem)
+unregistersymbol(Rapture_Release_keylistener_mem)
+</AssemblerScript>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>72388</ID>
+              <Description>"Status (Alt+E: NoClip, Alt+Q: Disable)"</Description>
+              <DropDownList ReadOnly="1" DescriptionOnly="1" DisplayValueAsItem="1">0:Disable
+1:NoClip
+</DropDownList>
+              <LastState Value="1" RealAddress="136FD0052"/>
+              <VariableType>Byte</VariableType>
+              <Address>bFlyMode</Address>
+              <Hotkeys>
+                <Hotkey>
+                  <Action>Set Value</Action>
+                  <Keys>
+                    <Key>18</Key>
+                    <Key>69</Key>
+                  </Keys>
+                  <Value>1</Value>
+                  <ID>0</ID>
+                </Hotkey>
+                <Hotkey>
+                  <Action>Set Value</Action>
+                  <Keys>
+                    <Key>18</Key>
+                    <Key>81</Key>
+                  </Keys>
+                  <Value>0</Value>
+                  <ID>1</ID>
+                </Hotkey>
+              </Hotkeys>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+  </CheatEntries>
+  <CheatCodes>
+    <CodeEntry>
+      <Description>crc1 Code :mov eax,[rcx+000000A8]</Description>
+      <Address>137C65219</Address>
+      <ModuleName>Rapture_Release.exe</ModuleName>
+      <ModuleNameOffset>C65219</ModuleNameOffset>
+      <Before>
+        <Byte>EC</Byte>
+        <Byte>F8</Byte>
+        <Byte>01</Byte>
+        <Byte>00</Byte>
+        <Byte>00</Byte>
+      </Before>
+      <Actual>
+        <Byte>8B</Byte>
+        <Byte>81</Byte>
+        <Byte>A8</Byte>
+        <Byte>00</Byte>
+        <Byte>00</Byte>
+        <Byte>00</Byte>
+      </Actual>
+      <After>
+        <Byte>48</Byte>
+        <Byte>8B</Byte>
+        <Byte>D9</Byte>
+        <Byte>4C</Byte>
+        <Byte>89</Byte>
+      </After>
+    </CodeEntry>
+    <CodeEntry>
+      <Description>crc2 Code :movss xmm0,[rdi+000000A8]</Description>
+      <Address>137C6F120</Address>
+      <ModuleName>Rapture_Release.exe</ModuleName>
+      <ModuleNameOffset>C6F120</ModuleNameOffset>
+      <Before>
+        <Byte>00</Byte>
+        <Byte>00</Byte>
+        <Byte>45</Byte>
+        <Byte>33</Byte>
+        <Byte>C9</Byte>
+      </Before>
+      <Actual>
+        <Byte>F3</Byte>
+        <Byte>0F</Byte>
+        <Byte>10</Byte>
+        <Byte>87</Byte>
+        <Byte>A8</Byte>
+        <Byte>00</Byte>
+        <Byte>00</Byte>
+        <Byte>00</Byte>
+      </Actual>
+      <After>
+        <Byte>F3</Byte>
+        <Byte>0F</Byte>
+        <Byte>11</Byte>
+        <Byte>85</Byte>
+        <Byte>4C</Byte>
+      </After>
+    </CodeEntry>
+    <CodeEntry>
+      <Description>crm1 Code :subss xmm7,[rdi+000000A8]</Description>
+      <Address>137C67558</Address>
+      <ModuleName>Rapture_Release.exe</ModuleName>
+      <ModuleNameOffset>C67558</ModuleNameOffset>
+      <Before>
+        <Byte>AF</Byte>
+        <Byte>B0</Byte>
+        <Byte>00</Byte>
+        <Byte>00</Byte>
+        <Byte>00</Byte>
+      </Before>
+      <Actual>
+        <Byte>F3</Byte>
+        <Byte>0F</Byte>
+        <Byte>5C</Byte>
+        <Byte>BF</Byte>
+        <Byte>A8</Byte>
+        <Byte>00</Byte>
+        <Byte>00</Byte>
+        <Byte>00</Byte>
+      </Actual>
+      <After>
+        <Byte>F3</Byte>
+        <Byte>0F</Byte>
+        <Byte>10</Byte>
+        <Byte>74</Byte>
+        <Byte>24</Byte>
+      </After>
+    </CodeEntry>
+    <CodeEntry>
+      <Description>crm2 Code :movss xmm2,[rcx+000000A8]</Description>
+      <Address>137C6444E</Address>
+      <ModuleName>Rapture_Release.exe</ModuleName>
+      <ModuleNameOffset>C6444E</ModuleNameOffset>
+      <Before>
+        <Byte>25</Byte>
+        <Byte>66</Byte>
+        <Byte>54</Byte>
+        <Byte>03</Byte>
+        <Byte>01</Byte>
+      </Before>
+      <Actual>
+        <Byte>F3</Byte>
+        <Byte>0F</Byte>
+        <Byte>10</Byte>
+        <Byte>91</Byte>
+        <Byte>A8</Byte>
+        <Byte>00</Byte>
+        <Byte>00</Byte>
+        <Byte>00</Byte>
+      </Actual>
+      <After>
+        <Byte>F3</Byte>
+        <Byte>41</Byte>
+        <Byte>0F</Byte>
+        <Byte>58</Byte>
+        <Byte>C1</Byte>
+      </After>
+    </CodeEntry>
+    <CodeEntry>
+      <Description>cwm Code :mov [rcx+000000A8],eax</Description>
+      <Address>137C66470</Address>
+      <ModuleName>Rapture_Release.exe</ModuleName>
+      <ModuleNameOffset>C66470</ModuleNameOffset>
+      <Before>
+        <Byte>41</Byte>
+        <Byte>8B</Byte>
+        <Byte>FA</Byte>
+        <Byte>8B</Byte>
+        <Byte>02</Byte>
+      </Before>
+      <Actual>
+        <Byte>89</Byte>
+        <Byte>81</Byte>
+        <Byte>A8</Byte>
+        <Byte>00</Byte>
+        <Byte>00</Byte>
+        <Byte>00</Byte>
+      </Actual>
+      <After>
+        <Byte>8B</Byte>
+        <Byte>42</Byte>
+        <Byte>04</Byte>
+        <Byte>89</Byte>
+        <Byte>81</Byte>
+      </After>
+    </CodeEntry>
+    <CodeEntry>
+      <Description>hz read on land Code :movss xmm1,[rdi+08]</Description>
+      <Address>138419E04</Address>
+      <ModuleName>Rapture_Release.exe</ModuleName>
+      <ModuleNameOffset>1419E04</ModuleNameOffset>
+      <Before>
+        <Byte>00</Byte>
+        <Byte>84</Byte>
+        <Byte>C0</Byte>
+        <Byte>74</Byte>
+        <Byte>10</Byte>
+      </Before>
+      <Actual>
+        <Byte>F3</Byte>
+        <Byte>0F</Byte>
+        <Byte>10</Byte>
+        <Byte>4F</Byte>
+        <Byte>08</Byte>
+      </Actual>
+      <After>
+        <Byte>0F</Byte>
+        <Byte>28</Byte>
+        <Byte>D6</Byte>
+        <Byte>48</Byte>
+        <Byte>8B</Byte>
+      </After>
+    </CodeEntry>
+    <CodeEntry>
+      <Description>speed read? Code :movss xmm2,[rbp-10]</Description>
+      <Address>137C6D3E7</Address>
+      <ModuleName>Rapture_Release.exe</ModuleName>
+      <ModuleNameOffset>C6D3E7</ModuleNameOffset>
+      <Before>
+        <Byte>E9</Byte>
+        <Byte>84</Byte>
+        <Byte>00</Byte>
+        <Byte>00</Byte>
+        <Byte>00</Byte>
+      </Before>
+      <Actual>
+        <Byte>F3</Byte>
+        <Byte>0F</Byte>
+        <Byte>10</Byte>
+        <Byte>55</Byte>
+        <Byte>F0</Byte>
+      </Actual>
+      <After>
+        <Byte>F3</Byte>
+        <Byte>0F</Byte>
+        <Byte>10</Byte>
+        <Byte>85</Byte>
+        <Byte>A4</Byte>
+      </After>
+    </CodeEntry>
+    <CodeEntry>
+      <Description>c1 Code :mov [rcx+00000180],eax</Description>
+      <Address>13803924E</Address>
+      <ModuleName>Rapture_Release.exe</ModuleName>
+      <ModuleNameOffset>103924E</ModuleNameOffset>
+      <Before>
+        <Byte>00</Byte>
+        <Byte>41</Byte>
+        <Byte>8B</Byte>
+        <Byte>40</Byte>
+        <Byte>1C</Byte>
+      </Before>
+      <Actual>
+        <Byte>89</Byte>
+        <Byte>81</Byte>
+        <Byte>80</Byte>
+        <Byte>01</Byte>
+        <Byte>00</Byte>
+        <Byte>00</Byte>
+      </Actual>
+      <After>
+        <Byte>41</Byte>
+        <Byte>8B</Byte>
+        <Byte>40</Byte>
+        <Byte>20</Byte>
+        <Byte>89</Byte>
+      </After>
+    </CodeEntry>
+    <CodeEntry>
+      <Description>c2 Code :movaps [rcx-60],xmm0</Description>
+      <Address>13816C9F1</Address>
+      <ModuleName>Rapture_Release.exe</ModuleName>
+      <ModuleNameOffset>116C9F1</ModuleNameOffset>
+      <Before>
+        <Byte>90</Byte>
+        <Byte>0F</Byte>
+        <Byte>28</Byte>
+        <Byte>42</Byte>
+        <Byte>A0</Byte>
+      </Before>
+      <Actual>
+        <Byte>0F</Byte>
+        <Byte>29</Byte>
+        <Byte>41</Byte>
+        <Byte>A0</Byte>
+      </Actual>
+      <After>
+        <Byte>0F</Byte>
+        <Byte>28</Byte>
+        <Byte>4A</Byte>
+        <Byte>B0</Byte>
+        <Byte>0F</Byte>
+      </After>
+    </CodeEntry>
+  </CheatCodes>
+  <UserdefinedSymbols>
+    <SymbolEntry>
+      <Name>moveForceWriteAOB</Name>
+      <Address> 137C673A8</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>fMoveSpeedMultiplierCal</Name>
+      <Address>136FF0028</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>fMoveSpeedMultiplier</Name>
+      <Address>136FF002C</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>fMoveSpeedMultiplierMod1</Name>
+      <Address>136FF0030</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>fMoveSpeedMultiplierMod2</Name>
+      <Address>136FF0034</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>bUseSpeedModKey</Name>
+      <Address>136FF0038</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>bSpeedModKeyPressed</Name>
+      <Address>136FF003C</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>bEndThread_Rapture_Release_keylistener2_mem</Name>
+      <Address>136FE00F0</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>fFlySpeed</Name>
+      <Address>136F8017B</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>snvRead2AOB</Name>
+      <Address> 137063147</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>bFlyMode</Name>
+      <Address>136FD0052</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>vx</Name>
+      <Address>136FD0056</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>someReturn1AOB</Name>
+      <Address> 137360D68</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>snvRead1AOB</Name>
+      <Address> 1370957EC</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>pSomeCamInfo1</Name>
+      <Address>136FC003D</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>playerCoordReadConstAOB</Name>
+      <Address> 137C65219</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>pPlayerCoord</Name>
+      <Address>136FB001B</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>movementYReadAOB</Name>
+      <Address> 1383D3908</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>pMovementInfo</Name>
+      <Address>136FA001D</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>highestZReadInAirAOB</Name>
+      <Address> 1382EB13C</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>pHighestZ</Name>
+      <Address>136F90073</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>playerCoordWriteOnMoveAOB</Name>
+      <Address> 137C6646E</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>fZDirection</Name>
+      <Address>136F80177</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>fFlySpeedMultiplier</Name>
+      <Address>136F8017B</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>bEndThread_Rapture_Release_keylistener_mem</Name>
+      <Address>136F7017D</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>fFlySpeedMultiplierMod1</Name>
+      <Address>136F70189</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>fFlySpeedMultiplierMod2</Name>
+      <Address>136F7018D</Address>
+    </SymbolEntry>
+  </UserdefinedSymbols>
+  <Comments>http://forum.cheatengine.org/viewtopic.php?p=5663773#5663773
+</Comments>
+</CheatTable>

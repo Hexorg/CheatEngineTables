@@ -1,0 +1,790 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="14">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>104</ID>
+      <Description>"README (double-click &lt;script&gt; to read) ----------&gt;"</Description>
+      <Color>FF00FF</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>{ README - Starpoing Gemini 2 Cheat Table by jgoemat and Griffihn
+  Steam Version 1.0 as of 2014-09-27
+
+  Blue entries will expand when enabled showing their children.
+
+  Instructions:
+    1) Enable SCRIPT: Globals, then enable all of the scripts under it
+    2) Enable 'Cheats' to see the individual cheats
+    3) Set values starting with 'b' to 1 to enable the cheats
+    4) New/Recalculated contains the former Ship Stats section with the option
+    to recalculate for current version of the game (added Reputation)
+    5) DO NOT make resistances above 1.0. every 0.1=10% resistance.
+    (it can cause some pretty nasty crashes) If resistances don't stick, try
+    lowering them to 30% or below (0.3 value).
+    6) All values can be frozen and it is indicated you do so with Current Hull
+    and Top speed for the values to actually stick (high speed and infinite HP)
+    7) The missile script/cheat seems to be acting a little funky at the moment
+
+Stats: Cash, XP, Level, Skill Points, Perk Points
+Ship: Hull (current/max), Troops (current/max), Max Cargo, Resistances
+Cheats:
+  bPlayerEnergy - Weapons are always charged
+  bEnemyEnergy - Non-player ships have no weapon energy
+  bItemRecharge - Items recharge instantly after use
+  bItemQuantity - Item quantity does not decrease when used
+  bMissileAmmo - Ammo not used on heavy weapons (missiles at least)
+  bMissileRecharge - Heavy weapons have no cooldown (missiles at least)
+
+NOTE: You may have to pick up some cargo to be able to see ship stats.
+
+All of the values in the New/Recalculated section can actually be found and
+updated for each version quite easily. When you search for a specific value,
+be sure to select the proper type and look in the vecinity of the value already
+in the cheat table. It will show up as a green value, instead of the normal
+black values you usually see.
+
+}
+[ENABLE]
+[DISABLE]
+</AssemblerScript>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>25</ID>
+      <Description>"SCRIPT: Globals"</Description>
+      <Options moHideChildren="1"/>
+      <Color>FF0000</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>globalalloc(globals,$100000)
+
+[ENABLE]
+
+{******************************************************************************
+ * Pointers
+ ******************************************************************************}
+
+label(pPlayerEnergy)   // 1000
+label(pSkillsAndPerks) // 1004
+label(pShipStats)      // 1008
+label(pStatsBySkill)   // 100C
+label(pStatsByXP)      // 1010
+
+globals+1000:
+pPlayerEnergy: // +30 is max, +40 is current
+
+globals+1004:
+pSkillsAndPerks:
+
+globals+1008:
+pShipStats:
+
+globals+100C:
+pStatsBySkill:
+
+globals+1010:
+pStatsByXP:
+
+registersymbol(pPlayerEnergy)
+registersymbol(pSkillsAndPerks)
+registersymbol(pShipStats)
+registersymbol(pStatsBySkill)
+registersymbol(pStatsByXP)
+
+{******************************************************************************
+ * Flags and Values
+ ******************************************************************************}
+
+label(bPlayerEnergy)     // 2000
+label(bEnemyEnergy)      // 2004
+label(fSpeedMultiplier)  // 2008
+label(bMissileAmmo)      // 200c
+label(bMissileRecharge)  // 2010
+label(bSkillRecharge)    // 2014
+label(bItemRecharge)     // 2018
+label(bItemQuantity)     // 201C
+
+globals+2000:
+bPlayerEnergy: // +30 is max, +40 is current
+
+globals+2004:
+bEnemyEnergy: // +30 is max, +40 is current
+
+globals+2008:
+fSpeedMultiplier: // will be ignored if less than 1.0
+
+globals+200C:
+bMissileAmmo:
+
+globals+2010:
+bMissileRecharge:
+
+globals+2014:
+bSkillRecharge:
+
+globals+2018:
+bItemRecharge:
+
+globals+201C:
+bItemQuantity:
+
+registersymbol(bPlayerEnergy)
+registersymbol(bEnemyEnergy)
+registersymbol(fSpeedMultiplier)
+registersymbol(bMissileAmmo)
+registersymbol(bMissileRecharge)
+registersymbol(bSkillRecharge)
+registersymbol(bItemRecharge)
+registersymbol(bItemQuantity)
+
+[DISABLE]
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>29</ID>
+          <Description>"Script: Energy"</Description>
+          <Color>80000008</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>{ Game   : StarpointGemini2.exe
+  Version: 
+  Date   : 2014-04-27
+  Author : Jason
+
+
+  EDI: Structure
+       30: Max Energy (float)
+       40: Current Energy (float)
+}
+
+[ENABLE]
+
+{******************************************************************************
+ * INJECT_ENERGY1 - For all ships - when recharging energy
+ ******************************************************************************}
+
+aobscanmodule(INJECT_ENERGY1,StarpointGemini2.exe,F3 0F 11 47 40 0F 2F) // should be unique
+alloc(newmem_ENERGY1,$1000)
+
+label(code_ENERGY1)
+label(skip_ENERGY1)
+label(return_ENERGY1)
+
+newmem_ENERGY1:
+
+code_ENERGY1:
+  cmp dword ptr [bEnemyEnergy],1
+  jne skip_ENERGY1
+  cmp dword ptr [pPlayerEnergy],edi
+  je skip_ENERGY1
+  push eax
+  xor eax,eax
+  mov [edi+40],eax
+  pop eax
+  movss xmm0,[edi+40]
+
+skip_ENERGY1:
+  movss [edi+40],xmm0
+  jmp return_ENERGY1
+
+INJECT_ENERGY1:
+  jmp code_ENERGY1
+return_ENERGY1:
+registersymbol(INJECT_ENERGY1)
+
+{******************************************************************************
+ * INJECT_ENERGY2 - ONLY for player ship, this is probably for display
+ ******************************************************************************}
+
+aobscanmodule(INJECT_ENERGY2,StarpointGemini2.exe,F3 0F 10 06 F3 0F 5E 40 30 EB) // should be unique
+alloc(newmem_ENERGY2,$1000)
+
+label(code_ENERGY2)
+label(skip_ENERGY2)
+label(return_ENERGY2)
+
+newmem_ENERGY2:
+
+code_ENERGY2:
+  mov [pPlayerEnergy],eax
+  cmp dword ptr [bPlayerEnergy],1
+  jne skip_ENERGY2
+  movss xmm0,[eax+30]
+  movss [eax+40],xmm0
+
+skip_ENERGY2:
+  movss xmm0,[esi]
+  divss xmm0,[eax+30]
+  jmp return_ENERGY2
+
+INJECT_ENERGY2:
+  jmp code_ENERGY2
+  nop
+  nop
+  nop
+  nop
+return_ENERGY2:
+registersymbol(INJECT_ENERGY2)
+
+
+[DISABLE]
+
+INJECT_ENERGY1:
+  db F3 0F 11 47 40
+
+unregistersymbol(INJECT_ENERGY1)
+dealloc(newmem_ENERGY1)
+
+{
+// ORIGINAL CODE - INJECTION POINT: "StarpointGemini2.exe"+1412CC
+// stores new energy when recharging, seems to be used for all ships
+
+"StarpointGemini2.exe"+1412AD: F3 0F11 47 40        - movss [edi+40],xmm0
+"StarpointGemini2.exe"+1412B2: 5F                   - pop edi
+"StarpointGemini2.exe"+1412B3: 5E                   - pop esi
+"StarpointGemini2.exe"+1412B4: 5B                   - pop ebx
+"StarpointGemini2.exe"+1412B5: 8B E5                - mov esp,ebp
+"StarpointGemini2.exe"+1412B7: 5D                   - pop ebp
+"StarpointGemini2.exe"+1412B8: C2 0400              - ret 0004
+"StarpointGemini2.exe"+1412BB: F3 0F10 47 34        - movss xmm0,[edi+34]
+"StarpointGemini2.exe"+1412C0: F3 0F59 05 9CFB5200  - mulss xmm0,[StarpointGemini2.exe+32FB9C]
+"StarpointGemini2.exe"+1412C8: F3 0F58 C2           - addss xmm0,xmm2
+// ---------- INJECTING HERE ----------
+"StarpointGemini2.exe"+1412CC: F3 0F11 47 40        - movss [edi+40],xmm0
+// ---------- DONE INJECTING  ----------
+"StarpointGemini2.exe"+1412D1: 0F2F C1              - comiss xmm0,xmm1
+"StarpointGemini2.exe"+1412D4: EB 03                - jmp StarpointGemini2.exe+1412D9
+"StarpointGemini2.exe"+1412D6: 0F2F D1              - comiss xmm2,xmm1
+"StarpointGemini2.exe"+1412D9: 76 05                - jna StarpointGemini2.exe+1412E0
+"StarpointGemini2.exe"+1412DB: F3 0F11 4F 40        - movss [edi+40],xmm1
+"StarpointGemini2.exe"+1412E0: 5F                   - pop edi
+"StarpointGemini2.exe"+1412E1: 5E                   - pop esi
+"StarpointGemini2.exe"+1412E2: 5B                   - pop ebx
+"StarpointGemini2.exe"+1412E3: 8B E5                - mov esp,ebp
+"StarpointGemini2.exe"+1412E5: 5D                   - pop ebp
+}
+
+INJECT_ENERGY2:
+  db F3 0F 10 06 F3 0F 5E 40 30
+
+unregistersymbol(INJECT_ENERGY2)
+dealloc(newmem_ENERGY2)
+
+{
+// ORIGINAL CODE - INJECTION POINT: 00223F11
+
+"StarpointGemini2.exe"+23EE8: 74 32             - je StarpointGemini2.exe+23F1C
+"StarpointGemini2.exe"+23EEA: 8B 0D 90F35600    - mov ecx,[StarpointGemini2.exe+36F390]
+"StarpointGemini2.exe"+23EF0: 53                - push ebx
+"StarpointGemini2.exe"+23EF1: 8D 89 280E0000    - lea ecx,[ecx+00000E28]
+"StarpointGemini2.exe"+23EF7: E8 A4BEFEFF       - call StarpointGemini2.exe+FDA0
+"StarpointGemini2.exe"+23EFC: 8B 0D 90F35600    - mov ecx,[StarpointGemini2.exe+36F390]
+"StarpointGemini2.exe"+23F02: 53                - push ebx
+"StarpointGemini2.exe"+23F03: 8D 89 280E0000    - lea ecx,[ecx+00000E28]
+"StarpointGemini2.exe"+23F09: 8D 70 40          - lea esi,[eax+40]
+"StarpointGemini2.exe"+23F0C: E8 8FBEFEFF       - call StarpointGemini2.exe+FDA0
+// ---------- INJECTING HERE ----------
+"StarpointGemini2.exe"+23F11: F3 0F10 06        - movss xmm0,[esi]
+"StarpointGemini2.exe"+23F15: F3 0F5E 40 30     - divss xmm0,[eax+30]
+// ---------- DONE INJECTING  ----------
+"StarpointGemini2.exe"+23F1A: EB 03             - jmp StarpointGemini2.exe+23F1F
+"StarpointGemini2.exe"+23F1C: 0F57 C0           - xorps xmm0,xmm0
+"StarpointGemini2.exe"+23F1F: FF 75 E0          - push [ebp-20]
+"StarpointGemini2.exe"+23F22: F3 0F10 4D E4     - movss xmm1,[ebp-1C]
+"StarpointGemini2.exe"+23F27: 8B D3             - mov edx,ebx
+"StarpointGemini2.exe"+23F29: 0F28 D0           - movaps xmm2,xmm0
+"StarpointGemini2.exe"+23F2C: 8B CF             - mov ecx,edi
+"StarpointGemini2.exe"+23F2E: E8 BD271300       - call StarpointGemini2.exe+1566F0
+"StarpointGemini2.exe"+23F33: 8B 4D FC          - mov ecx,[ebp-04]
+"StarpointGemini2.exe"+23F36: 83 C4 04          - add esp,04
+}
+</AssemblerScript>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>100</ID>
+          <Description>"Script: Item Charge"</Description>
+          <Color>80000008</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>{ Game   : StarpointGemini2.exe
+  Version: 
+  Date   : 2014-04-28
+  Author : Jason
+
+  When an item is recharging, the injected instruction loads the max charge.
+
+  EAX Structure:
+    -0C: Item Quantity (actually at offset 8 at least into a structure)
+    08: Max Charge
+    0C: Current Charge
+}
+
+[ENABLE]
+
+aobscanmodule(INJECT_ItemRecharge,StarpointGemini2.exe,F3 0F 10 50 08 0F) // should be unique
+alloc(newmem,$1000)
+
+label(code)
+label(skipRecharge)
+label(return)
+
+newmem:
+
+code:
+  // see if we should recharge item
+  cmp dword ptr [bItemRecharge],1
+  jne skipRecharge
+  movss xmm0,[eax+08] // load max charge in xmm0 that has new charge
+
+skipRecharge:
+  movss xmm2,[eax+08]
+  jmp return
+
+INJECT_ItemRecharge:
+  jmp code
+return:
+registersymbol(INJECT_ItemRecharge)
+
+[DISABLE]
+
+INJECT_ItemRecharge:
+  db F3 0F 10 50 08
+
+unregistersymbol(INJECT_ItemRecharge)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: 00CFD3CE
+
+"StarpointGemini2.exe"+FD39E: C7 00 02000000       - mov [eax],00000002
+"StarpointGemini2.exe"+FD3A4: F3 0F10 40 0C        - movss xmm0,[eax+0C]
+"StarpointGemini2.exe"+FD3A9: F3 0F10 0D 9479E800  - movss xmm1,[StarpointGemini2.exe+287994]
+"StarpointGemini2.exe"+FD3B1: F3 0F59 C1           - mulss xmm0,xmm1
+"StarpointGemini2.exe"+FD3B5: F3 0F5E 40 04        - divss xmm0,[eax+04]
+"StarpointGemini2.exe"+FD3BA: EB 3D                - jmp StarpointGemini2.exe+FD3F9
+"StarpointGemini2.exe"+FD3BC: 83 F9 02             - cmp ecx,02
+"StarpointGemini2.exe"+FD3BF: 75 3D                - jne StarpointGemini2.exe+FD3FE
+"StarpointGemini2.exe"+FD3C1: F3 0F10 05 9C4BF300  - movss xmm0,[StarpointGemini2.exe+334B9C]
+"StarpointGemini2.exe"+FD3C9: F3 0F58 40 0C        - addss xmm0,[eax+0C]           // add current frame time to current charge
+// ---------- INJECTING HERE ----------
+"StarpointGemini2.exe"+FD3CE: F3 0F10 50 08        - movss xmm2,[eax+08]           // load current charge
+// ---------- DONE INJECTING  ----------
+"StarpointGemini2.exe"+FD3D3: 0F2F C2              - comiss xmm0,xmm2
+"StarpointGemini2.exe"+FD3D6: F3 0F11 40 0C        - movss [eax+0C],xmm0
+"StarpointGemini2.exe"+FD3DB: 72 0F                - jb StarpointGemini2.exe+FD3EC
+"StarpointGemini2.exe"+FD3DD: F3 0F11 50 0C        - movss [eax+0C],xmm2
+"StarpointGemini2.exe"+FD3E2: C7 00 00000000       - mov [eax],00000000
+"StarpointGemini2.exe"+FD3E8: C6 40 F1 00          - mov byte ptr [eax-0F],00
+"StarpointGemini2.exe"+FD3EC: F3 0F10 40 0C        - movss xmm0,[eax+0C]
+"StarpointGemini2.exe"+FD3F1: F3 0F59 C1           - mulss xmm0,xmm1
+"StarpointGemini2.exe"+FD3F5: F3 0F5E C2           - divss xmm0,xmm2
+"StarpointGemini2.exe"+FD3F9: F3 0F11 40 FC        - movss [eax-04],xmm0
+}
+</AssemblerScript>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>102</ID>
+          <Description>"Script: Item Quantity"</Description>
+          <Color>80000008</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>{ Game   : StarpointGemini2.exe
+  Version: 
+  Date   : 2014-04-28
+  Author : Jason
+
+  This is where item quantity is decremented when used.
+
+  EBX Structure:
+    08: Item Quantity
+    0C: Seems to be some sort of type, if 1, 5 or 6 then don't decrement
+    10: 100.0?
+    18: 15.0?
+    1C: Max Charge (20.0)
+    20: Current Charge
+}
+
+[ENABLE]
+
+
+aobscanmodule(INJECT_ItemQuantity,StarpointGemini2.exe,83 F8 01 74 03 FF 4B 08) // should be unique (added dec instruction)
+alloc(newmem,$1000)
+
+label(code)
+label(return)
+
+newmem:
+
+code:
+  cmp dword ptr [bItemQuantity],1
+  je return+3
+
+  cmp eax,01
+  je return+3
+  jmp return
+
+INJECT_ItemQuantity:
+  jmp code
+return:
+registersymbol(INJECT_ItemQuantity)
+
+[DISABLE]
+
+INJECT_ItemQuantity:
+  db 83 F8 01 74 03
+
+unregistersymbol(INJECT_ItemQuantity)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: 00CFC52B
+
+"StarpointGemini2.exe"+FC516: 53                - push ebx
+"StarpointGemini2.exe"+FC517: 8B D9             - mov ebx,ecx
+"StarpointGemini2.exe"+FC519: 56                - push esi
+"StarpointGemini2.exe"+FC51A: 8B 43 0C          - mov eax,[ebx+0C]               // load some sort of item type
+"StarpointGemini2.exe"+FC51D: 57                - push edi
+"StarpointGemini2.exe"+FC51E: 89 5D FC          - mov [ebp-04],ebx
+"StarpointGemini2.exe"+FC521: 83 F8 05          - cmp eax,05                     // seems to skip decrementing if item typ eis 5, 6 or 1
+"StarpointGemini2.exe"+FC524: 74 0D             - je StarpointGemini2.exe+FC533
+"StarpointGemini2.exe"+FC526: 83 F8 06          - cmp eax,06
+"StarpointGemini2.exe"+FC529: 74 08             - je StarpointGemini2.exe+FC533
+// ---------- INJECTING HERE ----------
+"StarpointGemini2.exe"+FC52B: 83 F8 01          - cmp eax,01
+"StarpointGemini2.exe"+FC52E: 74 03             - je StarpointGemini2.exe+FC533
+// ---------- DONE INJECTING  ----------
+"StarpointGemini2.exe"+FC530: FF 4B 08          - dec [ebx+08]                   // decrement quantity
+"StarpointGemini2.exe"+FC533: 66 8B 13          - mov dx,[ebx]
+"StarpointGemini2.exe"+FC536: 6A 18             - push 18
+"StarpointGemini2.exe"+FC538: B9 09000000       - mov ecx,00000009
+"StarpointGemini2.exe"+FC53D: E8 BEFCFDFF       - call StarpointGemini2.exe+DC200
+"StarpointGemini2.exe"+FC542: 66 8B 13          - mov dx,[ebx]
+"StarpointGemini2.exe"+FC545: 83 C4 04          - add esp,04
+"StarpointGemini2.exe"+FC548: B9 09000000       - mov ecx,00000009
+"StarpointGemini2.exe"+FC54D: 6A 17             - push 17
+"StarpointGemini2.exe"+FC54F: F3 0F11 43 1C     - movss [ebx+1C],xmm0
+}
+</AssemblerScript>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>32</ID>
+      <Description>"Cheats"</Description>
+      <Options moHideChildren="1"/>
+      <Color>FF0000</Color>
+      <GroupHeader>1</GroupHeader>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>30</ID>
+          <Description>"bPlayerEnergy"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>bPlayerEnergy</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>31</ID>
+          <Description>"bEnemyEnergy"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>bEnemyEnergy</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>101</ID>
+          <Description>"bItemRecharge"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>bItemRecharge</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>103</ID>
+          <Description>"bItemQuantity"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>bItemQuantity</Address>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>145</ID>
+      <Description>"Recalculated 1.004"</Description>
+      <Color>80000008</Color>
+      <GroupHeader>1</GroupHeader>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>184</ID>
+          <Description>"Perk Points"</Description>
+          <Color>00FF00</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>StarpointGemini2.exe+47F148</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>183</ID>
+          <Description>"Skill Points"</Description>
+          <Color>00FF00</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>StarpointGemini2.exe+47F14C</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>182</ID>
+          <Description>"Reputation"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>StarpointGemini2.exe+44761C</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>185</ID>
+          <Description>"Current Troops"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>StarpointGemini2.exe+47CBB4</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>186</ID>
+          <Description>"Max Troops"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>StarpointGemini2.exe+47C390</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>174</ID>
+          <Description>"Resistances"</Description>
+          <Options moHideChildren="1"/>
+          <Color>FF0000</Color>
+          <GroupHeader>1</GroupHeader>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>175</ID>
+              <Description>"Radiation"</Description>
+              <Color>80000008</Color>
+              <VariableType>Float</VariableType>
+              <Address>StarpointGemini2.exe+443068</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>176</ID>
+              <Description>"Plasma"</Description>
+              <Color>80000008</Color>
+              <VariableType>Float</VariableType>
+              <Address>StarpointGemini2.exe+443064</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>177</ID>
+              <Description>"EMP"</Description>
+              <Color>80000008</Color>
+              <VariableType>Float</VariableType>
+              <Address>StarpointGemini2.exe+44306C</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>178</ID>
+              <Description>"Energy"</Description>
+              <Color>80000008</Color>
+              <VariableType>Float</VariableType>
+              <Address>StarpointGemini2.exe+44305C</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>179</ID>
+              <Description>"Projectile"</Description>
+              <Color>80000008</Color>
+              <VariableType>Float</VariableType>
+              <Address>StarpointGemini2.exe+443060</Address>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>187</ID>
+          <Description>"Current Hull"</Description>
+          <Color>80000008</Color>
+          <VariableType>Float</VariableType>
+          <Address>StarpointGemini2.exe+47C500</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>188</ID>
+          <Description>"Max Hull"</Description>
+          <Color>80000008</Color>
+          <VariableType>Float</VariableType>
+          <Address>StarpointGemini2.exe+47C4D4</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>169</ID>
+          <Description>"Level"</Description>
+          <Color>00FF00</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>StarpointGemini2.exe+47F13c</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>168</ID>
+          <Description>"Money"</Description>
+          <Color>00FF00</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>StarpointGemini2.exe+47F090</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>167</ID>
+          <Description>"XP"</Description>
+          <Color>00FF00</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>StarpointGemini2.exe+47F134</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>189</ID>
+          <Description>"Current Cargo"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>StarpointGemini2.exe+47CA88</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>190</ID>
+          <Description>"Max Cargo"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>StarpointGemini2.exe+47C38C</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>191</ID>
+          <Description>"Top Speed"</Description>
+          <Color>80000008</Color>
+          <VariableType>Float</VariableType>
+          <Address>StarpointGemini2.exe+47C974</Address>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>193</ID>
+      <Description>"test"</Description>
+      <Color>80000008</Color>
+      <VariableType>4 Bytes</VariableType>
+      <Address>37B20</Address>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols>
+    <SymbolEntry>
+      <Name>test</Name>
+      <Address>09220000</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>TEST_VALUES</Name>
+      <Address>06B10000</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>globals</Name>
+      <Address>09BA0000</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>bMissleRecharge</Name>
+      <Address>09552010</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>bMissleAmmo</Name>
+      <Address>0955200C</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>INJECT_Speed</Name>
+      <Address>00CFE949</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>INJECT_ShipStats</Name>
+      <Address>00C5D4AE</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>INJECT_StatsByXP</Name>
+      <Address>0127D381</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>TESET_SkillRecharge1</Name>
+      <Address>003C8904</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>INJECT_ENERGY1</Name>
+      <Address>01040F9B</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>INJECT_ENERGY2</Name>
+      <Address>00EBB791</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>INJECT_ItemRecharge</Name>
+      <Address>0116B5EC</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>INJECT_ItemQuantity</Name>
+      <Address>00FF5731</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>pPlayerEnergy</Name>
+      <Address>09BA1000</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>pSkillsAndPerks</Name>
+      <Address>09BA1004</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>pShipStats</Name>
+      <Address>09BA1008</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>pStatsBySkill</Name>
+      <Address>09BA100C</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>pStatsByXP</Name>
+      <Address>09BA1010</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>bPlayerEnergy</Name>
+      <Address>09BA2000</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>bEnemyEnergy</Name>
+      <Address>09BA2004</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>fSpeedMultiplier</Name>
+      <Address>09BA2008</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>bMissileAmmo</Name>
+      <Address>09BA200C</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>bMissileRecharge</Name>
+      <Address>09BA2010</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>bSkillRecharge</Name>
+      <Address>09BA2014</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>bItemRecharge</Name>
+      <Address>09BA2018</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>bItemQuantity</Name>
+      <Address>09BA201C</Address>
+    </SymbolEntry>
+  </UserdefinedSymbols>
+  <Comments>Starpoing Gemini 2 Cheat Table by jgoemat and Griffihn
+  Steam Version 1.0 as of 2014-09-27
+  Blue entries will expand when enabled showing their children.
+  Instructions:
+    1) Enable SCRIPT: Globals, then enable all of the scripts under it
+    2) Enable 'Cheats' to see the individual cheats
+    3) Set values starting with 'b' to 1 to enable the cheats
+    4) New/Recalculated contains the former Ship Stats section with the option
+    to recalculate for current version of the game (added Reputation)
+    5) DO NOT make resistances above 1.0. every 0.1=10% resistance.
+    (it can cause some pretty nasty crashes) If resistances don't stick, try
+    lowering them to 30% or below (0.3 value).
+    6) All values can be frozen and it is indicated you do so with Current Hull
+    and Top speed for the values to actually stick (high speed and infinite HP)
+    7) The missile script/cheat seems to be a bit funky at the moment
+Stats: Cash, XP, Level, Skill Points, Perk Points
+Ship: Hull (current/max), Troops (current/max), Max Cargo, Resistances
+Cheats:
+  bPlayerEnergy - Weapons are always charged
+  bEnemyEnergy - Non-player ships have no weapon energy
+  bItemRecharge - Items recharge instantly after use
+  bItemQuantity - Item quantity does not decrease when used
+  bMissileAmmo - Ammo not used on heavy weapons (missiles at least)
+  bMissileRecharge - Heavy weapons have no cooldown (missiles at least)
+NOTE: You may have to pick up some cargo to be able to see ship stats.
+All of the values in the New/Recalculated section can actually be found and
+updated for each version quite easily. When you search for a specific value,
+be sure to select the proper type and look in the vecinity of the value already
+in the cheat table. It will show up as a green value, instead of the normal
+black values you usually see.
+</Comments>
+</CheatTable>

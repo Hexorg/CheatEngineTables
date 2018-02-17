@@ -1,0 +1,490 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="16">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>0</ID>
+      <Description>"[X] &lt;== Starpoint Gemini V1.012 Script"</Description>
+      <Options moHideChildren="1"/>
+      <Color>80000008</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>{
+===========================================
+ Game Title    : Starpoint Gemini
+ Game Version  : 1.012
+ Process Name  : StarpointGemini.exe
+ Script Version: 1.0
+ CE Version    : 6.1
+ Release date  : 17-Dec-2011 (adapted from v1.004)
+ Author        : Recifense
+ Features:
+ - God Mode
+ - Minimum Credits
+ - Unlimited Shield Defense
+ - Quick Reload
+ - Useful pointers
+===========================================
+}
+
+[ENABLE]
+//=========================================
+// Check if script is compatible to this game version
+// If false the script will not be loaded
+
+assert(StarpointGemini.exe+009461,8a 81 9c e8 e1 00)
+assert(StarpointGemini.exe+0118fa ,d8 af 00 30 00 00)
+assert(StarpointGemini.exe+01bf7b,d9 41 18 d8 64 24 08)
+assert(StarpointGemini.exe+0dbd71,dd d8 d9 56 e8)
+assert(StarpointGemini.exe+0d8a77,d8 69 04 d9 59 04)
+assert(StarpointGemini.exe+09f498,8b 8e 00 30 00 00)
+
+//=========================================
+alloc(MyCode,1024)
+//=========================================
+// Declaration section
+label(_MonPlayer)
+label(_BackMP)
+label(_ExitMP)
+label(_MonP0)
+label(_GodMode)
+label(_BackGM)
+label(_ExitGM)
+label(_GodMode1)
+label(_BackGM1)
+label(_ExitGM1)
+label(_MonReload)
+label(_BackMR)
+label(_ExitMR)
+label(_MonShield)
+label(_BackMS)
+label(_ExitMS)
+label(_MonShield1)
+label(_BackMS1)
+label(_ExitMS1)
+label(pPlayer)
+label(pShip)
+label(pShipCargo)
+label(pReputation)
+label(iMinCredits)
+label(iEnableMC)
+label(iEnableGM)
+label(iEnableMR)
+label(iEnableMS)
+label(fZero)
+label(fOneHundred)
+
+//=========================================
+// Registering Symbols
+registersymbol(MyCode)
+registersymbol(pPlayer)
+registersymbol(pShip)
+registersymbol(pShipCargo)
+registersymbol(pReputation)
+registersymbol(iMinCredits)
+registersymbol(iEnableMC)
+registersymbol(iEnableGM)
+registersymbol(iEnableMR)
+registersymbol(iEnableMS)
+
+//=========================================
+MyCode:
+//========================================= v1.012
+// Activated on main screen and on main menu
+_MonPlayer:
+ push ebx                          // Save EBX context
+
+ lea eax,[ecx+10]                  // Adjust pointer
+
+ mov [pPlayer],eax                 // Save ptr for further use
+ lea eax,[eax+00d4bc28]            // Adjust to point to Reputation OK
+ mov [pReputation],eax             // Save it for debugging
+ mov eax,[pPlayer]                 // Get pointer to player
+ mov eax,[eax+04e594]              // Get pointer to Ship      OK
+ mov [pShip],eax                   // Save it for further use
+ lea eax,[eax+3008]                // Adjust to point to Cargo OK
+ mov [pShipCargo],eax              // Save it for debugging
+
+ cmp dword ptr [iEnableMC],0
+ je _MonP0                         // Jump if feature is disabled
+
+ mov eax,[iMinCredits]             // Get minimum credits
+ cmp eax,[ecx+00d4bc2c]            // Current value &gt;= minimum? OK
+ jle _MonP0                        // jump if true
+
+ mov [ecx+00d4bc2c],eax            // Update Credits OK
+
+_MonP0:
+ cmp dword ptr [iEnableGM],0
+ je _ExitMP                        // Jump if feature is disabled
+
+ mov eax,[pShip]
+ test eax,eax
+ jz _ExitMP                        // Jump if invalid pointer
+
+ mov ebx,[eax+00000Ac8]            // Get maximum HullHP OK
+ mov [eax+00003000],ebx            // Update HullHP OK
+
+_ExitMP:
+ pop ebx                           // Restore EBX context
+
+ mov al,[ecx+00E1E89C]             // Original code ok
+ jmp _BackMP                       // Back to main code
+
+//========================================= v1.012
+// HullHP
+_GodMode:
+ cmp dword ptr [iEnableGM],0
+ je _ExitGM                        // Jump if feature is disabled
+
+ cmp edi,[pShip]                   // Is it hull of player's ship?
+ jne _ExitGM                       // Jump if false
+
+ mov ecx,[edi+00000Ac8]            // Get maximum HullHP OK
+ mov [edi+00003000],ecx            // Update HullHP OK
+
+ fstp st(0)                        // Discard value2decrease
+ fld dword ptr [fZero]             // Make value2decrease = 0
+
+_ExitGM:
+ fsubr dword ptr [edi+00003000]    // Original code OK
+ jmp _BackGM                       // Back to main code
+
+//========================================= v1.012
+// Parts HP
+_GodMode1:
+ cmp dword ptr [iEnableGM],0
+ je _ExitGM1                       // Jump if feature is disabled
+
+ cmp ebx,[pShip]                   // Is it a part of player's ship?
+ jne _ExitGM1                      // Jump if false
+
+ mov eax,[ecx+1c]                  // Get maximum PartHP
+ mov [ecx+18],eax                  // Update PartHP
+
+ mov dword ptr [esp+08],0          // Make value2decrease = 0
+
+_ExitGM1:
+ fld dword ptr [ecx+18]            // Original code
+ fsub dword ptr [esp+08]           // Original code
+ jmp _BackGM1                      // Back to main code
+
+//========================================= v1.012
+// Instant Weapon Readiness
+_MonReload:
+ fstp st(0)                        // Original code
+
+ cmp dword ptr [iEnableMR],0
+ je _ExitMR                        // Jump if feature is disabled
+
+ cmp edi,[pShip]                   // Is it a part of player's ship?
+ jne _ExitMR                       // Jump if false
+
+ fstp st(0)                        // Discard value
+
+ fld dword ptr [fOneHundred]       // Make reload progress = 100%
+
+_ExitMR:
+ fst dword ptr [esi-18]            // Original code
+ jmp _BackMR                       // Back to main code
+
+//========================================= v1.012
+_MonShield:
+ fsubr dword ptr [ecx+04]           // Original code
+ fstp dword ptr [ecx+04]            // Original code
+
+ cmp dword ptr [iEnableMS],0
+ je _ExitMS                        // Jump if feature is disabled
+
+ cmp edi,[pShip]                   // Is it the player's ship?
+ jne _ExitMS                       // Jump if false
+
+ push eax
+ mov eax,[ecx]                     // Get maximum shield value
+ mov [ecx+04],eax                  // Make shield = maximum
+ pop eax
+
+_ExitMS:
+ jmp _BackMS                       // Back to main code
+
+//========================================= v1.012
+_MonShield1:
+ cmp dword ptr [iEnableMS],0
+ je _ExitMS1                       // Jump if feature is disabled
+
+ cmp esi,[pShip]                   // Is it the player's ship?
+ jne _ExitMS1                      // Jump if false
+
+ push eax
+ mov eax,[ecx-04]                  // Get maximum shield value
+ mov [ecx],eax                     // Make shield = maximum
+ pop eax
+
+_ExitMS1:
+ mov ecx,[esi+00003000]            // Original code OK
+ jmp _BackMS1                      // Back to main code
+
+//=========================================
+ db '==========================&gt;'
+ db 'CE6.1 Script by Recifense 121711'
+//=========================================
+// Variables
+iEnableMC:
+ dd 1
+iEnableGM:
+ dd 1
+iEnableMR:
+ dd 1
+iEnableMS:
+ dd 1
+pPlayer:
+ dd 0
+pShip:
+ dd 0
+pShipCargo:
+ dd 0
+pReputation:
+ dd 0
+iMinCredits:
+ dd #3000000
+fZero:
+ dd 0
+fOneHundred:
+ dd (float)100.0
+
+//=========================================
+// Hacking Points
+//StarpointGemini.exe+009421:
+StarpointGemini.exe+009461:
+ jmp _MonPlayer
+ nop
+_BackMP:
+
+//StarpointGemini.exe+011750:
+StarpointGemini.exe+0118fa:
+ jmp _GodMode
+ nop
+_BackGM:
+
+//StarpointGemini.exe+01bc6b:
+StarpointGemini.exe+01bf7b:
+ jmp _GodMode1
+ nop
+ nop
+_BackGM1:
+
+//StarpointGemini.exe+0d23d1:
+StarpointGemini.exe+0dbd71:
+ jmp _MonReload
+_BackMR:
+
+//StarpointGemini.exe+0cf0e7:
+StarpointGemini.exe+0d8a77:
+ jmp _MonShield
+ nop
+_BackMS:
+
+//StarpointGemini.exe+097ab8:
+StarpointGemini.exe+09f498:
+ jmp _MonShield1
+ nop
+_BackMS1:
+
+//=========================================
+// Script for Restoring Original Codes
+[DISABLE]
+//StarpointGemini.exe+009421:
+// mov al,[ecx+00af7bc8]
+StarpointGemini.exe+009461:
+// mov al,[ecx+00E1E89C]
+ db 8a 81 9c e8 e1 00
+
+//StarpointGemini.exe+011750:
+// fsubr dword ptr [edi+000024b0]
+StarpointGemini.exe+0118fa:
+// fsubr dword ptr [edi+00003000]
+ db d8 af 00 30 00 00
+
+//StarpointGemini.exe+01bc6b:
+StarpointGemini.exe+01bf7b:
+// fld dword ptr [ecx+18]
+// fsub dword ptr [esp+08]
+ db d9 41 18 d8 64 24 08
+
+//StarpointGemini.exe+0d23d1:
+StarpointGemini.exe+0dbd71:
+// fstp st(0)
+// fst dword ptr [esi-18]
+ db dd d8 d9 56 e8
+
+//StarpointGemini.exe+0cf0e7:
+StarpointGemini.exe+0d8a77:
+// fsubr dword ptr [ecx+04]
+// fstp dword ptr [ecx+04]
+ db d8 69 04 d9 59 04
+
+//StarpointGemini.exe+097ab8:
+// mov ecx,[esi+000024b0]
+StarpointGemini.exe+09f498:
+// mov ecx,[esi+00003000]
+ db 8b 8e 00 30 00 00
+
+//=========================================
+// Unregistering Symbols
+unregistersymbol(MyCode)
+unregistersymbol(pPlayer)
+unregistersymbol(pShip)
+unregistersymbol(pShipCargo)
+unregistersymbol(pReputation)
+unregistersymbol(iMinCredits)
+unregistersymbol(iEnableMC)
+unregistersymbol(iEnableGM)
+unregistersymbol(iEnableMR)
+unregistersymbol(iEnableMS)
+
+//=========================================
+dealloc(MyCode)
+//============= Scripts End ===============
+
+// ****************************************
+// NOTES
+// ****************************************
+{
+}
+
+
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>3</ID>
+          <Description>"Enable/Disable God Mode"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableGM</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>4</ID>
+          <Description>"Enable/Disable Fast Weapon Reload"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMR</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>5</ID>
+          <Description>"Enable/Disable Shields Up"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMS</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>2</ID>
+          <Description>"Enable/Disable Minimum Credits"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMC</Address>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>6</ID>
+              <Description>"Minimum Credits Value"</Description>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>iMinCredits</Address>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>7</ID>
+          <Description>"Player's Character XP"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>pPlayer</Address>
+          <Offsets>
+            <Offset>D4B8DC</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>8</ID>
+          <Description>"Player's Character Update Points"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>pPlayer</Address>
+          <Offsets>
+            <Offset>D4B8E8</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>9</ID>
+          <Description>"Player's Ship Maximum Cargo Weight"</Description>
+          <Color>80000008</Color>
+          <VariableType>2 Bytes</VariableType>
+          <Address>pShip</Address>
+          <Offsets>
+            <Offset>224</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>10</ID>
+          <Description>"Player's Ship Maximum Troop"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>pShip</Address>
+          <Offsets>
+            <Offset>AD4</Offset>
+          </Offsets>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols>
+    <SymbolEntry>
+      <Name>pPlayer</Name>
+      <Address>416D01C0</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>pShip</Name>
+      <Address>416D01C4</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>pShipCargo</Name>
+      <Address>416D01C8</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>pReputation</Name>
+      <Address>416D01CC</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>iMinCredits</Name>
+      <Address>416D01D0</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>iEnableMC</Name>
+      <Address>416D01B0</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>iEnableGM</Name>
+      <Address>416D01B4</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>iEnableMR</Name>
+      <Address>416D01B8</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>iEnableMS</Name>
+      <Address>416D01BC</Address>
+    </SymbolEntry>
+  </UserdefinedSymbols>
+  <Comments>===========================================
+ Game Title    : Starpoint Gemini
+ Game Version  : 1.012
+ Process Name  : StarpointGemini.exe
+ Script Version: 1.0
+ CE Version    : 6.1
+ Release date  : 17-Dec-2011 (adapted from v1.004)
+ Author        : Recifense
+ Features:
+ - God Mode
+ - Minimum Credits
+ - Unlimited Shield Defense
+ - Quick Reload
+ - Useful pointers
+===========================================
+</Comments>
+</CheatTable>

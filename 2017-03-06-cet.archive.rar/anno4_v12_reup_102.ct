@@ -1,0 +1,357 @@
+<?xml version="1.0"?>
+<CheatTable CheatEngineTableVersion="10">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>0</ID>
+      <Description>"Anno 1404 DoD V1.02 Script"</Description>
+      <Options moHideChildren="1"/>
+      <Color>80000008</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>{
+===============================================
+ Anno 1404 Dawn Of Discovery
+ Game Version  : 1.02.2819
+ Script Version: 1.0
+ CE Version    : 6.0
+ GodMode, Treasure, Honour, WareHouse and Ship's Cargo
+ 11-Mar-2010 first release
+ 28-May-2011 adapted to version 1.02
+===============================================
+}
+
+[ENABLE]
+//=========================================
+// Check if script is compatible to this game version
+// If false the script will not be loaded
+
+assert(Anno4.exe+200ed6,8b 48 04 8b 50 08)
+assert(Anno4.exe+1b3e5d,8b 81 a0 00 00 00)
+assert(Anno4.exe+31d1a5,e8 b6 84 6e 00)
+assert(Anno4.exe+35d9c0,74 03 8b 69 14)
+assert(Anno4.exe+2eb9e9,8b 8b c0 00 00 00)
+
+//=========================================
+alloc(MyCode,1024)
+//=========================================
+// Declaration section
+label(_MonCargo)
+label(_BackMC)
+label(_ExitMC)
+label(_MonTreasure)
+label(_BackMT)
+label(_ExitMT)
+label(_GodMode)
+label(_BackGM)
+label(_ExitGM)
+label(_MonWareHouse)
+label(_BackMW)
+label(_ExitMW)
+label(_ExitMW1)
+label(_MonT0)
+label(_MonSelected)
+label(_BackMS)
+label(pCargo)
+label(pTreasure)
+label(pSel)
+label(pWH)
+label(iEnableMC)
+label(iEnableMT)
+label(iEnableMH)
+label(iEnableGM)
+label(iEnableMW)
+label(iMinTreasure)
+label(iMinHonour)
+
+registersymbol(MyCode)
+registersymbol(pCargo)
+registersymbol(pTreasure)
+registersymbol(pSel)
+registersymbol(pWH)
+registersymbol(iEnableMC)
+registersymbol(iEnableMT)
+registersymbol(iEnableMH)
+registersymbol(iEnableGM)
+registersymbol(iEnableMW)
+
+//=========================================
+MyCode:
+//========================================= OK
+_MonCargo:
+ mov ecx,[eax+04]             // Original code
+ 
+ mov edx,[eax]                // Get Cargo Type
+ or edx,edx
+ jz _ExitMC                   // Jump if invalid
+
+ mov [pCargo],eax             // Save ptr to last valid cargo
+
+ cmp dword ptr [iEnableMC],0
+ je _ExitMC                   // Jump if feature is disabled
+ 
+ cmp edx,#100                 // Special cargo?
+ jge _ExitMC                  // Jump if true
+ 
+ cmp ecx,#30                  // Current Cargo &gt;= 30?
+ jge _ExitMC                  // Jump if true 
+
+ mov ecx,#30
+ mov [eax+04],ecx             // Make cargo = 30
+ 
+_ExitMC:
+ mov edx,[eax+08]             // Original code
+ jmp _BackMC                  // Back to main code
+
+//========================================= OK
+_MonTreasure:
+ mov [pTreasure],ecx          // Save ptr for debugging
+ 
+ cmp dword ptr [iEnableMT],0
+ je _MonT0                    // Jump if feature is disabled
+ 
+ mov eax,[iMinTreasure]
+ cmp eax,[ecx+000000a0]
+ jle _MonT0                   // Jump if current treasure &gt;= minimum
+ 
+ mov [ecx+000000a0],eax       // Make treasure = minimum
+
+_MonT0: 
+ cmp dword ptr [iEnableMH],0
+ je _ExitMT                   // Jump if feature is disabled
+ 
+ cmp eax,[ecx+000000a8]
+ or eax,eax
+ jz _ExitMT                   // Jump if honour = 0
+ 
+ mov eax,[iMinHonour]
+ cmp eax,[ecx+000000a8]
+ jle _ExitMT                  // Jump if current honour &gt;= minimum
+
+ mov [ecx+000000a8],eax       // Make honour = minimum
+ 
+_ExitMT:
+ mov eax,[ecx+000000a0]       // Original code
+ jmp _BackMT                  // Back to main code
+
+//========================================= OK
+_GodMode:
+ call Anno4.exe+00a05660      // Original code
+
+ pushfd
+ push ecx
+ 
+ cmp dword ptr [iEnableGM],0
+ je _ExitGM                   // Jump if feature is disabled
+
+ mov ecx,[ebx+04]             // Get ptr to unit
+ cmp dword ptr [ecx+000000c0],0 // Player´s unit?
+ jne _ExitGM                  // Jump if false
+ 
+ mov dword ptr [ebx+08],#40960000  // Make %HP = 100%
+ mov dword ptr [ebx+0c],00    // Make %HP = 100%
+ 
+ xor eax,eax
+ mov edx,eax                  // % to decrease = 0
+   
+_ExitGM:
+ pop ecx
+ popfd
+ jmp _BackGM                  // Back to main code
+
+//========================================= OK
+// ESI = pIslandStore
+// ECX = pStoreItem
+_MonWareHouse:
+ je _ExitMW1                  // Original code (simulating)
+ 
+ cmp dword ptr [iEnableMW],0
+ je _ExitMW                   // Jump if feature is disabled
+
+ or esi,esi
+ je _ExitMW                   // Jump if invalid pointer
+
+ cmp dword ptr [esi+00000324],0 // Is it a Player´s Island ?
+ jne _ExitMW                  // Jump if false
+
+ mov ebp,[esi+08]             // Get default capacity
+ mov [ecx+14],ebp             // Update item current value.
+     
+_ExitMW:
+ mov ebp,[ecx+14]             // Original code
+
+_ExitMW1:
+ mov [pWH],esi                // Save pointer for debugging
+ jmp _BackMW                  // Back to main code
+
+//========================================= OK
+_MonSelected:
+ mov [pSel],ebx               // Save ptr for debugging
+ 
+ mov ecx,[ebx+000000c0]       // Original code
+ jmp _BackMS                  // Back to main code
+
+//=========================================
+// Variables
+pCargo:
+ dd 0
+pTreasure:
+ dd 0 
+pSel:
+ dd 0
+pWH:
+ dd 0
+iEnableMC:
+ dd 1
+iEnableMT:
+ dd 1
+iEnableMH:
+ dd 1
+iEnableGM:
+ dd 1 
+iEnableMW:
+ dd 1  
+iMinTreasure:
+ dd #102400000
+iMinHonour:
+ dd #614400
+    
+//=========================================
+// Hacking Points
+//AddOn.exe+249976:
+Anno4.exe+200ed6:
+ jmp _MonCargo
+ nop
+_BackMC:
+
+//AddOn.exe+1f43c1:
+Anno4.exe+1b3e5d:
+ jmp _MonTreasure
+ nop
+_BackMT:
+
+//AddOn.exe+386565:
+Anno4.exe+31d1a5:
+ jmp _GodMode
+_BackGM:
+
+//AddOn.exe+3c7910:
+Anno4.exe+35d9c0:
+ jmp _MonWareHouse
+_BackMW:
+
+//AddOn.exe+34b424:
+Anno4.exe+2eb9e9:
+ jmp _MonSelected
+ nop
+_BackMS:
+
+//=========================================
+// Original Codes
+[DISABLE]
+//AddOn.exe+249976:
+Anno4.exe+200ed6:
+ mov ecx,[eax+04]
+ mov edx,[eax+08]
+ 
+//AddOn.exe+1f43c1:
+Anno4.exe+1b3e5d:
+ mov eax,[ecx+000000a0]
+ 
+//AddOn.exe+386565:
+Anno4.exe+31d1a5:
+ call Anno4.exe+00a05660
+ 
+//AddOn.exe+3c7910:
+Anno4.exe+35d9c0:
+ je Anno4.exe+35d9c5
+ mov ebp,[ecx+14]
+ 
+//AddOn.exe+34b424:
+Anno4.exe+2eb9e9:
+ mov ecx,[ebx+000000c0]
+    
+dealloc(MyCode)
+unregistersymbol(MyCode)
+unregistersymbol(pCargo)
+unregistersymbol(iEnableMC)
+unregistersymbol(iEnableMT)
+unregistersymbol(iEnableMH)
+unregistersymbol(iEnableGM)
+unregistersymbol(iEnableMW)
+unregistersymbol(pTreasure)
+unregistersymbol(pSel)
+unregistersymbol(pWH)
+
+
+
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>1</ID>
+          <Description>"Enable/Disable God Mode"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableGM</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>2</ID>
+          <Description>"Enable/Disable Ship Cargo"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMC</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>3</ID>
+          <Description>"Enable/Disable Minimum Treasure"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMT</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>4</ID>
+          <Description>"Enable/Disable Minimum Honour"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMH</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>5</ID>
+          <Description>"Enable/Disable Warehouse Minimum"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMW</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>6</ID>
+          <Description>"Cargo Type"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>pCargo</Address>
+          <Offsets>
+            <Offset>0</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>7</ID>
+          <Description>"Cargo Quantity"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>pCargo</Address>
+          <Offsets>
+            <Offset>4</Offset>
+          </Offsets>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols/>
+  <Comments>===============================================
+ Anno 1404 Dawn Of Discovery
+ Game Version  : 1.02.2819
+ Script Version: 1.0
+ CE Version    : 6.0
+ GodMode, Treasure, Honour, WareHouse and Ship's Cargo
+ 11-Mar-2010 first release
+ 28-May-2011 adapted to version 1.02
+===============================================
+</Comments>
+</CheatTable>

@@ -1,0 +1,564 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="24">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>11</ID>
+      <Description>"Setup Hero Exp"</Description>
+      <Options moHideChildren="1" moDeactivateChildrenAsWell="1"/>
+      <LastState/>
+      <Color>FF0000</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>{$lua}
+LaunchMonoDataCollector()
+{$asm}
+
+define(address, "LeaderBasePanel:set_Hero"+62)
+define(bytes,89 46 70 85 C0)
+
+[ENABLE]
+assert(address,bytes)
+alloc(newmem,$1000)
+
+label(code)
+label(return)
+label(p_hero_selected)
+registersymbol(p_hero_selected)
+label(p_gain_xp_amt)
+registersymbol(p_gain_xp_amt)
+
+newmem:
+p_hero_selected:
+dd 0
+p_gain_xp_amt:
+dd (float)100
+code:
+  mov [esi+70],eax
+  mov [p_hero_selected], eax
+  test eax,eax
+  jmp return
+
+address:
+  jmp code
+return:
+
+[DISABLE]
+
+address:
+  db bytes
+
+unregistersymbol(p_gain_xp_amt)
+unregistersymbol(p_hero_selected)
+dealloc(newmem)
+
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>12</ID>
+          <Description>"p_hero_selected"</Description>
+          <ShowAsHex>1</ShowAsHex>
+          <VariableType>4 Bytes</VariableType>
+          <Address>p_hero_selected</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>9</ID>
+          <Description>"Activate Gain Exp"</Description>
+          <LastState/>
+          <Color>0000FF</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>define(mono_gain_xp, "Unit:GainXp")
+
+[ENABLE]
+alloc(newmem, $300)
+createthread(code)
+label(gain_xp)
+registersymbol(gain_xp)
+
+mono_gain_xp:
+gain_xp:
+
+newmem:
+code:
+push ebp
+mov ebp, esp
+cmp [p_hero_selected], 0
+je @f
+mov eax, [p_gain_xp_amt]
+push eax
+push [p_hero_selected]
+call gain_xp
+@@:
+mov esp, ebp
+pop ebp
+ret
+[DISABLE]
+unregistersymbol(gain_xp)
+dealloc(newmem)
+
+</AssemblerScript>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>25</ID>
+              <Description>"Bonus Hero Exp"</Description>
+              <Color>000080</Color>
+              <VariableType>Float</VariableType>
+              <Address>p_gain_xp_amt</Address>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>86</ID>
+      <Description>"Setup City Assets"</Description>
+      <Options moHideChildren="1" moDeactivateChildrenAsWell="1"/>
+      <LastState/>
+      <Color>FF0000</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>{$lua}
+LaunchMonoDataCollector()
+{$asm}
+
+[ENABLE]
+globalalloc(p_player_assets, $1000)
+globalalloc(a_city, $100)
+globalalloc(i_city, $4)
+globalalloc(n_city, $4)
+globalalloc(some_string, $300)
+alloc(newmem, $1000)
+createthread(code)
+
+label(clear_player_assets)
+registersymbol(clear_player_assets)
+label(clear_a_city)
+registersymbol(clear_a_city)
+
+newmem:
+code:
+    push ebp
+    mov ebp, esp
+    call clear_player_assets
+    call clear_a_city
+    mov [i_city], 0
+    mov [n_city], 0
+
+    push 300
+    push 0
+    push some_string
+    call memset
+
+    mov esp, ebp
+    pop ebp
+    ret
+
+clear_player_assets:
+    push ebp
+    mov ebp, esp
+    push 1000
+    push 0
+    push p_player_assets
+    call memset
+    mov esp, ebp
+    pop ebp
+    ret
+    
+clear_a_city:
+    push ebp
+    mov ebp, esp
+    push 100
+    push 0
+    push a_city
+    call memset
+    mov esp, ebp
+    pop ebp
+    ret
+
+[DISABLE]
+dealloc(newmem)
+
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>34</ID>
+          <Description>"Activate City Assets (Open Cities Panel)"</Description>
+          <Options moHideChildren="1"/>
+          <LastState/>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>{$lua}
+LaunchMonoDataCollector()
+{$asm}
+
+define(address, CityLine:RefreshContent+c)
+define(bytes,8b 7d 08 d9 ee)
+
+define(address2, Amplitude.Unity.Simulation:SimulationProperty_DefaultProperty:get_Value+6)
+define(bytes2,8b 45 08 d9 40 20)
+
+[ENABLE]
+
+assert(address,bytes)
+alloc(newmem,$200)
+
+label(code)
+label(return)
+
+
+newmem:
+i_city_prop:
+dd 0
+b_player_initiated_action:
+dd 0
+
+code:
+    mov [i_city], 0
+    mov [b_player_initiated_action], 1
+    mov [i_city_prop], 0
+    mov edi, [ebp+8]
+    pushad
+    push edi
+    call add_city
+    add esp, 4
+    popad
+    db bytes
+    jmp return
+
+add_city:
+    push ebp
+    mov ebp, esp
+    mov eax, [ebp+8]
+    xor ecx, ecx
+
+    mov edx, a_city
+    @loop_check_city:
+    lea ebx, [edx+ecx*4]
+    inc ecx
+    cmp [ebx], 0
+
+    je @proc_add_city
+    cmp [ebx], eax
+    jne @loop_check_city
+    jmp @finalize_add_city
+
+    @proc_add_city:
+    mov [ebx], eax
+    inc [n_city]
+
+    @finalize_add_city:
+    @o_add_city:
+    mov esp, ebp
+    pop ebp
+    ret
+
+
+
+address:
+  jmp code
+return:
+
+assert(address2,bytes2)
+alloc(newmem2,$300)
+
+label(code2)
+label(return2)
+registersymbol(code2)
+
+
+newmem2:
+code2:
+  mov eax, [ebp+8]
+
+
+  cmp [b_player_initiated_action], 0
+  je @o
+  push ebx
+  push edx
+  push ecx
+
+  mov ebx, [eax+20]
+  mov ecx, [i_city_prop]
+  cmp ecx, 27
+  jg @f
+  mov edx, p_player_assets
+  lea edx, [ecx*8+edx]
+  mov [edx], ebx
+  add edx, 4
+  lea ebx, [eax+20]
+  mov [edx], ebx
+  inc [i_city_prop]
+  jmp @cleanup
+
+@@:
+  mov [i_city_prop], 0
+  mov [b_player_initiated_action], 0
+@cleanup:
+  pop ecx
+  pop edx
+  pop ebx
+@o:
+  fld dword ptr [eax+20]
+  jmp return2
+
+address2:
+  jmp code2
+  nop
+return2:
+
+[DISABLE]
+
+address:
+  db bytes
+
+
+dealloc(newmem)
+
+address2:
+  db bytes2
+
+
+unregistersymbol(code2)
+dealloc(newmem2)
+
+</AssemblerScript>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>87</ID>
+              <Description>"Refresh (Open &amp; keep cities panel first)"</Description>
+              <LastState/>
+              <Color>0000FF</Color>
+              <VariableType>Auto Assembler Script</VariableType>
+              <AssemblerScript>{$lua}
+LaunchMonoDataCollector()
+
+function validate_city_array()
+    local n_city = readInteger(getAddress("n_city"))
+    local a_city = getAddress("a_city")
+    if n_city &gt; 0 then
+        for i_city = 0, n_city-1 do
+            local city_addr = a_city + 4*i_city
+            local city = readInteger(city_addr)
+            local addr = mono_object_findRealStartOfObject(city)
+            local class_addr, class_name = mono_object_getClass(addr)
+            if class_name ~= "CityLine" then
+                clear_city_array()
+                showMessage("Clearing City Array")
+            else
+            end
+        end
+    end
+end
+
+function clear_city_array()
+    local a_city = getAddress("a_city")
+    local n_city = getAddress("n_city")
+    writeInteger(n_city, 0)
+    for i_city = 0,40 do
+        writeInteger(a_city + i_city*4, 0)
+    end
+end
+validate_city_array()
+{$asm}
+
+define(mono_refresh_city, CityLine:RefreshContent)
+
+[ENABLE]
+alloc(newmem, $300)
+createthread(code)
+
+mono_refresh_city:
+refresh_city:
+
+newmem:
+
+code:
+    push ebp
+    mov ebp, esp
+
+    cmp [n_city], 0
+    je @o
+
+    call clear_player_assets
+    mov eax, a_city
+    @@:
+    mov ecx, [i_city]
+    cmp ecx, [n_city]
+    jl @f
+    mov [i_city], 0
+    jmp @b
+
+    @@:
+    lea ebx, [eax+ecx*4]
+    cmp [ebx], 0
+    jz @o
+    push [i_city]
+    push [ebx]
+    call refresh_city
+    add esp, 4
+    pop [i_city]
+    jmp @o
+
+    @o:
+    mov esp, ebp
+    pop ebp
+    ret
+
+[DISABLE]
+dealloc(newmem)
+</AssemblerScript>
+              <CheatEntries>
+                <CheatEntry>
+                  <ID>88</ID>
+                  <Description>"City Index (Starting from 0)"</Description>
+                  <LastState Value="3" RealAddress="08FE1100"/>
+                  <Color>000080</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>i_city</Address>
+                </CheatEntry>
+              </CheatEntries>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>51</ID>
+              <Description>"Gold per turn"</Description>
+              <LastState Value="-9.199999809" RealAddress="24460368"/>
+              <VariableType>Float</VariableType>
+              <Address>p_player_assets+84</Address>
+              <Offsets>
+                <Offset>0</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>46</ID>
+              <Description>"Research per turn"</Description>
+              <LastState Value="9.600000381" RealAddress="24460340"/>
+              <VariableType>Float</VariableType>
+              <Address>p_player_assets+74</Address>
+              <Offsets>
+                <Offset>0</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>48</ID>
+              <Description>"Production per turn"</Description>
+              <LastState Value="0" RealAddress="24460390"/>
+              <VariableType>Float</VariableType>
+              <Address>p_player_assets+64</Address>
+              <Offsets>
+                <Offset>0</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>54</ID>
+              <Description>"Influence per turn"</Description>
+              <LastState Value="1" RealAddress="244603E0"/>
+              <VariableType>Float</VariableType>
+              <Address>p_player_assets+94</Address>
+              <Offsets>
+                <Offset>0</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>38</ID>
+              <Description>"Food per turn"</Description>
+              <LastState Value="11" RealAddress="244603B8"/>
+              <VariableType>Float</VariableType>
+              <Address>p_player_assets+24</Address>
+              <Offsets>
+                <Offset>0</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>39</ID>
+              <Description>"City growth stock"</Description>
+              <LastState Value="6" RealAddress="244BFFC0"/>
+              <VariableType>Float</VariableType>
+              <Address>p_player_assets+1c</Address>
+              <Offsets>
+                <Offset>0</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>43</ID>
+              <Description>"Approval"</Description>
+              <LastState Value="40" RealAddress="24460408"/>
+              <VariableType>Float</VariableType>
+              <Address>p_player_assets+4c</Address>
+              <Offsets>
+                <Offset>0</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>41</ID>
+              <Description>"Pop from pacified villages"</Description>
+              <LastState Value="0" RealAddress="24460CF0"/>
+              <VariableType>Float</VariableType>
+              <Address>p_player_assets+c</Address>
+              <Offsets>
+                <Offset>0</Offset>
+              </Offsets>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols>
+    <SymbolEntry>
+      <Name>EmpireBannerPanel.Static</Name>
+      <Address>015E00B3</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>EmpireBannerPanel.Class</Name>
+      <Address>015E00B7</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>enumerator</Name>
+      <Address>09FA0000</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>simulation_object</Name>
+      <Address>09FA0004</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>department_of_treasury</Name>
+      <Address>09FA0008</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>p_player_assets</Name>
+      <Address>08FE0000</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>p_army_hp</Name>
+      <Address>05541100</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>a_city</Name>
+      <Address>08FE1000</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>i_city</Name>
+      <Address>08FE1100</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>some_string</Name>
+      <Address>08FE1120</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>asdf</Name>
+      <Address>056C1410</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>n_city</Name>
+      <Address>08FE1110</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>dbg</Name>
+      <Address>005A001D</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>clear_player_assets</Name>
+      <Address>04D80036</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>clear_a_city</Name>
+      <Address>04D8004E</Address>
+    </SymbolEntry>
+  </UserdefinedSymbols>
+</CheatTable>

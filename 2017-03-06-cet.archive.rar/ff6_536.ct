@@ -1,0 +1,2646 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="19">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>43</ID>
+      <Description>"&gt;&gt; Get Chars Base (1st)"</Description>
+      <Options moHideChildren="1"/>
+      <LastState/>
+      <Color>C08000</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>[Enable]
+{$lua}
+openProcess('FF6.exe')
+{$asm}
+
+//LuaRet('define(charbase,'..Hex(exASMScan('8b 15 ?? ?? ?? ?? 85 d2 74 ?? 80 ba ?? ?? 00 00 01 75 ?? 33 c0 eb')[1])..')',?@define(charbase,1))
+AOBScanModule(charbase,FF6.exe ,8b 15 ?? ?? ?? ?? 85 d2 74 ?? 80 ba ?? ?? 00 00 01 75 ?? 33 c0 eb )
+//                              00 01 02 03 04 05 06 07 08 09 0a 0b 0c 0d 0e 0f 10 11 12 13 14 15 16 17 18 19 1a 1b 1c 1d 1e 1f
+AOBScanModule(loreoffs,FF6.exe ,ba 01 00 00 00 56 57 8b f9 0f b6 f0 8b ce c1 ee 03 83 e1 07 d3 e2 8b 07 5f 84 94 06 ?? 07 00 00 5e 0f 95 c0 5d c2 04 00)
+
+globalalloc(__,$4000)
+
+__:
+dq __
+
+__+10:
+dq charbase+02
+dq loreoffs //+18
+dq 0        //+20
+
+__+100:
+// get lore address
+mov  edx,[__+18]
+mov  edx,[edx+1c]
+add  edx,[ecx]
+mov  [__+20],edx
+mov  edx,1
+ret
+
+
+loreoffs:
+call __+100
+
+
+[Disable]
+__+20:
+dq 0
+[__+18]:
+db ba 01 00 00 00
+
+
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>99</ID>
+          <Description>" LORE (global)"</Description>
+          <DropDownList DescriptionOnly="1" DisplayValueAsItem="1">ff ff ff:All Lore
+</DropDownList>
+          <LastState Value="FF FF FF" RealAddress="0241B4C5"/>
+          <ShowAsHex>1</ShowAsHex>
+          <VariableType>Array of byte</VariableType>
+          <ByteLength>3</ByteLength>
+          <Address>__</Address>
+          <Offsets>
+            <Offset>0</Offset>
+            <Offset>20</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>91</ID>
+          <Description>"Choose Hero (2nd) &lt;Guest Included &gt;"</Description>
+          <LastState/>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>{$lua}
+if syntaxcheck then return end
+
+local function ceupd(t,o)for k,v in next,o do t[k]=v end return t end
+local base = readInteger('[[__+10]]')
+
+if base==nil then
+  showMessage("Can't locate Character Base,sry~")
+  return
+end
+
+local choice = createStringlist()
+for i=0,15 do
+  local addr = readInteger(base +i*0x30+0xc)
+  local name = readString(addr,8) or ''
+  if name:len()&gt;0 then choice.add(string.format('%X:%s',i,name)) end
+end
+local f = ceupd(createForm(),{Caption='Choose',Width=100,Height=120,Position='poOwnerFormCenter',
+            ShowInTaskBar='stAlways',BorderStyle='bsDialog',OnClose=function(s)s.Destroy()end})
+
+local ls = ceupd(createListBox(f),{Items=choice,Align=alClient})
+
+ls.OnDblClick = function(sender)
+  local idx = sender.ItemIndex
+  if idx &gt;= 0 then
+    idx = sender.Items[idx]:match('^%x+')
+    if idx~=nil and tonumber(idx,16)~=nil then
+      idx = tonumber(idx,16)
+      local al = getAddressList()
+      local mr = al.getMemoryRecordByDescription('*HERO*')
+      mr.Offset[1]=0x8+idx*0x30
+      mr = al.getMemoryRecordByDescription('*NAME*')
+      mr.Offset[1]=0xc+idx*0x30
+      mr = al.getMemoryRecordByDescription('*MAGIC*')
+      mr.Offset[0]=0x269+idx*0x40
+
+    end
+  end
+  sender.Destroy()
+  f:OnClose()
+end
+f.show()
+
+[Enable]
+
+[Disable]
+
+</AssemblerScript>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>93</ID>
+          <Description>"Choose Hero (2nd) &lt;Permanent Only&gt;"</Description>
+          <LastState/>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>{$lua}
+if syntaxcheck then return end
+
+local function ceupd(t,o)for k,v in next,o do t[k]=v end return t end
+local base = readInteger('[[__+10]]')
+
+if base==nil then
+  showMessage("Can't locate Character Base,sry~")
+  return
+end
+
+local choice = createStringlist()
+for i=0,15 do
+  local addr = readInteger(base +i*0x30+0xc)
+  local name = readString(addr,8) or ''
+  if name:len()&gt;0 and readBytes(readInteger(base +i*0x30+0x8) or 0)&lt;14 then choice.add(string.format('%X:%s',i,name)) end
+end
+local f = ceupd(createForm(),{Caption='Choose',Width=100,Height=120,Position='poOwnerFormCenter',
+            ShowInTaskBar='stAlways',BorderStyle='bsDialog',OnClose=function(s)s.Destroy()end})
+
+local ls = ceupd(createListBox(f),{Items=choice,Align=alClient})
+
+ls.OnDblClick = function(sender)
+  local idx = sender.ItemIndex
+  if idx &gt;= 0 then
+    idx = sender.Items[idx]:match('^%x+')
+    if idx~=nil and tonumber(idx,16)~=nil then
+      idx = tonumber(idx,16)
+      local al = getAddressList()
+      local mr = al.getMemoryRecordByDescription('*HERO*')
+      mr.Offset[1]=0x8+idx*0x30
+      mr = al.getMemoryRecordByDescription('*NAME*')
+      mr.Offset[1]=0xc+idx*0x30
+      mr = al.getMemoryRecordByDescription('*MAGIC*')
+      mr.Offset[0]=0x269+idx*0x40
+    end
+  end
+  sender.Destroy()
+  f:OnClose()
+end
+f.show()
+
+[Enable]
+
+[Disable]
+
+</AssemblerScript>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>47</ID>
+          <Description>"*HERO*"</Description>
+          <Options moHideChildren="1"/>
+          <LastState Activated="1" RealAddress="0241AD9C"/>
+          <VariableType>String</VariableType>
+          <Length>0</Length>
+          <Unicode>0</Unicode>
+          <ZeroTerminate>1</ZeroTerminate>
+          <Address>__</Address>
+          <Offsets>
+            <Offset>0</Offset>
+            <Offset>8</Offset>
+            <Offset>0</Offset>
+            <Offset>0</Offset>
+            <Offset>10</Offset>
+          </Offsets>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>57</ID>
+              <Description>"*NAME*"</Description>
+              <LastState RealAddress="023F8530"/>
+              <VariableType>String</VariableType>
+              <Length>6</Length>
+              <Unicode>0</Unicode>
+              <ZeroTerminate>1</ZeroTerminate>
+              <Address>__</Address>
+              <Offsets>
+                <Offset>0</Offset>
+                <Offset>C</Offset>
+                <Offset>0</Offset>
+                <Offset>0</Offset>
+                <Offset>10</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>96</ID>
+              <Description>"*MAGIC*"</Description>
+              <Options moHideChildren="1"/>
+              <DropDownList DescriptionOnly="1" DisplayValueAsItem="1">FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF:ALL Magic
+</DropDownList>
+              <LastState Activated="1" RealAddress="0241B005"/>
+              <ShowAsHex>1</ShowAsHex>
+              <Color>C08000</Color>
+              <VariableType>String</VariableType>
+              <Length>0</Length>
+              <Unicode>0</Unicode>
+              <ZeroTerminate>1</ZeroTerminate>
+              <Address>__</Address>
+              <Offsets>
+                <Offset>269</Offset>
+                <Offset>8</Offset>
+                <Offset>0</Offset>
+                <Offset>0</Offset>
+                <Offset>10</Offset>
+              </Offsets>
+              <CheatEntries>
+                <CheatEntry>
+                  <ID>97</ID>
+                  <Description>"Magic"</Description>
+                  <DropDownList DescriptionOnly="1" DisplayValueAsItem="1">FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF:ALL Magic
+</DropDownList>
+                  <LastState Value="FF 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 04 00 00 04 0C 04 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 FF 00 00 00 00 00 00 00 00" RealAddress="0241B005"/>
+                  <ShowAsHex>1</ShowAsHex>
+                  <VariableType>Array of byte</VariableType>
+                  <ByteLength>54</ByteLength>
+                  <Address>+0</Address>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>98</ID>
+                  <Description>"?? other ??"</Description>
+                  <DropDownList DescriptionOnly="1" DisplayValueAsItem="1">FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF:ALL Magic
+</DropDownList>
+                  <LastState Value="00 00 00 00 00 00 00 00 00 00" RealAddress="0241B03B"/>
+                  <ShowAsHex>1</ShowAsHex>
+                  <VariableType>Array of byte</VariableType>
+                  <ByteLength>10</ByteLength>
+                  <Address>+36</Address>
+                </CheatEntry>
+              </CheatEntries>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>49</ID>
+              <Description>"Level"</Description>
+              <LastState Value="5" RealAddress="0241ADA4"/>
+              <VariableType>Byte</VariableType>
+              <Address>+08</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>68</ID>
+              <Description>"&gt;&gt; HP/MP"</Description>
+              <Options moHideChildren="1"/>
+              <LastState RealAddress="0241ADA5"/>
+              <Color>C08000</Color>
+              <VariableType>String</VariableType>
+              <Length>0</Length>
+              <Unicode>0</Unicode>
+              <ZeroTerminate>1</ZeroTerminate>
+              <Address>+09</Address>
+              <CheatEntries>
+                <CheatEntry>
+                  <ID>50</ID>
+                  <Description>"HPnow"</Description>
+                  <DropDownList>9999:FULL
+</DropDownList>
+                  <LastState Value="96" RealAddress="0241ADA5"/>
+                  <VariableType>2 Bytes</VariableType>
+                  <Address>+0</Address>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>56</ID>
+                  <Description>"HPmax"</Description>
+                  <LastState Value="99" RealAddress="0241ADA7"/>
+                  <VariableType>2 Bytes</VariableType>
+                  <Address>+2</Address>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>55</ID>
+                  <Description>"MPnow"</Description>
+                  <DropDownList>9999:FULL
+
+</DropDownList>
+                  <LastState Value="42" RealAddress="0241ADA9"/>
+                  <VariableType>2 Bytes</VariableType>
+                  <Address>+4</Address>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>54</ID>
+                  <Description>"MPmax"</Description>
+                  <LastState Value="42" RealAddress="0241ADAB"/>
+                  <VariableType>2 Bytes</VariableType>
+                  <Address>+6</Address>
+                </CheatEntry>
+              </CheatEntries>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>70</ID>
+              <Description>"&gt;&gt; Exp (break to 2 parts)"</Description>
+              <Options moHideChildren="1"/>
+              <LastState RealAddress="0241ADAD"/>
+              <Color>C08000</Color>
+              <VariableType>String</VariableType>
+              <Length>0</Length>
+              <Unicode>0</Unicode>
+              <ZeroTerminate>1</ZeroTerminate>
+              <Address>+11</Address>
+              <CheatEntries>
+                <CheatEntry>
+                  <ID>53</ID>
+                  <Description>"1st 2byes of 3bytes"</Description>
+                  <LastState Value="536" RealAddress="0241ADAD"/>
+                  <VariableType>2 Bytes</VariableType>
+                  <Address>+0</Address>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>52</ID>
+                  <Description>"most significant byte ( x~65K)"</Description>
+                  <LastState Value="0" RealAddress="0241ADAF"/>
+                  <VariableType>Byte</VariableType>
+                  <Address>+2</Address>
+                </CheatEntry>
+              </CheatEntries>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>51</ID>
+              <Description>"field status"</Description>
+              <LastState Value="00 00" RealAddress="0241ADB0"/>
+              <ShowAsHex>1</ShowAsHex>
+              <VariableType>Array of byte</VariableType>
+              <ByteLength>2</ByteLength>
+              <Address>+14</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>67</ID>
+              <Description>"&gt;&gt; ABilities"</Description>
+              <Options moHideChildren="1"/>
+              <LastState Activated="1" RealAddress="0241ADB2"/>
+              <Color>C08000</Color>
+              <VariableType>String</VariableType>
+              <Length>0</Length>
+              <Unicode>0</Unicode>
+              <ZeroTerminate>1</ZeroTerminate>
+              <Address>+16</Address>
+              <CheatEntries>
+                <CheatEntry>
+                  <ID>58</ID>
+                  <Description>"#1"</Description>
+                  <DropDownList ReadOnly="1" DisplayValueAsItem="1">3:(empty)
+0:Attack
+10:Blitz
+7:Bushido 
+14:Control
+21:Defend
+23:Dualcast
+24:Gil Toss
+1:Items
+22:Jump
+12:Lore
+2:Magic
+29:Magitek
+18:Mimic
+6:Mug
+28:Posses
+26:Pray
+16:Rage
+4:Revert
+20:Row
+11:Runic
+27:Shock
+13:Sketch
+15:Slot
+5:Steal
+25:Summon
+8:Throw
+9:Tools
+</DropDownList>
+                  <LastState Value="0" RealAddress="0241ADB2"/>
+                  <VariableType>Byte</VariableType>
+                  <Address>+0</Address>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>63</ID>
+                  <Description>"#2"</Description>
+                  <DropDownList ReadOnly="1" DisplayValueAsItem="1">3:(empty)
+0:Attack
+10:Blitz
+7:Bushido 
+14:Control
+21:Defend
+23:Dualcast
+24:Gil Toss
+1:Items
+22:Jump
+12:Lore
+2:Magic
+29:Magitek
+18:Mimic
+6:Mug
+28:Posses
+26:Pray
+16:Rage
+4:Revert
+20:Row
+11:Runic
+27:Shock
+13:Sketch
+15:Slot
+5:Steal
+25:Summon
+8:Throw
+9:Tools
+</DropDownList>
+                  <LastState Value="25" RealAddress="0241ADB3"/>
+                  <VariableType>Byte</VariableType>
+                  <Address>+1</Address>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>62</ID>
+                  <Description>"#3"</Description>
+                  <DropDownList ReadOnly="1" DisplayValueAsItem="1">3:(empty)
+0:Attack
+10:Blitz
+7:Bushido 
+14:Control
+21:Defend
+23:Dualcast
+24:Gil Toss
+1:Items
+22:Jump
+12:Lore
+2:Magic
+29:Magitek
+18:Mimic
+6:Mug
+28:Posses
+26:Pray
+16:Rage
+4:Revert
+20:Row
+11:Runic
+27:Shock
+13:Sketch
+15:Slot
+5:Steal
+25:Summon
+8:Throw
+9:Tools
+</DropDownList>
+                  <LastState Value="2" RealAddress="0241ADB4"/>
+                  <VariableType>Byte</VariableType>
+                  <Address>+2</Address>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>61</ID>
+                  <Description>"#4"</Description>
+                  <DropDownList ReadOnly="1" DisplayValueAsItem="1">3:(empty)
+0:Attack
+10:Blitz
+7:Bushido 
+14:Control
+21:Defend
+23:Dualcast
+24:Gil Toss
+1:Items
+22:Jump
+12:Lore
+2:Magic
+29:Magitek
+18:Mimic
+6:Mug
+28:Posses
+26:Pray
+16:Rage
+4:Revert
+20:Row
+11:Runic
+27:Shock
+13:Sketch
+15:Slot
+5:Steal
+25:Summon
+8:Throw
+9:Tools
+</DropDownList>
+                  <LastState Value="12" RealAddress="0241ADB5"/>
+                  <VariableType>Byte</VariableType>
+                  <Address>+3</Address>
+                </CheatEntry>
+              </CheatEntries>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>71</ID>
+              <Description>"&gt;&gt; Attributes"</Description>
+              <Options moHideChildren="1"/>
+              <LastState RealAddress="0241ADB6"/>
+              <Color>C08000</Color>
+              <VariableType>String</VariableType>
+              <Length>0</Length>
+              <Unicode>0</Unicode>
+              <ZeroTerminate>1</ZeroTerminate>
+              <Address>+1a</Address>
+              <CheatEntries>
+                <CheatEntry>
+                  <ID>59</ID>
+                  <Description>"Strength"</Description>
+                  <LastState Value="31" RealAddress="0241ADB6"/>
+                  <VariableType>Byte</VariableType>
+                  <Address>+0</Address>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>65</ID>
+                  <Description>"Speed"</Description>
+                  <LastState Value="33" RealAddress="0241ADB7"/>
+                  <VariableType>Byte</VariableType>
+                  <Address>+1</Address>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>66</ID>
+                  <Description>"Stamina"</Description>
+                  <LastState Value="28" RealAddress="0241ADB8"/>
+                  <VariableType>Byte</VariableType>
+                  <Address>+2</Address>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>64</ID>
+                  <Description>"Magic"</Description>
+                  <LastState Value="39" RealAddress="0241ADB9"/>
+                  <VariableType>Byte</VariableType>
+                  <Address>+3</Address>
+                </CheatEntry>
+              </CheatEntries>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>77</ID>
+              <Description>"Esper/Summon"</Description>
+              <DropDownList ReadOnly="1" DisplayValueAsItem="1">14:Alexander
+13:Bahamut
+7:Bismarck
+28:Cactuar
+8:Cait Sith
+19:Carbuncle
+5:Catoblepas
+15:Crusader
+29:Diabolos
+24:Fenrir
+30:Gilgamesh
+22:Golem
+1:Ifrit
+17:Kirin
+25:Lakshmi
+27:Leviathan
+6:Maduin
+4:Midgardsomr
+11:Odin
+20:Phantom
+26:Phoenix
+9:Quetzalli
+16:Ragnarok
+12:Raiden
+0:Ramuh
+21:Seraph
+2:Shiva
+3:Siren
+23:Unicorn
+10:Valigarmanda
+18:Zona Seeker
+</DropDownList>
+              <LastState Value="4" RealAddress="0241ADBA"/>
+              <VariableType>Byte</VariableType>
+              <Address>+1e</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>84</ID>
+              <Description>"&gt;&gt; Equip &lt;Category&gt;"</Description>
+              <Options moHideChildren="1"/>
+              <LastState RealAddress="0241ADBB"/>
+              <Color>C08000</Color>
+              <VariableType>String</VariableType>
+              <Length>0</Length>
+              <Unicode>0</Unicode>
+              <ZeroTerminate>1</ZeroTerminate>
+              <Address>+1f</Address>
+              <CheatEntries>
+                <CheatEntry>
+                  <ID>85</ID>
+                  <Description>"Right Hand"</Description>
+                  <DropDownList DisplayValueAsItem="1">231:Apocalipse 
+163:Noiseblaster 
+94:Aegis Shield 
+169:Air Anchor 
+3:Air Knife 
+239:Angel Brush 
+43:Ashura 
+5:Assassin's Dagger 
+170:Auto Crossbow 
+16:Bastard Sword 
+164:Bioblaster 
+18:Blood Sword 
+74:Bone Club 
+244:Bone Wrist 
+71:Boomerang 
+90:Buckler 
+87:Burning Fist 
+77:Cards 
+68:Chain Flail 
+166:Chainsaw 
+61:Chocobo Brush 
+99:Crystal Shield 
+20:Crystal Sword 
+102:Cursed Shield 
+62:Da Vinci Brush 
+0:Dagger 
+78:Darts 
+79:Death Tarot 
+167:Debilitator 
+95:Diamond Shield 
+81:Dice 
+88:Dragon Claws 
+168:Drill 
+242:Dueling Mask 
+19:Enhancer 
+24:Excalibur 
+245:Excalipoor 
+21:Falchion 
+240:Final Trump 
+82:Fixed Dice 
+53:Flame Rod 
+171:Flame Scroll 
+96:Flame Shield 
+13:Flametongue 
+165:Flash 
+104:Force Shield 
+66:Fuma Shuriken 
+100:Genji Shield 
+8:Gladius 
+236:Godhand 
+93:Golden Shield 
+34:Golden Spear 
+58:Gravity Rod 
+11:Great Sword 
+241:Gungnir 
+73:Hawkeye 
+51:Healing Rod 
+31:Heavy Lance 
+91:Heavy Shield 
+33:Holy Lance 
+57:Holy Rod 
+54:Ice Rod 
+97:Ice Shield 
+14:Icebrand 
+41:Ichigeki 
+36:Impartisan 
+174:Invisibility Scroll 
+42:Kagenui 
+85:Kaiser Knuckles 
+46:Kazekiri 
+45:Kiku-ichimonji 
+38:Kodachi 
+44:Kotetsu 
+37:Kunai 
+26:Lightbringer 
+173:Lightning Scroll 
+235:Longinus 
+63:Magical Brush 
+60:Magus Rod 
+2:Main gauche 
+6:Man-Eater 
+48:Masamune 
+83:Metal Knuckles 
+69:Moonring Blade 
+70:Morning Star 
+49:Murakumo 
+47:Murasame 
+50:Mutsunokami 
+84:Mythril Claws 
+1:Mythril Knife 
+52:Mythril Rod 
+92:Mythril Shield 
+29:Mythril Spear 
+10:Mythril Sword 
+234:Oborozuki 
+23:Organyx 
+103:Paladin's Shield 
+32:Partisan 
+67:Pinwheel 
+56:Poison Rod 
+59:Punisher 
+35:Radiant Lance 
+27:Ragnarok 
+64:Rainbow Brush 
+72:Rising Sun 
+12:Rune Blade 
+39:Sakura 
+40:Sasuke 
+237:Save the Queen 
+243:Scorpion Tail 
+175:Shadow Scroll 
+65:Shuriken 
+75:Sniper 
+22:Soul Sabre 
+238:Stardust Rod 
+17:Stoneblade 
+7:Swordbreaker 
+4:Thief's Knife 
+15:Thunder Blade 
+55:Thunder Rod 
+98:Thunder Shield 
+89:Tigerfang 
+101:Tortoise Shield 
+30:Trident 
+28:Ultima Weapon 
+9:Valiant Knife 
+86:Venom Claws 
+80:Viper Darts 
+172:Water Scroll 
+76:Wing Edge 
+233:Zanmato 
+25:Zantetsuken 
+232:Zwill Crossblade 
+</DropDownList>
+                  <LastState Value="4" RealAddress="0241ADBB"/>
+                  <VariableType>Byte</VariableType>
+                  <Address>+0</Address>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>86</ID>
+                  <Description>"Left Hand"</Description>
+                  <DropDownList ReadOnly="1" DisplayValueAsItem="1">231:Apocalipse 
+163:Noiseblaster 
+94:Aegis Shield 
+169:Air Anchor 
+3:Air Knife 
+239:Angel Brush 
+43:Ashura 
+5:Assassin's Dagger 
+170:Auto Crossbow 
+16:Bastard Sword 
+164:Bioblaster 
+18:Blood Sword 
+74:Bone Club 
+244:Bone Wrist 
+71:Boomerang 
+90:Buckler 
+87:Burning Fist 
+77:Cards 
+68:Chain Flail 
+166:Chainsaw 
+61:Chocobo Brush 
+99:Crystal Shield 
+20:Crystal Sword 
+102:Cursed Shield 
+62:Da Vinci Brush 
+0:Dagger 
+78:Darts 
+79:Death Tarot 
+167:Debilitator 
+95:Diamond Shield 
+81:Dice 
+88:Dragon Claws 
+168:Drill 
+242:Dueling Mask 
+19:Enhancer 
+24:Excalibur 
+245:Excalipoor 
+21:Falchion 
+240:Final Trump 
+82:Fixed Dice 
+53:Flame Rod 
+171:Flame Scroll 
+96:Flame Shield 
+13:Flametongue 
+165:Flash 
+104:Force Shield 
+66:Fuma Shuriken 
+100:Genji Shield 
+8:Gladius 
+236:Godhand 
+93:Golden Shield 
+34:Golden Spear 
+58:Gravity Rod 
+11:Great Sword 
+241:Gungnir 
+73:Hawkeye 
+51:Healing Rod 
+31:Heavy Lance 
+91:Heavy Shield 
+33:Holy Lance 
+57:Holy Rod 
+54:Ice Rod 
+97:Ice Shield 
+14:Icebrand 
+41:Ichigeki 
+36:Impartisan 
+174:Invisibility Scroll 
+42:Kagenui 
+85:Kaiser Knuckles 
+46:Kazekiri 
+45:Kiku-ichimonji 
+38:Kodachi 
+44:Kotetsu 
+37:Kunai 
+26:Lightbringer 
+173:Lightning Scroll 
+235:Longinus 
+63:Magical Brush 
+60:Magus Rod 
+2:Main gauche 
+6:Man-Eater 
+48:Masamune 
+83:Metal Knuckles 
+69:Moonring Blade 
+70:Morning Star 
+49:Murakumo 
+47:Murasame 
+50:Mutsunokami 
+84:Mythril Claws 
+1:Mythril Knife 
+52:Mythril Rod 
+92:Mythril Shield 
+29:Mythril Spear 
+10:Mythril Sword 
+234:Oborozuki 
+23:Organyx 
+103:Paladin's Shield 
+32:Partisan 
+67:Pinwheel 
+56:Poison Rod 
+59:Punisher 
+35:Radiant Lance 
+27:Ragnarok 
+64:Rainbow Brush 
+72:Rising Sun 
+12:Rune Blade 
+39:Sakura 
+40:Sasuke 
+237:Save the Queen 
+243:Scorpion Tail 
+175:Shadow Scroll 
+65:Shuriken 
+75:Sniper 
+22:Soul Sabre 
+238:Stardust Rod 
+17:Stoneblade 
+7:Swordbreaker 
+4:Thief's Knife 
+15:Thunder Blade 
+55:Thunder Rod 
+98:Thunder Shield 
+89:Tigerfang 
+101:Tortoise Shield 
+30:Trident 
+28:Ultima Weapon 
+9:Valiant Knife 
+86:Venom Claws 
+80:Viper Darts 
+172:Water Scroll 
+76:Wing Edge 
+233:Zanmato 
+25:Zantetsuken 
+232:Zwill Crossblade 
+</DropDownList>
+                  <LastState Value="103" RealAddress="0241ADBC"/>
+                  <VariableType>Byte</VariableType>
+                  <Address>+1</Address>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>87</ID>
+                  <Description>"Head"</Description>
+                  <DropDownList ReadOnly="1" DisplayValueAsItem="1">110:Bandana 
+108:Beret 
+125:Black Cowl 
+128:Cat-Ear Hood 
+122:Circlet 
+126:Crystal Helm 
+124:Diamond Helm 
+129:Genji Helm 
+118:Golden Helm 
+114:Green Beret 
+106:Hairband 
+112:Hypno Crown 
+111:Iron Helm 
+105:Leather Cap 
+109:Magus Hat 
+121:Mystery Veil 
+116:Mythril Helm 
+127:Oath Veil 
+107:Plumed Hat 
+113:Priest's Miter 
+120:Red Cap 
+123:Royal Crown 
+131:Saucer 
+130:Thornlet 
+117:Tiara 
+119:Tiger Mask 
+115:Twist Headband 
+</DropDownList>
+                  <LastState Value="123" RealAddress="0241ADBD"/>
+                  <VariableType>Byte</VariableType>
+                  <Address>+2</Address>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>88</ID>
+                  <Description>"Body"</Description>
+                  <DropDownList ReadOnly="1" DisplayValueAsItem="1">161:Behemoth Suit 
+150:Black Garb 
+158:Chocobo Suit 
+133:Cotton Robe 
+152:Crystal Mail 
+149:Diamond Armor 
+146:Diamond Vest 
+148:Force Armor 
+141:Gaia Gear 
+154:Genji Armor 
+143:Golden Armor 
+135:Iron Armor 
+134:Kenpo Gi 
+132:Leather Armor 
+145:Luminous Robe 
+151:Magus Robe 
+156:Minerva Bustier 
+142:Mirage Vest 
+159:Moogle Suit 
+140:Mythril Mail 
+137:Mythril Vest 
+138:Ninja Gear 
+160:Nutkin Suit 
+144:Power Sash 
+147:Red Jacket 
+155:Reed Cloak 
+153:Regal Gown 
+136:Silk Robe 
+162:Snow Scarf 
+157:Tabby Suit 
+139:White Dress 
+</DropDownList>
+                  <LastState Value="153" RealAddress="0241ADBE"/>
+                  <VariableType>Byte</VariableType>
+                  <Address>+3</Address>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>89</ID>
+                  <Description>"Relic 1"</Description>
+                  <DropDownList ReadOnly="1" DisplayValueAsItem="1">225:Alarm Earring 
+179:Amulet 
+189:Angel Ring 
+188:Angel Wings 
+183:Barrier Ring 
+198:Berserker Ring 
+213:Black Belt 
+197:Blizzard Orb 
+207:Brigand's Glove 
+206:Celestriad 
+204:Crystal Orb 
+194:Cursed Ring 
+217:Dragon Horn 
+191:Dragoon Boots 
+195:Earring 
+182:Fairy Ring 
+215:Fake Mustache 
+226:Gale Hairpin 
+208:Gauntlet 
+209:Genji Glove 
+196:Gigas Glove 
+205:Gold Hairpin 
+228:Growth Egg 
+200:Guard Bracelet 
+214:Heiji's Jitte 
+186:Hermes Sandals 
+201:Hero's Ring 
+210:Hyper Wrist 
+181:Jeweled Ring 
+190:Knight's Code 
+221:Lich Ring 
+211:Master's Scroll 
+219:Memento Ring 
+218:Merit Award 
+224:Miracle Shoes 
+222:Molulu's Charm 
+203:Muscle Belt 
+184:Mythril Glove 
+178:Peace Ring 
+212:Prayer Beads 
+193:Princess Ring 
+185:Protect Ring 
+187:Reflect Ring 
+202:Ribbon 
+220:Safety Bit 
+176:Silver Spectacles 
+227:Sniper Eye 
+216:Soul of Thamasa 
+230:Sprint Shoes 
+177:Star Pendant 
+199:Thief's Bracer 
+229:Tintinnabulum 
+223:Ward Bangle 
+180:White Cape 
+192:Zephyr Cloak 
+</DropDownList>
+                  <LastState Value="230" RealAddress="0241ADBF"/>
+                  <VariableType>Byte</VariableType>
+                  <Address>+4</Address>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>90</ID>
+                  <Description>"Relic 2"</Description>
+                  <DropDownList ReadOnly="1" DisplayValueAsItem="1">225:Alarm Earring 
+179:Amulet 
+189:Angel Ring 
+188:Angel Wings 
+183:Barrier Ring 
+198:Berserker Ring 
+213:Black Belt 
+197:Blizzard Orb 
+207:Brigand's Glove 
+206:Celestriad 
+204:Crystal Orb 
+194:Cursed Ring 
+217:Dragon Horn 
+191:Dragoon Boots 
+195:Earring 
+182:Fairy Ring 
+215:Fake Mustache 
+226:Gale Hairpin 
+208:Gauntlet 
+209:Genji Glove 
+196:Gigas Glove 
+205:Gold Hairpin 
+228:Growth Egg 
+200:Guard Bracelet 
+214:Heiji's Jitte 
+186:Hermes Sandals 
+201:Hero's Ring 
+210:Hyper Wrist 
+181:Jeweled Ring 
+190:Knight's Code 
+221:Lich Ring 
+211:Master's Scroll 
+219:Memento Ring 
+218:Merit Award 
+224:Miracle Shoes 
+222:Molulu's Charm 
+203:Muscle Belt 
+184:Mythril Glove 
+178:Peace Ring 
+212:Prayer Beads 
+193:Princess Ring 
+185:Protect Ring 
+187:Reflect Ring 
+202:Ribbon 
+220:Safety Bit 
+176:Silver Spectacles 
+227:Sniper Eye 
+216:Soul of Thamasa 
+230:Sprint Shoes 
+177:Star Pendant 
+199:Thief's Bracer 
+229:Tintinnabulum 
+223:Ward Bangle 
+180:White Cape 
+192:Zephyr Cloak 
+</DropDownList>
+                  <LastState Value="209" RealAddress="0241ADC0"/>
+                  <VariableType>Byte</VariableType>
+                  <Address>+5</Address>
+                </CheatEntry>
+              </CheatEntries>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>72</ID>
+              <Description>"&gt;&gt; Equip &lt;non-category&gt;"</Description>
+              <Options moHideChildren="1"/>
+              <LastState RealAddress="0241ADBB"/>
+              <Color>C08000</Color>
+              <VariableType>String</VariableType>
+              <Length>0</Length>
+              <Unicode>0</Unicode>
+              <ZeroTerminate>1</ZeroTerminate>
+              <Address>+1f</Address>
+              <CheatEntries>
+                <CheatEntry>
+                  <ID>78</ID>
+                  <Description>"Right Hand"</Description>
+                  <DropDownList DisplayValueAsItem="1">94:Aegis Shield 
+169:Air Anchor 
+3:Air Knife 
+225:Alarm Earring 
+179:Amulet 
+239:Angel Brush 
+189:Angel Ring 
+188:Angel Wings 
+231:Apocalipse 
+43:Ashura 
+5:Assassin's Dagger 
+170:Auto Crossbow 
+110:Bandana 
+183:Barrier Ring 
+16:Bastard Sword 
+161:Behemoth Suit 
+108:Beret 
+198:Berserker Ring 
+164:Bioblaster 
+213:Black Belt 
+125:Black Cowl 
+150:Black Garb 
+197:Blizzard Orb 
+18:Blood Sword 
+74:Bone Club 
+244:Bone Wrist 
+71:Boomerang 
+207:Brigand's Glove 
+90:Buckler 
+87:Burning Fist 
+77:Cards 
+128:Cat-Ear Hood 
+206:Celestriad 
+68:Chain Flail 
+166:Chainsaw 
+61:Chocobo Brush 
+158:Chocobo Suit 
+122:Circlet 
+133:Cotton Robe 
+126:Crystal Helm 
+152:Crystal Mail 
+204:Crystal Orb 
+99:Crystal Shield 
+20:Crystal Sword 
+194:Cursed Ring 
+102:Cursed Shield 
+62:Da Vinci Brush 
+0:Dagger 
+78:Darts 
+79:Death Tarot 
+167:Debilitator 
+149:Diamond Armor 
+124:Diamond Helm 
+95:Diamond Shield 
+146:Diamond Vest 
+81:Dice 
+88:Dragon Claws 
+217:Dragon Horn 
+191:Dragoon Boots 
+168:Drill 
+242:Dueling Mask 
+195:Earring 
+19:Enhancer 
+24:Excalibur 
+245:Excalipoor 
+182:Fairy Ring 
+215:Fake Mustache 
+21:Falchion 
+240:Final Trump 
+82:Fixed Dice 
+53:Flame Rod 
+171:Flame Scroll 
+96:Flame Shield 
+13:Flametongue 
+165:Flash 
+148:Force Armor 
+104:Force Shield 
+66:Fuma Shuriken 
+141:Gaia Gear 
+226:Gale Hairpin 
+208:Gauntlet 
+154:Genji Armor 
+209:Genji Glove 
+129:Genji Helm 
+100:Genji Shield 
+196:Gigas Glove 
+8:Gladius 
+236:Godhand 
+205:Gold Hairpin 
+143:Golden Armor 
+118:Golden Helm 
+93:Golden Shield 
+34:Golden Spear 
+58:Gravity Rod 
+11:Great Sword 
+114:Green Beret 
+228:Growth Egg 
+200:Guard Bracelet 
+241:Gungnir 
+106:Hairband 
+73:Hawkeye 
+51:Healing Rod 
+31:Heavy Lance 
+91:Heavy Shield 
+214:Heiji's Jitte 
+186:Hermes Sandals 
+201:Hero's Ring 
+33:Holy Lance 
+57:Holy Rod 
+210:Hyper Wrist 
+112:Hypno Crown 
+54:Ice Rod 
+97:Ice Shield 
+14:Icebrand 
+41:Ichigeki 
+36:Impartisan 
+174:Invisibility Scroll 
+135:Iron Armor 
+111:Iron Helm 
+181:Jeweled Ring 
+42:Kagenui 
+85:Kaiser Knuckles 
+46:Kazekiri 
+134:Kenpo Gi 
+45:Kiku-ichimonji 
+190:Knight's Code 
+38:Kodachi 
+44:Kotetsu 
+37:Kunai 
+132:Leather Armor 
+105:Leather Cap 
+221:Lich Ring 
+26:Lightbringer 
+173:Lightning Scroll 
+235:Longinus 
+145:Luminous Robe 
+63:Magical Brush 
+109:Magus Hat 
+151:Magus Robe 
+60:Magus Rod 
+2:Main gauche 
+6:Man-Eater 
+48:Masamune 
+211:Master's Scroll 
+219:Memento Ring 
+218:Merit Award 
+83:Metal Knuckles 
+156:Minerva Bustier 
+224:Miracle Shoes 
+142:Mirage Vest 
+222:Molulu's Charm 
+159:Moogle Suit 
+69:Moonring Blade 
+70:Morning Star 
+49:Murakumo 
+47:Murasame 
+203:Muscle Belt 
+50:Mutsunokami 
+121:Mystery Veil 
+84:Mythril Claws 
+184:Mythril Glove 
+116:Mythril Helm 
+1:Mythril Knife 
+140:Mythril Mail 
+52:Mythril Rod 
+92:Mythril Shield 
+29:Mythril Spear 
+10:Mythril Sword 
+137:Mythril Vest 
+138:Ninja Gear 
+163:Noiseblaster 
+160:Nutkin Suit 
+127:Oath Veil 
+234:Oborozuki 
+23:Organyx 
+103:Paladin's Shield 
+32:Partisan 
+178:Peace Ring 
+67:Pinwheel 
+107:Plumed Hat 
+56:Poison Rod 
+144:Power Sash 
+212:Prayer Beads 
+113:Priest's Miter 
+193:Princess Ring 
+185:Protect Ring 
+59:Punisher 
+35:Radiant Lance 
+27:Ragnarok 
+64:Rainbow Brush 
+120:Red Cap 
+147:Red Jacket 
+155:Reed Cloak 
+187:Reflect Ring 
+153:Regal Gown 
+202:Ribbon 
+72:Rising Sun 
+123:Royal Crown 
+12:Rune Blade 
+220:Safety Bit 
+39:Sakura 
+40:Sasuke 
+131:Saucer 
+237:Save the Queen 
+243:Scorpion Tail 
+175:Shadow Scroll 
+65:Shuriken 
+136:Silk Robe 
+176:Silver Spectacles 
+75:Sniper 
+227:Sniper Eye 
+162:Snow Scarf 
+22:Soul Sabre 
+216:Soul of Thamasa 
+230:Sprint Shoes 
+177:Star Pendant 
+238:Stardust Rod 
+17:Stoneblade 
+7:Swordbreaker 
+157:Tabby Suit 
+199:Thief's Bracer 
+4:Thief's Knife 
+130:Thornlet 
+15:Thunder Blade 
+55:Thunder Rod 
+98:Thunder Shield 
+117:Tiara 
+119:Tiger Mask 
+89:Tigerfang 
+229:Tintinnabulum 
+101:Tortoise Shield 
+30:Trident 
+115:Twist Headband 
+28:Ultima Weapon 
+9:Valiant Knife 
+86:Venom Claws 
+80:Viper Darts 
+223:Ward Bangle 
+172:Water Scroll 
+180:White Cape 
+139:White Dress 
+76:Wing Edge 
+233:Zanmato 
+25:Zantetsuken 
+192:Zephyr Cloak 
+232:Zwill Crossblade 
+</DropDownList>
+                  <LastState Value="4" RealAddress="0241ADBB"/>
+                  <VariableType>Byte</VariableType>
+                  <Address>+0</Address>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>83</ID>
+                  <Description>"Left Hand"</Description>
+                  <DropDownList ReadOnly="1" DisplayValueAsItem="1">94:Aegis Shield 
+169:Air Anchor 
+3:Air Knife 
+225:Alarm Earring 
+179:Amulet 
+239:Angel Brush 
+189:Angel Ring 
+188:Angel Wings 
+231:Apocalipse 
+43:Ashura 
+5:Assassin's Dagger 
+170:Auto Crossbow 
+110:Bandana 
+183:Barrier Ring 
+16:Bastard Sword 
+161:Behemoth Suit 
+108:Beret 
+198:Berserker Ring 
+164:Bioblaster 
+213:Black Belt 
+125:Black Cowl 
+150:Black Garb 
+197:Blizzard Orb 
+18:Blood Sword 
+74:Bone Club 
+244:Bone Wrist 
+71:Boomerang 
+207:Brigand's Glove 
+90:Buckler 
+87:Burning Fist 
+77:Cards 
+128:Cat-Ear Hood 
+206:Celestriad 
+68:Chain Flail 
+166:Chainsaw 
+61:Chocobo Brush 
+158:Chocobo Suit 
+122:Circlet 
+133:Cotton Robe 
+126:Crystal Helm 
+152:Crystal Mail 
+204:Crystal Orb 
+99:Crystal Shield 
+20:Crystal Sword 
+194:Cursed Ring 
+102:Cursed Shield 
+62:Da Vinci Brush 
+0:Dagger 
+78:Darts 
+79:Death Tarot 
+167:Debilitator 
+149:Diamond Armor 
+124:Diamond Helm 
+95:Diamond Shield 
+146:Diamond Vest 
+81:Dice 
+88:Dragon Claws 
+217:Dragon Horn 
+191:Dragoon Boots 
+168:Drill 
+242:Dueling Mask 
+195:Earring 
+19:Enhancer 
+24:Excalibur 
+245:Excalipoor 
+182:Fairy Ring 
+215:Fake Mustache 
+21:Falchion 
+240:Final Trump 
+82:Fixed Dice 
+53:Flame Rod 
+171:Flame Scroll 
+96:Flame Shield 
+13:Flametongue 
+165:Flash 
+148:Force Armor 
+104:Force Shield 
+66:Fuma Shuriken 
+141:Gaia Gear 
+226:Gale Hairpin 
+208:Gauntlet 
+154:Genji Armor 
+209:Genji Glove 
+129:Genji Helm 
+100:Genji Shield 
+196:Gigas Glove 
+8:Gladius 
+236:Godhand 
+205:Gold Hairpin 
+143:Golden Armor 
+118:Golden Helm 
+93:Golden Shield 
+34:Golden Spear 
+58:Gravity Rod 
+11:Great Sword 
+114:Green Beret 
+228:Growth Egg 
+200:Guard Bracelet 
+241:Gungnir 
+106:Hairband 
+73:Hawkeye 
+51:Healing Rod 
+31:Heavy Lance 
+91:Heavy Shield 
+214:Heiji's Jitte 
+186:Hermes Sandals 
+201:Hero's Ring 
+33:Holy Lance 
+57:Holy Rod 
+210:Hyper Wrist 
+112:Hypno Crown 
+54:Ice Rod 
+97:Ice Shield 
+14:Icebrand 
+41:Ichigeki 
+36:Impartisan 
+174:Invisibility Scroll 
+135:Iron Armor 
+111:Iron Helm 
+181:Jeweled Ring 
+42:Kagenui 
+85:Kaiser Knuckles 
+46:Kazekiri 
+134:Kenpo Gi 
+45:Kiku-ichimonji 
+190:Knight's Code 
+38:Kodachi 
+44:Kotetsu 
+37:Kunai 
+132:Leather Armor 
+105:Leather Cap 
+221:Lich Ring 
+26:Lightbringer 
+173:Lightning Scroll 
+235:Longinus 
+145:Luminous Robe 
+63:Magical Brush 
+109:Magus Hat 
+151:Magus Robe 
+60:Magus Rod 
+2:Main gauche 
+6:Man-Eater 
+48:Masamune 
+211:Master's Scroll 
+219:Memento Ring 
+218:Merit Award 
+83:Metal Knuckles 
+156:Minerva Bustier 
+224:Miracle Shoes 
+142:Mirage Vest 
+222:Molulu's Charm 
+159:Moogle Suit 
+69:Moonring Blade 
+70:Morning Star 
+49:Murakumo 
+47:Murasame 
+203:Muscle Belt 
+50:Mutsunokami 
+121:Mystery Veil 
+84:Mythril Claws 
+184:Mythril Glove 
+116:Mythril Helm 
+1:Mythril Knife 
+140:Mythril Mail 
+52:Mythril Rod 
+92:Mythril Shield 
+29:Mythril Spear 
+10:Mythril Sword 
+137:Mythril Vest 
+138:Ninja Gear 
+163:Noiseblaster 
+160:Nutkin Suit 
+127:Oath Veil 
+234:Oborozuki 
+23:Organyx 
+103:Paladin's Shield 
+32:Partisan 
+178:Peace Ring 
+67:Pinwheel 
+107:Plumed Hat 
+56:Poison Rod 
+144:Power Sash 
+212:Prayer Beads 
+113:Priest's Miter 
+193:Princess Ring 
+185:Protect Ring 
+59:Punisher 
+35:Radiant Lance 
+27:Ragnarok 
+64:Rainbow Brush 
+120:Red Cap 
+147:Red Jacket 
+155:Reed Cloak 
+187:Reflect Ring 
+153:Regal Gown 
+202:Ribbon 
+72:Rising Sun 
+123:Royal Crown 
+12:Rune Blade 
+220:Safety Bit 
+39:Sakura 
+40:Sasuke 
+131:Saucer 
+237:Save the Queen 
+243:Scorpion Tail 
+175:Shadow Scroll 
+65:Shuriken 
+136:Silk Robe 
+176:Silver Spectacles 
+75:Sniper 
+227:Sniper Eye 
+162:Snow Scarf 
+22:Soul Sabre 
+216:Soul of Thamasa 
+230:Sprint Shoes 
+177:Star Pendant 
+238:Stardust Rod 
+17:Stoneblade 
+7:Swordbreaker 
+157:Tabby Suit 
+199:Thief's Bracer 
+4:Thief's Knife 
+130:Thornlet 
+15:Thunder Blade 
+55:Thunder Rod 
+98:Thunder Shield 
+117:Tiara 
+119:Tiger Mask 
+89:Tigerfang 
+229:Tintinnabulum 
+101:Tortoise Shield 
+30:Trident 
+115:Twist Headband 
+28:Ultima Weapon 
+9:Valiant Knife 
+86:Venom Claws 
+80:Viper Darts 
+223:Ward Bangle 
+172:Water Scroll 
+180:White Cape 
+139:White Dress 
+76:Wing Edge 
+233:Zanmato 
+25:Zantetsuken 
+192:Zephyr Cloak 
+232:Zwill Crossblade 
+</DropDownList>
+                  <LastState Value="103" RealAddress="0241ADBC"/>
+                  <VariableType>Byte</VariableType>
+                  <Address>+1</Address>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>82</ID>
+                  <Description>"Head"</Description>
+                  <DropDownList ReadOnly="1" DisplayValueAsItem="1">94:Aegis Shield 
+169:Air Anchor 
+3:Air Knife 
+225:Alarm Earring 
+179:Amulet 
+239:Angel Brush 
+189:Angel Ring 
+188:Angel Wings 
+231:Apocalipse 
+43:Ashura 
+5:Assassin's Dagger 
+170:Auto Crossbow 
+110:Bandana 
+183:Barrier Ring 
+16:Bastard Sword 
+161:Behemoth Suit 
+108:Beret 
+198:Berserker Ring 
+164:Bioblaster 
+213:Black Belt 
+125:Black Cowl 
+150:Black Garb 
+197:Blizzard Orb 
+18:Blood Sword 
+74:Bone Club 
+244:Bone Wrist 
+71:Boomerang 
+207:Brigand's Glove 
+90:Buckler 
+87:Burning Fist 
+77:Cards 
+128:Cat-Ear Hood 
+206:Celestriad 
+68:Chain Flail 
+166:Chainsaw 
+61:Chocobo Brush 
+158:Chocobo Suit 
+122:Circlet 
+133:Cotton Robe 
+126:Crystal Helm 
+152:Crystal Mail 
+204:Crystal Orb 
+99:Crystal Shield 
+20:Crystal Sword 
+194:Cursed Ring 
+102:Cursed Shield 
+62:Da Vinci Brush 
+0:Dagger 
+78:Darts 
+79:Death Tarot 
+167:Debilitator 
+149:Diamond Armor 
+124:Diamond Helm 
+95:Diamond Shield 
+146:Diamond Vest 
+81:Dice 
+88:Dragon Claws 
+217:Dragon Horn 
+191:Dragoon Boots 
+168:Drill 
+242:Dueling Mask 
+195:Earring 
+19:Enhancer 
+24:Excalibur 
+245:Excalipoor 
+182:Fairy Ring 
+215:Fake Mustache 
+21:Falchion 
+240:Final Trump 
+82:Fixed Dice 
+53:Flame Rod 
+171:Flame Scroll 
+96:Flame Shield 
+13:Flametongue 
+165:Flash 
+148:Force Armor 
+104:Force Shield 
+66:Fuma Shuriken 
+141:Gaia Gear 
+226:Gale Hairpin 
+208:Gauntlet 
+154:Genji Armor 
+209:Genji Glove 
+129:Genji Helm 
+100:Genji Shield 
+196:Gigas Glove 
+8:Gladius 
+236:Godhand 
+205:Gold Hairpin 
+143:Golden Armor 
+118:Golden Helm 
+93:Golden Shield 
+34:Golden Spear 
+58:Gravity Rod 
+11:Great Sword 
+114:Green Beret 
+228:Growth Egg 
+200:Guard Bracelet 
+241:Gungnir 
+106:Hairband 
+73:Hawkeye 
+51:Healing Rod 
+31:Heavy Lance 
+91:Heavy Shield 
+214:Heiji's Jitte 
+186:Hermes Sandals 
+201:Hero's Ring 
+33:Holy Lance 
+57:Holy Rod 
+210:Hyper Wrist 
+112:Hypno Crown 
+54:Ice Rod 
+97:Ice Shield 
+14:Icebrand 
+41:Ichigeki 
+36:Impartisan 
+174:Invisibility Scroll 
+135:Iron Armor 
+111:Iron Helm 
+181:Jeweled Ring 
+42:Kagenui 
+85:Kaiser Knuckles 
+46:Kazekiri 
+134:Kenpo Gi 
+45:Kiku-ichimonji 
+190:Knight's Code 
+38:Kodachi 
+44:Kotetsu 
+37:Kunai 
+132:Leather Armor 
+105:Leather Cap 
+221:Lich Ring 
+26:Lightbringer 
+173:Lightning Scroll 
+235:Longinus 
+145:Luminous Robe 
+63:Magical Brush 
+109:Magus Hat 
+151:Magus Robe 
+60:Magus Rod 
+2:Main gauche 
+6:Man-Eater 
+48:Masamune 
+211:Master's Scroll 
+219:Memento Ring 
+218:Merit Award 
+83:Metal Knuckles 
+156:Minerva Bustier 
+224:Miracle Shoes 
+142:Mirage Vest 
+222:Molulu's Charm 
+159:Moogle Suit 
+69:Moonring Blade 
+70:Morning Star 
+49:Murakumo 
+47:Murasame 
+203:Muscle Belt 
+50:Mutsunokami 
+121:Mystery Veil 
+84:Mythril Claws 
+184:Mythril Glove 
+116:Mythril Helm 
+1:Mythril Knife 
+140:Mythril Mail 
+52:Mythril Rod 
+92:Mythril Shield 
+29:Mythril Spear 
+10:Mythril Sword 
+137:Mythril Vest 
+138:Ninja Gear 
+163:Noiseblaster 
+160:Nutkin Suit 
+127:Oath Veil 
+234:Oborozuki 
+23:Organyx 
+103:Paladin's Shield 
+32:Partisan 
+178:Peace Ring 
+67:Pinwheel 
+107:Plumed Hat 
+56:Poison Rod 
+144:Power Sash 
+212:Prayer Beads 
+113:Priest's Miter 
+193:Princess Ring 
+185:Protect Ring 
+59:Punisher 
+35:Radiant Lance 
+27:Ragnarok 
+64:Rainbow Brush 
+120:Red Cap 
+147:Red Jacket 
+155:Reed Cloak 
+187:Reflect Ring 
+153:Regal Gown 
+202:Ribbon 
+72:Rising Sun 
+123:Royal Crown 
+12:Rune Blade 
+220:Safety Bit 
+39:Sakura 
+40:Sasuke 
+131:Saucer 
+237:Save the Queen 
+243:Scorpion Tail 
+175:Shadow Scroll 
+65:Shuriken 
+136:Silk Robe 
+176:Silver Spectacles 
+75:Sniper 
+227:Sniper Eye 
+162:Snow Scarf 
+22:Soul Sabre 
+216:Soul of Thamasa 
+230:Sprint Shoes 
+177:Star Pendant 
+238:Stardust Rod 
+17:Stoneblade 
+7:Swordbreaker 
+157:Tabby Suit 
+199:Thief's Bracer 
+4:Thief's Knife 
+130:Thornlet 
+15:Thunder Blade 
+55:Thunder Rod 
+98:Thunder Shield 
+117:Tiara 
+119:Tiger Mask 
+89:Tigerfang 
+229:Tintinnabulum 
+101:Tortoise Shield 
+30:Trident 
+115:Twist Headband 
+28:Ultima Weapon 
+9:Valiant Knife 
+86:Venom Claws 
+80:Viper Darts 
+223:Ward Bangle 
+172:Water Scroll 
+180:White Cape 
+139:White Dress 
+76:Wing Edge 
+233:Zanmato 
+25:Zantetsuken 
+192:Zephyr Cloak 
+232:Zwill Crossblade 
+</DropDownList>
+                  <LastState Value="123" RealAddress="0241ADBD"/>
+                  <VariableType>Byte</VariableType>
+                  <Address>+2</Address>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>81</ID>
+                  <Description>"Body"</Description>
+                  <DropDownList ReadOnly="1" DisplayValueAsItem="1">94:Aegis Shield 
+169:Air Anchor 
+3:Air Knife 
+225:Alarm Earring 
+179:Amulet 
+239:Angel Brush 
+189:Angel Ring 
+188:Angel Wings 
+231:Apocalipse 
+43:Ashura 
+5:Assassin's Dagger 
+170:Auto Crossbow 
+110:Bandana 
+183:Barrier Ring 
+16:Bastard Sword 
+161:Behemoth Suit 
+108:Beret 
+198:Berserker Ring 
+164:Bioblaster 
+213:Black Belt 
+125:Black Cowl 
+150:Black Garb 
+197:Blizzard Orb 
+18:Blood Sword 
+74:Bone Club 
+244:Bone Wrist 
+71:Boomerang 
+207:Brigand's Glove 
+90:Buckler 
+87:Burning Fist 
+77:Cards 
+128:Cat-Ear Hood 
+206:Celestriad 
+68:Chain Flail 
+166:Chainsaw 
+61:Chocobo Brush 
+158:Chocobo Suit 
+122:Circlet 
+133:Cotton Robe 
+126:Crystal Helm 
+152:Crystal Mail 
+204:Crystal Orb 
+99:Crystal Shield 
+20:Crystal Sword 
+194:Cursed Ring 
+102:Cursed Shield 
+62:Da Vinci Brush 
+0:Dagger 
+78:Darts 
+79:Death Tarot 
+167:Debilitator 
+149:Diamond Armor 
+124:Diamond Helm 
+95:Diamond Shield 
+146:Diamond Vest 
+81:Dice 
+88:Dragon Claws 
+217:Dragon Horn 
+191:Dragoon Boots 
+168:Drill 
+242:Dueling Mask 
+195:Earring 
+19:Enhancer 
+24:Excalibur 
+245:Excalipoor 
+182:Fairy Ring 
+215:Fake Mustache 
+21:Falchion 
+240:Final Trump 
+82:Fixed Dice 
+53:Flame Rod 
+171:Flame Scroll 
+96:Flame Shield 
+13:Flametongue 
+165:Flash 
+148:Force Armor 
+104:Force Shield 
+66:Fuma Shuriken 
+141:Gaia Gear 
+226:Gale Hairpin 
+208:Gauntlet 
+154:Genji Armor 
+209:Genji Glove 
+129:Genji Helm 
+100:Genji Shield 
+196:Gigas Glove 
+8:Gladius 
+236:Godhand 
+205:Gold Hairpin 
+143:Golden Armor 
+118:Golden Helm 
+93:Golden Shield 
+34:Golden Spear 
+58:Gravity Rod 
+11:Great Sword 
+114:Green Beret 
+228:Growth Egg 
+200:Guard Bracelet 
+241:Gungnir 
+106:Hairband 
+73:Hawkeye 
+51:Healing Rod 
+31:Heavy Lance 
+91:Heavy Shield 
+214:Heiji's Jitte 
+186:Hermes Sandals 
+201:Hero's Ring 
+33:Holy Lance 
+57:Holy Rod 
+210:Hyper Wrist 
+112:Hypno Crown 
+54:Ice Rod 
+97:Ice Shield 
+14:Icebrand 
+41:Ichigeki 
+36:Impartisan 
+174:Invisibility Scroll 
+135:Iron Armor 
+111:Iron Helm 
+181:Jeweled Ring 
+42:Kagenui 
+85:Kaiser Knuckles 
+46:Kazekiri 
+134:Kenpo Gi 
+45:Kiku-ichimonji 
+190:Knight's Code 
+38:Kodachi 
+44:Kotetsu 
+37:Kunai 
+132:Leather Armor 
+105:Leather Cap 
+221:Lich Ring 
+26:Lightbringer 
+173:Lightning Scroll 
+235:Longinus 
+145:Luminous Robe 
+63:Magical Brush 
+109:Magus Hat 
+151:Magus Robe 
+60:Magus Rod 
+2:Main gauche 
+6:Man-Eater 
+48:Masamune 
+211:Master's Scroll 
+219:Memento Ring 
+218:Merit Award 
+83:Metal Knuckles 
+156:Minerva Bustier 
+224:Miracle Shoes 
+142:Mirage Vest 
+222:Molulu's Charm 
+159:Moogle Suit 
+69:Moonring Blade 
+70:Morning Star 
+49:Murakumo 
+47:Murasame 
+203:Muscle Belt 
+50:Mutsunokami 
+121:Mystery Veil 
+84:Mythril Claws 
+184:Mythril Glove 
+116:Mythril Helm 
+1:Mythril Knife 
+140:Mythril Mail 
+52:Mythril Rod 
+92:Mythril Shield 
+29:Mythril Spear 
+10:Mythril Sword 
+137:Mythril Vest 
+138:Ninja Gear 
+163:Noiseblaster 
+160:Nutkin Suit 
+127:Oath Veil 
+234:Oborozuki 
+23:Organyx 
+103:Paladin's Shield 
+32:Partisan 
+178:Peace Ring 
+67:Pinwheel 
+107:Plumed Hat 
+56:Poison Rod 
+144:Power Sash 
+212:Prayer Beads 
+113:Priest's Miter 
+193:Princess Ring 
+185:Protect Ring 
+59:Punisher 
+35:Radiant Lance 
+27:Ragnarok 
+64:Rainbow Brush 
+120:Red Cap 
+147:Red Jacket 
+155:Reed Cloak 
+187:Reflect Ring 
+153:Regal Gown 
+202:Ribbon 
+72:Rising Sun 
+123:Royal Crown 
+12:Rune Blade 
+220:Safety Bit 
+39:Sakura 
+40:Sasuke 
+131:Saucer 
+237:Save the Queen 
+243:Scorpion Tail 
+175:Shadow Scroll 
+65:Shuriken 
+136:Silk Robe 
+176:Silver Spectacles 
+75:Sniper 
+227:Sniper Eye 
+162:Snow Scarf 
+22:Soul Sabre 
+216:Soul of Thamasa 
+230:Sprint Shoes 
+177:Star Pendant 
+238:Stardust Rod 
+17:Stoneblade 
+7:Swordbreaker 
+157:Tabby Suit 
+199:Thief's Bracer 
+4:Thief's Knife 
+130:Thornlet 
+15:Thunder Blade 
+55:Thunder Rod 
+98:Thunder Shield 
+117:Tiara 
+119:Tiger Mask 
+89:Tigerfang 
+229:Tintinnabulum 
+101:Tortoise Shield 
+30:Trident 
+115:Twist Headband 
+28:Ultima Weapon 
+9:Valiant Knife 
+86:Venom Claws 
+80:Viper Darts 
+223:Ward Bangle 
+172:Water Scroll 
+180:White Cape 
+139:White Dress 
+76:Wing Edge 
+233:Zanmato 
+25:Zantetsuken 
+192:Zephyr Cloak 
+232:Zwill Crossblade 
+</DropDownList>
+                  <LastState Value="153" RealAddress="0241ADBE"/>
+                  <VariableType>Byte</VariableType>
+                  <Address>+3</Address>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>80</ID>
+                  <Description>"Relic 1"</Description>
+                  <DropDownList ReadOnly="1" DisplayValueAsItem="1">94:Aegis Shield 
+169:Air Anchor 
+3:Air Knife 
+225:Alarm Earring 
+179:Amulet 
+239:Angel Brush 
+189:Angel Ring 
+188:Angel Wings 
+231:Apocalipse 
+43:Ashura 
+5:Assassin's Dagger 
+170:Auto Crossbow 
+110:Bandana 
+183:Barrier Ring 
+16:Bastard Sword 
+161:Behemoth Suit 
+108:Beret 
+198:Berserker Ring 
+164:Bioblaster 
+213:Black Belt 
+125:Black Cowl 
+150:Black Garb 
+197:Blizzard Orb 
+18:Blood Sword 
+74:Bone Club 
+244:Bone Wrist 
+71:Boomerang 
+207:Brigand's Glove 
+90:Buckler 
+87:Burning Fist 
+77:Cards 
+128:Cat-Ear Hood 
+206:Celestriad 
+68:Chain Flail 
+166:Chainsaw 
+61:Chocobo Brush 
+158:Chocobo Suit 
+122:Circlet 
+133:Cotton Robe 
+126:Crystal Helm 
+152:Crystal Mail 
+204:Crystal Orb 
+99:Crystal Shield 
+20:Crystal Sword 
+194:Cursed Ring 
+102:Cursed Shield 
+62:Da Vinci Brush 
+0:Dagger 
+78:Darts 
+79:Death Tarot 
+167:Debilitator 
+149:Diamond Armor 
+124:Diamond Helm 
+95:Diamond Shield 
+146:Diamond Vest 
+81:Dice 
+88:Dragon Claws 
+217:Dragon Horn 
+191:Dragoon Boots 
+168:Drill 
+242:Dueling Mask 
+195:Earring 
+19:Enhancer 
+24:Excalibur 
+245:Excalipoor 
+182:Fairy Ring 
+215:Fake Mustache 
+21:Falchion 
+240:Final Trump 
+82:Fixed Dice 
+53:Flame Rod 
+171:Flame Scroll 
+96:Flame Shield 
+13:Flametongue 
+165:Flash 
+148:Force Armor 
+104:Force Shield 
+66:Fuma Shuriken 
+141:Gaia Gear 
+226:Gale Hairpin 
+208:Gauntlet 
+154:Genji Armor 
+209:Genji Glove 
+129:Genji Helm 
+100:Genji Shield 
+196:Gigas Glove 
+8:Gladius 
+236:Godhand 
+205:Gold Hairpin 
+143:Golden Armor 
+118:Golden Helm 
+93:Golden Shield 
+34:Golden Spear 
+58:Gravity Rod 
+11:Great Sword 
+114:Green Beret 
+228:Growth Egg 
+200:Guard Bracelet 
+241:Gungnir 
+106:Hairband 
+73:Hawkeye 
+51:Healing Rod 
+31:Heavy Lance 
+91:Heavy Shield 
+214:Heiji's Jitte 
+186:Hermes Sandals 
+201:Hero's Ring 
+33:Holy Lance 
+57:Holy Rod 
+210:Hyper Wrist 
+112:Hypno Crown 
+54:Ice Rod 
+97:Ice Shield 
+14:Icebrand 
+41:Ichigeki 
+36:Impartisan 
+174:Invisibility Scroll 
+135:Iron Armor 
+111:Iron Helm 
+181:Jeweled Ring 
+42:Kagenui 
+85:Kaiser Knuckles 
+46:Kazekiri 
+134:Kenpo Gi 
+45:Kiku-ichimonji 
+190:Knight's Code 
+38:Kodachi 
+44:Kotetsu 
+37:Kunai 
+132:Leather Armor 
+105:Leather Cap 
+221:Lich Ring 
+26:Lightbringer 
+173:Lightning Scroll 
+235:Longinus 
+145:Luminous Robe 
+63:Magical Brush 
+109:Magus Hat 
+151:Magus Robe 
+60:Magus Rod 
+2:Main gauche 
+6:Man-Eater 
+48:Masamune 
+211:Master's Scroll 
+219:Memento Ring 
+218:Merit Award 
+83:Metal Knuckles 
+156:Minerva Bustier 
+224:Miracle Shoes 
+142:Mirage Vest 
+222:Molulu's Charm 
+159:Moogle Suit 
+69:Moonring Blade 
+70:Morning Star 
+49:Murakumo 
+47:Murasame 
+203:Muscle Belt 
+50:Mutsunokami 
+121:Mystery Veil 
+84:Mythril Claws 
+184:Mythril Glove 
+116:Mythril Helm 
+1:Mythril Knife 
+140:Mythril Mail 
+52:Mythril Rod 
+92:Mythril Shield 
+29:Mythril Spear 
+10:Mythril Sword 
+137:Mythril Vest 
+138:Ninja Gear 
+163:Noiseblaster 
+160:Nutkin Suit 
+127:Oath Veil 
+234:Oborozuki 
+23:Organyx 
+103:Paladin's Shield 
+32:Partisan 
+178:Peace Ring 
+67:Pinwheel 
+107:Plumed Hat 
+56:Poison Rod 
+144:Power Sash 
+212:Prayer Beads 
+113:Priest's Miter 
+193:Princess Ring 
+185:Protect Ring 
+59:Punisher 
+35:Radiant Lance 
+27:Ragnarok 
+64:Rainbow Brush 
+120:Red Cap 
+147:Red Jacket 
+155:Reed Cloak 
+187:Reflect Ring 
+153:Regal Gown 
+202:Ribbon 
+72:Rising Sun 
+123:Royal Crown 
+12:Rune Blade 
+220:Safety Bit 
+39:Sakura 
+40:Sasuke 
+131:Saucer 
+237:Save the Queen 
+243:Scorpion Tail 
+175:Shadow Scroll 
+65:Shuriken 
+136:Silk Robe 
+176:Silver Spectacles 
+75:Sniper 
+227:Sniper Eye 
+162:Snow Scarf 
+22:Soul Sabre 
+216:Soul of Thamasa 
+230:Sprint Shoes 
+177:Star Pendant 
+238:Stardust Rod 
+17:Stoneblade 
+7:Swordbreaker 
+157:Tabby Suit 
+199:Thief's Bracer 
+4:Thief's Knife 
+130:Thornlet 
+15:Thunder Blade 
+55:Thunder Rod 
+98:Thunder Shield 
+117:Tiara 
+119:Tiger Mask 
+89:Tigerfang 
+229:Tintinnabulum 
+101:Tortoise Shield 
+30:Trident 
+115:Twist Headband 
+28:Ultima Weapon 
+9:Valiant Knife 
+86:Venom Claws 
+80:Viper Darts 
+223:Ward Bangle 
+172:Water Scroll 
+180:White Cape 
+139:White Dress 
+76:Wing Edge 
+233:Zanmato 
+25:Zantetsuken 
+192:Zephyr Cloak 
+232:Zwill Crossblade 
+</DropDownList>
+                  <LastState Value="230" RealAddress="0241ADBF"/>
+                  <VariableType>Byte</VariableType>
+                  <Address>+4</Address>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>79</ID>
+                  <Description>"Relic 2"</Description>
+                  <DropDownList ReadOnly="1" DisplayValueAsItem="1">94:Aegis Shield 
+169:Air Anchor 
+3:Air Knife 
+225:Alarm Earring 
+179:Amulet 
+239:Angel Brush 
+189:Angel Ring 
+188:Angel Wings 
+231:Apocalipse 
+43:Ashura 
+5:Assassin's Dagger 
+170:Auto Crossbow 
+110:Bandana 
+183:Barrier Ring 
+16:Bastard Sword 
+161:Behemoth Suit 
+108:Beret 
+198:Berserker Ring 
+164:Bioblaster 
+213:Black Belt 
+125:Black Cowl 
+150:Black Garb 
+197:Blizzard Orb 
+18:Blood Sword 
+74:Bone Club 
+244:Bone Wrist 
+71:Boomerang 
+207:Brigand's Glove 
+90:Buckler 
+87:Burning Fist 
+77:Cards 
+128:Cat-Ear Hood 
+206:Celestriad 
+68:Chain Flail 
+166:Chainsaw 
+61:Chocobo Brush 
+158:Chocobo Suit 
+122:Circlet 
+133:Cotton Robe 
+126:Crystal Helm 
+152:Crystal Mail 
+204:Crystal Orb 
+99:Crystal Shield 
+20:Crystal Sword 
+194:Cursed Ring 
+102:Cursed Shield 
+62:Da Vinci Brush 
+0:Dagger 
+78:Darts 
+79:Death Tarot 
+167:Debilitator 
+149:Diamond Armor 
+124:Diamond Helm 
+95:Diamond Shield 
+146:Diamond Vest 
+81:Dice 
+88:Dragon Claws 
+217:Dragon Horn 
+191:Dragoon Boots 
+168:Drill 
+242:Dueling Mask 
+195:Earring 
+19:Enhancer 
+24:Excalibur 
+245:Excalipoor 
+182:Fairy Ring 
+215:Fake Mustache 
+21:Falchion 
+240:Final Trump 
+82:Fixed Dice 
+53:Flame Rod 
+171:Flame Scroll 
+96:Flame Shield 
+13:Flametongue 
+165:Flash 
+148:Force Armor 
+104:Force Shield 
+66:Fuma Shuriken 
+141:Gaia Gear 
+226:Gale Hairpin 
+208:Gauntlet 
+154:Genji Armor 
+209:Genji Glove 
+129:Genji Helm 
+100:Genji Shield 
+196:Gigas Glove 
+8:Gladius 
+236:Godhand 
+205:Gold Hairpin 
+143:Golden Armor 
+118:Golden Helm 
+93:Golden Shield 
+34:Golden Spear 
+58:Gravity Rod 
+11:Great Sword 
+114:Green Beret 
+228:Growth Egg 
+200:Guard Bracelet 
+241:Gungnir 
+106:Hairband 
+73:Hawkeye 
+51:Healing Rod 
+31:Heavy Lance 
+91:Heavy Shield 
+214:Heiji's Jitte 
+186:Hermes Sandals 
+201:Hero's Ring 
+33:Holy Lance 
+57:Holy Rod 
+210:Hyper Wrist 
+112:Hypno Crown 
+54:Ice Rod 
+97:Ice Shield 
+14:Icebrand 
+41:Ichigeki 
+36:Impartisan 
+174:Invisibility Scroll 
+135:Iron Armor 
+111:Iron Helm 
+181:Jeweled Ring 
+42:Kagenui 
+85:Kaiser Knuckles 
+46:Kazekiri 
+134:Kenpo Gi 
+45:Kiku-ichimonji 
+190:Knight's Code 
+38:Kodachi 
+44:Kotetsu 
+37:Kunai 
+132:Leather Armor 
+105:Leather Cap 
+221:Lich Ring 
+26:Lightbringer 
+173:Lightning Scroll 
+235:Longinus 
+145:Luminous Robe 
+63:Magical Brush 
+109:Magus Hat 
+151:Magus Robe 
+60:Magus Rod 
+2:Main gauche 
+6:Man-Eater 
+48:Masamune 
+211:Master's Scroll 
+219:Memento Ring 
+218:Merit Award 
+83:Metal Knuckles 
+156:Minerva Bustier 
+224:Miracle Shoes 
+142:Mirage Vest 
+222:Molulu's Charm 
+159:Moogle Suit 
+69:Moonring Blade 
+70:Morning Star 
+49:Murakumo 
+47:Murasame 
+203:Muscle Belt 
+50:Mutsunokami 
+121:Mystery Veil 
+84:Mythril Claws 
+184:Mythril Glove 
+116:Mythril Helm 
+1:Mythril Knife 
+140:Mythril Mail 
+52:Mythril Rod 
+92:Mythril Shield 
+29:Mythril Spear 
+10:Mythril Sword 
+137:Mythril Vest 
+138:Ninja Gear 
+163:Noiseblaster 
+160:Nutkin Suit 
+127:Oath Veil 
+234:Oborozuki 
+23:Organyx 
+103:Paladin's Shield 
+32:Partisan 
+178:Peace Ring 
+67:Pinwheel 
+107:Plumed Hat 
+56:Poison Rod 
+144:Power Sash 
+212:Prayer Beads 
+113:Priest's Miter 
+193:Princess Ring 
+185:Protect Ring 
+59:Punisher 
+35:Radiant Lance 
+27:Ragnarok 
+64:Rainbow Brush 
+120:Red Cap 
+147:Red Jacket 
+155:Reed Cloak 
+187:Reflect Ring 
+153:Regal Gown 
+202:Ribbon 
+72:Rising Sun 
+123:Royal Crown 
+12:Rune Blade 
+220:Safety Bit 
+39:Sakura 
+40:Sasuke 
+131:Saucer 
+237:Save the Queen 
+243:Scorpion Tail 
+175:Shadow Scroll 
+65:Shuriken 
+136:Silk Robe 
+176:Silver Spectacles 
+75:Sniper 
+227:Sniper Eye 
+162:Snow Scarf 
+22:Soul Sabre 
+216:Soul of Thamasa 
+230:Sprint Shoes 
+177:Star Pendant 
+238:Stardust Rod 
+17:Stoneblade 
+7:Swordbreaker 
+157:Tabby Suit 
+199:Thief's Bracer 
+4:Thief's Knife 
+130:Thornlet 
+15:Thunder Blade 
+55:Thunder Rod 
+98:Thunder Shield 
+117:Tiara 
+119:Tiger Mask 
+89:Tigerfang 
+229:Tintinnabulum 
+101:Tortoise Shield 
+30:Trident 
+115:Twist Headband 
+28:Ultima Weapon 
+9:Valiant Knife 
+86:Venom Claws 
+80:Viper Darts 
+223:Ward Bangle 
+172:Water Scroll 
+180:White Cape 
+139:White Dress 
+76:Wing Edge 
+233:Zanmato 
+25:Zantetsuken 
+192:Zephyr Cloak 
+232:Zwill Crossblade 
+</DropDownList>
+                  <LastState Value="209" RealAddress="0241ADC0"/>
+                  <VariableType>Byte</VariableType>
+                  <Address>+5</Address>
+                </CheatEntry>
+              </CheatEntries>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>94</ID>
+          <Description>" &lt;Don't change *HERO* , *NAME* and *MAGIC*&gt;"</Description>
+          <LastState Value="" RealAddress="00000000"/>
+          <Color>4080FF</Color>
+          <GroupHeader>1</GroupHeader>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>95</ID>
+      <Description>" &lt;based on vng21092 and cake-san's work, this just a rearrangement&gt;"</Description>
+      <LastState Value="" RealAddress="00000000"/>
+      <Color>4080FF</Color>
+      <GroupHeader>1</GroupHeader>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols>
+    <SymbolEntry>
+      <Name>__</Name>
+      <Address>013A0000</Address>
+    </SymbolEntry>
+  </UserdefinedSymbols>
+</CheatTable>

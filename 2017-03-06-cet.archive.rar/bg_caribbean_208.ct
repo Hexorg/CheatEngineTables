@@ -1,0 +1,1920 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="18">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>116</ID>
+      <Description>"[X] &lt;== Blood &amp; Gold: Caribbean! v2.000 Steam Script v2.0 AOB"</Description>
+      <Options moHideChildren="1"/>
+      <LastState Activated="1"/>
+      <Color>FF0000</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>{
+===========================================
+ Game Title    : Blood &amp; Gold - Caribbean!
+ Game Version  : 2.000 (Steam)
+ Game Sponsor  : fennix102
+ Process Name  : bg_caribbean.exe
+ Script Version: 2.0
+ CE Version    : 6.4
+ Release date  : 14-Dec-2015
+ Author        : Recifense
+ History:
+ 19-Jun-14: First Release.
+ 19-Oct-14: Release for version 0.910-Beta.
+ 25-Feb-15: Release for version 1.000.
+ 28-Mar-15: Adding pointer to Selected Troop.
+ 14-Dec-15: Release for version 2.000 (BG).
+ Features:
+ - God Mode (Army and Fleet)
+ - Thaler (Money)
+ - Unlimited Ammo
+ - Inventory Items (full)
+ - Some pointers
+===========================================
+}
+
+//=========================================
+// Definitions
+define(LUDO,"bg_caribbean.exe")
+
+//=========================================
+// Constants used in the script (that can be changed)
+define(ctCE64,(float)6.4)
+define(ctMMON,#164000)     // Minimum Money
+
+//=========================================
+[ENABLE]
+//=========================================
+alloc(MyCode,4096,LUDO)
+//=========================================
+
+AOBScan(aobMPHO,d9 85 14 60 00 00 d9 86 1c 02 00 00 da e9 df e0 f6 c4 44 0f)
+AOBScan(aobMPIO,8b 92 f0 40 01 00 8b 94 02 c0 02 00 00 89 91 34 06 00 00 8b)
+AOBScan(aobGMDA,d9 96 14 60 00 00 d9 5c 24 10 d9 44 24 10 dd 1c 24 e8 ?? ??)
+AOBScan(aobMOAO,81 e2 ff 00 00 00 2b c2 01 07 8b ce e8 ?? ?? ?? ?? 8b 4c 24 2c)
+AOBScan(aobMOIM,8b 4f 04 81 e1 ff 00 00 00 2b c1 50 68 ?? ?? ?? ?? 8d 94 24)
+AOBScan(aobMPHE,d9 87 14 60 00 00 d9 86 20 02 00 00 da e9 df e0 f6 c4 44 0f)
+AOBScan(aobMPPY,8b 91 58 02 00 00 33 c0 85 d2 ?? ?? 8b 89 4c 02 00 00 f6 41)
+AOBScan(aobGMDS,89 14 c6 8b 49 04 5f 89 4c c6 04 5e c2 08 00 cc cc cc cc cc)
+AOBScan(aobMOST,8b 87 b4 02 00 00 50 8d 4c 24 44 51 b9 ?? ?? ?? ?? e8 ?? ??)
+
+//=========================================
+// Declaration section
+label(_MonPlayerHero)
+label(_BackMPH)
+label(_ExitMPH)
+label(_MonPlayerInfo)
+label(_BackMPI)
+label(_ExitMPI)
+label(_GodModeArmy)
+label(_GodMA00)
+label(_BackGMA)
+label(_ExitGMA)
+label(_MonAmmo)
+label(_MonAO00)
+label(_BackMAO)
+label(_ExitMAO)
+label(_MonItem)
+label(_BackMIM)
+label(_ExitMIM)
+label(_MonPlayerHorse)
+label(_BackMHE)
+label(_ExitMHE)
+label(_MonPlayerParty)
+label(_BackMPP)
+label(_ExitMPP)
+label(_GodModeShip)
+label(_GodMS00)
+label(_BackGMS)
+label(_ExitGMS)
+label(_MonSelTroop)
+label(_BackMST)
+label(_ExitMST)
+label(iEnableGMD)
+label(iEnableMMM)
+label(iEnableMAO)
+label(iEnableMIM)
+label(iPlayerID)
+label(iShipID)
+label(pSel)
+label(pUnitHP)
+label(pUnitInfo)
+label(pParty)
+label(pArmy)
+label(pFleet)
+label(pTroop)
+
+//=========================================
+// Registering Symbols
+registersymbol(MyCode)
+registersymbol(iEnableGMD)
+registersymbol(iEnableMMM)
+registersymbol(iEnableMAO)
+registersymbol(iEnableMIM)
+registersymbol(iPlayerID)
+registersymbol(iShipID)
+registersymbol(pSel)
+registersymbol(pUnitHP)
+registersymbol(pUnitInfo)
+registersymbol(pParty)
+registersymbol(pArmy)
+registersymbol(pFleet)
+registersymbol(pTroop)
+
+registersymbol(aobMPHO)
+registersymbol(aobMPIO)
+registersymbol(aobGMDA)
+registersymbol(aobMOAO)
+registersymbol(aobMOIM)
+registersymbol(aobMPHE)
+registersymbol(aobMPPY)
+registersymbol(aobGMDS)
+registersymbol(aobMOST)
+
+//=========================================
+MyCode:
+//========================================= 1.0
+// While HP BAR is visible
+_MonPlayerHero:
+ mov [pUnitHP],ebp
+
+ cmp dword ptr [iEnableGMD],0
+ je _ExitMPH                       // Jump if feature is disabled
+
+ mov eax,[ebp+00006010]            // Get max HP
+ mov [ebp+00006014],eax            // Upd Cur HP
+ mov [ebp+0000600c],eax            // Upd HP
+
+_ExitMPH:
+ fld dword ptr [ebp+00006014]      // Original code (rd cHP)
+ jmp _BackMPH                      // Back to main code
+
+//========================================= 2.0
+// On the status screen
+_MonPlayerInfo:
+ mov edx,[edx+000140F0]            // Original code
+ mov [pUnitInfo],edx
+
+ cmp dword ptr [iEnableMMM],0
+ je _ExitMPI                       // Jump if feature is disabled
+
+ cmp dword ptr [edx+000005fc],ctMMON // Thaler
+ jge _ExitMPI
+
+ mov dword ptr [edx+000005fc],ctMMON
+
+_ExitMPI:
+ jmp _BackMPI                      // Back to main code
+
+//========================================= 1.0
+// During battle
+_GodModeArmy:
+ cmp dword ptr [iEnableGMD],0
+ je _ExitGMA                       // Jump if feature is disabled
+
+ cmp esi,[pUnitHP]
+ je _GodMA00
+
+ cmp dword ptr [esi+000007b4],0
+ jne _ExitGMA
+
+_GodMA00:
+ fstp st(0)
+
+ fld dword ptr [esi+00006010]
+
+_ExitGMA:
+ fst dword ptr [esi+00006014]      // Original code (upd HP)
+ jmp _BackGMA                      // Back to main code
+
+//========================================= 1.0
+// When using ammo
+_MonAmmo:
+ cmp dword ptr [iEnableMAO],0
+ je _ExitMAO                       // Jump if feature is disabled
+
+ mov edx,[esp+10]
+ cmp edx,[pUnitHP]
+ je _MonAO00
+
+ cmp edx,[esp+0c]
+ jne _ExitMAO
+
+ cmp dword ptr [edx+000007b4],0
+ jne _ExitMAO
+
+_MonAO00:
+ xor edx,edx
+ mov [esi+04],dl                   // Make spent_ammo = 0
+ mov [esi-04],dl                   // Reload ammo
+
+_ExitMAO:
+ mov edx,[esi+04]                  // Restore ECX
+ and edx,000000FF                  // Original code
+ jmp _BackMAO                      // Back to main code
+
+//========================================= 1.0
+// On inventory
+_MonItem:
+ cmp dword ptr [iEnableMIM],0
+ je _ExitMIM                       // Jump if feature is disabled
+
+ xor ecx,ecx
+ mov [edi+04],cl                   // Make consumed_qtty = 0
+
+_ExitMIM:
+ mov ecx,[edi+04]                  // Restore ECX
+ and ecx,000000FF                  // Original code
+ jmp _BackMIM                      // Back to main code
+
+//========================================= 1.0
+// While HP BAR is visible
+_MonPlayerHorse:
+ mov [pSel],edi
+
+ cmp dword ptr [iEnableGMD],0
+ je _ExitMHE                       // Jump if feature is disabled
+
+ mov eax,[edi+00006010]            // Get max HP
+ mov [edi+00006014],eax            // Upd Cur HP
+ mov [edi+0000600C],eax            // Upd HP
+
+_ExitMHE:
+ fld dword ptr [edi+00006014]      // Original code (rds cHP)
+ jmp _BackMHE                      // Back to main code
+
+//========================================= NHP
+// Browsing Party Windows
+_MonPlayerParty:
+ mov [pParty],ecx
+
+ mov edx,[ecx+0000024C]
+ mov [pArmy],edx
+
+ mov edx,[ecx+0000539c]
+ mov [pFleet],edx
+
+ test edx,edx
+ jz _ExitMPP
+
+ mov edx,[edx+00000d28]
+ mov [iShipID],edx
+
+_ExitMPP:
+ mov edx,[ecx+00000258]            // Original code
+ jmp _BackMPP                      // Back to main code
+
+//========================================= 1.0
+// During battle
+_GodModeShip:
+ mov ecx,[ecx+04]                  // Original code
+
+ cmp dword ptr [iEnableGMD],0
+ je _ExitGMS                       // Jump if feature is disabled
+
+ push ecx
+ mov ecx,[esi+60]
+ cmp ecx,[iShipID]
+ pop ecx
+ jne _ExitGMS
+
+ cmp edx,[esi+eax*8]
+ jns _GodMS00
+
+ mov edx,[esi+eax*8]
+
+_GodMS00:
+ cmp ecx,[esi+eax*8+04]
+ jns _ExitGMS
+
+ mov ecx,[esi+eax*8+04]
+
+_ExitGMS:
+ mov [esi+eax*8],edx               // Original code (upd values)
+ jmp _BackGMS                      // Back to main code
+
+//========================================= S2.0
+// When looking in the troop skill
+_MonSelTroop:
+ mov [pTroop],edi
+
+_ExitMST:
+ mov eax,[edi+000002B4]            // Original code (rd cXP)
+ jmp _BackMST                      // Back to main code
+
+//=========================================
+ db '===================================================&gt;'
+ db 'CE6.4 Script by Recifense 032815'
+//=========================================
+// Variables
+iEnableGMD:
+ dd 0
+iEnableMMM:
+ dd 0
+iEnableMAO:
+ dd 0
+iEnableMIM:
+ dd 0
+iPlayerID:
+ dd 0
+iShipID:
+ dd 55555555
+pSel:
+ dd MyCode
+pUnitHP:
+ dd MyCode
+pUnitInfo:
+ dd 0
+pParty:
+ dd 0
+pArmy:
+ dd 0
+pFleet:
+ dd MyCode
+pTroop:
+ dd 0
+
+//=========================================
+// Hacking Points
+aobMPHO:
+ jmp _MonPlayerHero
+ nop
+_BackMPH:
+
+aobMPIO:
+ jmp _MonPlayerInfo
+ nop
+_BackMPI:
+
+aobGMDA:
+ jmp _GodModeArmy
+ nop
+_BackGMA:
+
+aobMOAO:
+ jmp _MonAmmo
+ nop
+_BackMAO:
+
+aobMOIM:
+ jmp _MonItem
+ db 90 90 90 90
+_BackMIM:
+
+aobMPHE:
+ jmp _MonPlayerHorse
+ nop
+_BackMHE:
+
+aobMPPY:
+ jmp _MonPlayerParty
+ nop
+_BackMPP:
+
+aobGMDS:
+ jmp _GodModeShip
+ nop
+_BackGMS:
+
+aobMOST:
+ jmp _MonSelTroop
+ nop
+_BackMST:
+
+//=========================================
+// Script for Restoring Original Codes
+[DISABLE]
+aobMPHO:
+//fld dword ptr [ebp+00006014]
+ db d9 85 14 60 00 00
+
+aobMPIO:
+//mov edx,[edx+000140F0]
+ db 8b 92 f0 40 01 00
+
+aobGMDA:
+//fst dword ptr [esi+00006014]
+ db d9 96 14 60 00 00
+
+aobMOAO:
+//and edx,000000FF
+ db 81 e2 ff 00 00 00
+
+aobMOIM:
+//mov ecx,[edi+04]
+//and ecx,000000FF
+ db 8b 4f 04 81 e1 ff 00 00 00
+
+aobMPHE:
+//fld dword ptr [edi+00006014]
+ db d9 87 14 60 00 00
+
+aobMPPY:
+//mov edx,[ecx+00000258]
+ db 8b 91 58 02 00 00
+
+aobGMDS:
+// mov [esi+eax*8],edx
+// mov ecx,[ecx+04]
+ db 89 14 c6 8b 49 04
+
+aobMOST:
+//mov eax,[edi+000002B4]
+ db 8b 87 b4 02 00 00
+
+//=========================================
+// Deactivating the Enable/Disable scripts
+{$lua}
+getAddressList().getMemoryRecordByID(117).Active=false
+getAddressList().getMemoryRecordByID(118).Active=false
+getAddressList().getMemoryRecordByID(119).Active=false
+getAddressList().getMemoryRecordByID(120).Active=false
+{$asm}
+
+//=========================================
+// Unregistering Symbols
+unregistersymbol(MyCode)
+unregistersymbol(iEnableGMD)
+unregistersymbol(iEnableMMM)
+unregistersymbol(iEnableMAO)
+unregistersymbol(iEnableMIM)
+unregistersymbol(iPlayerID)
+unregistersymbol(iShipID)
+unregistersymbol(pSel)
+unregistersymbol(pUnitHP)
+unregistersymbol(pUnitInfo)
+unregistersymbol(pParty)
+unregistersymbol(pArmy)
+unregistersymbol(pFleet)
+unregistersymbol(pTroop)
+
+unregistersymbol(aobMPHO)
+unregistersymbol(aobMPIO)
+unregistersymbol(aobGMDA)
+unregistersymbol(aobMOAO)
+unregistersymbol(aobMOIM)
+unregistersymbol(aobMPHE)
+unregistersymbol(aobMPPY)
+unregistersymbol(aobGMDS)
+unregistersymbol(aobMOST)
+
+//=========================================
+dealloc(MyCode)
+//============= Scripts End ===============
+
+// ****************************************
+// NOTES
+// ****************************************
+{
+
+}
+
+
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>117</ID>
+          <Description>"[X] &lt;== God Mode --------------------------------------&gt; (HK: CTRL+Insert / CTRL+Delete)"</Description>
+          <LastState Activated="1"/>
+          <Color>008000</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[enable]
+define(test,LUDO)
+
+{$LUA}
+writeInteger("iEnableGMD",1)
+getAddressList().getMemoryRecordByID(117).Color=0x0008000
+{$ASM}
+
+[disable]
+{$LUA}
+writeInteger("iEnableGMD",0)
+getAddressList().getMemoryRecordByID(117).Color=0x0c08000
+{$ASM}
+
+</AssemblerScript>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Activate</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>45</Key>
+              </Keys>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Deactivate</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>46</Key>
+              </Keys>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>118</ID>
+          <Description>"[X] &lt;== Minimum Money -----------------------------&gt; (HK: CTRL+Home / CTRL+End)"</Description>
+          <LastState Activated="1"/>
+          <Color>008000</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[enable]
+define(test,LUDO)
+
+{$LUA}
+writeInteger("iEnableMMM",1)
+getAddressList().getMemoryRecordByID(118).Color=0x0008000
+{$ASM}
+
+[disable]
+{$LUA}
+writeInteger("iEnableMMM",0)
+getAddressList().getMemoryRecordByID(118).Color=0x0c08000
+{$ASM}
+
+</AssemblerScript>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Activate</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Deactivate</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>119</ID>
+          <Description>"[X] &lt;== Unlimited Ammo -----------------------------&gt; (HK: CTRL+Home / CTRL+End)"</Description>
+          <LastState Activated="1"/>
+          <Color>008000</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[enable]
+define(test,LUDO)
+
+{$LUA}
+writeInteger("iEnableMAO",1)
+getAddressList().getMemoryRecordByID(119).Color=0x0008000
+{$ASM}
+
+[disable]
+{$LUA}
+writeInteger("iEnableMAO",0)
+getAddressList().getMemoryRecordByID(119).Color=0x0c08000
+{$ASM}
+
+</AssemblerScript>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Activate</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Deactivate</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>120</ID>
+          <Description>"[X] &lt;== Full Item -----------------------------------------&gt; (HK: CTRL+Page Up / CTRL+Page Down)"</Description>
+          <LastState Activated="0"/>
+          <Color>C08000</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[enable]
+define(test,LUDO)
+
+{$LUA}
+writeInteger("iEnableMIM",1)
+getAddressList().getMemoryRecordByID(120).Color=0x0008000
+{$ASM}
+
+[disable]
+{$LUA}
+writeInteger("iEnableMIM",0)
+getAddressList().getMemoryRecordByID(120).Color=0x0c08000
+{$ASM}
+
+</AssemblerScript>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Activate</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>33</Key>
+              </Keys>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Deactivate</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>34</Key>
+              </Keys>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>121</ID>
+          <Description>"[X] &lt;=================== Player Info =================="</Description>
+          <Options moHideChildren="1"/>
+          <LastState Value="" Activated="1" RealAddress="00000000"/>
+          <Color>404080</Color>
+          <GroupHeader>1</GroupHeader>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>122</ID>
+              <Description>"Name ====&gt;"</Description>
+              <LastState Activated="0" RealAddress="526D8038"/>
+              <Color>0000FF</Color>
+              <VariableType>String</VariableType>
+              <Length>16</Length>
+              <Unicode>0</Unicode>
+              <ZeroTerminate>1</ZeroTerminate>
+              <Address>pUnitInfo</Address>
+              <Offsets>
+                <Offset>14</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>123</ID>
+              <Description>"Current XP ==&gt;"</Description>
+              <LastState Value="147" Activated="0" RealAddress="526D82D8"/>
+              <Color>0000FF</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pUnitInfo</Address>
+              <Offsets>
+                <Offset>2B4</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>124</ID>
+              <Description>"Available Skill Points  ==&gt;"</Description>
+              <LastState Value="0" Activated="0" RealAddress="526D82E0"/>
+              <Color>0000FF</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pUnitInfo</Address>
+              <Offsets>
+                <Offset>2BC</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>125</ID>
+              <Description>"Available Attribute Points  ==&gt;"</Description>
+              <LastState Value="0" Activated="0" RealAddress="526D82E4"/>
+              <Color>0000FF</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pUnitInfo</Address>
+              <Offsets>
+                <Offset>2C0</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>126</ID>
+              <Description>"Available Weapon Points  ==&gt;"</Description>
+              <LastState Value="0" Activated="0" RealAddress="526D82E8"/>
+              <Color>0000FF</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pUnitInfo</Address>
+              <Offsets>
+                <Offset>2C4</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>127</ID>
+              <Description>"Current Money ==&gt;"</Description>
+              <LastState Value="999983409" Activated="0" RealAddress="526D8620"/>
+              <Color>0000FF</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pUnitInfo</Address>
+              <Offsets>
+                <Offset>5FC</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>181</ID>
+              <Description>"STR"</Description>
+              <LastState Value="500" Activated="0" RealAddress="526D8294"/>
+              <Color>0000FF</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pUnitInfo</Address>
+              <Offsets>
+                <Offset>270</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>184</ID>
+              <Description>"AGI"</Description>
+              <LastState Value="500" Activated="0" RealAddress="526D8298"/>
+              <Color>0000FF</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pUnitInfo</Address>
+              <Offsets>
+                <Offset>274</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>182</ID>
+              <Description>"INT"</Description>
+              <LastState Value="500" Activated="0" RealAddress="526D829C"/>
+              <Color>0000FF</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pUnitInfo</Address>
+              <Offsets>
+                <Offset>278</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>183</ID>
+              <Description>"CHA"</Description>
+              <LastState Value="500" Activated="0" RealAddress="526D82A0"/>
+              <Color>0000FF</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pUnitInfo</Address>
+              <Offsets>
+                <Offset>27C</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>185</ID>
+              <Description>"1H"</Description>
+              <LastState Value="699" Activated="0" RealAddress="526D82BC"/>
+              <Color>80000008</Color>
+              <VariableType>Float</VariableType>
+              <Address>pUnitInfo</Address>
+              <Offsets>
+                <Offset>298</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>186</ID>
+              <Description>"2H"</Description>
+              <LastState Value="699" Activated="0" RealAddress="526D82C0"/>
+              <Color>80000008</Color>
+              <VariableType>Float</VariableType>
+              <Address>pUnitInfo</Address>
+              <Offsets>
+                <Offset>29C</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>187</ID>
+              <Description>"Polearms"</Description>
+              <LastState Value="699" Activated="0" RealAddress="526D82C4"/>
+              <Color>80000008</Color>
+              <VariableType>Float</VariableType>
+              <Address>pUnitInfo</Address>
+              <Offsets>
+                <Offset>2A0</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>188</ID>
+              <Description>"Archery"</Description>
+              <LastState Value="699" Activated="0" RealAddress="526D82C8"/>
+              <Color>80000008</Color>
+              <VariableType>Float</VariableType>
+              <Address>pUnitInfo</Address>
+              <Offsets>
+                <Offset>2A4</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>189</ID>
+              <Description>"Crossbow"</Description>
+              <LastState Value="699" Activated="0" RealAddress="526D82CC"/>
+              <Color>80000008</Color>
+              <VariableType>Float</VariableType>
+              <Address>pUnitInfo</Address>
+              <Offsets>
+                <Offset>2A8</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>190</ID>
+              <Description>"Throwing"</Description>
+              <LastState Value="699" Activated="0" RealAddress="526D82D0"/>
+              <Color>80000008</Color>
+              <VariableType>Float</VariableType>
+              <Address>pUnitInfo</Address>
+              <Offsets>
+                <Offset>2AC</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>215</ID>
+              <Description>"Firearms"</Description>
+              <LastState Value="699" Activated="0" RealAddress="526D82D4"/>
+              <Color>80000008</Color>
+              <VariableType>Float</VariableType>
+              <Address>pUnitInfo</Address>
+              <Offsets>
+                <Offset>2B0</Offset>
+              </Offsets>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>216</ID>
+          <Description>"[X] &lt;=============== Inventory =============="</Description>
+          <Options moHideChildren="1"/>
+          <LastState Value="" Activated="0" RealAddress="00000000"/>
+          <Color>000080</Color>
+          <GroupHeader>1</GroupHeader>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>217</ID>
+              <Description>"Inventory Item Slot 1"</Description>
+              <LastState Value="" Activated="0" RealAddress="00000000"/>
+              <Color>80000008</Color>
+              <GroupHeader>1</GroupHeader>
+              <CheatEntries>
+                <CheatEntry>
+                  <ID>147</ID>
+                  <Description>"Item ID (see item_kinds1.txt)"</Description>
+                  <LastState Value="4294967295" Activated="0" RealAddress="526D8320"/>
+                  <Color>0000FF</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pUnitInfo</Address>
+                  <Offsets>
+                    <Offset>2FC</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>218</ID>
+                  <Description>"Item Modifier"</Description>
+                  <LastState Value="0" Activated="0" RealAddress="526D8304"/>
+                  <Color>0000FF</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pUnitInfo</Address>
+                  <Offsets>
+                    <Offset>2E0</Offset>
+                  </Offsets>
+                </CheatEntry>
+              </CheatEntries>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>219</ID>
+              <Description>"Inventory Item Slot 2"</Description>
+              <LastState Value="" Activated="0" RealAddress="00000000"/>
+              <Color>80000008</Color>
+              <GroupHeader>1</GroupHeader>
+              <CheatEntries>
+                <CheatEntry>
+                  <ID>220</ID>
+                  <Description>"Item ID (see item_kinds1.txt)"</Description>
+                  <LastState Value="4294967295" Activated="0" RealAddress="526D8328"/>
+                  <Color>0000FF</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pUnitInfo</Address>
+                  <Offsets>
+                    <Offset>304</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>221</ID>
+                  <Description>"Item Modifier"</Description>
+                  <LastState Value="0" Activated="0" RealAddress="526D832C"/>
+                  <Color>0000FF</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pUnitInfo</Address>
+                  <Offsets>
+                    <Offset>308</Offset>
+                  </Offsets>
+                </CheatEntry>
+              </CheatEntries>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>222</ID>
+              <Description>"Inventory Item Slot 3"</Description>
+              <LastState Value="" Activated="0" RealAddress="00000000"/>
+              <Color>80000008</Color>
+              <GroupHeader>1</GroupHeader>
+              <CheatEntries>
+                <CheatEntry>
+                  <ID>223</ID>
+                  <Description>"Item ID (see item_kinds1.txt)"</Description>
+                  <LastState Value="4294967295" Activated="0" RealAddress="526D8330"/>
+                  <Color>0000FF</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pUnitInfo</Address>
+                  <Offsets>
+                    <Offset>30C</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>224</ID>
+                  <Description>"Item Modifier"</Description>
+                  <LastState Value="0" Activated="0" RealAddress="526D8334"/>
+                  <Color>0000FF</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pUnitInfo</Address>
+                  <Offsets>
+                    <Offset>310</Offset>
+                  </Offsets>
+                </CheatEntry>
+              </CheatEntries>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>148</ID>
+              <Description>"Inventory Item Slot 4"</Description>
+              <LastState Value="" Activated="0" RealAddress="00000000"/>
+              <Color>80000008</Color>
+              <GroupHeader>1</GroupHeader>
+              <CheatEntries>
+                <CheatEntry>
+                  <ID>149</ID>
+                  <Description>"Item ID (see item_kinds1.txt)"</Description>
+                  <LastState Value="4294967295" Activated="0" RealAddress="526D8338"/>
+                  <Color>0000FF</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pUnitInfo</Address>
+                  <Offsets>
+                    <Offset>314</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>150</ID>
+                  <Description>"Item Modifier"</Description>
+                  <LastState Value="0" Activated="0" RealAddress="526D833C"/>
+                  <Color>0000FF</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pUnitInfo</Address>
+                  <Offsets>
+                    <Offset>318</Offset>
+                  </Offsets>
+                </CheatEntry>
+              </CheatEntries>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>151</ID>
+              <Description>"Inventory Item Slot 5"</Description>
+              <LastState Value="" Activated="0" RealAddress="00000000"/>
+              <Color>80000008</Color>
+              <GroupHeader>1</GroupHeader>
+              <CheatEntries>
+                <CheatEntry>
+                  <ID>152</ID>
+                  <Description>"Item ID (see item_kinds1.txt)"</Description>
+                  <LastState Value="4294967295" Activated="0" RealAddress="526D8340"/>
+                  <Color>0000FF</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pUnitInfo</Address>
+                  <Offsets>
+                    <Offset>31C</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>153</ID>
+                  <Description>"Item Modifier"</Description>
+                  <LastState Value="0" Activated="0" RealAddress="526D8344"/>
+                  <Color>0000FF</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pUnitInfo</Address>
+                  <Offsets>
+                    <Offset>320</Offset>
+                  </Offsets>
+                </CheatEntry>
+              </CheatEntries>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>154</ID>
+              <Description>"Inventory Item Slot 6"</Description>
+              <LastState Value="" Activated="0" RealAddress="00000000"/>
+              <Color>80000008</Color>
+              <GroupHeader>1</GroupHeader>
+              <CheatEntries>
+                <CheatEntry>
+                  <ID>155</ID>
+                  <Description>"Item ID (see item_kinds1.txt)"</Description>
+                  <LastState Value="4294967295" Activated="0" RealAddress="526D8348"/>
+                  <Color>0000FF</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pUnitInfo</Address>
+                  <Offsets>
+                    <Offset>324</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>156</ID>
+                  <Description>"Item Modifier"</Description>
+                  <LastState Value="0" Activated="0" RealAddress="526D834C"/>
+                  <Color>0000FF</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pUnitInfo</Address>
+                  <Offsets>
+                    <Offset>328</Offset>
+                  </Offsets>
+                </CheatEntry>
+              </CheatEntries>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>157</ID>
+              <Description>"Inventory Item Slot 7"</Description>
+              <LastState Value="" Activated="0" RealAddress="00000000"/>
+              <Color>80000008</Color>
+              <GroupHeader>1</GroupHeader>
+              <CheatEntries>
+                <CheatEntry>
+                  <ID>158</ID>
+                  <Description>"Item ID (see item_kinds1.txt)"</Description>
+                  <LastState Value="4294967295" Activated="0" RealAddress="526D8350"/>
+                  <Color>0000FF</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pUnitInfo</Address>
+                  <Offsets>
+                    <Offset>32C</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>159</ID>
+                  <Description>"Item Modifier"</Description>
+                  <LastState Value="100" Activated="0" RealAddress="526D8354"/>
+                  <Color>0000FF</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pUnitInfo</Address>
+                  <Offsets>
+                    <Offset>330</Offset>
+                  </Offsets>
+                </CheatEntry>
+              </CheatEntries>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>160</ID>
+              <Description>"Inventory Item Slot 8"</Description>
+              <LastState Value="" Activated="0" RealAddress="00000000"/>
+              <Color>80000008</Color>
+              <GroupHeader>1</GroupHeader>
+              <CheatEntries>
+                <CheatEntry>
+                  <ID>161</ID>
+                  <Description>"Item ID (see item_kinds1.txt)"</Description>
+                  <LastState Value="4294967295" Activated="0" RealAddress="526D8358"/>
+                  <Color>0000FF</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pUnitInfo</Address>
+                  <Offsets>
+                    <Offset>334</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>162</ID>
+                  <Description>"Item Modifier"</Description>
+                  <LastState Value="0" Activated="0" RealAddress="526D835C"/>
+                  <Color>0000FF</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pUnitInfo</Address>
+                  <Offsets>
+                    <Offset>338</Offset>
+                  </Offsets>
+                </CheatEntry>
+              </CheatEntries>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>163</ID>
+              <Description>"Inventory Item Slot 9"</Description>
+              <LastState Value="" Activated="0" RealAddress="00000000"/>
+              <Color>80000008</Color>
+              <GroupHeader>1</GroupHeader>
+              <CheatEntries>
+                <CheatEntry>
+                  <ID>164</ID>
+                  <Description>"Item ID (see item_kinds1.txt)"</Description>
+                  <LastState Value="4294967295" Activated="0" RealAddress="526D8360"/>
+                  <Color>0000FF</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pUnitInfo</Address>
+                  <Offsets>
+                    <Offset>33C</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>225</ID>
+                  <Description>"Item Modifier"</Description>
+                  <LastState Value="0" Activated="0" RealAddress="526D8364"/>
+                  <Color>0000FF</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pUnitInfo</Address>
+                  <Offsets>
+                    <Offset>340</Offset>
+                  </Offsets>
+                </CheatEntry>
+              </CheatEntries>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>141</ID>
+          <Description>"[X] &lt;================ Selected Troop Info  ============="</Description>
+          <Options moHideChildren="1"/>
+          <LastState Value="" Activated="0" RealAddress="00000000"/>
+          <Color>404080</Color>
+          <GroupHeader>1</GroupHeader>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>142</ID>
+              <Description>"Name ====&gt;"</Description>
+              <LastState Activated="0" RealAddress="526D8038"/>
+              <Color>0000FF</Color>
+              <VariableType>String</VariableType>
+              <Length>32</Length>
+              <Unicode>0</Unicode>
+              <ZeroTerminate>1</ZeroTerminate>
+              <Address>pTroop</Address>
+              <Offsets>
+                <Offset>14</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>143</ID>
+              <Description>"Current XP ==&gt;"</Description>
+              <LastState Value="147" Activated="0" RealAddress="526D82D8"/>
+              <Color>0000FF</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pTroop</Address>
+              <Offsets>
+                <Offset>2B4</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>144</ID>
+              <Description>"Available Skill Points  ==&gt;"</Description>
+              <LastState Value="0" Activated="0" RealAddress="526D82E0"/>
+              <Color>0000FF</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pTroop</Address>
+              <Offsets>
+                <Offset>2BC</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>145</ID>
+              <Description>"Available Attribute Points  ==&gt;"</Description>
+              <LastState Value="0" Activated="0" RealAddress="526D82E4"/>
+              <Color>0000FF</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pTroop</Address>
+              <Offsets>
+                <Offset>2C0</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>146</ID>
+              <Description>"Available Weapon Points  ==&gt;"</Description>
+              <LastState Value="0" Activated="0" RealAddress="526D82E8"/>
+              <Color>0000FF</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pTroop</Address>
+              <Offsets>
+                <Offset>2C4</Offset>
+              </Offsets>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>226</ID>
+          <Description>"[X] &lt;=============== Party Info =============="</Description>
+          <Options moHideChildren="1"/>
+          <LastState Value="" Activated="0" RealAddress="00000000"/>
+          <Color>000080</Color>
+          <GroupHeader>1</GroupHeader>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>248</ID>
+              <Description>"Name =====&gt;"</Description>
+              <LastState Activated="0" RealAddress="50B30E78"/>
+              <Color>0000FF</Color>
+              <VariableType>String</VariableType>
+              <Length>16</Length>
+              <Unicode>0</Unicode>
+              <ZeroTerminate>1</ZeroTerminate>
+              <Address>pParty</Address>
+              <Offsets>
+                <Offset>1C</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>227</ID>
+              <Description>"Number of Troops (including player) ==&gt;"</Description>
+              <LastState Value="2" Activated="0" RealAddress="50B310B4"/>
+              <Color>FF00FF</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pParty</Address>
+              <Offsets>
+                <Offset>258</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>228</ID>
+              <Description>"Troop Size  (Index 01) ==&gt;"</Description>
+              <LastState Value="1" Activated="0" RealAddress="526A9698"/>
+              <Color>0000FF</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pParty</Address>
+              <Offsets>
+                <Offset>0</Offset>
+                <Offset>24C</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>229</ID>
+              <Description>"Troop Type (Index 01) ==&gt;"</Description>
+              <LastState Value="0" Activated="0" RealAddress="526A969C"/>
+              <ShowAsSigned>1</ShowAsSigned>
+              <Color>0000FF</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pParty</Address>
+              <Offsets>
+                <Offset>4</Offset>
+                <Offset>24C</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>191</ID>
+              <Description>"Troop Upgrade (Index 01) ==&gt;"</Description>
+              <LastState Value="0" Activated="0" RealAddress="526A96AC"/>
+              <Color>0000FF</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pParty</Address>
+              <Offsets>
+                <Offset>14</Offset>
+                <Offset>24C</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>205</ID>
+              <Description>"Troop Wounded  (Index 01) ==&gt;"</Description>
+              <LastState Value="0" Activated="0" RealAddress="526A96A8"/>
+              <Color>0000FF</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pParty</Address>
+              <Offsets>
+                <Offset>10</Offset>
+                <Offset>24C</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>230</ID>
+              <Description>"Troop Size  (Index 02) ==&gt;"</Description>
+              <LastState Value="3" Activated="0" RealAddress="526A96B8"/>
+              <Color>408000</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pParty</Address>
+              <Offsets>
+                <Offset>20</Offset>
+                <Offset>24C</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>231</ID>
+              <Description>"Troop Type (Index 02) ==&gt;"</Description>
+              <LastState Value="172" Activated="0" RealAddress="526A96BC"/>
+              <ShowAsSigned>1</ShowAsSigned>
+              <Color>408000</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pParty</Address>
+              <Offsets>
+                <Offset>24</Offset>
+                <Offset>24C</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>192</ID>
+              <Description>"Troop Upgrade  (Index 02) ==&gt;"</Description>
+              <LastState Value="0" Activated="0" RealAddress="526A96CC"/>
+              <Color>408000</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pParty</Address>
+              <Offsets>
+                <Offset>34</Offset>
+                <Offset>24C</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>206</ID>
+              <Description>"Troop Wounded  (Index 02) ==&gt;"</Description>
+              <LastState Value="0" Activated="0" RealAddress="526A96C8"/>
+              <Color>408000</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pParty</Address>
+              <Offsets>
+                <Offset>30</Offset>
+                <Offset>24C</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>232</ID>
+              <Description>"Troop Size  (Index 03) ==&gt;"</Description>
+              <LastState Value="0" Activated="0" RealAddress="526A96D8"/>
+              <Color>0000FF</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pParty</Address>
+              <Offsets>
+                <Offset>40</Offset>
+                <Offset>24C</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>233</ID>
+              <Description>"Troop Type (Index 03) ==&gt;"</Description>
+              <LastState Value="-1" Activated="0" RealAddress="526A96DC"/>
+              <ShowAsSigned>1</ShowAsSigned>
+              <Color>0000FF</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pParty</Address>
+              <Offsets>
+                <Offset>44</Offset>
+                <Offset>24C</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>193</ID>
+              <Description>"Troop Upgrade  (Index 03) ==&gt;"</Description>
+              <LastState Value="0" Activated="0" RealAddress="526A96EC"/>
+              <Color>0000FF</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pParty</Address>
+              <Offsets>
+                <Offset>54</Offset>
+                <Offset>24C</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>207</ID>
+              <Description>"Troop Wounded  (Index 03) ==&gt;"</Description>
+              <LastState Value="0" Activated="0" RealAddress="526A96E8"/>
+              <Color>0000FF</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pParty</Address>
+              <Offsets>
+                <Offset>50</Offset>
+                <Offset>24C</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>234</ID>
+              <Description>"Troop Size  (Index 04) ==&gt;"</Description>
+              <LastState Value="0" Activated="0" RealAddress="526A96F8"/>
+              <Color>408000</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pParty</Address>
+              <Offsets>
+                <Offset>60</Offset>
+                <Offset>24C</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>235</ID>
+              <Description>"Troop Type (Index 04) ==&gt;"</Description>
+              <LastState Value="-1" Activated="0" RealAddress="526A96FC"/>
+              <ShowAsSigned>1</ShowAsSigned>
+              <Color>408000</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pParty</Address>
+              <Offsets>
+                <Offset>64</Offset>
+                <Offset>24C</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>194</ID>
+              <Description>"Troop Upgrade  (Index 04) ==&gt;"</Description>
+              <LastState Value="0" Activated="0" RealAddress="526A970C"/>
+              <Color>408000</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pParty</Address>
+              <Offsets>
+                <Offset>74</Offset>
+                <Offset>24C</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>208</ID>
+              <Description>"Troop Wounded  (Index 04) ==&gt;"</Description>
+              <LastState Value="0" Activated="0" RealAddress="526A9708"/>
+              <Color>408000</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pParty</Address>
+              <Offsets>
+                <Offset>70</Offset>
+                <Offset>24C</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>236</ID>
+              <Description>"Troop Size  (Index 05) ==&gt;"</Description>
+              <LastState Value="0" Activated="0" RealAddress="526A9718"/>
+              <Color>0000FF</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pParty</Address>
+              <Offsets>
+                <Offset>80</Offset>
+                <Offset>24C</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>237</ID>
+              <Description>"Troop Type (Index 05) ==&gt;"</Description>
+              <LastState Value="-1" Activated="0" RealAddress="526A971C"/>
+              <ShowAsSigned>1</ShowAsSigned>
+              <Color>0000FF</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pParty</Address>
+              <Offsets>
+                <Offset>84</Offset>
+                <Offset>24C</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>195</ID>
+              <Description>"Troop Upgrade  (Index 05) ==&gt;"</Description>
+              <LastState Value="0" Activated="0" RealAddress="526A972C"/>
+              <Color>0000FF</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pParty</Address>
+              <Offsets>
+                <Offset>94</Offset>
+                <Offset>24C</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>209</ID>
+              <Description>"Troop Wounded  (Index 05) ==&gt;"</Description>
+              <LastState Value="0" Activated="0" RealAddress="526A9728"/>
+              <Color>0000FF</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pParty</Address>
+              <Offsets>
+                <Offset>90</Offset>
+                <Offset>24C</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>238</ID>
+              <Description>"Troop Size  (Index 06) ==&gt;"</Description>
+              <LastState Value="0" Activated="0" RealAddress="526A9738"/>
+              <Color>408000</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pParty</Address>
+              <Offsets>
+                <Offset>A0</Offset>
+                <Offset>24C</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>239</ID>
+              <Description>"Troop Type (Index 06) ==&gt;"</Description>
+              <LastState Value="-1" Activated="0" RealAddress="526A973C"/>
+              <ShowAsSigned>1</ShowAsSigned>
+              <Color>408000</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pParty</Address>
+              <Offsets>
+                <Offset>A4</Offset>
+                <Offset>24C</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>196</ID>
+              <Description>"Troop Upgrade  (Index 06) ==&gt;"</Description>
+              <LastState Value="0" Activated="0" RealAddress="526A974C"/>
+              <Color>408000</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pParty</Address>
+              <Offsets>
+                <Offset>B4</Offset>
+                <Offset>24C</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>210</ID>
+              <Description>"Troop Wounded  (Index 06) ==&gt;"</Description>
+              <LastState Value="0" Activated="0" RealAddress="526A9748"/>
+              <Color>408000</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pParty</Address>
+              <Offsets>
+                <Offset>B0</Offset>
+                <Offset>24C</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>240</ID>
+              <Description>"Troop Size  (Index 07) ==&gt;"</Description>
+              <LastState Value="0" Activated="0" RealAddress="526A9758"/>
+              <Color>0000FF</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pParty</Address>
+              <Offsets>
+                <Offset>C0</Offset>
+                <Offset>24C</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>241</ID>
+              <Description>"Troop Type (Index 07) ==&gt;"</Description>
+              <LastState Value="-1" Activated="0" RealAddress="526A975C"/>
+              <ShowAsSigned>1</ShowAsSigned>
+              <Color>0000FF</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pParty</Address>
+              <Offsets>
+                <Offset>C4</Offset>
+                <Offset>24C</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>242</ID>
+              <Description>"Troop Upgrade (Index 07) ==&gt;"</Description>
+              <LastState Value="0" Activated="0" RealAddress="526A976C"/>
+              <Color>0000FF</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pParty</Address>
+              <Offsets>
+                <Offset>D4</Offset>
+                <Offset>24C</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>243</ID>
+              <Description>"Troop Wounded  (Index 07) ==&gt;"</Description>
+              <LastState Value="0" Activated="0" RealAddress="526A9768"/>
+              <Color>0000FF</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pParty</Address>
+              <Offsets>
+                <Offset>D0</Offset>
+                <Offset>24C</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>244</ID>
+              <Description>"Troop Size  (Index 08) ==&gt;"</Description>
+              <LastState Value="0" Activated="0" RealAddress="526A9778"/>
+              <Color>008000</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pParty</Address>
+              <Offsets>
+                <Offset>E0</Offset>
+                <Offset>24C</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>245</ID>
+              <Description>"Troop Type (Index 08) ==&gt;"</Description>
+              <LastState Value="-1" Activated="0" RealAddress="526A977C"/>
+              <ShowAsSigned>1</ShowAsSigned>
+              <Color>008000</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pParty</Address>
+              <Offsets>
+                <Offset>E4</Offset>
+                <Offset>24C</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>197</ID>
+              <Description>"Troop Upgrade (Index 08) ==&gt;"</Description>
+              <LastState Value="0" Activated="0" RealAddress="526A978C"/>
+              <Color>008000</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pParty</Address>
+              <Offsets>
+                <Offset>F4</Offset>
+                <Offset>24C</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>211</ID>
+              <Description>"Troop Wounded  (Index 08) ==&gt;"</Description>
+              <LastState Value="0" Activated="0" RealAddress="526A9788"/>
+              <Color>008000</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pParty</Address>
+              <Offsets>
+                <Offset>F0</Offset>
+                <Offset>24C</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>246</ID>
+              <Description>"Troop Size  (Index 09) ==&gt;"</Description>
+              <LastState Value="0" Activated="0" RealAddress="526A9798"/>
+              <Color>0000FF</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pParty</Address>
+              <Offsets>
+                <Offset>100</Offset>
+                <Offset>24C</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>200</ID>
+              <Description>"Troop Type (Index 09) ==&gt;"</Description>
+              <LastState Value="-1" Activated="0" RealAddress="526A979C"/>
+              <ShowAsSigned>1</ShowAsSigned>
+              <Color>0000FF</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pParty</Address>
+              <Offsets>
+                <Offset>104</Offset>
+                <Offset>24C</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>201</ID>
+              <Description>"Troop Upgrade  (Index 09) ==&gt;"</Description>
+              <LastState Value="0" Activated="0" RealAddress="526A97AC"/>
+              <Color>0000FF</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pParty</Address>
+              <Offsets>
+                <Offset>114</Offset>
+                <Offset>24C</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>212</ID>
+              <Description>"Troop Wounded  (Index 09) ==&gt;"</Description>
+              <LastState Value="0" Activated="0" RealAddress="526A97A8"/>
+              <Color>0000FF</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pParty</Address>
+              <Offsets>
+                <Offset>110</Offset>
+                <Offset>24C</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>199</ID>
+              <Description>"Troop Size  (Index 10) ==&gt;"</Description>
+              <LastState Value="0" Activated="0" RealAddress="526A97B8"/>
+              <Color>008000</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pParty</Address>
+              <Offsets>
+                <Offset>120</Offset>
+                <Offset>24C</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>247</ID>
+              <Description>"Troop Type (Index 10) ==&gt;"</Description>
+              <LastState Value="-1" Activated="0" RealAddress="526A97BC"/>
+              <ShowAsSigned>1</ShowAsSigned>
+              <Color>008000</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pParty</Address>
+              <Offsets>
+                <Offset>124</Offset>
+                <Offset>24C</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>198</ID>
+              <Description>"Troop Upgrade  (Index 10) ==&gt;"</Description>
+              <LastState Value="0" Activated="0" RealAddress="526A97CC"/>
+              <Color>008000</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pParty</Address>
+              <Offsets>
+                <Offset>134</Offset>
+                <Offset>24C</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>213</ID>
+              <Description>"Troop Wounded  (Index 10) ==&gt;"</Description>
+              <LastState Value="0" Activated="0" RealAddress="526A97C8"/>
+              <Color>008000</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pParty</Address>
+              <Offsets>
+                <Offset>130</Offset>
+                <Offset>24C</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>202</ID>
+              <Description>"Troop Size  (Index 11) ==&gt;"</Description>
+              <LastState Value="0" Activated="0" RealAddress="526A97D8"/>
+              <Color>0000FF</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pParty</Address>
+              <Offsets>
+                <Offset>140</Offset>
+                <Offset>24C</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>204</ID>
+              <Description>"Troop Type (Index 11) ==&gt;"</Description>
+              <LastState Value="-1" Activated="0" RealAddress="526A97DC"/>
+              <ShowAsSigned>1</ShowAsSigned>
+              <Color>0000FF</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pParty</Address>
+              <Offsets>
+                <Offset>144</Offset>
+                <Offset>24C</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>203</ID>
+              <Description>"Troop Upgrade  (Index 11) ==&gt;"</Description>
+              <LastState Value="0" Activated="0" RealAddress="526A97EC"/>
+              <Color>0000FF</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pParty</Address>
+              <Offsets>
+                <Offset>154</Offset>
+                <Offset>24C</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>214</ID>
+              <Description>"Troop Wounded  (Index 11) ==&gt;"</Description>
+              <LastState Value="0" Activated="0" RealAddress="526A97E8"/>
+              <Color>0000FF</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pParty</Address>
+              <Offsets>
+                <Offset>150</Offset>
+                <Offset>24C</Offset>
+              </Offsets>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols>
+    <SymbolEntry>
+      <Name>Recifense</Name>
+      <Address>20151214</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>iEnableGMD</Name>
+      <Address>10170220</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>iEnableMMM</Name>
+      <Address>10170224</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>iEnableMAO</Name>
+      <Address>10170228</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>iEnableMIM</Name>
+      <Address>1017022C</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>iPlayerID</Name>
+      <Address>10170230</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>iShipID</Name>
+      <Address>10170234</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>pSel</Name>
+      <Address>10170238</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>pUnitHP</Name>
+      <Address>1017023C</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>pUnitInfo</Name>
+      <Address>10170240</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>pParty</Name>
+      <Address>10170244</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>pArmy</Name>
+      <Address>10170248</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>pFleet</Name>
+      <Address>1017024C</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>pTroop</Name>
+      <Address>10170250</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>aobMPHO</Name>
+      <Address> 005DA876</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>aobMPIO</Name>
+      <Address> 00589158</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>aobGMDA</Name>
+      <Address> 0049B304</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>aobMOAO</Name>
+      <Address> 004A02AE</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>aobMOIM</Name>
+      <Address> 0054C378</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>aobMPHE</Name>
+      <Address> 005DA756</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>aobMPPY</Name>
+      <Address> 005456D0</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>aobGMDS</Name>
+      <Address> 00551646</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>aobMOST</Name>
+      <Address> 0058AA3A</Address>
+    </SymbolEntry>
+  </UserdefinedSymbols>
+  <Comments>===========================================
+ Game Title    : Blood &amp; Gold - Caribbean!
+ Game Version  : 2.000 (Steam)
+ Game Sponsor  : fennix102
+ Process Name  : bg_caribbean.exe
+ Script Version: 2.0
+ CE Version    : 6.4
+ Release date  : 14-Dec-2015
+ Author        : Recifense
+ History:
+ 19-Jun-14: First Release.
+ 19-Oct-14: Release for version 0.910-Beta.
+ 25-Feb-15: Release for version 1.000.
+ 28-Mar-15: Adding pointer to Selected Troop.
+ 14-Dec-15: Release for version 2.000 (BG).
+ Features:
+ - God Mode (Army and Fleet) [1]
+ - Minimum Thaler (Money)    [2]
+ - Unlimited Ammo            [3]
+ - Inventory Items (full)    [4]
+ - Some pointers
+===========================================
+[1] For player's army and fleet; *
+[2] For human player only; **
+[3] For human player's units;
+[4] Need to pass the cursor over the item in the inventory;
+(*)[IMPORTANT] The following step must be done:
+- Click on Party TAB (at the bottom)
+- Select "Manage Army" (first Icon on the top left) 
+(**) Select the character TAB at the bottom of the screen;
+===========================================
+[USAGE]
+1) Run CE64;
+2) Run Game;
+3) Load the game process "aribbean!.exe" in CE;
+4) Load this table and activate the main script;
+5) Now Activate the script of each cheat you want to use;
+6) Game On;
+===========================================
+[HOTKEYS]
+CTRL+Home     = Enable  MM/UA cheats;
+CTRL+End      = Disable mm/UA cheats;
+-----------
+CTRL+PageUp   = Enable  IIF cheat;
+CTRL+PageDown = Disable IIF cheat;
+-----------
+CTRL+Insert   = Enable  GM cheat;
+CTRL+Delete   = Disable GM cheat;
+===========================================
+[ADVICE]
+When you can,save the game before starting using table/cheat. So you can always come back in case you don't like the result.
+===========================================
+[INFO]
+Tested on Win 7 64bits
+===========================================
+Cheers!
+</Comments>
+</CheatTable>

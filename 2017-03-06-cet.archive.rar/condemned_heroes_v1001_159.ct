@@ -1,0 +1,344 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="13">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>9</ID>
+      <Description>"[X] &lt;== Men of War - Comdemened Heroes v1001 Script"</Description>
+      <Options moHideChildren="1"/>
+      <Color>80000008</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>{
+===========================================
+ Game Title    : Men of War: Comdemned Heroes
+ Game Version  : 1.00.1
+ Process Name  : "Condemned Heroes.exe"
+ Script Version: 1.0
+ CE Version    : 6.1
+ Release date  : 10-Apr-2012
+ Author        : Recifense
+ Features:
+ - God Mode (for soldiers)
+ - Unlimited Fuel
+ - Unlimited Ammo
+ - Full Stamina
+===========================================
+}
+
+[ENABLE]
+//=========================================
+// Check if script is compatible to this game version
+// If false the script will not be loaded
+
+assert("Condemned Heroes.exe"+0027170B,d9 9e 98 00 00 00 75 75)
+assert("Condemned Heroes.exe"+001ee290,d8 ae 98 00 00 00 d9 1c)
+assert("Condemned Heroes.exe"+001962f0,8b 44 24 04 89 41 2c c2)
+assert("Condemned Heroes.exe"+00271115,d9 00 d9 55 00 d8 64 24)
+
+//=========================================
+alloc(MyCode,1024)
+//=========================================
+// Declaration section
+label(_GodMode)
+label(_BackGM)
+label(_ExitGM)
+label(_MonFuel)
+label(_BackMF)
+label(_ExitMF)
+label(_MonAmmo)
+label(_MonA0)
+label(_MonA1)
+label(_BackMA)
+label(_ExitMA)
+label(_MonStamina)
+label(_BackMS)
+label(_ExitMS)
+label(pHero)
+label(iEnableGM)
+label(iEnableMF)
+label(iEnableMA)
+label(iEnableMS)
+label(fRubbish)
+label(iEDI)
+
+//=========================================
+// Registering Symbols
+registersymbol(MyCode)
+registersymbol(pHero)
+registersymbol(iEnableGM)
+registersymbol(iEnableMF)
+registersymbol(iEnableMA)
+registersymbol(iEnableMS)
+
+//=========================================
+MyCode:
+//========================================= ok
+// God Mode
+_GodMode:
+ pushfd                        // Save EFLAGS
+ mov [pHero],esi               // Save pointer for debugging
+ 
+ cmp dword ptr [iEnableGM],0
+ je _ExitGM                    // Jump if feature is disabled
+ 
+ push edi
+ push eax
+ mov edi,[esi+0c]              // Get ptr to Owner ID
+ mov al,["Condemned Heroes.exe"+62477c] // Get player ID (OK)
+ cmp al,[edi+00000312]         // Player´s unit? ...
+ pop eax
+ pop edi
+ jne _ExitGM                   // ... Jump if true
+
+ fstp st(0)                    // Discard value
+ mov dword ptr [esi+00000094],47f11d00 // 123450.0
+ fld dword ptr [esi+00000094]  // Get max HP
+ 
+_ExitGM:
+ fstp dword ptr [esi+00000098] // Original code
+ popfd                         // Restore EFLAGS
+ jmp _BackGM                   // Back to main code
+
+//========================================= CH
+_MonFuel:
+ cmp dword ptr [iEnableMF],0
+ je _ExitMF                    // Jump if feature is disabled
+ 
+ push edi
+ push eax
+ mov edi,[esi+08]              // Get ptr to Owner ID
+ mov al,["Condemned Heroes.exe"+62477c]   // Get player ID (OK)
+ cmp al,[edi+00000312]
+ pop eax
+ pop edi
+ jne _ExitMF                   // Jump if it is not a player´s unit
+
+ fstp st(0)                    // Discard value
+ fldz                          // Make value2decrease = 0
+
+ push eax
+ mov eax,[esi+00000094]        // Get maximum fuel
+ mov [esi+00000098],eax        // Make current fuel = maximum
+ pop eax
+  
+_ExitMF:
+ fsubr dword ptr [esi+00000098]// Original code
+ jmp _BackMF                   // Back to main code
+
+//========================================= CH
+_MonAmmo:
+ mov [iEDI],edi
+
+ mov eax,[esp+04]              // Original code
+
+ cmp dword ptr [iEnableMA],0
+ je _ExitMA                    // Jump if feature is disabled
+ 
+ mov edi,[ecx+18]              // Human ?
+ or edi,edi
+ jz _MonA0                     // Jump if false
+ 
+ cmp dword ptr [edi+04],00010001 // Really human?
+ jne _ExitMA                   // Jump if false
+ 
+ mov edi,[edi+24]
+ or edi,edi
+ jz _ExitMA                    // Jump if it is a null pointer
+ jmp _MonA1
+
+_MonA0:                        // Check if ammo of a tank
+ mov edi,[ecx+1c]
+ or edi,edi
+ jz _ExitMA                    // Jump if it is a null pointer
+ 
+ cmp dword ptr [edi+0c],0      // Tank or similar?
+ jne _ExitMA                   // Jump if false
+
+ mov edi,[edi+18]
+ or edi,edi
+ jz _ExitMA                    // Jump if it is a null pointer
+
+_MonA1:
+ push eax
+ mov al,[edi+00000312]         // Get Unit ID **02f0
+ cmp al,["Condemned Heroes.exe"+62477c]   // Player´s UNIT? **
+ pop eax
+ jne _ExitMA                   // Jump if it is not a player´s unit´s ammo
+ 
+ or eax,eax                    // Next value = 0?
+ jz _ExitMA                    // Jump if true
+
+ cmp eax,[ecx+2c]              // New value greater than current one?
+ jge _ExitMA                   // Jump if true
+ 
+ mov eax,[ecx+2c]              // Make new value = current value
+  
+_ExitMA:
+ mov edi,[iEDI]
+
+ mov [ecx+2c],eax              // Original code
+ jmp _BackMA                   // Back to main code
+
+//========================================= CH
+_MonStamina:
+ cmp dword ptr [iEnableMS],0
+ je _ExitMS                    // Jump if feature is disabled
+ 
+ push esi
+ push edi
+ push eax
+ lea esi,[ebp-1c]              // Point to structure base **24
+ mov edi,[esi+0c]              // Get ptr to Owner ID
+ mov al,["Condemned Heroes.exe"+62477c]   // Get player ID **
+ cmp al,[edi+00000312]         // Player's unit? .... **02f0
+ pop eax
+ pop edi
+ pop esi
+ jne _ExitMS                   // .... Jump if false
+
+ mov dword ptr [eax],42c80000  // New stamina = 100.0
+ 
+_ExitMS:
+ fld dword ptr [eax]           // Original code
+ fst dword ptr [ebp+00]        // Original code
+ jmp _BackMS                   // Back to main code
+
+//=========================================
+ db '=================================&gt;'
+ db 'CE6.1 Script by Recifense 041012'
+//=========================================
+// Variables
+pHero:
+ dd 0
+iEnableGM:
+ dd 1
+iEnableMA:
+ dd 1
+iEnableMF:
+ dd 1
+iEnableMS:
+ dd 1
+fRubbish:
+ dd 0
+iEDI:
+ dd 0
+
+//=========================================
+// Hacking Points
+"Condemned Heroes.exe"+0027170b:
+ jmp _GodMode
+ nop
+_BackGM:
+
+"Condemned Heroes.exe"+001ee290:
+ jmp _MonFuel
+ nop
+_BackMF:
+
+"Condemned Heroes.exe"+001962f0:
+ jmp _MonAmmo
+ nop
+ nop
+_BackMA:
+
+"Condemned Heroes.exe"+00271115:
+ jmp _MonStamina
+_BackMS:
+
+//=========================================
+// Script for Restoring Original Codes
+[DISABLE]
+"Condemned Heroes.exe"+0027170b:
+// fstp dword ptr [esi+00000098]
+ db d9 9e 98 00 00 00
+
+"Condemned Heroes.exe"+001ee290:
+// fsubr dword ptr [esi+00000098]
+ db d8 ae 98 00 00 00
+
+"Condemned Heroes.exe"+001962f0:
+// mov eax,[esp+04]
+// mov [ecx+2c],eax
+ db 8b 44 24 04 89 41 2c
+
+"Condemned Heroes.exe"+00271115:
+// fld dword ptr [eax]
+// fst dword ptr [ebp+00]
+ db d9 00 d9 55 00
+
+//=========================================
+// Unregistering Symbols
+unregistersymbol(MyCode)
+unregistersymbol(pHero)
+unregistersymbol(iEnableGM)
+unregistersymbol(iEnableMF)
+unregistersymbol(iEnableMA)
+unregistersymbol(iEnableMS)
+
+//=========================================
+dealloc(MyCode)
+//============= Scripts End ===============
+
+// ****************************************
+// NOTES
+// ****************************************
+{
+}
+
+
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>4</ID>
+          <Description>"Enable/Disable God Mode ==&gt; (1/0)"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableGM</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>6</ID>
+          <Description>"Enable/Disable Unlimited Ammo ==&gt; (1/0)"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMA</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>7</ID>
+          <Description>"Enable/Disable Unlimited Stamina ==&gt; (1/0)"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMS</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>5</ID>
+          <Description>"Enable/Disable Unlimited Fuel ==&gt; (1/0)"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMF</Address>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols/>
+  <Comments>===========================================
+ Game Title    : Men of War: Comdemned Heroes
+ Game Version  : 1.00.1
+ Process Name  : "Condemned Heroes.exe"
+ Script Version: 1.0
+ CE Version    : 6.1
+ Release date  : 10-Apr-2012
+ Author        : Recifense
+ Features:
+ - God Mode (for soldiers) [1]
+ - Unlimited Ammo [2]
+ - Full Stamina [3]
+ - Unlimited Fuel [4]
+===========================================
+[1] Only applied to soldiers. But they can still die if overrun by a tank;
+[2] In fact, unlimited bullets;
+[3] Player's Soldiers' stamina does not decrease;
+[4] You know what I mean. :)
+======================
+Have fun!
+Cheers!
+</Comments>
+</CheatTable>

@@ -1,0 +1,186 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="14">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>0</ID>
+      <Description>"BL2: Fix Slots"</Description>
+      <Options moHideChildren="1"/>
+      <Color>80000008</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>[ENABLE]
+aobscan(FixSlotsSignature,8B 7D D8 8B 3F 8B C8 03 C9 F3 0F 10 54 CF 04 F3 0F 58 D0)
+alloc(FixSlots,256)
+alloc(Data,8)
+label(Exit)
+label(Return)
+label(FixSlotsInjectionLocation)
+label(FixSlotsCounter)
+label(FixSlotsValue)
+registersymbol(FixSlotsInjectionLocation)
+registersymbol(FixSlotsCounter)
+registersymbol(FixSlotsValue)
+
+Data:
+FixSlotsValue:
+db 0C 30 00 00
+
+Data+4:
+FixSlotsCounter:
+
+FixSlots:
+cmp [esi],0x434347AE
+jnz Exit
+add [FixSlotsCounter],1
+mov eax,[FixSlotsValue]
+and eax,0x7FFF
+
+Exit:
+movss xmm1,[esi]
+xorps xmm0,xmm0
+jmp Return
+
+FixSlotsSignature-63:
+FixSlotsInjectionLocation:
+jmp FixSlots
+nop
+nop
+Return:
+
+[DISABLE]
+FixSlotsInjectionLocation:
+movss xmm1,[esi]
+xorps xmm0,xmm0
+
+dealloc(FixSlots)
+dealloc(Counter)
+unregistersymbol(FixSlotsInjectionLocation)
+unregistersymbol(FixSlotsValue)
+unregistersymbol(FixSlotsCounter)
+      
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>1</ID>
+          <Description>"Trigger Count"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>FixSlotsCounter</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>2</ID>
+          <Description>"Type"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>FixSlotsValue</Address>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>1092</ID>
+      <Description>"-=Shop Timer=-"</Description>
+      <Color>80000008</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>[ENABLE]
+aobscan(address,F3 0F 2C 88 B4 04 00 00)
+
+alloc(newmem,$1000) 
+
+label(FLAG_ShopTimer) 
+label(POINTER_ShopTimer) 
+
+newmem: 
+  label(continue) 
+  label(return) 
+  mov dword ptr [POINTER_ShopTimer], eax 
+  cmp dword ptr [FLAG_ShopTimer],00000001 
+  jne continue 
+  mov dword ptr [FLAG_ShopTimer],00000000 
+  mov dword ptr [eax+000004B4],(float)1.0 // 1 second 
+
+continue: 
+  cvttss2si ecx,[eax+000004B4] 
+  jmp return 
+
+FLAG_ShopTimer: 
+  dd 0 // set to 1 to lower shop timer next time it is open 
+POINTER_ShopTimer: 
+  dd 0 // set to 1 to lower shop timer next time it is open 
+
+registersymbol(FLAG_ShopTimer) 
+registersymbol(POINTER_ShopTimer) 
+
+//----------------------------------------------------------------------------- 
+// Inject our code 
+//-----------------------------------------------------------------------------
+label(inject_shoptimer1)
+registersymbol(inject_shoptimer1)
+address: 
+inject_shoptimer1:
+  jmp newmem 
+  nop 
+  nop
+  nop
+return: 
+
+[DISABLE]
+inject_shoptimer1:
+  db F3 0F 2C 88 B4 04 00 00
+
+dealloc(newmem)
+
+unregistersymbol(FLAG_ShopTimer) 
+unregistersymbol(POINTER_ShopTimer) 
+unregistersymbol(inject_shoptimer1)
+
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>1094</ID>
+          <Description>"No description"</Description>
+          <Color>80000008</Color>
+          <VariableType>Float</VariableType>
+          <Address>POINTER_ShopTimer</Address>
+          <Offsets>
+            <Offset>4B4</Offset>
+          </Offsets>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>120</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>0</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols>
+    <SymbolEntry>
+      <Name>FixSlotsInjectionLocation</Name>
+      <Address>00AD9392</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>FixSlotsCounter</Name>
+      <Address>159C0104</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>FixSlotsValue</Name>
+      <Address>159C0100</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>FLAG_ShopTimer</Name>
+      <Address>0B370037</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>POINTER_ShopTimer</Name>
+      <Address>0B37003B</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>inject_shoptimer1</Name>
+      <Address>01437693</Address>
+    </SymbolEntry>
+  </UserdefinedSymbols>
+</CheatTable>
