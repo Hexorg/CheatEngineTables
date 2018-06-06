@@ -1,0 +1,443 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="16">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>10</ID>
+      <Description>"[X] &lt;== Wars and Warriors - Joan of Arc v1.0 Script"</Description>
+      <Options moHideChildren="1"/>
+      <Color>FF0000</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>{
+===========================================
+ Game Title    : War &amp; Warriors - Joan of Arc
+ Game Version  : 1.0
+ Game Sponsor  : Deviance
+ Proces Name   : joan.exe
+ Script Version: 1.0
+ CE Version    : 6.3
+ Release date  : 25-Jul-2013
+ Author        : Recifense
+ History:
+ 25-Jul-13: First Release
+ Features:
+ - God Mode
+ - Full Stamina
+ - Some Pointers
+===========================================
+}
+
+//=========================================
+// Definitions
+define(LUDO,"joan.exe")
+define(FHPR,joan.exe+002fa1e7)
+define(MHSS,joan.exe+0002d0df)
+define(GMD0,joan.exe+000fd50d)
+define(GMD1,joan.exe+000fd530)
+
+//=========================================
+[ENABLE]
+//=========================================
+//LuaCall(CheckVersion())
+//=========================================
+// Check if script is compatible to this game version
+// If false the script will not be loaded
+
+assert(FHPR,db 82 35 01 00 00 8b 85 80 fd ff ff da b0 3d 01 00 00 d8 1d ??)
+assert(MHSS,83 b8 35 01 00 00 00 ?? ?? 8b 4d fc 83 b9 20 01 00 00 00 ?? ??)
+assert(GMD0,89 88 35 01 00 00 8b 55 f8 52 6a 00 8b 45 fc 8b 88 35 01 00 00)
+assert(GMD1,89 82 35 01 00 00 8b 45 fc 83 b8 35 01 00 00 00 ?? ?? 8b 4d fc)
+
+//=========================================
+alloc(MyCode,4096,LUDO)
+//=========================================
+// Declaration section
+label(_FindHumanPlayer)
+label(_FindHP0)
+label(_BackFHP)
+label(_ExitFHP)
+label(_MonHumanStatus)
+label(_MonHS00)
+label(_BackMHS)
+label(_ExitMHS)
+label(_GodMode0)
+label(_BackGM0)
+label(_ExitGM0)
+label(_GodMode1)
+label(_BackGM1)
+label(_ExitGM1)
+label(pHero)
+label(pComp)
+label(iEnableGMD)
+label(iEnableMSA)
+
+//=========================================
+// Registering Symbols
+registersymbol(MyCode)
+registersymbol(pHero)
+registersymbol(pComp)
+registersymbol(iEnableGMD)
+registersymbol(iEnableMSA)
+
+//=========================================
+MyCode:
+//=========================================
+// Main game screen
+_FindHumanPlayer:
+ push eax
+
+ movzx eax,[edx+02]
+ cmp eax,2
+ jne _ExitFHP
+
+ mov eax,[edx+7f]
+ cmp eax,'Joan'
+ jne _FindHP0
+
+ mov [pHero],edx
+ jmp _ExitFHP
+
+_FindHP0:
+ mov [pComp],edx
+
+_ExitFHP:
+ pop eax
+
+ fild dword ptr [edx+00000135]     // Original code (rds cHP)
+ jmp _BackFHP                      // Back to main code
+
+//=========================================
+// Main game screen
+_MonHumanStatus:
+ push eax
+ push edx
+
+ mov edx,eax
+
+ movzx eax,[edx+02]
+ cmp eax,2
+ jne _ExitMHS
+
+ cmp dword ptr [iEnableGMD],0
+ je _MonHS00                       // Jump if feature is disabled
+
+ mov eax,[edx+0000013d]
+ mov [edx+00000135],eax
+
+_MonHS00:
+ cmp dword ptr [iEnableMSA],0
+ je _ExitMHS                       // Jump if feature is disabled
+
+ mov eax,[edx+00000149]
+ mov [edx+00000145],eax
+
+_ExitMHS:
+ pop edx
+ pop eax
+
+ cmp dword ptr [eax+00000135],00   // Original code (rds cHP)
+ jmp _BackMHS                      // Back to main code
+
+//=========================================
+// During Combat
+_GodMode0:
+ push eax
+ push edx
+
+ mov edx,eax
+
+ movzx eax,[edx+02]
+ cmp eax,2
+ jne _ExitGM0
+
+ cmp dword ptr [iEnableGMD],0
+ je _ExitGM0                       // Jump if feature is disabled
+
+ mov ecx,[edx+0000013d]
+
+_ExitGM0:
+ pop edx
+ pop eax
+
+ mov [eax+00000135],ecx            // Original code (upds HP)
+ jmp _BackGM0                      // Back to main code
+
+//=========================================
+// During Combat
+_GodMode1:
+ push ebx
+
+ movzx ebx,[edx+02]
+ cmp ebx,2
+ jne _ExitGM1
+
+ cmp dword ptr [iEnableGMD],0
+ je _ExitGM1                       // Jump if feature is disabled
+
+ mov eax,[edx+0000013d]
+
+_ExitGM1:
+ pop ebx
+
+ mov [edx+00000135],eax            // Original code (upds HP)
+ jmp _BackGM1                      // Back to main code
+
+//=========================================
+ db '=======================================&gt;'
+ db 'CE6.2 Script by Recifense 062513'
+//=========================================
+// Variables
+iEnableGMD:
+ dd 0
+iEnableMSA:
+ dd 0
+pHero:
+ dd 0
+pComp:
+ dd 0
+
+//=========================================
+// Hacking Points
+FHPR:
+ jmp _FindHumanPlayer
+ nop
+_BackFHP:
+
+MHSS:
+ jmp _MonHumanStatus
+ nop
+ nop
+_BackMHS:
+
+GMD0:
+ jmp _GodMode0
+ nop
+_BackGM0:
+
+GMD1:
+ jmp _GodMode1
+ nop
+_BackGM1:
+
+//=========================================
+// Script for Restoring Original Codes
+[DISABLE]
+FHPR:
+// fild dword ptr [edx+00000135]
+ db db 82 35 01 00 00
+
+MHSS:
+// cmp dword ptr [eax+00000135],00
+ db 83 b8 35 01 00 00 00
+
+GMD0:
+// mov [eax+00000135],ecx
+ db 89 88 35 01 00 00
+
+GMD1:
+// mov [edx+00000135],eax
+ db 89 82 35 01 00 00
+
+//=========================================
+// Unregistering Symbols
+unregistersymbol(MyCode)
+unregistersymbol(pHero)
+unregistersymbol(pComp)
+unregistersymbol(iEnableGMD)
+unregistersymbol(iEnableMSA)
+
+//=========================================
+dealloc(MyCode)
+//============= Scripts End ===============
+
+// ****************************************
+// NOTES
+// ****************************************
+{
+}
+
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>11</ID>
+          <Description>"Enable/Disable God Mode =&gt; (1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableGMD</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>12</ID>
+          <Description>"Enable/Disable Full Stamina =&gt; (1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMSA</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>13</ID>
+          <Description>"============== Joan of Arc Info ==============="</Description>
+          <ShowAsHex>1</ShowAsHex>
+          <Color>000080</Color>
+          <VariableType>String</VariableType>
+          <Length>16</Length>
+          <Unicode>0</Unicode>
+          <ZeroTerminate>1</ZeroTerminate>
+          <Address>pHero</Address>
+          <Offsets>
+            <Offset>3D</Offset>
+          </Offsets>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>18</ID>
+              <Description>"Current XP ==&gt;"</Description>
+              <Color>0000FF</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pHero</Address>
+              <Offsets>
+                <Offset>126</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>20</ID>
+              <Description>"Combo Points Avaliable ==&gt;"</Description>
+              <Color>0000FF</Color>
+              <VariableType>2 Bytes</VariableType>
+              <Address>pHero</Address>
+              <Offsets>
+                <Offset>12A</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>21</ID>
+              <Description>"Attribute Points Avaliable ==&gt;"</Description>
+              <Color>0000FF</Color>
+              <VariableType>2 Bytes</VariableType>
+              <Address>pHero</Address>
+              <Offsets>
+                <Offset>12C</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>4</ID>
+              <Description>"Gold Available ==&gt;"</Description>
+              <Color>0000FF</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>joan.exe+4706bc</Address>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>22</ID>
+          <Description>"============== Companion Info ================"</Description>
+          <ShowAsHex>1</ShowAsHex>
+          <Color>000080</Color>
+          <VariableType>String</VariableType>
+          <Length>16</Length>
+          <Unicode>0</Unicode>
+          <ZeroTerminate>1</ZeroTerminate>
+          <Address>pComp</Address>
+          <Offsets>
+            <Offset>3D</Offset>
+          </Offsets>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>23</ID>
+              <Description>"Current XP ==&gt;"</Description>
+              <Color>0000FF</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pComp</Address>
+              <Offsets>
+                <Offset>126</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>24</ID>
+              <Description>"Combo Points Avaliable ==&gt;"</Description>
+              <Color>0000FF</Color>
+              <VariableType>2 Bytes</VariableType>
+              <Address>pComp</Address>
+              <Offsets>
+                <Offset>12A</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>25</ID>
+              <Description>"Attribute Points Avaliable ==&gt;"</Description>
+              <Color>0000FF</Color>
+              <VariableType>2 Bytes</VariableType>
+              <Address>pComp</Address>
+              <Offsets>
+                <Offset>12C</Offset>
+              </Offsets>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols/>
+  <Comments>===========================================
+ Game Title    : War &amp; Warriors - Joan of Arc
+ Game Version  : 1.0
+ Game Sponsor  : Deviance
+ Proces Name   : joan.exe
+ Script Version: 1.0
+ CE Version    : 6.3
+ Release date  : 25-Jul-2013
+ Author        : Recifense
+ History:
+ 25-Jul-13: First Release
+ Features:
+ - God Mode      [1]
+ - Full Stamina  [2]
+ - Some Pointers [3]
+===========================================
+[1] For Player and Companion;
+[2] For Player and Companion;
+[3] Used on the table;
+===========================================
+HOTKEYS:
+CTRL+Home = Enable  all cheats;
+CTRL+End  = Disable all cheats;
+===========================================
+Cheers!
+</Comments>
+</CheatTable>

@@ -1,0 +1,2720 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="26">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>61</ID>
+      <Description>"Crew Stats + Race Cheats"</Description>
+      <Options moHideChildren="1" moDeactivateChildrenAsWell="1"/>
+      <LastState/>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>usemono()
+define(PlayerGetTeamAddress,Player:get_team+4)
+define(PlayerGetTeamBytes,48 89 0C 24 48 8B C1)
+
+define(JobDriver,            #0)
+define(JobStaff,             #1)
+define(JobEngineer,          #2)
+define(JobEngineerLead,      #3)
+define(JobTeamAssistant,     #4)
+define(JobTeamPrincipal,     #5)
+define(JobScout,             #6)
+define(JobMechanic,          #7)
+
+/*
+Chairman,
+IMAPresident,
+PrivateInvestigator,
+Photographer,
+BookKeeper,
+Barrister,
+Actor,
+SponsorLiasion,
+Journalist,
+Fan,
+Unemployed,
+InvestorChairman,*/
+
+getmonostruct(Player)
+getmonostruct(Team)
+getmonostruct(TeamFinanceController)
+getmonostruct(Finance)
+getmonostruct(ContractManagerTeam)
+getmonostruct(EmployeeSlot)
+getmonostruct(Person)
+getmonostruct(ContractPerson)
+getmonostruct(Contract)
+getmonostruct(CalendarEvent_v1)
+getmonostruct(Driver)
+getmonostruct(DriverStats)
+getmonostruct(Engineer)
+getmonostruct(EngineerStats)
+getmonostruct(CarStats)
+getmonostruct(Mechanic)
+getmonostruct(MechanicStats)
+//getmonostruct(List,System.Collections.Generic:List`1)
+[ENABLE]
+
+assert(PlayerGetTeamAddress,PlayerGetTeamBytes)
+alloc(newmem,$1000,PlayerGetTeamAddress)
+
+label(code)
+label(return)
+label(pPlayer)
+label(pPlayerTeam)
+label(iPlayerTeamId)
+
+//General
+label(_getJobs)
+label(_nextJob)
+label(_getJobsFinish)
+label(_cleanup)
+label(iListSize)
+label(iOffset)
+
+//Drivers
+label(pDriver1)
+label(pDriver2)
+label(pDriver3)
+label(_SetJobDriver)
+
+//Engineer
+label(pEngineer)
+label(_SetJobEngineer)
+
+//Mechanic
+label(pMechanic1)
+label(pMechanic2)
+label(_SetJobMechanic)
+
+//General
+registersymbol(PlayerGetTeamAddress)
+registersymbol(pPlayer)
+registersymbol(pPlayerTeam)
+registersymbol(iPlayerTeamId)
+registersymbol(Team.mEmployeeSlots)
+registersymbol(Team.financeController)
+registersymbol(TeamFinanceController.finance)
+registersymbol(Finance.currentBudget)
+registersymbol(EmployeeSlot.personHired)
+
+//Drivers
+registersymbol(Driver.mStats)
+registersymbol(pDriver1)
+registersymbol(pDriver2)
+registersymbol(pDriver3)
+registersymbol(DriverStats.braking)
+registersymbol(DriverStats.cornering)
+registersymbol(DriverStats.smoothness)
+registersymbol(DriverStats.overtaking)
+registersymbol(DriverStats.consistency)
+registersymbol(DriverStats.adaptability)
+registersymbol(DriverStats.fitness)
+registersymbol(DriverStats.feedback)
+registersymbol(DriverStats.focus)
+registersymbol(DriverStats.balance)
+registersymbol(DriverStats.experience)
+registersymbol(DriverStats.marketability)
+
+//Person
+registersymbol(Person.contract)
+
+//ContractPerson
+registersymbol(ContractPerson.mCurrentStatus)
+registersymbol(ContractPerson.mProposedStatus)
+registersymbol(ContractPerson.yearlyWages)
+registersymbol(ContractPerson.qualifyingBonus)
+registersymbol(ContractPerson.qualifyingBonusTargetPosition)
+registersymbol(ContractPerson.raceBonus)
+registersymbol(ContractPerson.raceBonusTargetPosition)
+registersymbol(ContractPerson.championBonus)
+registersymbol(ContractPerson.payDriver)
+registersymbol(ContractPerson.amountForContractorToPay)
+registersymbol(ContractPerson.amountForTargetToPay)
+registersymbol(ContractPerson.hasSignOnFee)
+registersymbol(ContractPerson.hasRaceBonus)
+registersymbol(ContractPerson.hasQualifyingBonus)
+registersymbol(ContractPerson.length)
+/*public enum ContractLength
+  {
+    Short,
+    Medium,
+    Long,
+}*/
+
+//Contract
+//registersymbol(Contract.startDate)
+//registersymbol(Contract.mEndDate)
+
+//CalendarEvent_v1
+//registersymbol(CalendarEvent_v1.triggerDate)
+
+//Engineer
+registersymbol(Engineer.stats)
+registersymbol(pEngineer)
+registersymbol(EngineerStats.partContributionStats)
+registersymbol(CarStats.topSpeed)
+registersymbol(CarStats.acceleration)
+registersymbol(CarStats.braking)
+registersymbol(CarStats.lowSpeedCorners)
+registersymbol(CarStats.mediumSpeedCorners)
+registersymbol(CarStats.highSpeedCorners)
+
+//Mechanic
+registersymbol(Team.mMechanics)
+registersymbol(pMechanic1)
+registersymbol(pMechanic2)
+registersymbol(Mechanic.stats)
+registersymbol(MechanicStats.reliability)
+registersymbol(MechanicStats.performance)
+registersymbol(MechanicStats.concentration)
+registersymbol(MechanicStats.speed)
+registersymbol(MechanicStats.pitStops)
+registersymbol(MechanicStats.leadership)
+
+newmem:
+  push rax
+  push rbx
+  push rcx
+  push rdx
+
+  mov [pPlayer], rcx
+  mov rax, [rcx+Player.mPlayerTeam]
+  mov [pPlayerTeam], rax
+  mov eax, [rax+Team.teamID]
+  mov [iPlayerTeamId], eax
+
+//Retrieve the Jobs from a List of EmployeeSlot
+_getJobs:
+  mov rax, [pPlayerTeam]
+  mov rbx, [rax+Team.contractManager]
+  mov rbx, [rbx+ContractManagerTeam.mEmployeeSlots]
+  mov rcx, [rbx+10] //List._items
+  mov [iListSize], 1
+  mov [iOffset], 20
+  mov [pDriver1], 0
+  mov [pDriver2], 0
+  mov [pDriver3], 0
+  mov [pEngineer], 0
+  mov [pMechanic1], 0
+  mov [pMechanic2], 0
+_nextJob:
+  mov edx, [rbx+18] //List._Size
+  cmp [iListSize], edx
+  je _getJobsFinish
+  inc [iListSize]
+  mov rdx, [iOffset]
+  add [iOffset], 8
+  mov rdx, [rcx+rdx]
+  cmp rdx, 0
+  je _getJobsFinish
+
+_checkJobType:
+  cmp [rdx+EmployeeSlot.jobType],JobDriver
+  je _SetJobDriver
+  cmp [rdx+EmployeeSlot.jobType],JobEngineerLead
+  je _SetJobEngineer
+  cmp [rdx+EmployeeSlot.jobType],JobMechanic
+  je _SetJobMechanic
+  jmp _nextJob
+
+_getJobsFinish:
+_cleanup:
+  pop rdx
+  pop rcx
+  pop rbx
+  pop rax
+
+code:
+  mov [rsp],rcx
+  mov rax,rcx
+  jmp return
+
+_SetJobDriver:
+  cmp [pDriver1], 0
+  jne @f
+  mov rdx, [rdx+EmployeeSlot.personHired]
+  mov [pDriver1],rdx
+  jmp _nextJob
+@@:
+  cmp [pDriver2], 0
+  jne @f
+  mov rdx, [rdx+EmployeeSlot.personHired]
+  mov [pDriver2],rdx
+  jmp _nextJob
+@@:
+  cmp [pDriver3], 0
+  jne @f
+  mov rdx, [rdx+EmployeeSlot.personHired]
+  mov [pDriver3],rdx
+  jmp _nextJob
+@@:
+  jmp _nextJob
+
+_SetJobEngineer:
+  cmp [pEngineer], 0
+  jne @f
+  mov rdx, [rdx+EmployeeSlot.personHired]
+  mov [pEngineer],rdx
+  jmp _nextJob
+@@:
+  jmp _nextJob
+
+_SetJobMechanic:
+  cmp [pMechanic1], 0
+  jne @f
+  mov rdx, [rdx+EmployeeSlot.personHired]
+  mov [pMechanic1],rdx
+  jmp _nextJob
+@@:
+  cmp [pMechanic2], 0
+  jne @f
+  mov rdx, [rdx+EmployeeSlot.personHired]
+  mov [pMechanic2],rdx
+  jmp _nextJob
+@@:
+  jmp _nextJob
+
+iListSize:
+ dq 0
+
+iOffset:
+ dq 0
+
+pPlayer:
+ dq 0
+
+pPlayerTeam:
+ dq 0
+
+iPlayerTeamId:
+ dq 0
+
+pDriver1:
+ dq 0
+pDriver2:
+ dq 0
+pDriver3:
+ dq 0
+
+pEngineer:
+ dq 0
+
+pMechanic1:
+ dq 0
+pMechanic2:
+ dq 0
+
+PlayerGetTeamAddress:
+  jmp newmem
+  nop
+  nop
+return:
+
+[DISABLE]
+
+PlayerGetTeamAddress:
+  db PlayerGetTeamBytes
+  // mov [rsp],rcx
+  // mov rax,rcx
+
+//General
+unregistersymbol(PlayerGetTeamAddress)
+unregistersymbol(pPlayer)
+unregistersymbol(pPlayerTeam)
+unregistersymbol(iPlayerTeamId)
+
+unregistersymbol(Team.mEmployeeSlots)
+unregistersymbol(Team.financeController)
+unregistersymbol(TeamFinanceController.finance)
+unregistersymbol(Finance.currentBudget)
+unregistersymbol(EmployeeSlot.personHired)
+
+//Drivers
+unregistersymbol(Driver.mStats)
+unregistersymbol(pDriver1)
+unregistersymbol(pDriver2)
+unregistersymbol(pDriver3)
+unregistersymbol(DriverStats.braking)
+unregistersymbol(DriverStats.cornering)
+unregistersymbol(DriverStats.smoothness)
+unregistersymbol(DriverStats.overtaking)
+unregistersymbol(DriverStats.consistency)
+unregistersymbol(DriverStats.adaptability)
+unregistersymbol(DriverStats.fitness)
+unregistersymbol(DriverStats.feedback)
+unregistersymbol(DriverStats.focus)
+unregistersymbol(DriverStats.balance)
+unregistersymbol(DriverStats.experience)
+unregistersymbol(DriverStats.marketability)
+
+//Person
+registersymbol(Person.contract)
+
+//ContractPerson
+registersymbol(ContractPerson.mCurrentStatus)
+registersymbol(ContractPerson.mProposedStatus)
+registersymbol(ContractPerson.yearlyWages)
+registersymbol(ContractPerson.qualifyingBonus)
+registersymbol(ContractPerson.qualifyingBonusTargetPosition)
+registersymbol(ContractPerson.raceBonus)
+registersymbol(ContractPerson.raceBonusTargetPosition)
+registersymbol(ContractPerson.championBonus)
+registersymbol(ContractPerson.payDriver)
+registersymbol(ContractPerson.amountForContractorToPay)
+registersymbol(ContractPerson.amountForTargetToPay)
+registersymbol(ContractPerson.hasSignOnFee)
+registersymbol(ContractPerson.hasRaceBonus)
+registersymbol(ContractPerson.hasQualifyingBonus)
+registersymbol(ContractPerson.length)
+
+//Engineer
+unregistersymbol(Engineer.stats)
+unregistersymbol(pEngineer)
+unregistersymbol(EngineerStats.partContributionStats)
+unregistersymbol(CarStats.topSpeed)
+unregistersymbol(CarStats.acceleration)
+unregistersymbol(CarStats.braking)
+unregistersymbol(CarStats.lowSpeedCorners)
+unregistersymbol(CarStats.mediumSpeedCorners)
+unregistersymbol(CarStats.highSpeedCorners)
+
+//Mechanic
+unregistersymbol(Team.mMechanics)
+unregistersymbol(pMechanic1)
+unregistersymbol(pMechanic2)
+unregistersymbol(Mechanic.stats)
+unregistersymbol(MechanicStats.reliability)
+unregistersymbol(MechanicStats.performance)
+unregistersymbol(MechanicStats.concentration)
+unregistersymbol(MechanicStats.speed)
+unregistersymbol(MechanicStats.pitStops)
+unregistersymbol(MechanicStats.leadership)
+
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: 1646C6B4
+
+1646C6A1: 00 00                          -  add [rax],al
+1646C6A3: 00 00                          -  add [rax],al
+1646C6A5: 00 00                          -  add [rax],al
+1646C6A7: 00 00                          -  add [rax],al
+1646C6A9: 00 00                          -  add [rax],al
+1646C6AB: 00 00                          -  add [rax],al
+1646C6AD: 00 00                          -  add [rax],al
+1646C6AF: 00 48 83                       -  add [rax-7D],cl
+1646C6B2: EC                             -  in al,dx
+1646C6B3: 08 48                          - db 08 48  // SHORTENED TO HIT INJECTION FROM:  or [rax-77],cl
+// ---------- INJECTING HERE ----------
+1646C6B5: 89 0C 24                       -  mov [rsp],ecx
+1646C6B8: 48 8B C1                       -  mov rax,rcx
+// ---------- DONE INJECTING  ----------
+1646C6BB: 48 8B 80 08 01 00 00           -  mov rax,[rax+00000108]
+1646C6C2: 48 83 C4 08                    -  add rsp,08
+1646C6C6: C3                             -  ret 
+1646C6C7: 00 00                          -  add [rax],al
+1646C6C9: 00 00                          -  add [rax],al
+1646C6CB: 00 17                          -  add [rdi],dl
+1646C6CD: 00 00                          -  add [rax],al
+1646C6CF: 00 24 00                       -  add [rax+rax],ah
+1646C6D2: 00 00                          -  add [rax],al
+1646C6D4: 01 04 01                       -  add [rcx+rax],eax
+}
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>60</ID>
+          <Description>"Money"</Description>
+          <VariableType>8 Bytes</VariableType>
+          <Address>pPlayerTeam</Address>
+          <Offsets>
+            <Offset>Finance.currentBudget</Offset>
+            <Offset>TeamFinanceController.finance</Offset>
+            <Offset>Team.financeController</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>200</ID>
+          <Description>"Drivers"</Description>
+          <Options moHideChildren="1" moDeactivateChildrenAsWell="1"/>
+          <LastState Value="" RealAddress="00000000"/>
+          <GroupHeader>1</GroupHeader>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>187</ID>
+              <Description>"Main Driver 1"</Description>
+              <Options moHideChildren="1"/>
+              <ShowAsHex>1</ShowAsHex>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pDriver1</Address>
+              <Offsets>
+                <Offset>0</Offset>
+                <Offset>Driver.mStats</Offset>
+              </Offsets>
+              <CheatEntries>
+                <CheatEntry>
+                  <ID>274</ID>
+                  <Description>"Contract"</Description>
+                  <Options moHideChildren="1"/>
+                  <ShowAsHex>1</ShowAsHex>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pDriver1</Address>
+                  <Offsets>
+                    <Offset>0</Offset>
+                    <Offset>Person.contract</Offset>
+                  </Offsets>
+                  <CheatEntries>
+                    <CheatEntry>
+                      <ID>277</ID>
+                      <Description>"Yearly Wages"</Description>
+                      <VariableType>4 Bytes</VariableType>
+                      <Address>+ContractPerson.yearlyWages</Address>
+                    </CheatEntry>
+                    <CheatEntry>
+                      <ID>285</ID>
+                      <Description>"Qualifying Bonus Enabled"</Description>
+                      <DropDownList DescriptionOnly="1" DisplayValueAsItem="1">0:False
+1:True
+</DropDownList>
+                      <VariableType>Byte</VariableType>
+                      <Address>+ContractPerson.hasQualifyingBonus</Address>
+                    </CheatEntry>
+                    <CheatEntry>
+                      <ID>278</ID>
+                      <Description>"Qualifying Bonus"</Description>
+                      <VariableType>4 Bytes</VariableType>
+                      <Address>+ContractPerson.qualifyingBonus</Address>
+                    </CheatEntry>
+                    <CheatEntry>
+                      <ID>279</ID>
+                      <Description>"Qualifying Bonus Target Position"</Description>
+                      <VariableType>4 Bytes</VariableType>
+                      <Address>+ContractPerson.qualifyingBonusTargetPosition</Address>
+                    </CheatEntry>
+                    <CheatEntry>
+                      <ID>284</ID>
+                      <Description>"Race Bonus Enabled"</Description>
+                      <DropDownList DescriptionOnly="1" DisplayValueAsItem="1">0:False
+1:True
+</DropDownList>
+                      <VariableType>Byte</VariableType>
+                      <Address>+ContractPerson.hasRaceBonus</Address>
+                    </CheatEntry>
+                    <CheatEntry>
+                      <ID>280</ID>
+                      <Description>"Race Bonus"</Description>
+                      <VariableType>4 Bytes</VariableType>
+                      <Address>+ContractPerson.raceBonus</Address>
+                    </CheatEntry>
+                    <CheatEntry>
+                      <ID>281</ID>
+                      <Description>"Race Bonus Target Position"</Description>
+                      <VariableType>4 Bytes</VariableType>
+                      <Address>+ContractPerson.raceBonusTargetPosition</Address>
+                    </CheatEntry>
+                    <CheatEntry>
+                      <ID>282</ID>
+                      <Description>"Champion Bonus"</Description>
+                      <VariableType>4 Bytes</VariableType>
+                      <Address>+ContractPerson.championBonus</Address>
+                    </CheatEntry>
+                    <CheatEntry>
+                      <ID>283</ID>
+                      <Description>"Pay Driver"</Description>
+                      <VariableType>4 Bytes</VariableType>
+                      <Address>+ContractPerson.payDriver</Address>
+                    </CheatEntry>
+                  </CheatEntries>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>188</ID>
+                  <Description>"First Name"</Description>
+                  <VariableType>String</VariableType>
+                  <Length>10</Length>
+                  <Unicode>1</Unicode>
+                  <CodePage>0</CodePage>
+                  <ZeroTerminate>1</ZeroTerminate>
+                  <Address>pDriver1</Address>
+                  <Offsets>
+                    <Offset>14</Offset>
+                    <Offset>28</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>237</ID>
+                  <Description>"Last Name"</Description>
+                  <VariableType>String</VariableType>
+                  <Length>10</Length>
+                  <Unicode>1</Unicode>
+                  <CodePage>0</CodePage>
+                  <ZeroTerminate>1</ZeroTerminate>
+                  <Address>pDriver1</Address>
+                  <Offsets>
+                    <Offset>14</Offset>
+                    <Offset>30</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>236</ID>
+                  <Description>"Braking"</Description>
+                  <VariableType>Float</VariableType>
+                  <Address>+DriverStats.braking</Address>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>189</ID>
+                  <Description>"Cornering"</Description>
+                  <VariableType>Float</VariableType>
+                  <Address>+DriverStats.cornering</Address>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>190</ID>
+                  <Description>"Smoothness"</Description>
+                  <VariableType>Float</VariableType>
+                  <Address>+DriverStats.smoothness</Address>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>191</ID>
+                  <Description>"Overtaking"</Description>
+                  <VariableType>Float</VariableType>
+                  <Address>+DriverStats.overtaking</Address>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>192</ID>
+                  <Description>"Consistency"</Description>
+                  <VariableType>Float</VariableType>
+                  <Address>+DriverStats.consistency</Address>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>193</ID>
+                  <Description>"Adaptability"</Description>
+                  <VariableType>Float</VariableType>
+                  <Address>+DriverStats.adaptability</Address>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>194</ID>
+                  <Description>"Fitness"</Description>
+                  <VariableType>Float</VariableType>
+                  <Address>+DriverStats.fitness</Address>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>195</ID>
+                  <Description>"Feedback"</Description>
+                  <VariableType>Float</VariableType>
+                  <Address>+DriverStats.feedback</Address>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>196</ID>
+                  <Description>"Focus"</Description>
+                  <VariableType>Float</VariableType>
+                  <Address>+DriverStats.focus</Address>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>199</ID>
+                  <Description>"Marketability"</Description>
+                  <VariableType>Float</VariableType>
+                  <Address>+DriverStats.marketability</Address>
+                </CheatEntry>
+              </CheatEntries>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>201</ID>
+              <Description>"Main Driver 2"</Description>
+              <Options moHideChildren="1"/>
+              <ShowAsHex>1</ShowAsHex>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pDriver2</Address>
+              <Offsets>
+                <Offset>0</Offset>
+                <Offset>Driver.mStats</Offset>
+              </Offsets>
+              <CheatEntries>
+                <CheatEntry>
+                  <ID>286</ID>
+                  <Description>"Contract"</Description>
+                  <Options moHideChildren="1"/>
+                  <ShowAsHex>1</ShowAsHex>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pDriver2</Address>
+                  <Offsets>
+                    <Offset>0</Offset>
+                    <Offset>Person.contract</Offset>
+                  </Offsets>
+                  <CheatEntries>
+                    <CheatEntry>
+                      <ID>289</ID>
+                      <Description>"Yearly Wages"</Description>
+                      <VariableType>4 Bytes</VariableType>
+                      <Address>+ContractPerson.yearlyWages</Address>
+                    </CheatEntry>
+                    <CheatEntry>
+                      <ID>290</ID>
+                      <Description>"Qualifying Bonus Enabled"</Description>
+                      <DropDownList DescriptionOnly="1" DisplayValueAsItem="1">0:False
+1:True
+</DropDownList>
+                      <VariableType>Byte</VariableType>
+                      <Address>+ContractPerson.hasQualifyingBonus</Address>
+                    </CheatEntry>
+                    <CheatEntry>
+                      <ID>291</ID>
+                      <Description>"Qualifying Bonus"</Description>
+                      <VariableType>4 Bytes</VariableType>
+                      <Address>+ContractPerson.qualifyingBonus</Address>
+                    </CheatEntry>
+                    <CheatEntry>
+                      <ID>292</ID>
+                      <Description>"Qualifying Bonus Target Position"</Description>
+                      <VariableType>4 Bytes</VariableType>
+                      <Address>+ContractPerson.qualifyingBonusTargetPosition</Address>
+                    </CheatEntry>
+                    <CheatEntry>
+                      <ID>293</ID>
+                      <Description>"Race Bonus Enabled"</Description>
+                      <DropDownList DescriptionOnly="1" DisplayValueAsItem="1">0:False
+1:True
+</DropDownList>
+                      <VariableType>Byte</VariableType>
+                      <Address>+ContractPerson.hasRaceBonus</Address>
+                    </CheatEntry>
+                    <CheatEntry>
+                      <ID>294</ID>
+                      <Description>"Race Bonus"</Description>
+                      <VariableType>4 Bytes</VariableType>
+                      <Address>+ContractPerson.raceBonus</Address>
+                    </CheatEntry>
+                    <CheatEntry>
+                      <ID>295</ID>
+                      <Description>"Race Bonus Target Position"</Description>
+                      <VariableType>4 Bytes</VariableType>
+                      <Address>+ContractPerson.raceBonusTargetPosition</Address>
+                    </CheatEntry>
+                    <CheatEntry>
+                      <ID>296</ID>
+                      <Description>"Champion Bonus"</Description>
+                      <VariableType>4 Bytes</VariableType>
+                      <Address>+ContractPerson.championBonus</Address>
+                    </CheatEntry>
+                    <CheatEntry>
+                      <ID>297</ID>
+                      <Description>"Pay Driver"</Description>
+                      <VariableType>4 Bytes</VariableType>
+                      <Address>+ContractPerson.payDriver</Address>
+                    </CheatEntry>
+                  </CheatEntries>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>238</ID>
+                  <Description>"First Name"</Description>
+                  <VariableType>String</VariableType>
+                  <Length>10</Length>
+                  <Unicode>1</Unicode>
+                  <CodePage>0</CodePage>
+                  <ZeroTerminate>1</ZeroTerminate>
+                  <Address>pDriver2</Address>
+                  <Offsets>
+                    <Offset>14</Offset>
+                    <Offset>28</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>239</ID>
+                  <Description>"Last Name"</Description>
+                  <VariableType>String</VariableType>
+                  <Length>10</Length>
+                  <Unicode>1</Unicode>
+                  <CodePage>0</CodePage>
+                  <ZeroTerminate>1</ZeroTerminate>
+                  <Address>pDriver2</Address>
+                  <Offsets>
+                    <Offset>14</Offset>
+                    <Offset>30</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>202</ID>
+                  <Description>"Braking"</Description>
+                  <VariableType>Float</VariableType>
+                  <Address>+DriverStats.braking</Address>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>203</ID>
+                  <Description>"Cornering"</Description>
+                  <VariableType>Float</VariableType>
+                  <Address>+DriverStats.cornering</Address>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>204</ID>
+                  <Description>"Smoothness"</Description>
+                  <VariableType>Float</VariableType>
+                  <Address>+DriverStats.smoothness</Address>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>205</ID>
+                  <Description>"Overtaking"</Description>
+                  <VariableType>Float</VariableType>
+                  <Address>+DriverStats.overtaking</Address>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>206</ID>
+                  <Description>"Consistency"</Description>
+                  <VariableType>Float</VariableType>
+                  <Address>+DriverStats.consistency</Address>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>207</ID>
+                  <Description>"Adaptability"</Description>
+                  <VariableType>Float</VariableType>
+                  <Address>+DriverStats.adaptability</Address>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>208</ID>
+                  <Description>"Fitness"</Description>
+                  <VariableType>Float</VariableType>
+                  <Address>+DriverStats.fitness</Address>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>209</ID>
+                  <Description>"Feedback"</Description>
+                  <VariableType>Float</VariableType>
+                  <Address>+DriverStats.feedback</Address>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>210</ID>
+                  <Description>"Focus"</Description>
+                  <VariableType>Float</VariableType>
+                  <Address>+DriverStats.focus</Address>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>213</ID>
+                  <Description>"Marketability"</Description>
+                  <VariableType>Float</VariableType>
+                  <Address>+DriverStats.marketability</Address>
+                </CheatEntry>
+              </CheatEntries>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>214</ID>
+              <Description>"Reserve Driver"</Description>
+              <Options moHideChildren="1"/>
+              <ShowAsHex>1</ShowAsHex>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pDriver3</Address>
+              <Offsets>
+                <Offset>0</Offset>
+                <Offset>Driver.mStats</Offset>
+              </Offsets>
+              <CheatEntries>
+                <CheatEntry>
+                  <ID>298</ID>
+                  <Description>"Contract"</Description>
+                  <Options moHideChildren="1"/>
+                  <ShowAsHex>1</ShowAsHex>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pDriver3</Address>
+                  <Offsets>
+                    <Offset>0</Offset>
+                    <Offset>Person.contract</Offset>
+                  </Offsets>
+                  <CheatEntries>
+                    <CheatEntry>
+                      <ID>301</ID>
+                      <Description>"Yearly Wages"</Description>
+                      <VariableType>4 Bytes</VariableType>
+                      <Address>+ContractPerson.yearlyWages</Address>
+                    </CheatEntry>
+                    <CheatEntry>
+                      <ID>302</ID>
+                      <Description>"Qualifying Bonus Enabled"</Description>
+                      <DropDownList DescriptionOnly="1" DisplayValueAsItem="1">0:False
+1:True
+</DropDownList>
+                      <VariableType>Byte</VariableType>
+                      <Address>+ContractPerson.hasQualifyingBonus</Address>
+                    </CheatEntry>
+                    <CheatEntry>
+                      <ID>303</ID>
+                      <Description>"Qualifying Bonus"</Description>
+                      <VariableType>4 Bytes</VariableType>
+                      <Address>+ContractPerson.qualifyingBonus</Address>
+                    </CheatEntry>
+                    <CheatEntry>
+                      <ID>304</ID>
+                      <Description>"Qualifying Bonus Target Position"</Description>
+                      <VariableType>4 Bytes</VariableType>
+                      <Address>+ContractPerson.qualifyingBonusTargetPosition</Address>
+                    </CheatEntry>
+                    <CheatEntry>
+                      <ID>305</ID>
+                      <Description>"Race Bonus Enabled"</Description>
+                      <DropDownList DescriptionOnly="1" DisplayValueAsItem="1">0:False
+1:True
+</DropDownList>
+                      <VariableType>Byte</VariableType>
+                      <Address>+ContractPerson.hasRaceBonus</Address>
+                    </CheatEntry>
+                    <CheatEntry>
+                      <ID>306</ID>
+                      <Description>"Race Bonus"</Description>
+                      <VariableType>4 Bytes</VariableType>
+                      <Address>+ContractPerson.raceBonus</Address>
+                    </CheatEntry>
+                    <CheatEntry>
+                      <ID>307</ID>
+                      <Description>"Race Bonus Target Position"</Description>
+                      <VariableType>4 Bytes</VariableType>
+                      <Address>+ContractPerson.raceBonusTargetPosition</Address>
+                    </CheatEntry>
+                    <CheatEntry>
+                      <ID>308</ID>
+                      <Description>"Champion Bonus"</Description>
+                      <VariableType>4 Bytes</VariableType>
+                      <Address>+ContractPerson.championBonus</Address>
+                    </CheatEntry>
+                    <CheatEntry>
+                      <ID>309</ID>
+                      <Description>"Pay Driver"</Description>
+                      <VariableType>4 Bytes</VariableType>
+                      <Address>+ContractPerson.payDriver</Address>
+                    </CheatEntry>
+                  </CheatEntries>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>240</ID>
+                  <Description>"First Name"</Description>
+                  <VariableType>String</VariableType>
+                  <Length>10</Length>
+                  <Unicode>1</Unicode>
+                  <CodePage>0</CodePage>
+                  <ZeroTerminate>1</ZeroTerminate>
+                  <Address>pDriver3</Address>
+                  <Offsets>
+                    <Offset>14</Offset>
+                    <Offset>28</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>241</ID>
+                  <Description>"Last Name"</Description>
+                  <VariableType>String</VariableType>
+                  <Length>10</Length>
+                  <Unicode>1</Unicode>
+                  <CodePage>0</CodePage>
+                  <ZeroTerminate>1</ZeroTerminate>
+                  <Address>pDriver3</Address>
+                  <Offsets>
+                    <Offset>14</Offset>
+                    <Offset>30</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>215</ID>
+                  <Description>"Braking"</Description>
+                  <VariableType>Float</VariableType>
+                  <Address>+DriverStats.braking</Address>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>216</ID>
+                  <Description>"Cornering"</Description>
+                  <VariableType>Float</VariableType>
+                  <Address>+DriverStats.cornering</Address>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>217</ID>
+                  <Description>"Smoothness"</Description>
+                  <VariableType>Float</VariableType>
+                  <Address>+DriverStats.smoothness</Address>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>218</ID>
+                  <Description>"Overtaking"</Description>
+                  <VariableType>Float</VariableType>
+                  <Address>+DriverStats.overtaking</Address>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>219</ID>
+                  <Description>"Consistency"</Description>
+                  <VariableType>Float</VariableType>
+                  <Address>+DriverStats.consistency</Address>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>220</ID>
+                  <Description>"Adaptability"</Description>
+                  <VariableType>Float</VariableType>
+                  <Address>+DriverStats.adaptability</Address>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>221</ID>
+                  <Description>"Fitness"</Description>
+                  <VariableType>Float</VariableType>
+                  <Address>+DriverStats.fitness</Address>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>222</ID>
+                  <Description>"Feedback"</Description>
+                  <VariableType>Float</VariableType>
+                  <Address>+DriverStats.feedback</Address>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>223</ID>
+                  <Description>"Focus"</Description>
+                  <VariableType>Float</VariableType>
+                  <Address>+DriverStats.focus</Address>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>226</ID>
+                  <Description>"Marketability"</Description>
+                  <VariableType>Float</VariableType>
+                  <Address>+DriverStats.marketability</Address>
+                </CheatEntry>
+              </CheatEntries>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>228</ID>
+          <Description>"Engineer "</Description>
+          <Options moHideChildren="1"/>
+          <ShowAsHex>1</ShowAsHex>
+          <VariableType>4 Bytes</VariableType>
+          <Address>pEngineer</Address>
+          <Offsets>
+            <Offset>0</Offset>
+            <Offset>EngineerStats.partContributionStats</Offset>
+            <Offset>Engineer.stats</Offset>
+          </Offsets>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>310</ID>
+              <Description>"Contract"</Description>
+              <Options moHideChildren="1"/>
+              <ShowAsHex>1</ShowAsHex>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pEngineer</Address>
+              <Offsets>
+                <Offset>0</Offset>
+                <Offset>Person.contract</Offset>
+              </Offsets>
+              <CheatEntries>
+                <CheatEntry>
+                  <ID>313</ID>
+                  <Description>"Yearly Wages"</Description>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>+ContractPerson.yearlyWages</Address>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>314</ID>
+                  <Description>"Qualifying Bonus Enabled"</Description>
+                  <DropDownList DescriptionOnly="1" DisplayValueAsItem="1">0:False
+1:True
+</DropDownList>
+                  <VariableType>Byte</VariableType>
+                  <Address>+ContractPerson.hasQualifyingBonus</Address>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>315</ID>
+                  <Description>"Qualifying Bonus"</Description>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>+ContractPerson.qualifyingBonus</Address>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>316</ID>
+                  <Description>"Qualifying Bonus Target Position"</Description>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>+ContractPerson.qualifyingBonusTargetPosition</Address>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>317</ID>
+                  <Description>"Race Bonus Enabled"</Description>
+                  <DropDownList DescriptionOnly="1" DisplayValueAsItem="1">0:False
+1:True
+</DropDownList>
+                  <VariableType>Byte</VariableType>
+                  <Address>+ContractPerson.hasRaceBonus</Address>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>318</ID>
+                  <Description>"Race Bonus"</Description>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>+ContractPerson.raceBonus</Address>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>319</ID>
+                  <Description>"Race Bonus Target Position"</Description>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>+ContractPerson.raceBonusTargetPosition</Address>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>320</ID>
+                  <Description>"Champion Bonus"</Description>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>+ContractPerson.championBonus</Address>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>321</ID>
+                  <Description>"Pay Driver"</Description>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>+ContractPerson.payDriver</Address>
+                </CheatEntry>
+              </CheatEntries>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>242</ID>
+              <Description>"First Name"</Description>
+              <VariableType>String</VariableType>
+              <Length>10</Length>
+              <Unicode>1</Unicode>
+              <CodePage>0</CodePage>
+              <ZeroTerminate>1</ZeroTerminate>
+              <Address>pEngineer</Address>
+              <Offsets>
+                <Offset>14</Offset>
+                <Offset>28</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>243</ID>
+              <Description>"Last Name"</Description>
+              <VariableType>String</VariableType>
+              <Length>10</Length>
+              <Unicode>1</Unicode>
+              <CodePage>0</CodePage>
+              <ZeroTerminate>1</ZeroTerminate>
+              <Address>pEngineer</Address>
+              <Offsets>
+                <Offset>14</Offset>
+                <Offset>30</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>229</ID>
+              <Description>"Engine"</Description>
+              <VariableType>Float</VariableType>
+              <Address>+CarStats.topSpeed</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>230</ID>
+              <Description>"Gear"</Description>
+              <VariableType>Float</VariableType>
+              <Address>+CarStats.acceleration</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>231</ID>
+              <Description>"Breaks"</Description>
+              <VariableType>Float</VariableType>
+              <Address>+CarStats.braking</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>232</ID>
+              <Description>"Front"</Description>
+              <VariableType>Float</VariableType>
+              <Address>+CarStats.lowSpeedCorners</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>233</ID>
+              <Description>"Mounting"</Description>
+              <VariableType>Float</VariableType>
+              <Address>+CarStats.mediumSpeedCorners</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>234</ID>
+              <Description>"Back"</Description>
+              <VariableType>Float</VariableType>
+              <Address>+CarStats.highSpeedCorners</Address>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>227</ID>
+          <Description>"Mechanics"</Description>
+          <Options moHideChildren="1" moDeactivateChildrenAsWell="1"/>
+          <LastState Value="" RealAddress="00000000"/>
+          <GroupHeader>1</GroupHeader>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>148</ID>
+              <Description>"Mechanic 1"</Description>
+              <Options moHideChildren="1"/>
+              <ShowAsHex>1</ShowAsHex>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pMechanic1</Address>
+              <Offsets>
+                <Offset>0</Offset>
+                <Offset>Mechanic.stats</Offset>
+              </Offsets>
+              <CheatEntries>
+                <CheatEntry>
+                  <ID>322</ID>
+                  <Description>"Contract"</Description>
+                  <Options moHideChildren="1"/>
+                  <ShowAsHex>1</ShowAsHex>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pMechanic1</Address>
+                  <Offsets>
+                    <Offset>0</Offset>
+                    <Offset>Person.contract</Offset>
+                  </Offsets>
+                  <CheatEntries>
+                    <CheatEntry>
+                      <ID>325</ID>
+                      <Description>"Yearly Wages"</Description>
+                      <VariableType>4 Bytes</VariableType>
+                      <Address>+ContractPerson.yearlyWages</Address>
+                    </CheatEntry>
+                    <CheatEntry>
+                      <ID>326</ID>
+                      <Description>"Qualifying Bonus Enabled"</Description>
+                      <DropDownList DescriptionOnly="1" DisplayValueAsItem="1">0:False
+1:True
+</DropDownList>
+                      <VariableType>Byte</VariableType>
+                      <Address>+ContractPerson.hasQualifyingBonus</Address>
+                    </CheatEntry>
+                    <CheatEntry>
+                      <ID>327</ID>
+                      <Description>"Qualifying Bonus"</Description>
+                      <VariableType>4 Bytes</VariableType>
+                      <Address>+ContractPerson.qualifyingBonus</Address>
+                    </CheatEntry>
+                    <CheatEntry>
+                      <ID>328</ID>
+                      <Description>"Qualifying Bonus Target Position"</Description>
+                      <VariableType>4 Bytes</VariableType>
+                      <Address>+ContractPerson.qualifyingBonusTargetPosition</Address>
+                    </CheatEntry>
+                    <CheatEntry>
+                      <ID>329</ID>
+                      <Description>"Race Bonus Enabled"</Description>
+                      <DropDownList DescriptionOnly="1" DisplayValueAsItem="1">0:False
+1:True
+</DropDownList>
+                      <VariableType>Byte</VariableType>
+                      <Address>+ContractPerson.hasRaceBonus</Address>
+                    </CheatEntry>
+                    <CheatEntry>
+                      <ID>330</ID>
+                      <Description>"Race Bonus"</Description>
+                      <VariableType>4 Bytes</VariableType>
+                      <Address>+ContractPerson.raceBonus</Address>
+                    </CheatEntry>
+                    <CheatEntry>
+                      <ID>331</ID>
+                      <Description>"Race Bonus Target Position"</Description>
+                      <VariableType>4 Bytes</VariableType>
+                      <Address>+ContractPerson.raceBonusTargetPosition</Address>
+                    </CheatEntry>
+                    <CheatEntry>
+                      <ID>332</ID>
+                      <Description>"Champion Bonus"</Description>
+                      <VariableType>4 Bytes</VariableType>
+                      <Address>+ContractPerson.championBonus</Address>
+                    </CheatEntry>
+                    <CheatEntry>
+                      <ID>333</ID>
+                      <Description>"Pay Driver"</Description>
+                      <VariableType>4 Bytes</VariableType>
+                      <Address>+ContractPerson.payDriver</Address>
+                    </CheatEntry>
+                  </CheatEntries>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>244</ID>
+                  <Description>"First Name"</Description>
+                  <VariableType>String</VariableType>
+                  <Length>10</Length>
+                  <Unicode>1</Unicode>
+                  <CodePage>0</CodePage>
+                  <ZeroTerminate>1</ZeroTerminate>
+                  <Address>pMechanic1</Address>
+                  <Offsets>
+                    <Offset>14</Offset>
+                    <Offset>28</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>245</ID>
+                  <Description>"Last Name"</Description>
+                  <VariableType>String</VariableType>
+                  <Length>10</Length>
+                  <Unicode>1</Unicode>
+                  <CodePage>0</CodePage>
+                  <ZeroTerminate>1</ZeroTerminate>
+                  <Address>pMechanic1</Address>
+                  <Offsets>
+                    <Offset>14</Offset>
+                    <Offset>30</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>174</ID>
+                  <Description>"Reliability"</Description>
+                  <VariableType>Float</VariableType>
+                  <Address>+MechanicStats.reliability</Address>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>175</ID>
+                  <Description>"Performance"</Description>
+                  <VariableType>Float</VariableType>
+                  <Address>+MechanicStats.performance</Address>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>176</ID>
+                  <Description>"Concentration"</Description>
+                  <VariableType>Float</VariableType>
+                  <Address>+MechanicStats.concentration</Address>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>177</ID>
+                  <Description>"Speed"</Description>
+                  <VariableType>Float</VariableType>
+                  <Address>+MechanicStats.speed</Address>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>178</ID>
+                  <Description>"PitStops"</Description>
+                  <VariableType>Float</VariableType>
+                  <Address>+MechanicStats.pitStops</Address>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>179</ID>
+                  <Description>"Leadership"</Description>
+                  <VariableType>Float</VariableType>
+                  <Address>+MechanicStats.leadership</Address>
+                </CheatEntry>
+              </CheatEntries>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>180</ID>
+              <Description>"Mechanic 2"</Description>
+              <Options moHideChildren="1"/>
+              <ShowAsHex>1</ShowAsHex>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pMechanic2</Address>
+              <Offsets>
+                <Offset>0</Offset>
+                <Offset>Mechanic.stats</Offset>
+              </Offsets>
+              <CheatEntries>
+                <CheatEntry>
+                  <ID>334</ID>
+                  <Description>"Contract"</Description>
+                  <Options moHideChildren="1"/>
+                  <ShowAsHex>1</ShowAsHex>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pMechanic2</Address>
+                  <Offsets>
+                    <Offset>0</Offset>
+                    <Offset>Person.contract</Offset>
+                  </Offsets>
+                  <CheatEntries>
+                    <CheatEntry>
+                      <ID>337</ID>
+                      <Description>"Yearly Wages"</Description>
+                      <VariableType>4 Bytes</VariableType>
+                      <Address>+ContractPerson.yearlyWages</Address>
+                    </CheatEntry>
+                    <CheatEntry>
+                      <ID>338</ID>
+                      <Description>"Qualifying Bonus Enabled"</Description>
+                      <DropDownList DescriptionOnly="1" DisplayValueAsItem="1">0:False
+1:True
+</DropDownList>
+                      <VariableType>Byte</VariableType>
+                      <Address>+ContractPerson.hasQualifyingBonus</Address>
+                    </CheatEntry>
+                    <CheatEntry>
+                      <ID>339</ID>
+                      <Description>"Qualifying Bonus"</Description>
+                      <VariableType>4 Bytes</VariableType>
+                      <Address>+ContractPerson.qualifyingBonus</Address>
+                    </CheatEntry>
+                    <CheatEntry>
+                      <ID>340</ID>
+                      <Description>"Qualifying Bonus Target Position"</Description>
+                      <VariableType>4 Bytes</VariableType>
+                      <Address>+ContractPerson.qualifyingBonusTargetPosition</Address>
+                    </CheatEntry>
+                    <CheatEntry>
+                      <ID>341</ID>
+                      <Description>"Race Bonus Enabled"</Description>
+                      <DropDownList DescriptionOnly="1" DisplayValueAsItem="1">0:False
+1:True
+</DropDownList>
+                      <VariableType>Byte</VariableType>
+                      <Address>+ContractPerson.hasRaceBonus</Address>
+                    </CheatEntry>
+                    <CheatEntry>
+                      <ID>342</ID>
+                      <Description>"Race Bonus"</Description>
+                      <VariableType>4 Bytes</VariableType>
+                      <Address>+ContractPerson.raceBonus</Address>
+                    </CheatEntry>
+                    <CheatEntry>
+                      <ID>343</ID>
+                      <Description>"Race Bonus Target Position"</Description>
+                      <VariableType>4 Bytes</VariableType>
+                      <Address>+ContractPerson.raceBonusTargetPosition</Address>
+                    </CheatEntry>
+                    <CheatEntry>
+                      <ID>344</ID>
+                      <Description>"Champion Bonus"</Description>
+                      <VariableType>4 Bytes</VariableType>
+                      <Address>+ContractPerson.championBonus</Address>
+                    </CheatEntry>
+                    <CheatEntry>
+                      <ID>345</ID>
+                      <Description>"Pay Driver"</Description>
+                      <VariableType>4 Bytes</VariableType>
+                      <Address>+ContractPerson.payDriver</Address>
+                    </CheatEntry>
+                  </CheatEntries>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>246</ID>
+                  <Description>"First Name"</Description>
+                  <VariableType>String</VariableType>
+                  <Length>10</Length>
+                  <Unicode>1</Unicode>
+                  <CodePage>0</CodePage>
+                  <ZeroTerminate>1</ZeroTerminate>
+                  <Address>pMechanic2</Address>
+                  <Offsets>
+                    <Offset>14</Offset>
+                    <Offset>28</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>247</ID>
+                  <Description>"Last Name"</Description>
+                  <VariableType>String</VariableType>
+                  <Length>10</Length>
+                  <Unicode>1</Unicode>
+                  <CodePage>0</CodePage>
+                  <ZeroTerminate>1</ZeroTerminate>
+                  <Address>pMechanic2</Address>
+                  <Offsets>
+                    <Offset>14</Offset>
+                    <Offset>30</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>181</ID>
+                  <Description>"Reliability"</Description>
+                  <VariableType>Float</VariableType>
+                  <Address>+MechanicStats.reliability</Address>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>182</ID>
+                  <Description>"Performance"</Description>
+                  <VariableType>Float</VariableType>
+                  <Address>+MechanicStats.performance</Address>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>183</ID>
+                  <Description>"Concentration"</Description>
+                  <VariableType>Float</VariableType>
+                  <Address>+MechanicStats.concentration</Address>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>184</ID>
+                  <Description>"Speed"</Description>
+                  <VariableType>Float</VariableType>
+                  <Address>+MechanicStats.speed</Address>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>185</ID>
+                  <Description>"PitStops"</Description>
+                  <VariableType>Float</VariableType>
+                  <Address>+MechanicStats.pitStops</Address>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>186</ID>
+                  <Description>"Leadership"</Description>
+                  <VariableType>Float</VariableType>
+                  <Address>+MechanicStats.leadership</Address>
+                </CheatEntry>
+              </CheatEntries>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>349</ID>
+          <Description>"Fast Part Improvement"</Description>
+          <LastState/>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>define(PartImprovementGetWorkRateAddress,PartImprovement:GetWorkRate+21a)
+define(PartImprovementGetWorkRateBytes,F2 0F 5E C1 F2 0F 5A C0)
+
+getmonostruct(PartImprovement)
+getmonostruct(Team)
+[ENABLE]
+
+assert(PartImprovementGetWorkRateAddress,PartImprovementGetWorkRateBytes)
+alloc(newmem,$1000,PartImprovementGetWorkRateAddress)
+
+label(code)
+label(return)
+label(dValue)
+
+registersymbol(PartImprovementGetWorkRateAddress)
+
+newmem:
+  push rsi
+
+  //Entity/Team
+  mov rsi, [rdi+PartImprovement.mTeam]
+  //TeamID
+  mov esi, [rsi+Team.teamID]
+  cmp [iPlayerTeamId], esi
+  jne code
+
+  movsd xmm0, [dValue]
+
+code:
+  pop rsi
+  divsd xmm0,xmm1
+  cvtsd2ss xmm0,xmm0
+  jmp return
+
+dValue:
+ dq (double)5000
+
+PartImprovementGetWorkRateAddress:
+  jmp newmem
+  nop
+  nop
+  nop
+return:
+
+[DISABLE]
+
+PartImprovementGetWorkRateAddress:
+  db PartImprovementGetWorkRateBytes
+  // cvtsd2ss xmm0,xmm0
+  // lea rsp,[rbp-18]
+
+unregistersymbol(PartImprovementGetWorkRateAddress)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: 2BB4517E
+
+2BB45150: 48 83 C4 20                    -  add rsp,20
+2BB45154: F3 0F 5A C0                    -  cvtss2sd xmm0,xmm0
+2BB45158: F2 0F 5A E8                    -  cvtsd2ss xmm5,xmm0
+2BB4515C: F3 0F 11 6D C0                 -  movss [rbp-40],xmm5
+2BB45161: C7 45 C4 09 00 00 00           -  mov [rbp-3C],00000009
+2BB45168: F3 0F 10 45 C0                 -  movss xmm0,[rbp-40]
+2BB4516D: F3 0F 5A C0                    -  cvtss2sd xmm0,xmm0
+2BB45171: B8 90 7E 00 00                 -  mov eax,00007E90
+2BB45176: F2 0F 2A C8                    -  cvtsi2sd xmm1,eax
+2BB4517A: F2 0F 5E C1                    -  divsd xmm0,xmm1
+// ---------- INJECTING HERE ----------
+2BB4517E: F2 0F 5A C0                    -  cvtsd2ss xmm0,xmm0
+2BB45182: 48 8D 65 E8                    -  lea rsp,[rbp-18]
+// ---------- DONE INJECTING  ----------
+2BB45186: 41 5E                          -  pop r14
+2BB45188: 5F                             -  pop rdi
+2BB45189: 5E                             -  pop rsi
+2BB4518A: C9                             -  leave 
+2BB4518B: C3                             -  ret 
+2BB4518C: 40 48                          -  dec eax
+2BB4518E: 8B 8D 00 00 20 42              -  mov ecx,[rbp+42200000]
+2BB45194: 48 8B 85 70 FF FF FF           -  mov rax,[rbp-ContractPerson.raceBonus]
+2BB4519B: 49 B8 00 C0 69 8F C2 F5 3D 00  -  mov r8,003DF5C28F69C000
+2BB451A5: 48 99                          -  cqo 
+}
+</AssemblerScript>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>68</ID>
+          <Description>"Race Cheats"</Description>
+          <Options moHideChildren="1" moDeactivateChildrenAsWell="1"/>
+          <LastState Value="" RealAddress="00000000"/>
+          <GroupHeader>1</GroupHeader>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>65</ID>
+              <Description>"Fuel"</Description>
+              <Options moHideChildren="1"/>
+              <LastState/>
+              <VariableType>Auto Assembler Script</VariableType>
+              <AssemblerScript>define(FuelUpdateFuelAddress,Fuel:UpdateFuel+5)
+define(FuelUpdateFuelBytes,48 83 EC 18 48 8B F1)
+
+//getmonostruct(Player)
+getmonostruct(Fuel)
+getmonostruct(PerformanceImpact)
+getmonostruct(RacingVehicle)
+getmonostruct(Driver)
+getmonostruct(Person)
+getmonostruct(ContractPerson)
+getmonostruct(Team)
+[ENABLE]
+
+assert(FuelUpdateFuelAddress,FuelUpdateFuelBytes)
+alloc(newmem,$1000,FuelUpdateFuelAddress)
+
+label(_checkplayer)
+label(_FuelUpdateFuelExit)
+label(code)
+label(return)
+label(bSabotageEnemy)
+
+registersymbol(FuelUpdateFuelAddress)
+registersymbol(bSabotageEnemy)
+
+newmem:
+  cmp byte ptr [bSabotageEnemy], 1
+  jne _checkplayer
+  mov [rcx+Fuel.mFuelLapDistance], 0
+
+_checkplayer:
+  push rsi
+  //rcx = Fuel/PerformanceImpact
+  cmp rcx, #0
+  je _FuelUpdateFuelExit
+  //RacingVehicle
+  mov rsi, [rcx+PerformanceImpact.mVehicle]
+  cmp rsi, #0
+  je _FuelUpdateFuelExit
+  //Driver/Person
+  mov rsi, [rsi+RacingVehicle.driver]
+  cmp rsi, #0
+  je _FuelUpdateFuelExit
+  //ContractPerson
+  mov rsi, [rsi+Person.contract]
+  cmp rsi, #0
+  je _FuelUpdateFuelExit
+  //Entity/Team
+  mov rsi, [rsi+ContractPerson.employeer]
+  cmp rsi, #0
+  je _FuelUpdateFuelExit
+  //TeamID
+  mov esi, [rsi+Team.teamID]
+  cmp [iPlayerTeamId], esi
+  jne _FuelUpdateFuelExit
+  //Set Fuel
+  mov esi, [rcx+Fuel.mCircuitLapDistance]
+  mov [rcx+Fuel.mFuelLapDistance], esi
+
+_FuelUpdateFuelExit:
+  pop rsi
+
+code:
+  sub rsp,18
+  mov rsi,rcx
+  jmp return
+
+bSabotageEnemy:
+  db 0
+
+FuelUpdateFuelAddress:
+  jmp newmem
+  nop
+  nop
+return:
+
+[DISABLE]
+
+FuelUpdateFuelAddress:
+  db FuelUpdateFuelBytes
+  // sub rsp,18
+  // mov rsi,rcx
+
+unregistersymbol(FuelUpdateFuelAddress)
+unregistersymbol(bSabotageEnemy)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: 1FCDDC35
+
+1FCDDC1D: 04 03                          -  add al,03
+1FCDDC1F: 05 00 00 04 53                 -  add eax,53040000
+1FCDDC24: 01 50 00                       -  add [rax+00],edx
+1FCDDC27: 00 00                          -  add [rax],al
+1FCDDC29: 00 00                          -  add [rax],al
+1FCDDC2B: 00 00                          -  add [rax],al
+1FCDDC2D: 00 00                          -  add [rax],al
+1FCDDC2F: 00 55 48                       -  add [rbp+48],dl
+1FCDDC32: 8B EC                          -  mov ebp,esp
+1FCDDC34: 56                             -  push rsi
+// ---------- INJECTING HERE ----------
+1FCDDC35: 48 83 EC 18                    -  sub rsp,18
+1FCDDC39: 48 8B F1                       -  mov rsi,rcx
+// ---------- DONE INJECTING  ----------
+1FCDDC3C: 48 8B 46 10                    -  mov rax,[rsi+10]
+1FCDDC40: 48 8B C8                       -  mov rcx,rax
+1FCDDC43: 83 39 00                       -  cmp dword ptr [rcx],00
+1FCDDC46: 48 8B 40 40                    -  mov rax,[rax+40]
+1FCDDC4A: 48 8B C8                       -  mov rcx,rax
+1FCDDC4D: 83 39 00                       -  cmp dword ptr [rcx],00
+1FCDDC50: F3 0F 10 40 4C                 -  movss xmm0,[rax+4C]
+1FCDDC55: F3 0F 5A C0                    -  cvtss2sd xmm0,xmm0
+1FCDDC59: F2 0F 5A E8                    -  cvtsd2ss xmm5,xmm0
+1FCDDC5D: F3 0F 11 6D F4                 -  movss [rbp-0C],xmm5
+}
+</AssemblerScript>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>66</ID>
+              <Description>"Tyre"</Description>
+              <Options moHideChildren="1"/>
+              <LastState/>
+              <VariableType>Auto Assembler Script</VariableType>
+              <AssemblerScript>define(TyreSetSimulationUpdateAddress,TyreSet:SimulationUpdate+5)
+define(TyreSetSimulationUpdateBytes,48 83 EC 18 48 8B F1)
+
+//getmonostruct(Player)
+getmonostruct(TyreSet)
+getmonostruct(PerformanceImpact)
+getmonostruct(RacingVehicle)
+getmonostruct(Driver)
+getmonostruct(Person)
+getmonostruct(ContractPerson)
+getmonostruct(Team)
+[ENABLE]
+
+assert(TyreSetSimulationUpdateAddress,TyreSetSimulationUpdateBytes)
+alloc(newmem,$1000,TyreSetSimulationUpdateAddress)
+
+label(_checkplayer)
+label(_TyreSetSimulationUpdateExit)
+label(code)
+label(return)
+label(bSabotageTyreEnemy)
+
+registersymbol(TyreSetSimulationUpdateAddress)
+registersymbol(bSabotageTyreEnemy)
+
+newmem:
+  cmp byte ptr [bSabotageTyreEnemy], 1
+  jne _checkplayer
+  mov [rcx+TyreSet.mCondition], 0
+
+_checkplayer:
+  push rsi
+  //rcx = TyreSet
+  cmp rcx, #0
+  je _TyreSetSimulationUpdateExit
+  //RacingVehicle
+  mov rsi, [rcx+TyreSet.mVehicle]
+  cmp rsi, #0
+  je _TyreSetSimulationUpdateExit
+  //Driver/Person
+  mov rsi, [rsi+RacingVehicle.driver]
+  cmp rsi, #0
+  je _TyreSetSimulationUpdateExit
+  //ContractPerson
+  mov rsi, [rsi+Person.contract]
+  cmp rsi, #0
+  je _TyreSetSimulationUpdateExit
+  //Entity/Team
+  mov rsi, [rsi+ContractPerson.employeer]
+  cmp rsi, #0
+  je _TyreSetSimulationUpdateExit
+  //TeamID
+  mov esi, [rsi+Team.teamID]
+  //Check if Player Team
+  cmp [iPlayerTeamId], esi
+  jne _TyreSetSimulationUpdateExit
+  //Set Tyre
+  mov esi, (float)1.0
+  mov [rcx+TyreSet.mCondition], esi
+  mov esi, (float)0.5
+  mov [rcx+TyreSet.mTemperature], esi
+
+_TyreSetSimulationUpdateExit:
+  pop rsi
+
+code:
+  sub rsp,18
+  mov rsi,rcx
+  jmp return
+
+bSabotageTyreEnemy:
+  db 0
+
+TyreSetSimulationUpdateAddress:
+  jmp newmem
+  nop
+  nop
+return:
+
+[DISABLE]
+
+TyreSetSimulationUpdateAddress:
+  db TyreSetSimulationUpdateBytes
+  // sub rsp,18
+  // mov rsi,rcx
+
+unregistersymbol(TyreSetSimulationUpdateAddress)
+unregistersymbol(bSabotageTyreEnemy)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: 510203D5
+
+510203C1: 0B 0E                          -  or ecx,[rsi]
+510203C3: 00 00                          -  add [rax],al
+510203C5: 00 00                          -  add [rax],al
+510203C7: 00 00                          -  add [rax],al
+510203C9: 00 00                          -  add [rax],al
+510203CB: 00 00                          -  add [rax],al
+510203CD: 00 00                          -  add [rax],al
+510203CF: 00 55 48                       -  add [rbp+48],dl
+510203D2: 8B EC                          -  mov ebp,esp
+510203D4: 56                             -  push rsi
+// ---------- INJECTING HERE ----------
+510203D5: 48 83 EC 18                    -  sub rsp,18
+510203D9: 48 8B F1                       -  mov rsi,rcx
+// ---------- DONE INJECTING  ----------
+510203DC: 48 83 EC 20                    -  sub rsp,20
+510203E0: 49 BB 40 BB 27 13 00 00 00 00  -  mov r11,TyreSet:UpdateTyreDrivingStyleTemperature
+510203EA: 41 FF D3                       -  call r11
+510203ED: 48 83 C4 20                    -  add rsp,20
+510203F1: 48 8B CE                       -  mov rcx,rsi
+510203F4: 48 83 EC 20                    -  sub rsp,20
+510203F8: 49 BB A0 BD 27 13 00 00 00 00  -  mov r11,TyreSet:UpdateWeatherImpactOnTyreTemperature
+51020402: 41 FF D3                       -  call r11
+51020405: 48 83 C4 20                    -  add rsp,20
+51020409: F3 0F 10 46 38                 -  movss xmm0,[rsi+38]
+}
+</AssemblerScript>
+              <CheatEntries>
+                <CheatEntry>
+                  <ID>101</ID>
+                  <Description>"Destroy Enemies Tyre"</Description>
+                  <DropDownList DescriptionOnly="1" DisplayValueAsItem="1">0:Disable
+1:Enable
+</DropDownList>
+                  <VariableType>Byte</VariableType>
+                  <Address>bSabotageTyreEnemy</Address>
+                </CheatEntry>
+              </CheatEntries>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>67</ID>
+              <Description>"Car Parts Condition"</Description>
+              <LastState/>
+              <VariableType>Auto Assembler Script</VariableType>
+              <AssemblerScript>usemono()
+define(CarPartConditionDecrementConditionAddress,CarPartCondition:DecrementCondition+6f)
+define(CarPartConditionDecrementConditionBytes,F2 0F 5C C1 49 8B CF)
+
+//getmonostruct(Player)
+getmonostruct(CarPartCondition)
+getmonostruct(CarPart)
+getmonostruct(Car)
+getmonostruct(CarManager)
+getmonostruct(Team)
+[ENABLE]
+
+assert(CarPartConditionDecrementConditionAddress,CarPartConditionDecrementConditionBytes)
+alloc(newmem,$1000,CarPartConditionDecrementConditionAddress)
+
+label(code)
+label(_CarPartConditionDecrementConditionExit)
+label(return)
+label(fMinCondition)
+
+registersymbol(CarPartConditionDecrementConditionAddress)
+
+newmem:
+  push rsi
+  //r15 = CarPartCondition
+  cmp r15, #0
+  je _CarPartConditionDecrementConditionExit
+  //CarPart
+  mov rsi, [r15+CarPartCondition.mPart]
+  cmp rsi, #0
+  je _CarPartConditionDecrementConditionExit
+  //Car
+  mov rsi, [rsi+CarPart.fittedCar]
+  cmp rsi, #0
+  je _CarPartConditionDecrementConditionExit
+  //CarManager
+  mov rsi, [rsi+Car.mCarManager]
+  cmp rsi, #0
+  je _CarPartConditionDecrementConditionExit
+  //Entity/Team
+  mov rsi, [rsi+CarManager.mTeam]
+  cmp rsi, #0
+  je _CarPartConditionDecrementConditionExit
+  //TeamID
+  mov esi, [rsi+Team.teamID]
+  //Check if Player Team
+  cmp [iPlayerTeamId], esi
+  jne _CarPartConditionDecrementConditionExit
+  //Set Car Part Damage to 0
+  xorps xmm1, xmm1
+/*  movss xmm0, [fMinCondition]
+  comiss xmm0, [rcx+CarPartCondition.mCondition]
+  jb _CarPartConditionDecrementConditionExit
+  movss [rcx+CarPartCondition.mCondition], xmm0
+  mov [rcx+CarPartCondition.mState], #0*/
+
+_CarPartConditionDecrementConditionExit:
+  pop rsi
+
+code:
+  subsd xmm0,xmm1
+  mov rcx,r15
+  jmp return
+
+fMinCondition:
+  dd (float)1.0
+
+CarPartConditionDecrementConditionAddress:
+  jmp newmem
+  nop
+  nop
+return:
+
+[DISABLE]
+
+CarPartConditionDecrementConditionAddress:
+  db CarPartConditionDecrementConditionBytes
+  // subsd xmm0,xmm1
+  // mov rcx,r15
+
+unregistersymbol(CarPartConditionDecrementConditionAddress)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: 132E2700
+
+132E26D4: 48 83 C4 20                    -  add rsp,20
+132E26D8: F3 0F 5A C0                    -  cvtss2sd xmm0,xmm0
+132E26DC: F2 0F 5A E8                    -  cvtsd2ss xmm5,xmm0
+132E26E0: F3 0F 11 6D E4                 -  movss [rbp-1C],xmm5
+132E26E5: 49 63 47 20                    -  movsxd  rax,dword ptr [r15+20]
+132E26E9: 48 89 45 D0                    -  mov [rbp-30],rax
+132E26ED: F3 41 0F 10 47 24              -  movss xmm0,[r15+24]
+132E26F3: F3 0F 5A C0                    -  cvtss2sd xmm0,xmm0
+132E26F7: F3 0F 10 4D E4                 -  movss xmm1,[rbp-1C]
+132E26FC: F3 0F 5A C9                    -  cvtss2sd xmm1,xmm1
+// ---------- INJECTING HERE ----------
+132E2700: F2 0F 5C C1                    -  subsd xmm0,xmm1
+132E2704: 49 8B CF                       -  mov rcx,r15
+// ---------- DONE INJECTING  ----------
+132E2707: F2 0F 10 C8                    -  movsd xmm1,xmm0
+132E270B: F2 0F 5A C9                    -  cvtsd2ss xmm1,xmm1
+132E270F: 48 83 EC 20                    -  sub rsp,20
+132E2713: 49 BB 20 2D 02 51 00 00 00 00  -  mov r11,CarPartCondition:SetCondition
+132E271D: 41 FF D3                       -  call r11
+132E2720: 48 83 C4 20                    -  add rsp,20
+132E2724: 48 8B 45 D0                    -  mov rax,[rbp-30]
+132E2728: 49 63 4F 20                    -  movsxd  rcx,dword ptr [r15+20]
+132E272C: 3B C1                          -  cmp eax,ecx
+132E272E: 0F 84 94 01 00 00              -  je CarPartCondition:DecrementCondition+238
+}
+</AssemblerScript>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>350</ID>
+              <Description>"Car Speed"</Description>
+              <Options moHideChildren="1"/>
+              <LastState/>
+              <VariableType>Auto Assembler Script</VariableType>
+              <AssemblerScript>define(VehicleUpdateSpeedAddress,Vehicle:UpdateSpeed+334)
+define(VehicleUpdateSpeedBytes,F3 0F 5A C0 66 0F 57 C9)
+
+getmonostruct(RacingVehicle)
+getmonostruct(Vehicle)
+getmonostruct(String)
+getmonostruct(Driver)
+getmonostruct(Person)
+getmonostruct(ContractPerson)
+getmonostruct(Team)
+
+[ENABLE]
+
+assert(VehicleUpdateSpeedAddress,VehicleUpdateSpeedBytes)
+alloc(newmem,$1000,VehicleUpdateSpeedAddress)
+
+label(code)
+label(return)
+label(fSpeed)
+label(fOne)
+label(sSafetyVehicle)
+
+registersymbol(VehicleUpdateSpeedAddress)
+registersymbol(fSpeed)
+
+newmem:
+  push rdi
+
+  //Safety Vehicle
+  mov rdi, [rsi+Vehicle.name]
+  mov rdi, [rdi+14]
+  //cmp rdi, 'Safety Vehicle'
+  cmp rdi,[sSafetyVehicle]
+  je code
+
+  //Driver/Person
+  mov rdi, [rsi+RacingVehicle.driver]
+  cmp rdi, #0
+  je code
+  //ContractPerson
+  mov rdi, [rdi+Person.contract]
+  cmp rdi, #0
+  je code
+  //Entity/Team
+  mov rdi, [rdi+ContractPerson.employeer]
+  cmp rdi, #0
+  je code
+  //TeamID
+  mov edi, [rdi+Team.teamID]
+  cmp [iPlayerTeamId], edi
+  jne code
+
+  //Speed
+  movss xmm1, [rbp-74]
+  //xorps xmm0, xmm0
+  comiss xmm1, [fOne]
+  jb code
+  movss xmm0, [fSpeed]
+  //movss [rsi+Vehicle.speed], xmm0
+
+code:
+  pop rdi
+  cvtss2sd xmm0,xmm0
+  xorpd xmm1,xmm1
+  jmp return
+
+fSpeed:
+ dd (float)100
+
+fOne:
+ dd (float)1
+
+sSafetyVehicle:
+  db 'S',0,'a',0,'f',0,'e',0,'t',0,'y',0,' ',0,'V',0,'e',0,'h',0,'i',0,'c',0,'l',0,'e'
+
+VehicleUpdateSpeedAddress:
+  jmp newmem
+  nop
+  nop
+  nop
+return:
+
+[DISABLE]
+
+VehicleUpdateSpeedAddress:
+  db VehicleUpdateSpeedBytes
+  // cvtss2sd xmm0,xmm0
+  // xorpd xmm1,xmm1
+
+unregistersymbol(VehicleUpdateSpeedAddress)
+unregistersymbol(fSpeed)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: 1AFB8AA4
+
+1AFB8A73: 48 83 EC 20                    -  sub rsp,20
+1AFB8A77: 49 BB F0 B2 FB 1A 00 00 00 00  -  mov r11,Vehicle:SetPedalState
+1AFB8A81: 41 FF D3                       -  call r11
+1AFB8A84: 48 83 C4 20                    -  add rsp,20
+1AFB8A88: E9 12 00 00 00                 -  jmp Vehicle:UpdateSpeed+32f
+1AFB8A8D: F3 0F 10 45 8C                 -  movss xmm0,[rbp-74]
+1AFB8A92: F3 0F 5A C0                    -  cvtss2sd xmm0,xmm0
+1AFB8A96: F2 0F 5A E8                    -  cvtsd2ss xmm5,xmm0
+1AFB8A9A: F3 0F 11 6E 7C                 -  movss [rsi+7C],xmm5
+1AFB8A9F: F3 0F 10 46 7C                 -  movss xmm0,[rsi+7C]
+// ---------- INJECTING HERE ----------
+1AFB8AA4: F3 0F 5A C0                    -  cvtss2sd xmm0,xmm0
+1AFB8AA8: 66 0F 57 C9                    -  xorpd xmm1,xmm1
+// ---------- DONE INJECTING  ----------
+1AFB8AAC: F2 0F 5A C9                    -  cvtsd2ss xmm1,xmm1
+1AFB8AB0: F2 0F 5A C0                    -  cvtsd2ss xmm0,xmm0
+1AFB8AB4: 48 83 EC 20                    -  sub rsp,20
+1AFB8AB8: 49 BB B0 34 35 06 00 00 00 00  -  mov r11,UnityEngine:Mathf:Max
+1AFB8AC2: 41 FF D3                       -  call r11
+1AFB8AC5: 48 83 C4 20                    -  add rsp,20
+1AFB8AC9: F3 0F 5A C0                    -  cvtss2sd xmm0,xmm0
+1AFB8ACD: F2 0F 5A E8                    -  cvtsd2ss xmm5,xmm0
+1AFB8AD1: F3 0F 11 6E 7C                 -  movss [rsi+7C],xmm5
+1AFB8AD6: F3 0F 10 46 7C                 -  movss xmm0,[rsi+7C]
+}
+</AssemblerScript>
+              <CheatEntries>
+                <CheatEntry>
+                  <ID>351</ID>
+                  <Description>"Speed"</Description>
+                  <VariableType>Float</VariableType>
+                  <Address>fSpeed</Address>
+                </CheatEntry>
+              </CheatEntries>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>69</ID>
+          <Description>"Debug Infos (Ignore)"</Description>
+          <Options moHideChildren="1"/>
+          <LastState Value="" RealAddress="00000000"/>
+          <GroupHeader>1</GroupHeader>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>62</ID>
+              <Description>"Player Pointer"</Description>
+              <ShowAsHex>1</ShowAsHex>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pPlayer</Address>
+              <Offsets>
+                <Offset>0</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>63</ID>
+              <Description>"Player Team Pointer"</Description>
+              <ShowAsHex>1</ShowAsHex>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pPlayerTeam</Address>
+              <Offsets>
+                <Offset>0</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>64</ID>
+              <Description>"Player Team Id"</Description>
+              <VariableType>4 Bytes</VariableType>
+              <Address>iPlayerTeamId</Address>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>70</ID>
+      <Description>"Part Design"</Description>
+      <Options moHideChildren="1" moDeactivateChildrenAsWell="1"/>
+      <LastState/>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>usemono()
+define(UIComponentEntryOnMouseEnterAddress,UIComponentEntry:OnMouseEnter+5)
+define(UIComponentEntryOnMouseEnterBytes,48 83 EC 08 48 8B F1)
+
+getmonostruct(UIComponentEntry)
+getmonostruct(CarPartComponent)
+[ENABLE]
+
+assert(UIComponentEntryOnMouseEnterAddress,UIComponentEntryOnMouseEnterBytes)
+alloc(newmem,$1000,UIComponentEntryOnMouseEnterAddress)
+
+label(code)
+label(return)
+label(createSuperPart)
+label(bEnableSuperPart)
+label(pCarPartComponent)
+
+registersymbol(UIComponentEntryOnMouseEnterAddress)
+registersymbol(pCarPartComponent)
+registersymbol(bEnableSuperPart)
+registersymbol(CarPartComponent.mNameID)
+registersymbol(CarPartComponent.riskLevel)
+registersymbol(CarPartComponent.statBoost)
+registersymbol(CarPartComponent.maxStatBoost)
+registersymbol(CarPartComponent.reliabilityBoost)
+registersymbol(CarPartComponent.maxReliabilityBoost)
+registersymbol(CarPartComponent.productionTime)
+registersymbol(CarPartComponent.cost)
+registersymbol(CarPartComponent.redZone)
+
+newmem:
+ //rcx = UIComponentEntry
+ cmp [rcx+UIComponentEntry.mComponent], 0
+ je code
+ push rdi
+ mov rdi, [rcx+UIComponentEntry.mComponent]
+ mov [pCarPartComponent], rdi
+ pop rdi
+
+ cmp byte ptr [bEnableSuperPart], 0
+ je code
+
+createSuperPart:
+  push rdi
+  mov rdi, [pCarPartComponent]
+  mov [rdi+CarPartComponent.riskLevel],(float)-10
+  mov [rdi+CarPartComponent.statBoost],(float)500
+  mov [rdi+CarPartComponent.maxStatBoost],(float)500
+  mov [rdi+CarPartComponent.reliabilityBoost],(float)1
+  mov [rdi+CarPartComponent.maxReliabilityBoost],(float)1
+  mov [rdi+CarPartComponent.productionTime],(float)-1000
+  mov [rdi+CarPartComponent.cost],(float)-100000000
+  mov [rdi+CarPartComponent.redZone],(float)-100
+  pop rdi
+
+code:
+  sub rsp,08
+  mov rsi,rcx
+  jmp return
+
+bEnableSuperPart:
+ db 0
+
+pCarPartComponent:
+ dq 0
+
+UIComponentEntryOnMouseEnterAddress:
+  jmp newmem
+  nop
+  nop
+return:
+
+[DISABLE]
+
+UIComponentEntryOnMouseEnterAddress:
+  db UIComponentEntryOnMouseEnterBytes
+  // sub rsp,08
+  // mov rsi,rcx
+
+unregistersymbol(UIComponentEntryOnMouseEnterAddress)
+unregistersymbol(pCarPartComponent)
+unregistersymbol(bEnableSuperPart)
+unregistersymbol(CarPartComponent.mNameID)
+unregistersymbol(CarPartComponent.riskLevel)
+unregistersymbol(CarPartComponent.statBoost)
+unregistersymbol(CarPartComponent.maxStatBoost)
+unregistersymbol(CarPartComponent.reliabilityBoost)
+unregistersymbol(CarPartComponent.maxReliabilityBoost)
+unregistersymbol(CarPartComponent.productionTime)
+unregistersymbol(CarPartComponent.cost)
+unregistersymbol(CarPartComponent.redZone)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: 148EB9A5
+
+148EB98C: 01 50 00                       -  add [rax+00],edx
+148EB98F: 00 00                          -  add [rax],al
+148EB991: E8 6A 46 83 F0                 -  call 05120000
+148EB996: 04 98                          -  add al,-68
+148EB998: DD 5C 0E 00                    -  fstp qword ptr [rsi+rcx+00]
+148EB99C: 00 00                          -  add [rax],al
+148EB99E: 00 00                          -  add [rax],al
+148EB9A0: 55                             -  push rbp
+148EB9A1: 48 8B EC                       -  mov rbp,rsp
+148EB9A4: 56                             -  push rsi
+// ---------- INJECTING HERE ----------
+148EB9A5: 48 83 EC 08                    -  sub rsp,08
+148EB9A9: 48 8B F1                       -  mov rsi,rcx
+// ---------- DONE INJECTING  ----------
+148EB9AC: 48 8B 46 68                    -  mov rax,[rsi+68]
+148EB9B0: 48 85 C0                       -  test rax,rax
+148EB9B3: 0F 84 62 00 00 00              -  je UIComponentEntry:OnMouseEnter+7b
+148EB9B9: 48 83 EC 20                    -  sub rsp,20
+148EB9BD: 49 BB 50 15 AC 1B 00 00 00 00  -  mov r11,UIManager:get_instance
+148EB9C7: 41 FF D3                       -  call r11
+148EB9CA: 48 83 C4 20                    -  add rsp,20
+148EB9CE: 48 8B C8                       -  mov rcx,rax
+148EB9D1: 83 39 00                       -  cmp dword ptr [rcx],00
+148EB9D4: 41 BA B0 92 4A 73              -  mov r10d,734A92B0
+}
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>72</ID>
+          <Description>"Super Part"</Description>
+          <VariableType>Byte</VariableType>
+          <Address>bEnableSuperPart</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>71</ID>
+          <Description>"Car Part Component Pointer"</Description>
+          <ShowAsHex>1</ShowAsHex>
+          <VariableType>4 Bytes</VariableType>
+          <Address>pCarPartComponent</Address>
+          <Offsets>
+            <Offset>0</Offset>
+          </Offsets>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>89</ID>
+              <Description>"RiskLevel"</Description>
+              <VariableType>Float</VariableType>
+              <Address>+CarPartComponent.riskLevel</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>90</ID>
+              <Description>"StatBoost"</Description>
+              <VariableType>Float</VariableType>
+              <Address>+CarPartComponent.statBoost</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>91</ID>
+              <Description>"MaxStatBoost"</Description>
+              <VariableType>Float</VariableType>
+              <Address>+CarPartComponent.maxStatBoost</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>92</ID>
+              <Description>"ReliabilityBoost"</Description>
+              <VariableType>Float</VariableType>
+              <Address>+CarPartComponent.reliabilityBoost</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>93</ID>
+              <Description>"MaxReliabilityBoost"</Description>
+              <VariableType>Float</VariableType>
+              <Address>+CarPartComponent.maxReliabilityBoost</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>94</ID>
+              <Description>"ProductionTime"</Description>
+              <VariableType>Float</VariableType>
+              <Address>+CarPartComponent.productionTime</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>95</ID>
+              <Description>"Cost"</Description>
+              <VariableType>Float</VariableType>
+              <Address>+CarPartComponent.cost</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>96</ID>
+              <Description>"RedZone"</Description>
+              <VariableType>Float</VariableType>
+              <Address>+CarPartComponent.redZone</Address>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>99</ID>
+      <Description>"Practice - Easy Car Setup"</Description>
+      <LastState/>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>define(UISetupBalanceSliderEntrySetFillBarKnowledgeAddress1,UISetupBalanceSliderEntry:SetFillBarKnowledge+75)
+define(UISetupBalanceSliderEntrySetFillBarKnowledgeAddress2,UISetupBalanceSliderEntry:SetFillBarKnowledge+b4)
+define(UISetupBalanceSliderEntrySetFillBarKnowledgeBytes1,F3 0F 5A C9 F2 0F 5C C1)
+define(UISetupBalanceSliderEntrySetFillBarKnowledgeBytes2,F3 0F 5A C9 F2 0F 58 C1)
+
+[ENABLE]
+
+assert(UISetupBalanceSliderEntrySetFillBarKnowledgeAddress1,UISetupBalanceSliderEntrySetFillBarKnowledgeBytes1)
+assert(UISetupBalanceSliderEntrySetFillBarKnowledgeAddress2,UISetupBalanceSliderEntrySetFillBarKnowledgeBytes2)
+alloc(newmem,$1000,UISetupBalanceSliderEntrySetFillBarKnowledgeAddress1)
+
+label(UISetupBalanceSliderEntrySetFillBarKnowledgeCode1)
+label(UISetupBalanceSliderEntrySetFillBarKnowledgeReturn1)
+label(UISetupBalanceSliderEntrySetFillBarKnowledgeCode2)
+label(UISetupBalanceSliderEntrySetFillBarKnowledgeCode2)
+label(fReccomended)
+
+registersymbol(UISetupBalanceSliderEntrySetFillBarKnowledgeAddress1)
+registersymbol(UISetupBalanceSliderEntrySetFillBarKnowledgeAddress2)
+
+newmem:
+
+UISetupBalanceSliderEntrySetFillBarKnowledgeCode1:
+  movss xmm1, [fReccomended]
+  cvtss2sd xmm1,xmm1
+  subsd xmm0,xmm1
+  jmp UISetupBalanceSliderEntrySetFillBarKnowledgeReturn1
+
+UISetupBalanceSliderEntrySetFillBarKnowledgeCode2:
+  movss xmm1, [fReccomended]
+  cvtss2sd xmm1,xmm1
+  addsd xmm0,xmm1
+  jmp UISetupBalanceSliderEntrySetFillBarKnowledgeReturn2
+
+fReccomended:
+ dd (float)0.01
+
+UISetupBalanceSliderEntrySetFillBarKnowledgeAddress1:
+  jmp UISetupBalanceSliderEntrySetFillBarKnowledgeCode1
+  nop
+  nop
+  nop
+UISetupBalanceSliderEntrySetFillBarKnowledgeReturn1:
+
+UISetupBalanceSliderEntrySetFillBarKnowledgeAddress2:
+  jmp UISetupBalanceSliderEntrySetFillBarKnowledgeCode2
+  nop
+  nop
+  nop
+UISetupBalanceSliderEntrySetFillBarKnowledgeReturn2:
+
+[DISABLE]
+
+UISetupBalanceSliderEntrySetFillBarKnowledgeAddress1:
+  db UISetupBalanceSliderEntrySetFillBarKnowledgeBytes1
+  // cvtss2sd xmm1,xmm1
+  // subsd xmm0,xmm1
+
+UISetupBalanceSliderEntrySetFillBarKnowledgeAddress2:
+  db UISetupBalanceSliderEntrySetFillBarKnowledgeBytes2
+  // cvtss2sd xmm1,xmm1
+  // addsd xmm0,xmm1
+
+unregistersymbol(UISetupBalanceSliderEntrySetFillBarKnowledgeAddress1)
+unregistersymbol(UISetupBalanceSliderEntrySetFillBarKnowledgeAddress2)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: 114D3EF5
+
+114D3EC3: F3 0F 5A C9                    -  cvtss2sd xmm1,xmm1
+114D3EC7: F2 0F 58 C1                    -  addsd xmm0,xmm1
+114D3ECB: F3 0F 10 0D FD 04 00 00        -  movss xmm1,[UISetupBalanceSliderEntry:SetFillBarKnowledge+550]
+114D3ED3: F3 0F 5A C9                    -  cvtss2sd xmm1,xmm1
+114D3ED7: F2 0F 5E C1                    -  divsd xmm0,xmm1
+114D3EDB: F2 0F 5A E8                    -  cvtsd2ss xmm5,xmm0
+114D3EDF: F3 0F 11 6D 84                 -  movss [rbp-7C],xmm5
+114D3EE4: F3 0F 10 45 84                 -  movss xmm0,[rbp-7C]
+114D3EE9: F3 0F 5A C0                    -  cvtss2sd xmm0,xmm0
+114D3EED: F3 0F 10 8D 70 FF FF FF        -  movss xmm1,[rbp-00000090]
+// ---------- INJECTING HERE ----------
+114D3EF5: F3 0F 5A C9                    -  cvtss2sd xmm1,xmm1
+114D3EF9: F2 0F 5C C1                    -  subsd xmm0,xmm1
+// ---------- DONE INJECTING  ----------
+114D3EFD: F2 0F 5A C0                    -  cvtsd2ss xmm0,xmm0
+114D3F01: 48 83 EC 20                    -  sub rsp,20
+114D3F05: 49 BB E0 D1 5E 05 00 00 00 00  -  mov r11,UnityEngine:Mathf:Clamp01
+114D3F0F: 41 FF D3                       -  call r11
+114D3F12: 48 83 C4 20                    -  add rsp,20
+114D3F16: F3 0F 5A C0                    -  cvtss2sd xmm0,xmm0
+114D3F1A: F2 0F 5A E8                    -  cvtsd2ss xmm5,xmm0
+114D3F1E: F3 0F 11 6D 80                 -  movss [rbp-80],xmm5
+114D3F23: F3 0F 10 45 84                 -  movss xmm0,[rbp-7C]
+114D3F28: F3 0F 5A C0                    -  cvtss2sd xmm0,xmm0
+}
+
+</AssemblerScript>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>248</ID>
+      <Description>"Traits (Hover over trait in driver details)"</Description>
+      <Options moHideChildren="1"/>
+      <LastState/>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>usemono()
+define(PersonalityTraitGetDescriptionAddress,PersonalityTrait:get_description+5)
+define(PersonalityTraitGetDescriptionByte,48 83 EC 08 48 8B F1)
+
+getmonostruct(PersonalityTrait)
+getmonostruct(PersonalityTraitData)
+getmonostruct(DriverStats)
+
+[ENABLE]
+
+assert(PersonalityTraitGetDescriptionAddress,PersonalityTraitGetDescriptionByte)
+alloc(newmem,$1000,PersonalityTraitGetDescriptionAddress)
+
+label(code)
+label(return)
+label(pTrait)
+
+
+registersymbol(PersonalityTraitGetDescriptionAddress)
+registersymbol(pTrait)
+registersymbol(PersonalityTrait.data)
+
+//PersonalityTraitData
+registersymbol(PersonalityTraitData.driverStatsModifier)
+registersymbol(PersonalityTraitData.moraleModifier)
+registersymbol(PersonalityTraitData.mechanicModifier)
+registersymbol(PersonalityTraitData.teammateModifier)
+registersymbol(PersonalityTraitData.chairmanModifier)
+registersymbol(PersonalityTraitData.improveabilityModifier)
+registersymbol(PersonalityTraitData.potentialModifier)
+registersymbol(PersonalityTraitData.desiredWinsModifier)
+registersymbol(PersonalityTraitData.desiredEarningsModifier)
+registersymbol(PersonalityTraitData.allStats)
+registersymbol(PersonalityTraitData.type)
+/*
+public enum TraitType
+{
+    Permanent,
+    Temporary,
+}
+*/
+
+//Drivers
+registersymbol(DriverStats.braking)
+registersymbol(DriverStats.cornering)
+registersymbol(DriverStats.smoothness)
+registersymbol(DriverStats.overtaking)
+registersymbol(DriverStats.consistency)
+registersymbol(DriverStats.adaptability)
+registersymbol(DriverStats.fitness)
+registersymbol(DriverStats.feedback)
+registersymbol(DriverStats.focus)
+registersymbol(DriverStats.marketability)
+
+newmem:
+  mov [pTrait], rcx
+
+code:
+  sub rsp,08
+  mov rsi,rcx
+  jmp return
+
+pTrait:
+ dq 0
+
+PersonalityTraitGetDescriptionAddress:
+  jmp newmem
+  nop
+  nop
+return:
+
+[DISABLE]
+
+PersonalityTraitGetDescriptionAddress:
+  db PersonalityTraitGetDescriptionByte
+  // sub rsp,08
+  // mov rsi,rcx
+
+unregistersymbol(PersonalityTraitGetDescriptionAddress)
+unregistersymbol(pTrait)
+unregistersymbol(PersonalityTrait.data)
+
+//PersonalityTraitData
+unregistersymbol(PersonalityTraitData.moraleModifier)
+unregistersymbol(PersonalityTraitData.mechanicModifier)
+unregistersymbol(PersonalityTraitData.teammateModifier)
+unregistersymbol(PersonalityTraitData.chairmanModifier)
+unregistersymbol(PersonalityTraitData.improveabilityModifier)
+unregistersymbol(PersonalityTraitData.potentialModifier)
+unregistersymbol(PersonalityTraitData.desiredWinsModifier)
+unregistersymbol(PersonalityTraitData.desiredEarningsModifier)
+unregistersymbol(PersonalityTraitData.allStats)
+unregistersymbol(PersonalityTraitData.type)
+
+
+//Drivers
+unregistersymbol(DriverStats.braking)
+unregistersymbol(DriverStats.cornering)
+unregistersymbol(DriverStats.smoothness)
+unregistersymbol(DriverStats.overtaking)
+unregistersymbol(DriverStats.consistency)
+unregistersymbol(DriverStats.adaptability)
+unregistersymbol(DriverStats.fitness)
+unregistersymbol(DriverStats.feedback)
+unregistersymbol(DriverStats.focus)
+unregistersymbol(DriverStats.marketability)
+
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: 382DC7E5
+
+382DC7D1: 00 00                          -  add [rax],al
+382DC7D3: 00 00                          -  add [rax],al
+382DC7D5: 00 00                          -  add [rax],al
+382DC7D7: 00 00                          -  add [rax],al
+382DC7D9: 00 00                          -  add [rax],al
+382DC7DB: 00 00                          -  add [rax],al
+382DC7DD: 00 00                          -  add [rax],al
+382DC7DF: 00 55 48                       -  add [rbp+48],dl
+382DC7E2: 8B EC                          -  mov ebp,esp
+382DC7E4: 56                             -  push rsi
+// ---------- INJECTING HERE ----------
+382DC7E5: 48 83 EC 08                    -  sub rsp,08
+382DC7E9: 48 8B F1                       -  mov rsi,rcx
+// ---------- DONE INJECTING  ----------
+382DC7EC: 48 8B 4E 18                    -  mov rcx,[rsi+18]
+382DC7F0: B8 70 14 DB 33                 -  mov eax,33DB1470
+382DC7F5: 48 89 08                       -  mov [rax],rcx
+382DC7F8: 48 8B 46 28                    -  mov rax,[rsi+28]
+382DC7FC: 48 8B C8                       -  mov rcx,rax
+382DC7FF: 48 83 EC 20                    -  sub rsp,20
+382DC803: 83 38 00                       -  cmp dword ptr [rax],00
+382DC806: 49 BB 64 C8 2D 38 00 00 00 00  -  mov r11,00000000382DC864
+382DC810: 41 FF D3                       -  call r11
+382DC813: 48 83 C4 20                    -  add rsp,20
+}
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>259</ID>
+          <Description>"Driver Stats"</Description>
+          <ShowAsHex>1</ShowAsHex>
+          <VariableType>4 Bytes</VariableType>
+          <Address>pTrait</Address>
+          <Offsets>
+            <Offset>0</Offset>
+            <Offset>PersonalityTraitData.driverStatsModifier</Offset>
+            <Offset>PersonalityTrait.data</Offset>
+          </Offsets>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>262</ID>
+              <Description>"Braking"</Description>
+              <VariableType>Float</VariableType>
+              <Address>+DriverStats.braking</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>263</ID>
+              <Description>"Cornering"</Description>
+              <VariableType>Float</VariableType>
+              <Address>+DriverStats.cornering</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>264</ID>
+              <Description>"Smoothness"</Description>
+              <VariableType>Float</VariableType>
+              <Address>+DriverStats.smoothness</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>265</ID>
+              <Description>"Overtaking"</Description>
+              <VariableType>Float</VariableType>
+              <Address>+DriverStats.overtaking</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>266</ID>
+              <Description>"Consistency"</Description>
+              <VariableType>Float</VariableType>
+              <Address>+DriverStats.consistency</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>267</ID>
+              <Description>"Adaptability"</Description>
+              <VariableType>Float</VariableType>
+              <Address>+DriverStats.adaptability</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>268</ID>
+              <Description>"Fitness"</Description>
+              <VariableType>Float</VariableType>
+              <Address>+DriverStats.fitness</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>269</ID>
+              <Description>"Feedback"</Description>
+              <VariableType>Float</VariableType>
+              <Address>+DriverStats.feedback</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>270</ID>
+              <Description>"Focus"</Description>
+              <VariableType>Float</VariableType>
+              <Address>+DriverStats.focus</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>273</ID>
+              <Description>"Marketability"</Description>
+              <VariableType>Float</VariableType>
+              <Address>+DriverStats.marketability</Address>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>258</ID>
+          <Description>"Type"</Description>
+          <DropDownList DescriptionOnly="1" DisplayValueAsItem="1">0:Permanent
+1:Temporary
+</DropDownList>
+          <VariableType>4 Bytes</VariableType>
+          <Address>pTrait</Address>
+          <Offsets>
+            <Offset>PersonalityTraitData.type</Offset>
+            <Offset>PersonalityTrait.data</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>249</ID>
+          <Description>"All Stats"</Description>
+          <ShowAsSigned>1</ShowAsSigned>
+          <VariableType>4 Bytes</VariableType>
+          <Address>pTrait</Address>
+          <Offsets>
+            <Offset>PersonalityTraitData.allStats</Offset>
+            <Offset>PersonalityTrait.data</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>250</ID>
+          <Description>"Morale Modifier"</Description>
+          <VariableType>Float</VariableType>
+          <Address>pTrait</Address>
+          <Offsets>
+            <Offset>PersonalityTraitData.moraleModifier</Offset>
+            <Offset>PersonalityTrait.data</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>251</ID>
+          <Description>"Mechanic Modifier"</Description>
+          <ShowAsSigned>1</ShowAsSigned>
+          <VariableType>4 Bytes</VariableType>
+          <Address>pTrait</Address>
+          <Offsets>
+            <Offset>PersonalityTraitData.mechanicModifier</Offset>
+            <Offset>PersonalityTrait.data</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>252</ID>
+          <Description>"Teammate Modifier"</Description>
+          <VariableType>Float</VariableType>
+          <Address>pTrait</Address>
+          <Offsets>
+            <Offset>PersonalityTraitData.teammateModifier</Offset>
+            <Offset>PersonalityTrait.data</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>253</ID>
+          <Description>"Chairman Modifier"</Description>
+          <ShowAsSigned>1</ShowAsSigned>
+          <VariableType>4 Bytes</VariableType>
+          <Address>pTrait</Address>
+          <Offsets>
+            <Offset>PersonalityTraitData.chairmanModifier</Offset>
+            <Offset>PersonalityTrait.data</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>254</ID>
+          <Description>"Improveability Modifier"</Description>
+          <VariableType>Float</VariableType>
+          <Address>pTrait</Address>
+          <Offsets>
+            <Offset>PersonalityTraitData.improveabilityModifier</Offset>
+            <Offset>PersonalityTrait.data</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>255</ID>
+          <Description>"Potential Modifier"</Description>
+          <ShowAsSigned>1</ShowAsSigned>
+          <VariableType>4 Bytes</VariableType>
+          <Address>pTrait</Address>
+          <Offsets>
+            <Offset>PersonalityTraitData.potentialModifier</Offset>
+            <Offset>PersonalityTrait.data</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>256</ID>
+          <Description>"Desired WinsModifier"</Description>
+          <ShowAsSigned>1</ShowAsSigned>
+          <VariableType>4 Bytes</VariableType>
+          <Address>pTrait</Address>
+          <Offsets>
+            <Offset>PersonalityTraitData.desiredWinsModifier</Offset>
+            <Offset>PersonalityTrait.data</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>257</ID>
+          <Description>"Desired EarningsModifier"</Description>
+          <VariableType>8 Bytes</VariableType>
+          <Address>pTrait</Address>
+          <Offsets>
+            <Offset>PersonalityTraitData.desiredEarningsModifier</Offset>
+            <Offset>PersonalityTrait.data</Offset>
+          </Offsets>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols/>
+</CheatTable>

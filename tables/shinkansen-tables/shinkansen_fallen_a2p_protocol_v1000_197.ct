@@ -1,0 +1,3519 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="18">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>121653</ID>
+      <Description>"Avatar Base Address Scan Initialization (Activate This First)"</Description>
+      <Options moHideChildren="1"/>
+      <LastState Activated="0"/>
+      <Color>800000</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>[ENABLE]
+registersymbol(Avatar_basepointer)
+registersymbol(Avatar_update_enable)
+registersymbol(Avatar_set_enable)
+registersymbol(Avatar_actionpointsset_enable)
+registersymbol(Avatar_ammoset_enable)
+registersymbol(Avatar_hpset_enable)
+
+alloc(Avatar_basepointer, 4)
+alloc(Avatar_update_enable, 4)
+alloc(Avatar_set_enable, 4)
+alloc(Avatar_actionpointsset_enable, 4)
+alloc(Avatar_ammoset_enable, 4)
+alloc(Avatar_hpset_enable, 4)
+
+
+[DISABLE]
+unregistersymbol(Avatar_basepointer)
+unregistersymbol(Avatar_update_enable)
+unregistersymbol(Avatar_set_enable)
+unregistersymbol(Avatar_actionpointsset_enable)
+unregistersymbol(Avatar_ammoset_enable)
+unregistersymbol(Avatar_hpset_enable)
+
+dealloc(Avatar_basepointer)
+dealloc(Avatar_update_enable)
+dealloc(Avatar_set_enable)
+dealloc(Avatar_actionpointsset_enable)
+dealloc(Avatar_ammoset_enable)
+dealloc(Avatar_hpset_enable)
+
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>121654</ID>
+          <Description>"Avatar Base Address Scan (To Activate: Battle, To Update: Battle)"</Description>
+          <LastState Activated="0"/>
+          <Color>804000</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[ENABLE]
+label(Avatar_savedAOB)
+label(Avatar_returnhere)
+label(Avatar_originalcode)
+label(Avatar_exit)
+
+label(Avatar_update_exit)
+label(Avatar_set_exit)
+label(Avatar_actionpointsset_exit)
+label(Avatar_ammoset_exit)
+label(Avatar_hpset_exit)
+
+registersymbol(Avatar_savedAOB)
+
+//35D7267A - 8B C8                 - mov ecx,eax
+//35D7267C - 39 09                 - cmp [ecx],ecx
+// InteractionStateAvatarTargetPlace:OldMovement+5ee
+//35D7267E - 8B 40 30              - mov eax,[eax+30]
+//35D72681 - 8B C8                 - mov ecx,eax
+//35D72683 - 39 09                 - cmp [ecx],ecx
+//35D72685 - 8B 40 0C              - mov eax,[eax+0C]
+//35D72688 - 8B 4F 4C              - mov ecx,[edi+4C]
+//35D7268B - 2B C1                 - sub eax,ecx
+//35D7268D - 89 85 20FFFFFF        - mov [ebp-000000E0],eax
+aobscan(Avatar_searchedAOB, 0F B6 80 05 01 00 00 85 C0 * * 0F B6 45 10)
+
+alloc(Avatar_newmem, 2048)
+alloc(Avatar_temp1, 4)
+alloc(Avatar_temp2, 4)
+
+
+Avatar_newmem:
+mov [Avatar_temp1], ebx
+mov [Avatar_temp2], edx
+
+// Check Team
+cmp dword ptr [eax+ec], #0
+jne Avatar_hpset_exit
+
+cmp dword ptr [Avatar_update_enable], #0
+je Avatar_update_exit
+mov [Avatar_basepointer], eax
+Avatar_update_exit:
+
+cmp dword ptr [Avatar_set_enable], #0
+je Avatar_set_exit
+Avatar_set_exit:
+
+cmp dword ptr [Avatar_actionpointsset_enable], #0
+je Avatar_actionpointsset_exit
+cmp dword ptr [eax+30], #0
+je Avatar_actionpointsset_exit
+mov ebx, [eax+30]
+mov edx, [ebx+14]
+mov [ebx+c], edx
+Avatar_actionpointsset_exit:
+
+cmp dword ptr [Avatar_ammoset_enable], #0
+je Avatar_ammoset_exit
+cmp dword ptr [eax+54], #0
+je Avatar_ammoset_exit
+mov ebx, [eax+54]
+// If Clipsize is 1 or less, don't change
+cmp edx, #1
+jle Avatar_ammoset_exit
+mov edx, [ebx+24]
+cmp dword ptr [ebx+8], #0
+je Avatar_ammoset_exit
+mov ebx, [ebx+8]
+cmp dword ptr [ebx+3c], #0
+je Avatar_ammoset_exit
+mov ebx, [ebx+3c]
+mov [ebx+c], edx
+Avatar_ammoset_exit:
+
+cmp dword ptr [Avatar_hpset_enable], #0
+je Avatar_hpset_exit
+cmp dword ptr [eax+34], #0
+je Avatar_hpset_exit
+mov ebx, [eax+34]
+cmp dword ptr [ebx+8], #0
+je Avatar_hpset_exit
+mov ebx, [ebx+8]
+cmp dword ptr [ebx+14], #0
+je Avatar_hpset_exit
+mov ebx, [ebx+14]
+cmp dword ptr [ebx+24], #0
+je Avatar_hpset_exit
+mov edx, [ebx+24]
+fld [edx+14]
+mov edx, [ebx+28]
+fstp [edx+14]
+Avatar_hpset_exit:
+
+mov ebx, [Avatar_temp1]
+mov edx, [Avatar_temp2]
+
+
+Avatar_originalcode:
+db 0F B6 80 05 01 00 00
+//movzx eax,byte ptr [eax+00000105]
+
+
+Avatar_exit:
+jmp Avatar_returnhere
+
+
+Avatar_searchedAOB:
+Avatar_savedAOB:
+jmp Avatar_newmem
+nop
+nop
+Avatar_returnhere:
+
+
+[DISABLE]
+Avatar_savedAOB:
+db 0F B6 80 05 01 00 00
+//movzx eax,byte ptr [eax+00000105]
+
+unregistersymbol(Avatar_savedAOB)
+
+dealloc(Avatar_newmem)
+dealloc(Avatar_temp1)
+dealloc(Avatar_temp2)
+
+</AssemblerScript>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>121655</ID>
+          <Description>"AP Set to Max?"</Description>
+          <DropDownList DisplayValueAsItem="1">0:No
+1:Yes
+</DropDownList>
+          <LastState Value="??" Activated="0" RealAddress="00000000"/>
+          <Color>FF8000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>Avatar_actionpointsset_enable</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>121656</ID>
+          <Description>"Ammo Set to Max?"</Description>
+          <DropDownList DisplayValueAsItem="1">0:No
+1:Yes
+</DropDownList>
+          <LastState Value="??" Activated="0" RealAddress="00000000"/>
+          <Color>FF8000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>Avatar_ammoset_enable</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>121657</ID>
+          <Description>"HP Set to Max?"</Description>
+          <DropDownList DisplayValueAsItem="1">0:No
+1:Yes
+</DropDownList>
+          <LastState Value="??" Activated="0" RealAddress="00000000"/>
+          <Color>FF8000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>Avatar_hpset_enable</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>121658</ID>
+          <Description>"Avatar Update Base Address?"</Description>
+          <DropDownList DisplayValueAsItem="1">0:No
+1:Yes
+</DropDownList>
+          <LastState Value="??" Activated="0" RealAddress="00000000"/>
+          <Color>FF8000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>Avatar_update_enable</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>121659</ID>
+          <Description>"Avatar Stats"</Description>
+          <Options moHideChildren="1"/>
+          <LastState Value="" Activated="0" RealAddress="00000000"/>
+          <Color>80000008</Color>
+          <GroupHeader>1</GroupHeader>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>121660</ID>
+              <Description>"Base Address"</Description>
+              <LastState Value="??" Activated="0" RealAddress="00000000"/>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>Avatar_basepointer</Address>
+              <Offsets>
+                <Offset>0</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>121667</ID>
+              <Description>"guid"</Description>
+              <LastState Activated="0" RealAddress="00000000"/>
+              <Color>80000008</Color>
+              <VariableType>String</VariableType>
+              <Length>32</Length>
+              <Unicode>1</Unicode>
+              <ZeroTerminate>1</ZeroTerminate>
+              <Address>Avatar_basepointer</Address>
+              <Offsets>
+                <Offset>C</Offset>
+                <Offset>28</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>121669</ID>
+              <Description>"actionPoints"</Description>
+              <Options moHideChildren="1"/>
+              <LastState Value="" Activated="0" RealAddress="00000000"/>
+              <Color>80000008</Color>
+              <GroupHeader>1</GroupHeader>
+              <CheatEntries>
+                <CheatEntry>
+                  <ID>121670</ID>
+                  <Description>"Base Address"</Description>
+                  <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                  <Color>80000008</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>Avatar_basepointer</Address>
+                  <Offsets>
+                    <Offset>0</Offset>
+                    <Offset>30</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>121671</ID>
+                  <Description>"points"</Description>
+                  <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                  <Color>80000008</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>Avatar_basepointer</Address>
+                  <Offsets>
+                    <Offset>C</Offset>
+                    <Offset>30</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>121672</ID>
+                  <Description>"pointsBonus"</Description>
+                  <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                  <Color>80000008</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>Avatar_basepointer</Address>
+                  <Offsets>
+                    <Offset>10</Offset>
+                    <Offset>30</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>121673</ID>
+                  <Description>"pointsMax"</Description>
+                  <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                  <Color>80000008</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>Avatar_basepointer</Address>
+                  <Offsets>
+                    <Offset>14</Offset>
+                    <Offset>30</Offset>
+                  </Offsets>
+                </CheatEntry>
+              </CheatEntries>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>121674</ID>
+              <Description>"statSet"</Description>
+              <Options moHideChildren="1"/>
+              <LastState Value="" Activated="0" RealAddress="00000000"/>
+              <Color>80000008</Color>
+              <GroupHeader>1</GroupHeader>
+              <CheatEntries>
+                <CheatEntry>
+                  <ID>121675</ID>
+                  <Description>"Base Address"</Description>
+                  <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                  <Color>80000008</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>Avatar_basepointer</Address>
+                  <Offsets>
+                    <Offset>0</Offset>
+                    <Offset>34</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>121676</ID>
+                  <Description>"stats"</Description>
+                  <Options moHideChildren="1"/>
+                  <LastState Value="" Activated="0" RealAddress="00000000"/>
+                  <Color>80000008</Color>
+                  <GroupHeader>1</GroupHeader>
+                  <CheatEntries>
+                    <CheatEntry>
+                      <ID>121677</ID>
+                      <Description>"Base Address"</Description>
+                      <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                      <Color>80000008</Color>
+                      <VariableType>4 Bytes</VariableType>
+                      <Address>Avatar_basepointer</Address>
+                      <Offsets>
+                        <Offset>0</Offset>
+                        <Offset>8</Offset>
+                        <Offset>34</Offset>
+                      </Offsets>
+                    </CheatEntry>
+                    <CheatEntry>
+                      <ID>121678</ID>
+                      <Description>"String"</Description>
+                      <Options moHideChildren="1"/>
+                      <LastState Value="" Activated="0" RealAddress="00000000"/>
+                      <Color>80000008</Color>
+                      <GroupHeader>1</GroupHeader>
+                      <CheatEntries>
+                        <CheatEntry>
+                          <ID>121679</ID>
+                          <Description>"Slot 1"</Description>
+                          <LastState Activated="0" RealAddress="00000000"/>
+                          <Color>80000008</Color>
+                          <VariableType>String</VariableType>
+                          <Length>32</Length>
+                          <Unicode>1</Unicode>
+                          <ZeroTerminate>1</ZeroTerminate>
+                          <Address>Avatar_basepointer</Address>
+                          <Offsets>
+                            <Offset>C</Offset>
+                            <Offset>10</Offset>
+                            <Offset>10</Offset>
+                            <Offset>8</Offset>
+                            <Offset>34</Offset>
+                          </Offsets>
+                        </CheatEntry>
+                        <CheatEntry>
+                          <ID>121680</ID>
+                          <Description>"Slot 2"</Description>
+                          <LastState Activated="0" RealAddress="00000000"/>
+                          <Color>80000008</Color>
+                          <VariableType>String</VariableType>
+                          <Length>32</Length>
+                          <Unicode>1</Unicode>
+                          <ZeroTerminate>1</ZeroTerminate>
+                          <Address>Avatar_basepointer</Address>
+                          <Offsets>
+                            <Offset>C</Offset>
+                            <Offset>14</Offset>
+                            <Offset>10</Offset>
+                            <Offset>8</Offset>
+                            <Offset>34</Offset>
+                          </Offsets>
+                        </CheatEntry>
+                        <CheatEntry>
+                          <ID>121681</ID>
+                          <Description>"Slot 3"</Description>
+                          <LastState Activated="0" RealAddress="00000000"/>
+                          <Color>80000008</Color>
+                          <VariableType>String</VariableType>
+                          <Length>32</Length>
+                          <Unicode>1</Unicode>
+                          <ZeroTerminate>1</ZeroTerminate>
+                          <Address>Avatar_basepointer</Address>
+                          <Offsets>
+                            <Offset>C</Offset>
+                            <Offset>18</Offset>
+                            <Offset>10</Offset>
+                            <Offset>8</Offset>
+                            <Offset>34</Offset>
+                          </Offsets>
+                        </CheatEntry>
+                        <CheatEntry>
+                          <ID>121682</ID>
+                          <Description>"Slot 4"</Description>
+                          <LastState Activated="0" RealAddress="00000000"/>
+                          <Color>80000008</Color>
+                          <VariableType>String</VariableType>
+                          <Length>32</Length>
+                          <Unicode>1</Unicode>
+                          <ZeroTerminate>1</ZeroTerminate>
+                          <Address>Avatar_basepointer</Address>
+                          <Offsets>
+                            <Offset>C</Offset>
+                            <Offset>1C</Offset>
+                            <Offset>10</Offset>
+                            <Offset>8</Offset>
+                            <Offset>34</Offset>
+                          </Offsets>
+                        </CheatEntry>
+                        <CheatEntry>
+                          <ID>121683</ID>
+                          <Description>"Slot 5"</Description>
+                          <LastState Activated="0" RealAddress="00000000"/>
+                          <Color>80000008</Color>
+                          <VariableType>String</VariableType>
+                          <Length>32</Length>
+                          <Unicode>1</Unicode>
+                          <ZeroTerminate>1</ZeroTerminate>
+                          <Address>Avatar_basepointer</Address>
+                          <Offsets>
+                            <Offset>C</Offset>
+                            <Offset>20</Offset>
+                            <Offset>10</Offset>
+                            <Offset>8</Offset>
+                            <Offset>34</Offset>
+                          </Offsets>
+                        </CheatEntry>
+                        <CheatEntry>
+                          <ID>121684</ID>
+                          <Description>"Slot 6"</Description>
+                          <LastState Activated="0" RealAddress="00000000"/>
+                          <Color>80000008</Color>
+                          <VariableType>String</VariableType>
+                          <Length>32</Length>
+                          <Unicode>1</Unicode>
+                          <ZeroTerminate>1</ZeroTerminate>
+                          <Address>Avatar_basepointer</Address>
+                          <Offsets>
+                            <Offset>C</Offset>
+                            <Offset>24</Offset>
+                            <Offset>10</Offset>
+                            <Offset>8</Offset>
+                            <Offset>34</Offset>
+                          </Offsets>
+                        </CheatEntry>
+                        <CheatEntry>
+                          <ID>121685</ID>
+                          <Description>"Slot 7"</Description>
+                          <LastState Activated="0" RealAddress="00000000"/>
+                          <Color>80000008</Color>
+                          <VariableType>String</VariableType>
+                          <Length>32</Length>
+                          <Unicode>1</Unicode>
+                          <ZeroTerminate>1</ZeroTerminate>
+                          <Address>Avatar_basepointer</Address>
+                          <Offsets>
+                            <Offset>C</Offset>
+                            <Offset>28</Offset>
+                            <Offset>10</Offset>
+                            <Offset>8</Offset>
+                            <Offset>34</Offset>
+                          </Offsets>
+                        </CheatEntry>
+                      </CheatEntries>
+                    </CheatEntry>
+                    <CheatEntry>
+                      <ID>121686</ID>
+                      <Description>"current"</Description>
+                      <Options moHideChildren="1"/>
+                      <LastState Value="" Activated="0" RealAddress="00000000"/>
+                      <Color>80000008</Color>
+                      <GroupHeader>1</GroupHeader>
+                      <CheatEntries>
+                        <CheatEntry>
+                          <ID>121687</ID>
+                          <Description>"Slot 1"</Description>
+                          <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                          <Color>80000008</Color>
+                          <VariableType>Float</VariableType>
+                          <Address>Avatar_basepointer</Address>
+                          <Offsets>
+                            <Offset>14</Offset>
+                            <Offset>10</Offset>
+                            <Offset>14</Offset>
+                            <Offset>8</Offset>
+                            <Offset>34</Offset>
+                          </Offsets>
+                        </CheatEntry>
+                        <CheatEntry>
+                          <ID>121688</ID>
+                          <Description>"Slot 2"</Description>
+                          <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                          <Color>80000008</Color>
+                          <VariableType>Float</VariableType>
+                          <Address>Avatar_basepointer</Address>
+                          <Offsets>
+                            <Offset>14</Offset>
+                            <Offset>14</Offset>
+                            <Offset>14</Offset>
+                            <Offset>8</Offset>
+                            <Offset>34</Offset>
+                          </Offsets>
+                        </CheatEntry>
+                        <CheatEntry>
+                          <ID>121689</ID>
+                          <Description>"Slot 3"</Description>
+                          <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                          <Color>80000008</Color>
+                          <VariableType>Float</VariableType>
+                          <Address>Avatar_basepointer</Address>
+                          <Offsets>
+                            <Offset>14</Offset>
+                            <Offset>18</Offset>
+                            <Offset>14</Offset>
+                            <Offset>8</Offset>
+                            <Offset>34</Offset>
+                          </Offsets>
+                        </CheatEntry>
+                        <CheatEntry>
+                          <ID>121690</ID>
+                          <Description>"Slot 4"</Description>
+                          <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                          <Color>80000008</Color>
+                          <VariableType>Float</VariableType>
+                          <Address>Avatar_basepointer</Address>
+                          <Offsets>
+                            <Offset>14</Offset>
+                            <Offset>1C</Offset>
+                            <Offset>14</Offset>
+                            <Offset>8</Offset>
+                            <Offset>34</Offset>
+                          </Offsets>
+                        </CheatEntry>
+                        <CheatEntry>
+                          <ID>121691</ID>
+                          <Description>"Slot 5"</Description>
+                          <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                          <Color>80000008</Color>
+                          <VariableType>Float</VariableType>
+                          <Address>Avatar_basepointer</Address>
+                          <Offsets>
+                            <Offset>14</Offset>
+                            <Offset>20</Offset>
+                            <Offset>14</Offset>
+                            <Offset>8</Offset>
+                            <Offset>34</Offset>
+                          </Offsets>
+                        </CheatEntry>
+                        <CheatEntry>
+                          <ID>121692</ID>
+                          <Description>"Slot 6"</Description>
+                          <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                          <Color>80000008</Color>
+                          <VariableType>Float</VariableType>
+                          <Address>Avatar_basepointer</Address>
+                          <Offsets>
+                            <Offset>14</Offset>
+                            <Offset>24</Offset>
+                            <Offset>14</Offset>
+                            <Offset>8</Offset>
+                            <Offset>34</Offset>
+                          </Offsets>
+                        </CheatEntry>
+                        <CheatEntry>
+                          <ID>121693</ID>
+                          <Description>"Slot 7"</Description>
+                          <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                          <Color>80000008</Color>
+                          <VariableType>Float</VariableType>
+                          <Address>Avatar_basepointer</Address>
+                          <Offsets>
+                            <Offset>14</Offset>
+                            <Offset>28</Offset>
+                            <Offset>14</Offset>
+                            <Offset>8</Offset>
+                            <Offset>34</Offset>
+                          </Offsets>
+                        </CheatEntry>
+                      </CheatEntries>
+                    </CheatEntry>
+                  </CheatEntries>
+                </CheatEntry>
+              </CheatEntries>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>121701</ID>
+              <Description>"weapon"</Description>
+              <Options moHideChildren="1"/>
+              <LastState Value="" Activated="0" RealAddress="00000000"/>
+              <Color>80000008</Color>
+              <GroupHeader>1</GroupHeader>
+              <CheatEntries>
+                <CheatEntry>
+                  <ID>121702</ID>
+                  <Description>"Base Address"</Description>
+                  <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                  <Color>80000008</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>Avatar_basepointer</Address>
+                  <Offsets>
+                    <Offset>0</Offset>
+                    <Offset>54</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>121703</ID>
+                  <Description>"item"</Description>
+                  <Options moHideChildren="1"/>
+                  <LastState Value="" Activated="0" RealAddress="00000000"/>
+                  <Color>80000008</Color>
+                  <GroupHeader>1</GroupHeader>
+                  <CheatEntries>
+                    <CheatEntry>
+                      <ID>121704</ID>
+                      <Description>"Base Address"</Description>
+                      <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                      <Color>80000008</Color>
+                      <VariableType>4 Bytes</VariableType>
+                      <Address>Avatar_basepointer</Address>
+                      <Offsets>
+                        <Offset>0</Offset>
+                        <Offset>8</Offset>
+                        <Offset>54</Offset>
+                      </Offsets>
+                    </CheatEntry>
+                    <CheatEntry>
+                      <ID>121705</ID>
+                      <Description>"element"</Description>
+                      <Options moHideChildren="1"/>
+                      <LastState Value="" Activated="0" RealAddress="00000000"/>
+                      <Color>80000008</Color>
+                      <GroupHeader>1</GroupHeader>
+                      <CheatEntries>
+                        <CheatEntry>
+                          <ID>121706</ID>
+                          <Description>"Base Address"</Description>
+                          <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                          <Color>80000008</Color>
+                          <VariableType>4 Bytes</VariableType>
+                          <Address>Avatar_basepointer</Address>
+                          <Offsets>
+                            <Offset>0</Offset>
+                            <Offset>3C</Offset>
+                            <Offset>8</Offset>
+                            <Offset>54</Offset>
+                          </Offsets>
+                        </CheatEntry>
+                        <CheatEntry>
+                          <ID>121707</ID>
+                          <Description>"amount"</Description>
+                          <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                          <Color>80000008</Color>
+                          <VariableType>4 Bytes</VariableType>
+                          <Address>Avatar_basepointer</Address>
+                          <Offsets>
+                            <Offset>C</Offset>
+                            <Offset>3C</Offset>
+                            <Offset>8</Offset>
+                            <Offset>54</Offset>
+                          </Offsets>
+                        </CheatEntry>
+                      </CheatEntries>
+                    </CheatEntry>
+                  </CheatEntries>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>121708</ID>
+                  <Description>"clipSize"</Description>
+                  <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                  <Color>80000008</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>Avatar_basepointer</Address>
+                  <Offsets>
+                    <Offset>24</Offset>
+                    <Offset>54</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>121709</ID>
+                  <Description>"shootFailAccum"</Description>
+                  <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                  <Color>80000008</Color>
+                  <VariableType>Float</VariableType>
+                  <Address>Avatar_basepointer</Address>
+                  <Offsets>
+                    <Offset>2C</Offset>
+                    <Offset>54</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>121710</ID>
+                  <Description>"debuffChance"</Description>
+                  <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                  <Color>80000008</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>Avatar_basepointer</Address>
+                  <Offsets>
+                    <Offset>30</Offset>
+                    <Offset>54</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>121711</ID>
+                  <Description>"debuffDamage"</Description>
+                  <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                  <Color>80000008</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>Avatar_basepointer</Address>
+                  <Offsets>
+                    <Offset>34</Offset>
+                    <Offset>54</Offset>
+                  </Offsets>
+                </CheatEntry>
+              </CheatEntries>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>121713</ID>
+              <Description>"actorID"</Description>
+              <LastState Activated="0" RealAddress="00000000"/>
+              <Color>80000008</Color>
+              <VariableType>String</VariableType>
+              <Length>32</Length>
+              <Unicode>1</Unicode>
+              <ZeroTerminate>1</ZeroTerminate>
+              <Address>Avatar_basepointer</Address>
+              <Offsets>
+                <Offset>C</Offset>
+                <Offset>5C</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>121714</ID>
+              <Description>"voiceID"</Description>
+              <LastState Activated="0" RealAddress="00000000"/>
+              <Color>80000008</Color>
+              <VariableType>String</VariableType>
+              <Length>32</Length>
+              <Unicode>1</Unicode>
+              <ZeroTerminate>1</ZeroTerminate>
+              <Address>Avatar_basepointer</Address>
+              <Offsets>
+                <Offset>C</Offset>
+                <Offset>60</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>121715</ID>
+              <Description>"questActorID"</Description>
+              <LastState Activated="0" RealAddress="00000000"/>
+              <Color>80000008</Color>
+              <VariableType>String</VariableType>
+              <Length>32</Length>
+              <Unicode>1</Unicode>
+              <ZeroTerminate>1</ZeroTerminate>
+              <Address>Avatar_basepointer</Address>
+              <Offsets>
+                <Offset>C</Offset>
+                <Offset>64</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>121725</ID>
+              <Description>"atp"</Description>
+              <Options moHideChildren="1"/>
+              <LastState Value="" Activated="0" RealAddress="00000000"/>
+              <Color>80000008</Color>
+              <GroupHeader>1</GroupHeader>
+              <CheatEntries>
+                <CheatEntry>
+                  <ID>121726</ID>
+                  <Description>"Base Address"</Description>
+                  <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                  <Color>80000008</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>Avatar_basepointer</Address>
+                  <Offsets>
+                    <Offset>0</Offset>
+                    <Offset>8C</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>121727</ID>
+                  <Description>"id"</Description>
+                  <LastState Activated="0" RealAddress="00000000"/>
+                  <Color>80000008</Color>
+                  <VariableType>String</VariableType>
+                  <Length>32</Length>
+                  <Unicode>1</Unicode>
+                  <ZeroTerminate>1</ZeroTerminate>
+                  <Address>Avatar_basepointer</Address>
+                  <Offsets>
+                    <Offset>C</Offset>
+                    <Offset>8</Offset>
+                    <Offset>8C</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>121728</ID>
+                  <Description>"avatarName (type: InitialAvatarSetup.Name) UNKNOWN"</Description>
+                  <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                  <Color>80000008</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>Avatar_basepointer</Address>
+                  <Offsets>
+                    <Offset>C</Offset>
+                    <Offset>8C</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>121729</ID>
+                  <Description>"actorID"</Description>
+                  <LastState Activated="0" RealAddress="00000000"/>
+                  <Color>80000008</Color>
+                  <VariableType>String</VariableType>
+                  <Length>32</Length>
+                  <Unicode>1</Unicode>
+                  <ZeroTerminate>1</ZeroTerminate>
+                  <Address>Avatar_basepointer</Address>
+                  <Offsets>
+                    <Offset>C</Offset>
+                    <Offset>10</Offset>
+                    <Offset>8C</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>121730</ID>
+                  <Description>"race"</Description>
+                  <LastState Activated="0" RealAddress="00000000"/>
+                  <Color>80000008</Color>
+                  <VariableType>String</VariableType>
+                  <Length>32</Length>
+                  <Unicode>1</Unicode>
+                  <ZeroTerminate>1</ZeroTerminate>
+                  <Address>Avatar_basepointer</Address>
+                  <Offsets>
+                    <Offset>C</Offset>
+                    <Offset>14</Offset>
+                    <Offset>8C</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>121731</ID>
+                  <Description>"gender"</Description>
+                  <LastState Activated="0" RealAddress="00000000"/>
+                  <Color>80000008</Color>
+                  <VariableType>String</VariableType>
+                  <Length>32</Length>
+                  <Unicode>1</Unicode>
+                  <ZeroTerminate>1</ZeroTerminate>
+                  <Address>Avatar_basepointer</Address>
+                  <Offsets>
+                    <Offset>C</Offset>
+                    <Offset>18</Offset>
+                    <Offset>8C</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>121732</ID>
+                  <Description>"group"</Description>
+                  <LastState Activated="0" RealAddress="00000000"/>
+                  <Color>80000008</Color>
+                  <VariableType>String</VariableType>
+                  <Length>32</Length>
+                  <Unicode>1</Unicode>
+                  <ZeroTerminate>1</ZeroTerminate>
+                  <Address>Avatar_basepointer</Address>
+                  <Offsets>
+                    <Offset>C</Offset>
+                    <Offset>1C</Offset>
+                    <Offset>8C</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>121733</ID>
+                  <Description>"voiceID"</Description>
+                  <LastState Activated="0" RealAddress="00000000"/>
+                  <Color>80000008</Color>
+                  <VariableType>String</VariableType>
+                  <Length>32</Length>
+                  <Unicode>1</Unicode>
+                  <ZeroTerminate>1</ZeroTerminate>
+                  <Address>Avatar_basepointer</Address>
+                  <Offsets>
+                    <Offset>C</Offset>
+                    <Offset>20</Offset>
+                    <Offset>8C</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>121734</ID>
+                  <Description>"clothes (type: System.Collections.Generic.ListSystem.String) UNKNOWN"</Description>
+                  <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                  <Color>80000008</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>Avatar_basepointer</Address>
+                  <Offsets>
+                    <Offset>24</Offset>
+                    <Offset>8C</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>121735</ID>
+                  <Description>"stats (type: System.Collections.Generic.ListAvatarTemplateIDValue) UNKNOWN"</Description>
+                  <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                  <Color>80000008</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>Avatar_basepointer</Address>
+                  <Offsets>
+                    <Offset>28</Offset>
+                    <Offset>8C</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>121736</ID>
+                  <Description>"items (type: System.Collections.Generic.ListAvatarTemplateIDValue) UNKNOWN"</Description>
+                  <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                  <Color>80000008</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>Avatar_basepointer</Address>
+                  <Offsets>
+                    <Offset>2C</Offset>
+                    <Offset>8C</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>121737</ID>
+                  <Description>"armors (type: System.Collections.Generic.ListSystem.String) UNKNOWN"</Description>
+                  <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                  <Color>80000008</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>Avatar_basepointer</Address>
+                  <Offsets>
+                    <Offset>30</Offset>
+                    <Offset>8C</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>121738</ID>
+                  <Description>"behaviour"</Description>
+                  <LastState Activated="0" RealAddress="00000000"/>
+                  <Color>80000008</Color>
+                  <VariableType>String</VariableType>
+                  <Length>32</Length>
+                  <Unicode>1</Unicode>
+                  <ZeroTerminate>1</ZeroTerminate>
+                  <Address>Avatar_basepointer</Address>
+                  <Offsets>
+                    <Offset>C</Offset>
+                    <Offset>34</Offset>
+                    <Offset>8C</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>121739</ID>
+                  <Description>"avatarState"</Description>
+                  <LastState Activated="0" RealAddress="00000000"/>
+                  <Color>80000008</Color>
+                  <VariableType>String</VariableType>
+                  <Length>32</Length>
+                  <Unicode>1</Unicode>
+                  <ZeroTerminate>1</ZeroTerminate>
+                  <Address>Avatar_basepointer</Address>
+                  <Offsets>
+                    <Offset>C</Offset>
+                    <Offset>38</Offset>
+                    <Offset>8C</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>121740</ID>
+                  <Description>"isPrimary"</Description>
+                  <DropDownList DisplayValueAsItem="1">0:No
+1:Yes
+</DropDownList>
+                  <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                  <Color>80000008</Color>
+                  <VariableType>Byte</VariableType>
+                  <Address>Avatar_basepointer</Address>
+                  <Offsets>
+                    <Offset>3C</Offset>
+                    <Offset>8C</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>121741</ID>
+                  <Description>"randomName"</Description>
+                  <DropDownList DisplayValueAsItem="1">0:No
+1:Yes
+</DropDownList>
+                  <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                  <Color>80000008</Color>
+                  <VariableType>Byte</VariableType>
+                  <Address>Avatar_basepointer</Address>
+                  <Offsets>
+                    <Offset>3D</Offset>
+                    <Offset>8C</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>121742</ID>
+                  <Description>"level"</Description>
+                  <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                  <Color>80000008</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>Avatar_basepointer</Address>
+                  <Offsets>
+                    <Offset>40</Offset>
+                    <Offset>8C</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>121743</ID>
+                  <Description>"experience"</Description>
+                  <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                  <Color>80000008</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>Avatar_basepointer</Address>
+                  <Offsets>
+                    <Offset>44</Offset>
+                    <Offset>8C</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>121744</ID>
+                  <Description>"skillPoints"</Description>
+                  <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                  <Color>80000008</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>Avatar_basepointer</Address>
+                  <Offsets>
+                    <Offset>48</Offset>
+                    <Offset>8C</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>121745</ID>
+                  <Description>"minVisionAngle"</Description>
+                  <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                  <Color>80000008</Color>
+                  <VariableType>Float</VariableType>
+                  <Address>Avatar_basepointer</Address>
+                  <Offsets>
+                    <Offset>4C</Offset>
+                    <Offset>8C</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>121746</ID>
+                  <Description>"maxVisionAngle"</Description>
+                  <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                  <Color>80000008</Color>
+                  <VariableType>Float</VariableType>
+                  <Address>Avatar_basepointer</Address>
+                  <Offsets>
+                    <Offset>50</Offset>
+                    <Offset>8C</Offset>
+                  </Offsets>
+                </CheatEntry>
+              </CheatEntries>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>121748</ID>
+              <Description>"avatarRace"</Description>
+              <LastState Activated="0" RealAddress="00000000"/>
+              <Color>80000008</Color>
+              <VariableType>String</VariableType>
+              <Length>32</Length>
+              <Unicode>1</Unicode>
+              <ZeroTerminate>1</ZeroTerminate>
+              <Address>Avatar_basepointer</Address>
+              <Offsets>
+                <Offset>C</Offset>
+                <Offset>94</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>121749</ID>
+              <Description>"avatarGender"</Description>
+              <LastState Activated="0" RealAddress="00000000"/>
+              <Color>80000008</Color>
+              <VariableType>String</VariableType>
+              <Length>32</Length>
+              <Unicode>1</Unicode>
+              <ZeroTerminate>1</ZeroTerminate>
+              <Address>Avatar_basepointer</Address>
+              <Offsets>
+                <Offset>C</Offset>
+                <Offset>98</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>121756</ID>
+              <Description>"colorSetId"</Description>
+              <LastState Activated="0" RealAddress="00000000"/>
+              <Color>80000008</Color>
+              <VariableType>String</VariableType>
+              <Length>32</Length>
+              <Unicode>1</Unicode>
+              <ZeroTerminate>1</ZeroTerminate>
+              <Address>Avatar_basepointer</Address>
+              <Offsets>
+                <Offset>C</Offset>
+                <Offset>B4</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>121770</ID>
+              <Description>"team"</Description>
+              <DropDownList DisplayValueAsItem="1">0:Ally
+1:Enemy
+2:Neutral
+</DropDownList>
+              <LastState Value="??" Activated="0" RealAddress="00000000"/>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>Avatar_basepointer</Address>
+              <Offsets>
+                <Offset>EC</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>121771</ID>
+              <Description>"acted"</Description>
+              <DropDownList DisplayValueAsItem="1">0:No
+1:Yes
+</DropDownList>
+              <LastState Value="??" Activated="0" RealAddress="00000000"/>
+              <Color>80000008</Color>
+              <VariableType>Byte</VariableType>
+              <Address>Avatar_basepointer</Address>
+              <Offsets>
+                <Offset>F0</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>121772</ID>
+              <Description>"isPrimary"</Description>
+              <DropDownList DisplayValueAsItem="1">0:No
+1:Yes
+</DropDownList>
+              <LastState Value="??" Activated="0" RealAddress="00000000"/>
+              <Color>80000008</Color>
+              <VariableType>Byte</VariableType>
+              <Address>Avatar_basepointer</Address>
+              <Offsets>
+                <Offset>F1</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>121773</ID>
+              <Description>"isTemporal"</Description>
+              <DropDownList DisplayValueAsItem="1">0:No
+1:Yes
+</DropDownList>
+              <LastState Value="??" Activated="0" RealAddress="00000000"/>
+              <Color>80000008</Color>
+              <VariableType>Byte</VariableType>
+              <Address>Avatar_basepointer</Address>
+              <Offsets>
+                <Offset>F2</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>121774</ID>
+              <Description>"lastWeaponIndex"</Description>
+              <LastState Value="??" Activated="0" RealAddress="00000000"/>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>Avatar_basepointer</Address>
+              <Offsets>
+                <Offset>F4</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>121775</ID>
+              <Description>"currentWeaponIndex"</Description>
+              <LastState Value="??" Activated="0" RealAddress="00000000"/>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>Avatar_basepointer</Address>
+              <Offsets>
+                <Offset>F8</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>121776</ID>
+              <Description>"skillPoints"</Description>
+              <LastState Value="??" Activated="0" RealAddress="00000000"/>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>Avatar_basepointer</Address>
+              <Offsets>
+                <Offset>FC</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>121777</ID>
+              <Description>"killCount"</Description>
+              <LastState Value="??" Activated="0" RealAddress="00000000"/>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>Avatar_basepointer</Address>
+              <Offsets>
+                <Offset>100</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>121778</ID>
+              <Description>"behaviorRunning"</Description>
+              <DropDownList DisplayValueAsItem="1">0:No
+1:Yes
+</DropDownList>
+              <LastState Value="??" Activated="0" RealAddress="00000000"/>
+              <Color>80000008</Color>
+              <VariableType>Byte</VariableType>
+              <Address>Avatar_basepointer</Address>
+              <Offsets>
+                <Offset>104</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>121779</ID>
+              <Description>"dead"</Description>
+              <DropDownList DisplayValueAsItem="1">0:No
+1:Yes
+</DropDownList>
+              <LastState Value="??" Activated="0" RealAddress="00000000"/>
+              <Color>80000008</Color>
+              <VariableType>Byte</VariableType>
+              <Address>Avatar_basepointer</Address>
+              <Offsets>
+                <Offset>105</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>121780</ID>
+              <Description>"inactive"</Description>
+              <DropDownList DisplayValueAsItem="1">0:No
+1:Yes
+</DropDownList>
+              <LastState Value="??" Activated="0" RealAddress="00000000"/>
+              <Color>80000008</Color>
+              <VariableType>Byte</VariableType>
+              <Address>Avatar_basepointer</Address>
+              <Offsets>
+                <Offset>106</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>121781</ID>
+              <Description>"showDebugData"</Description>
+              <DropDownList DisplayValueAsItem="1">0:No
+1:Yes
+</DropDownList>
+              <LastState Value="??" Activated="0" RealAddress="00000000"/>
+              <Color>80000008</Color>
+              <VariableType>Byte</VariableType>
+              <Address>Avatar_basepointer</Address>
+              <Offsets>
+                <Offset>107</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>121782</ID>
+              <Description>"isAlreadyCheckingTheScavenge"</Description>
+              <DropDownList DisplayValueAsItem="1">0:No
+1:Yes
+</DropDownList>
+              <LastState Value="??" Activated="0" RealAddress="00000000"/>
+              <Color>80000008</Color>
+              <VariableType>Byte</VariableType>
+              <Address>Avatar_basepointer</Address>
+              <Offsets>
+                <Offset>108</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>121783</ID>
+              <Description>"debuffDamage"</Description>
+              <DropDownList DisplayValueAsItem="1">0:No
+1:Yes
+</DropDownList>
+              <LastState Value="??" Activated="0" RealAddress="00000000"/>
+              <Color>80000008</Color>
+              <VariableType>Byte</VariableType>
+              <Address>Avatar_basepointer</Address>
+              <Offsets>
+                <Offset>109</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>121787</ID>
+              <Description>"animationIndex"</Description>
+              <LastState Value="??" Activated="0" RealAddress="00000000"/>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>Avatar_basepointer</Address>
+              <Offsets>
+                <Offset>134</Offset>
+              </Offsets>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>121334</ID>
+      <Description>"Avatar_Caravaneers Base Address Scan Initialization (Activate This First)"</Description>
+      <Options moHideChildren="1"/>
+      <LastState Activated="0"/>
+      <Color>800000</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>[ENABLE]
+registersymbol(Avatar_Caravaneers_basepointer)
+registersymbol(Avatar_Caravaneers_update_enable)
+registersymbol(Avatar_Caravaneers_set_enable)
+
+alloc(Avatar_Caravaneers_basepointer, 4)
+alloc(Avatar_Caravaneers_update_enable, 4)
+alloc(Avatar_Caravaneers_set_enable, 4)
+
+
+[DISABLE]
+unregistersymbol(Avatar_Caravaneers_basepointer)
+unregistersymbol(Avatar_Caravaneers_update_enable)
+unregistersymbol(Avatar_Caravaneers_set_enable)
+
+dealloc(Avatar_Caravaneers_basepointer)
+dealloc(Avatar_Caravaneers_update_enable)
+dealloc(Avatar_Caravaneers_set_enable)
+
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>121335</ID>
+          <Description>"Avatar_Caravaneers Base Address Scan (To Activate: View Caravaneer Stats, To Update: View Caravaneer Stats)"</Description>
+          <LastState Activated="0"/>
+          <Color>804000</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[ENABLE]
+label(Avatar_Caravaneers_savedAOB)
+label(Avatar_Caravaneers_returnhere)
+label(Avatar_Caravaneers_originalcode)
+label(Avatar_Caravaneers_exit)
+
+label(Avatar_Caravaneers_update_exit)
+label(Avatar_Caravaneers_set_exit)
+
+registersymbol(Avatar_Caravaneers_savedAOB)
+
+//35DC836A - 83 C4 10              - add esp,10
+//35DC836D - 8B 45 0C              - mov eax,[ebp+0C]
+// StatsPanel:UpdateKillCounter+20
+//35DC8370 - 8B 40 6C              - mov eax,[eax+6C]
+//35DC8373 - 89 46 70              - mov [esi+70],eax
+//35DC8376 - 8B 46 38              - mov eax,[esi+38]
+//35DC8379 - 89 45 F4              - mov [ebp-0C],eax
+//35DC837C - 8B 46 70              - mov eax,[esi+70]
+aobscan(Avatar_Caravaneers_searchedAOB, 8B 40 6C 89 46 70 8B 46 38)
+
+alloc(Avatar_Caravaneers_newmem, 2048)
+
+
+Avatar_Caravaneers_newmem:
+cmp dword ptr [Avatar_Caravaneers_update_enable], #0
+je Avatar_Caravaneers_update_exit
+mov [Avatar_Caravaneers_basepointer], eax
+Avatar_Caravaneers_update_exit:
+
+cmp dword ptr [Avatar_Caravaneers_set_enable], #0
+je Avatar_Caravaneers_set_exit
+Avatar_Caravaneers_set_exit:
+
+
+Avatar_Caravaneers_originalcode:
+db 8B 40 6C 89 46 70
+//mov eax,[eax+6C]
+//mov [esi+70],eax
+
+
+Avatar_Caravaneers_exit:
+jmp Avatar_Caravaneers_returnhere
+
+
+Avatar_Caravaneers_searchedAOB:
+Avatar_Caravaneers_savedAOB:
+jmp Avatar_Caravaneers_newmem
+nop
+Avatar_Caravaneers_returnhere:
+
+
+[DISABLE]
+Avatar_Caravaneers_savedAOB:
+db 8B 40 6C 89 46 70
+//mov eax,[eax+6C]
+//mov [esi+70],eax
+
+unregistersymbol(Avatar_Caravaneers_savedAOB)
+
+dealloc(Avatar_Caravaneers_newmem)
+
+</AssemblerScript>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>121339</ID>
+          <Description>"Avatar_Caravaneers Update Base Address?"</Description>
+          <DropDownList DisplayValueAsItem="1">0:No
+1:Yes
+</DropDownList>
+          <LastState Value="??" Activated="0" RealAddress="00000000"/>
+          <Color>FF8000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>Avatar_Caravaneers_update_enable</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>121342</ID>
+          <Description>"Avatar_Caravaneers Stats"</Description>
+          <Options moHideChildren="1"/>
+          <LastState Value="" Activated="0" RealAddress="00000000"/>
+          <Color>80000008</Color>
+          <GroupHeader>1</GroupHeader>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>121343</ID>
+              <Description>"Base Address"</Description>
+              <LastState Value="??" Activated="0" RealAddress="00000000"/>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>Avatar_Caravaneers_basepointer</Address>
+              <Offsets>
+                <Offset>0</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>75733</ID>
+              <Description>"templateID"</Description>
+              <LastState Activated="0" RealAddress="00000000"/>
+              <Color>80000008</Color>
+              <VariableType>String</VariableType>
+              <Length>32</Length>
+              <Unicode>1</Unicode>
+              <ZeroTerminate>1</ZeroTerminate>
+              <Address>Avatar_Caravaneers_basepointer</Address>
+              <Offsets>
+                <Offset>C</Offset>
+                <Offset>8</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>121344</ID>
+              <Description>"firstName"</Description>
+              <LastState Activated="0" RealAddress="00000000"/>
+              <Color>80000008</Color>
+              <VariableType>String</VariableType>
+              <Length>32</Length>
+              <Unicode>1</Unicode>
+              <ZeroTerminate>1</ZeroTerminate>
+              <Address>Avatar_Caravaneers_basepointer</Address>
+              <Offsets>
+                <Offset>C</Offset>
+                <Offset>C</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>121345</ID>
+              <Description>"alias"</Description>
+              <LastState Activated="0" RealAddress="00000000"/>
+              <Color>80000008</Color>
+              <VariableType>String</VariableType>
+              <Length>32</Length>
+              <Unicode>1</Unicode>
+              <ZeroTerminate>1</ZeroTerminate>
+              <Address>Avatar_Caravaneers_basepointer</Address>
+              <Offsets>
+                <Offset>C</Offset>
+                <Offset>10</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>121346</ID>
+              <Description>"lastName"</Description>
+              <LastState Activated="0" RealAddress="00000000"/>
+              <Color>80000008</Color>
+              <VariableType>String</VariableType>
+              <Length>32</Length>
+              <Unicode>1</Unicode>
+              <ZeroTerminate>1</ZeroTerminate>
+              <Address>Avatar_Caravaneers_basepointer</Address>
+              <Offsets>
+                <Offset>C</Offset>
+                <Offset>14</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>121347</ID>
+              <Description>"guid"</Description>
+              <LastState Activated="0" RealAddress="00000000"/>
+              <Color>80000008</Color>
+              <VariableType>String</VariableType>
+              <Length>32</Length>
+              <Unicode>1</Unicode>
+              <ZeroTerminate>1</ZeroTerminate>
+              <Address>Avatar_Caravaneers_basepointer</Address>
+              <Offsets>
+                <Offset>C</Offset>
+                <Offset>18</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>121348</ID>
+              <Description>"actorID"</Description>
+              <LastState Activated="0" RealAddress="00000000"/>
+              <Color>80000008</Color>
+              <VariableType>String</VariableType>
+              <Length>32</Length>
+              <Unicode>1</Unicode>
+              <ZeroTerminate>1</ZeroTerminate>
+              <Address>Avatar_Caravaneers_basepointer</Address>
+              <Offsets>
+                <Offset>C</Offset>
+                <Offset>1C</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>121349</ID>
+              <Description>"voiceID"</Description>
+              <LastState Activated="0" RealAddress="00000000"/>
+              <Color>80000008</Color>
+              <VariableType>String</VariableType>
+              <Length>32</Length>
+              <Unicode>1</Unicode>
+              <ZeroTerminate>1</ZeroTerminate>
+              <Address>Avatar_Caravaneers_basepointer</Address>
+              <Offsets>
+                <Offset>C</Offset>
+                <Offset>20</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>121350</ID>
+              <Description>"questActorID"</Description>
+              <LastState Activated="0" RealAddress="00000000"/>
+              <Color>80000008</Color>
+              <VariableType>String</VariableType>
+              <Length>32</Length>
+              <Unicode>1</Unicode>
+              <ZeroTerminate>1</ZeroTerminate>
+              <Address>Avatar_Caravaneers_basepointer</Address>
+              <Offsets>
+                <Offset>C</Offset>
+                <Offset>24</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>121359</ID>
+              <Description>"race"</Description>
+              <LastState Activated="0" RealAddress="00000000"/>
+              <Color>80000008</Color>
+              <VariableType>String</VariableType>
+              <Length>32</Length>
+              <Unicode>1</Unicode>
+              <ZeroTerminate>1</ZeroTerminate>
+              <Address>Avatar_Caravaneers_basepointer</Address>
+              <Offsets>
+                <Offset>C</Offset>
+                <Offset>28</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>121360</ID>
+              <Description>"gender"</Description>
+              <LastState Activated="0" RealAddress="00000000"/>
+              <Color>80000008</Color>
+              <VariableType>String</VariableType>
+              <Length>32</Length>
+              <Unicode>1</Unicode>
+              <ZeroTerminate>1</ZeroTerminate>
+              <Address>Avatar_Caravaneers_basepointer</Address>
+              <Offsets>
+                <Offset>C</Offset>
+                <Offset>2C</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>121361</ID>
+              <Description>"equipedWeaponGUID"</Description>
+              <LastState Activated="0" RealAddress="00000000"/>
+              <Color>80000008</Color>
+              <VariableType>String</VariableType>
+              <Length>32</Length>
+              <Unicode>1</Unicode>
+              <ZeroTerminate>1</ZeroTerminate>
+              <Address>Avatar_Caravaneers_basepointer</Address>
+              <Offsets>
+                <Offset>C</Offset>
+                <Offset>30</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>121373</ID>
+              <Description>"mainStats"</Description>
+              <Options moHideChildren="1"/>
+              <LastState Value="" Activated="0" RealAddress="00000000"/>
+              <Color>80000008</Color>
+              <GroupHeader>1</GroupHeader>
+              <CheatEntries>
+                <CheatEntry>
+                  <ID>121369</ID>
+                  <Description>"Base Address"</Description>
+                  <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                  <Color>80000008</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>Avatar_Caravaneers_basepointer</Address>
+                  <Offsets>
+                    <Offset>0</Offset>
+                    <Offset>50</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>121374</ID>
+                  <Description>"Base Address"</Description>
+                  <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                  <Color>80000008</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>Avatar_Caravaneers_basepointer</Address>
+                  <Offsets>
+                    <Offset>0</Offset>
+                    <Offset>8</Offset>
+                    <Offset>50</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>121378</ID>
+                  <Description>"Slot 1"</Description>
+                  <Options moHideChildren="1"/>
+                  <LastState Value="" Activated="0" RealAddress="00000000"/>
+                  <Color>80000008</Color>
+                  <GroupHeader>1</GroupHeader>
+                  <CheatEntries>
+                    <CheatEntry>
+                      <ID>121375</ID>
+                      <Description>"Base Address"</Description>
+                      <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                      <Color>80000008</Color>
+                      <VariableType>4 Bytes</VariableType>
+                      <Address>Avatar_Caravaneers_basepointer</Address>
+                      <Offsets>
+                        <Offset>0</Offset>
+                        <Offset>10</Offset>
+                        <Offset>8</Offset>
+                        <Offset>50</Offset>
+                      </Offsets>
+                    </CheatEntry>
+                    <CheatEntry>
+                      <ID>121376</ID>
+                      <Description>"id"</Description>
+                      <LastState Activated="0" RealAddress="00000000"/>
+                      <Color>80000008</Color>
+                      <VariableType>String</VariableType>
+                      <Length>32</Length>
+                      <Unicode>1</Unicode>
+                      <ZeroTerminate>1</ZeroTerminate>
+                      <Address>Avatar_Caravaneers_basepointer</Address>
+                      <Offsets>
+                        <Offset>C</Offset>
+                        <Offset>8</Offset>
+                        <Offset>10</Offset>
+                        <Offset>8</Offset>
+                        <Offset>50</Offset>
+                      </Offsets>
+                    </CheatEntry>
+                    <CheatEntry>
+                      <ID>121377</ID>
+                      <Description>"value"</Description>
+                      <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                      <Color>80000008</Color>
+                      <VariableType>Float</VariableType>
+                      <Address>Avatar_Caravaneers_basepointer</Address>
+                      <Offsets>
+                        <Offset>C</Offset>
+                        <Offset>10</Offset>
+                        <Offset>8</Offset>
+                        <Offset>50</Offset>
+                      </Offsets>
+                    </CheatEntry>
+                  </CheatEntries>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>121379</ID>
+                  <Description>"Slot 2"</Description>
+                  <Options moHideChildren="1"/>
+                  <LastState Value="" Activated="0" RealAddress="00000000"/>
+                  <Color>80000008</Color>
+                  <GroupHeader>1</GroupHeader>
+                  <CheatEntries>
+                    <CheatEntry>
+                      <ID>121380</ID>
+                      <Description>"Base Address"</Description>
+                      <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                      <Color>80000008</Color>
+                      <VariableType>4 Bytes</VariableType>
+                      <Address>Avatar_Caravaneers_basepointer</Address>
+                      <Offsets>
+                        <Offset>0</Offset>
+                        <Offset>14</Offset>
+                        <Offset>8</Offset>
+                        <Offset>50</Offset>
+                      </Offsets>
+                    </CheatEntry>
+                    <CheatEntry>
+                      <ID>121381</ID>
+                      <Description>"id"</Description>
+                      <LastState Activated="0" RealAddress="00000000"/>
+                      <Color>80000008</Color>
+                      <VariableType>String</VariableType>
+                      <Length>32</Length>
+                      <Unicode>1</Unicode>
+                      <ZeroTerminate>1</ZeroTerminate>
+                      <Address>Avatar_Caravaneers_basepointer</Address>
+                      <Offsets>
+                        <Offset>C</Offset>
+                        <Offset>8</Offset>
+                        <Offset>14</Offset>
+                        <Offset>8</Offset>
+                        <Offset>50</Offset>
+                      </Offsets>
+                    </CheatEntry>
+                    <CheatEntry>
+                      <ID>121382</ID>
+                      <Description>"value"</Description>
+                      <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                      <Color>80000008</Color>
+                      <VariableType>Float</VariableType>
+                      <Address>Avatar_Caravaneers_basepointer</Address>
+                      <Offsets>
+                        <Offset>C</Offset>
+                        <Offset>14</Offset>
+                        <Offset>8</Offset>
+                        <Offset>50</Offset>
+                      </Offsets>
+                    </CheatEntry>
+                  </CheatEntries>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>121383</ID>
+                  <Description>"Slot 3"</Description>
+                  <Options moHideChildren="1"/>
+                  <LastState Value="" Activated="0" RealAddress="00000000"/>
+                  <Color>80000008</Color>
+                  <GroupHeader>1</GroupHeader>
+                  <CheatEntries>
+                    <CheatEntry>
+                      <ID>121384</ID>
+                      <Description>"Base Address"</Description>
+                      <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                      <Color>80000008</Color>
+                      <VariableType>4 Bytes</VariableType>
+                      <Address>Avatar_Caravaneers_basepointer</Address>
+                      <Offsets>
+                        <Offset>0</Offset>
+                        <Offset>18</Offset>
+                        <Offset>8</Offset>
+                        <Offset>50</Offset>
+                      </Offsets>
+                    </CheatEntry>
+                    <CheatEntry>
+                      <ID>121385</ID>
+                      <Description>"id"</Description>
+                      <LastState Activated="0" RealAddress="00000000"/>
+                      <Color>80000008</Color>
+                      <VariableType>String</VariableType>
+                      <Length>32</Length>
+                      <Unicode>1</Unicode>
+                      <ZeroTerminate>1</ZeroTerminate>
+                      <Address>Avatar_Caravaneers_basepointer</Address>
+                      <Offsets>
+                        <Offset>C</Offset>
+                        <Offset>8</Offset>
+                        <Offset>18</Offset>
+                        <Offset>8</Offset>
+                        <Offset>50</Offset>
+                      </Offsets>
+                    </CheatEntry>
+                    <CheatEntry>
+                      <ID>121386</ID>
+                      <Description>"value"</Description>
+                      <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                      <Color>80000008</Color>
+                      <VariableType>Float</VariableType>
+                      <Address>Avatar_Caravaneers_basepointer</Address>
+                      <Offsets>
+                        <Offset>C</Offset>
+                        <Offset>18</Offset>
+                        <Offset>8</Offset>
+                        <Offset>50</Offset>
+                      </Offsets>
+                    </CheatEntry>
+                  </CheatEntries>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>121387</ID>
+                  <Description>"Slot 4"</Description>
+                  <Options moHideChildren="1"/>
+                  <LastState Value="" Activated="0" RealAddress="00000000"/>
+                  <Color>80000008</Color>
+                  <GroupHeader>1</GroupHeader>
+                  <CheatEntries>
+                    <CheatEntry>
+                      <ID>121388</ID>
+                      <Description>"Base Address"</Description>
+                      <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                      <Color>80000008</Color>
+                      <VariableType>4 Bytes</VariableType>
+                      <Address>Avatar_Caravaneers_basepointer</Address>
+                      <Offsets>
+                        <Offset>0</Offset>
+                        <Offset>1C</Offset>
+                        <Offset>8</Offset>
+                        <Offset>50</Offset>
+                      </Offsets>
+                    </CheatEntry>
+                    <CheatEntry>
+                      <ID>121389</ID>
+                      <Description>"id"</Description>
+                      <LastState Activated="0" RealAddress="00000000"/>
+                      <Color>80000008</Color>
+                      <VariableType>String</VariableType>
+                      <Length>32</Length>
+                      <Unicode>1</Unicode>
+                      <ZeroTerminate>1</ZeroTerminate>
+                      <Address>Avatar_Caravaneers_basepointer</Address>
+                      <Offsets>
+                        <Offset>C</Offset>
+                        <Offset>8</Offset>
+                        <Offset>1C</Offset>
+                        <Offset>8</Offset>
+                        <Offset>50</Offset>
+                      </Offsets>
+                    </CheatEntry>
+                    <CheatEntry>
+                      <ID>121390</ID>
+                      <Description>"value"</Description>
+                      <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                      <Color>80000008</Color>
+                      <VariableType>Float</VariableType>
+                      <Address>Avatar_Caravaneers_basepointer</Address>
+                      <Offsets>
+                        <Offset>C</Offset>
+                        <Offset>1C</Offset>
+                        <Offset>8</Offset>
+                        <Offset>50</Offset>
+                      </Offsets>
+                    </CheatEntry>
+                  </CheatEntries>
+                </CheatEntry>
+              </CheatEntries>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>121391</ID>
+              <Description>"masteries"</Description>
+              <Options moHideChildren="1"/>
+              <LastState Value="" Activated="0" RealAddress="00000000"/>
+              <Color>80000008</Color>
+              <GroupHeader>1</GroupHeader>
+              <CheatEntries>
+                <CheatEntry>
+                  <ID>121392</ID>
+                  <Description>"Base Address"</Description>
+                  <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                  <Color>80000008</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>Avatar_Caravaneers_basepointer</Address>
+                  <Offsets>
+                    <Offset>0</Offset>
+                    <Offset>54</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>121393</ID>
+                  <Description>"Base Address"</Description>
+                  <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                  <Color>80000008</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>Avatar_Caravaneers_basepointer</Address>
+                  <Offsets>
+                    <Offset>0</Offset>
+                    <Offset>C</Offset>
+                    <Offset>54</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>121410</ID>
+                  <Description>"Base Address"</Description>
+                  <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                  <Color>80000008</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>Avatar_Caravaneers_basepointer</Address>
+                  <Offsets>
+                    <Offset>0</Offset>
+                    <Offset>8</Offset>
+                    <Offset>C</Offset>
+                    <Offset>54</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>121394</ID>
+                  <Description>"Slot 1"</Description>
+                  <Options moHideChildren="1"/>
+                  <LastState Value="" Activated="0" RealAddress="00000000"/>
+                  <Color>80000008</Color>
+                  <GroupHeader>1</GroupHeader>
+                  <CheatEntries>
+                    <CheatEntry>
+                      <ID>121395</ID>
+                      <Description>"Base Address"</Description>
+                      <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                      <Color>80000008</Color>
+                      <VariableType>4 Bytes</VariableType>
+                      <Address>Avatar_Caravaneers_basepointer</Address>
+                      <Offsets>
+                        <Offset>0</Offset>
+                        <Offset>10</Offset>
+                        <Offset>8</Offset>
+                        <Offset>C</Offset>
+                        <Offset>54</Offset>
+                      </Offsets>
+                    </CheatEntry>
+                    <CheatEntry>
+                      <ID>121396</ID>
+                      <Description>"id"</Description>
+                      <LastState Activated="0" RealAddress="00000000"/>
+                      <Color>80000008</Color>
+                      <VariableType>String</VariableType>
+                      <Length>32</Length>
+                      <Unicode>1</Unicode>
+                      <ZeroTerminate>1</ZeroTerminate>
+                      <Address>Avatar_Caravaneers_basepointer</Address>
+                      <Offsets>
+                        <Offset>C</Offset>
+                        <Offset>8</Offset>
+                        <Offset>10</Offset>
+                        <Offset>8</Offset>
+                        <Offset>C</Offset>
+                        <Offset>54</Offset>
+                      </Offsets>
+                    </CheatEntry>
+                    <CheatEntry>
+                      <ID>121414</ID>
+                      <Description>"titleId"</Description>
+                      <LastState Activated="0" RealAddress="00000000"/>
+                      <Color>80000008</Color>
+                      <VariableType>String</VariableType>
+                      <Length>32</Length>
+                      <Unicode>1</Unicode>
+                      <ZeroTerminate>1</ZeroTerminate>
+                      <Address>Avatar_Caravaneers_basepointer</Address>
+                      <Offsets>
+                        <Offset>C</Offset>
+                        <Offset>C</Offset>
+                        <Offset>10</Offset>
+                        <Offset>8</Offset>
+                        <Offset>C</Offset>
+                        <Offset>54</Offset>
+                      </Offsets>
+                    </CheatEntry>
+                    <CheatEntry>
+                      <ID>121415</ID>
+                      <Description>"descId"</Description>
+                      <LastState Activated="0" RealAddress="00000000"/>
+                      <Color>80000008</Color>
+                      <VariableType>String</VariableType>
+                      <Length>32</Length>
+                      <Unicode>1</Unicode>
+                      <ZeroTerminate>1</ZeroTerminate>
+                      <Address>Avatar_Caravaneers_basepointer</Address>
+                      <Offsets>
+                        <Offset>C</Offset>
+                        <Offset>10</Offset>
+                        <Offset>10</Offset>
+                        <Offset>8</Offset>
+                        <Offset>C</Offset>
+                        <Offset>54</Offset>
+                      </Offsets>
+                    </CheatEntry>
+                    <CheatEntry>
+                      <ID>121411</ID>
+                      <Description>"level"</Description>
+                      <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                      <Color>80000008</Color>
+                      <VariableType>4 Bytes</VariableType>
+                      <Address>Avatar_Caravaneers_basepointer</Address>
+                      <Offsets>
+                        <Offset>14</Offset>
+                        <Offset>10</Offset>
+                        <Offset>8</Offset>
+                        <Offset>C</Offset>
+                        <Offset>54</Offset>
+                      </Offsets>
+                    </CheatEntry>
+                    <CheatEntry>
+                      <ID>121412</ID>
+                      <Description>"exp"</Description>
+                      <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                      <Color>80000008</Color>
+                      <VariableType>4 Bytes</VariableType>
+                      <Address>Avatar_Caravaneers_basepointer</Address>
+                      <Offsets>
+                        <Offset>18</Offset>
+                        <Offset>10</Offset>
+                        <Offset>8</Offset>
+                        <Offset>C</Offset>
+                        <Offset>54</Offset>
+                      </Offsets>
+                    </CheatEntry>
+                    <CheatEntry>
+                      <ID>121413</ID>
+                      <Description>"expStep"</Description>
+                      <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                      <Color>80000008</Color>
+                      <VariableType>4 Bytes</VariableType>
+                      <Address>Avatar_Caravaneers_basepointer</Address>
+                      <Offsets>
+                        <Offset>1C</Offset>
+                        <Offset>10</Offset>
+                        <Offset>8</Offset>
+                        <Offset>C</Offset>
+                        <Offset>54</Offset>
+                      </Offsets>
+                    </CheatEntry>
+                  </CheatEntries>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>121416</ID>
+                  <Description>"Slot 2"</Description>
+                  <Options moHideChildren="1"/>
+                  <LastState Value="" Activated="0" RealAddress="00000000"/>
+                  <Color>80000008</Color>
+                  <GroupHeader>1</GroupHeader>
+                  <CheatEntries>
+                    <CheatEntry>
+                      <ID>121417</ID>
+                      <Description>"Base Address"</Description>
+                      <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                      <Color>80000008</Color>
+                      <VariableType>4 Bytes</VariableType>
+                      <Address>Avatar_Caravaneers_basepointer</Address>
+                      <Offsets>
+                        <Offset>0</Offset>
+                        <Offset>14</Offset>
+                        <Offset>8</Offset>
+                        <Offset>C</Offset>
+                        <Offset>54</Offset>
+                      </Offsets>
+                    </CheatEntry>
+                    <CheatEntry>
+                      <ID>121418</ID>
+                      <Description>"id"</Description>
+                      <LastState Activated="0" RealAddress="00000000"/>
+                      <Color>80000008</Color>
+                      <VariableType>String</VariableType>
+                      <Length>32</Length>
+                      <Unicode>1</Unicode>
+                      <ZeroTerminate>1</ZeroTerminate>
+                      <Address>Avatar_Caravaneers_basepointer</Address>
+                      <Offsets>
+                        <Offset>C</Offset>
+                        <Offset>8</Offset>
+                        <Offset>14</Offset>
+                        <Offset>8</Offset>
+                        <Offset>C</Offset>
+                        <Offset>54</Offset>
+                      </Offsets>
+                    </CheatEntry>
+                    <CheatEntry>
+                      <ID>121419</ID>
+                      <Description>"titleId"</Description>
+                      <LastState Activated="0" RealAddress="00000000"/>
+                      <Color>80000008</Color>
+                      <VariableType>String</VariableType>
+                      <Length>32</Length>
+                      <Unicode>1</Unicode>
+                      <ZeroTerminate>1</ZeroTerminate>
+                      <Address>Avatar_Caravaneers_basepointer</Address>
+                      <Offsets>
+                        <Offset>C</Offset>
+                        <Offset>C</Offset>
+                        <Offset>14</Offset>
+                        <Offset>8</Offset>
+                        <Offset>C</Offset>
+                        <Offset>54</Offset>
+                      </Offsets>
+                    </CheatEntry>
+                    <CheatEntry>
+                      <ID>121420</ID>
+                      <Description>"descId"</Description>
+                      <LastState Activated="0" RealAddress="00000000"/>
+                      <Color>80000008</Color>
+                      <VariableType>String</VariableType>
+                      <Length>32</Length>
+                      <Unicode>1</Unicode>
+                      <ZeroTerminate>1</ZeroTerminate>
+                      <Address>Avatar_Caravaneers_basepointer</Address>
+                      <Offsets>
+                        <Offset>C</Offset>
+                        <Offset>10</Offset>
+                        <Offset>14</Offset>
+                        <Offset>8</Offset>
+                        <Offset>C</Offset>
+                        <Offset>54</Offset>
+                      </Offsets>
+                    </CheatEntry>
+                    <CheatEntry>
+                      <ID>121421</ID>
+                      <Description>"level"</Description>
+                      <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                      <Color>80000008</Color>
+                      <VariableType>4 Bytes</VariableType>
+                      <Address>Avatar_Caravaneers_basepointer</Address>
+                      <Offsets>
+                        <Offset>14</Offset>
+                        <Offset>14</Offset>
+                        <Offset>8</Offset>
+                        <Offset>C</Offset>
+                        <Offset>54</Offset>
+                      </Offsets>
+                    </CheatEntry>
+                    <CheatEntry>
+                      <ID>121422</ID>
+                      <Description>"exp"</Description>
+                      <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                      <Color>80000008</Color>
+                      <VariableType>4 Bytes</VariableType>
+                      <Address>Avatar_Caravaneers_basepointer</Address>
+                      <Offsets>
+                        <Offset>18</Offset>
+                        <Offset>14</Offset>
+                        <Offset>8</Offset>
+                        <Offset>C</Offset>
+                        <Offset>54</Offset>
+                      </Offsets>
+                    </CheatEntry>
+                    <CheatEntry>
+                      <ID>121423</ID>
+                      <Description>"expStep"</Description>
+                      <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                      <Color>80000008</Color>
+                      <VariableType>4 Bytes</VariableType>
+                      <Address>Avatar_Caravaneers_basepointer</Address>
+                      <Offsets>
+                        <Offset>1C</Offset>
+                        <Offset>14</Offset>
+                        <Offset>8</Offset>
+                        <Offset>C</Offset>
+                        <Offset>54</Offset>
+                      </Offsets>
+                    </CheatEntry>
+                  </CheatEntries>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>121424</ID>
+                  <Description>"Slot 3"</Description>
+                  <Options moHideChildren="1"/>
+                  <LastState Value="" Activated="0" RealAddress="00000000"/>
+                  <Color>80000008</Color>
+                  <GroupHeader>1</GroupHeader>
+                  <CheatEntries>
+                    <CheatEntry>
+                      <ID>121425</ID>
+                      <Description>"Base Address"</Description>
+                      <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                      <Color>80000008</Color>
+                      <VariableType>4 Bytes</VariableType>
+                      <Address>Avatar_Caravaneers_basepointer</Address>
+                      <Offsets>
+                        <Offset>0</Offset>
+                        <Offset>18</Offset>
+                        <Offset>8</Offset>
+                        <Offset>C</Offset>
+                        <Offset>54</Offset>
+                      </Offsets>
+                    </CheatEntry>
+                    <CheatEntry>
+                      <ID>121426</ID>
+                      <Description>"id"</Description>
+                      <LastState Activated="0" RealAddress="00000000"/>
+                      <Color>80000008</Color>
+                      <VariableType>String</VariableType>
+                      <Length>32</Length>
+                      <Unicode>1</Unicode>
+                      <ZeroTerminate>1</ZeroTerminate>
+                      <Address>Avatar_Caravaneers_basepointer</Address>
+                      <Offsets>
+                        <Offset>C</Offset>
+                        <Offset>8</Offset>
+                        <Offset>18</Offset>
+                        <Offset>8</Offset>
+                        <Offset>C</Offset>
+                        <Offset>54</Offset>
+                      </Offsets>
+                    </CheatEntry>
+                    <CheatEntry>
+                      <ID>121427</ID>
+                      <Description>"titleId"</Description>
+                      <LastState Activated="0" RealAddress="00000000"/>
+                      <Color>80000008</Color>
+                      <VariableType>String</VariableType>
+                      <Length>32</Length>
+                      <Unicode>1</Unicode>
+                      <ZeroTerminate>1</ZeroTerminate>
+                      <Address>Avatar_Caravaneers_basepointer</Address>
+                      <Offsets>
+                        <Offset>C</Offset>
+                        <Offset>C</Offset>
+                        <Offset>18</Offset>
+                        <Offset>8</Offset>
+                        <Offset>C</Offset>
+                        <Offset>54</Offset>
+                      </Offsets>
+                    </CheatEntry>
+                    <CheatEntry>
+                      <ID>121428</ID>
+                      <Description>"descId"</Description>
+                      <LastState Activated="0" RealAddress="00000000"/>
+                      <Color>80000008</Color>
+                      <VariableType>String</VariableType>
+                      <Length>32</Length>
+                      <Unicode>1</Unicode>
+                      <ZeroTerminate>1</ZeroTerminate>
+                      <Address>Avatar_Caravaneers_basepointer</Address>
+                      <Offsets>
+                        <Offset>C</Offset>
+                        <Offset>10</Offset>
+                        <Offset>18</Offset>
+                        <Offset>8</Offset>
+                        <Offset>C</Offset>
+                        <Offset>54</Offset>
+                      </Offsets>
+                    </CheatEntry>
+                    <CheatEntry>
+                      <ID>121429</ID>
+                      <Description>"level"</Description>
+                      <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                      <Color>80000008</Color>
+                      <VariableType>4 Bytes</VariableType>
+                      <Address>Avatar_Caravaneers_basepointer</Address>
+                      <Offsets>
+                        <Offset>14</Offset>
+                        <Offset>18</Offset>
+                        <Offset>8</Offset>
+                        <Offset>C</Offset>
+                        <Offset>54</Offset>
+                      </Offsets>
+                    </CheatEntry>
+                    <CheatEntry>
+                      <ID>121430</ID>
+                      <Description>"exp"</Description>
+                      <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                      <Color>80000008</Color>
+                      <VariableType>4 Bytes</VariableType>
+                      <Address>Avatar_Caravaneers_basepointer</Address>
+                      <Offsets>
+                        <Offset>18</Offset>
+                        <Offset>18</Offset>
+                        <Offset>8</Offset>
+                        <Offset>C</Offset>
+                        <Offset>54</Offset>
+                      </Offsets>
+                    </CheatEntry>
+                    <CheatEntry>
+                      <ID>121431</ID>
+                      <Description>"expStep"</Description>
+                      <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                      <Color>80000008</Color>
+                      <VariableType>4 Bytes</VariableType>
+                      <Address>Avatar_Caravaneers_basepointer</Address>
+                      <Offsets>
+                        <Offset>1C</Offset>
+                        <Offset>18</Offset>
+                        <Offset>8</Offset>
+                        <Offset>C</Offset>
+                        <Offset>54</Offset>
+                      </Offsets>
+                    </CheatEntry>
+                  </CheatEntries>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>121432</ID>
+                  <Description>"Slot 4"</Description>
+                  <Options moHideChildren="1"/>
+                  <LastState Value="" Activated="0" RealAddress="00000000"/>
+                  <Color>80000008</Color>
+                  <GroupHeader>1</GroupHeader>
+                  <CheatEntries>
+                    <CheatEntry>
+                      <ID>121433</ID>
+                      <Description>"Base Address"</Description>
+                      <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                      <Color>80000008</Color>
+                      <VariableType>4 Bytes</VariableType>
+                      <Address>Avatar_Caravaneers_basepointer</Address>
+                      <Offsets>
+                        <Offset>0</Offset>
+                        <Offset>1C</Offset>
+                        <Offset>8</Offset>
+                        <Offset>C</Offset>
+                        <Offset>54</Offset>
+                      </Offsets>
+                    </CheatEntry>
+                    <CheatEntry>
+                      <ID>121434</ID>
+                      <Description>"id"</Description>
+                      <LastState Activated="0" RealAddress="00000000"/>
+                      <Color>80000008</Color>
+                      <VariableType>String</VariableType>
+                      <Length>32</Length>
+                      <Unicode>1</Unicode>
+                      <ZeroTerminate>1</ZeroTerminate>
+                      <Address>Avatar_Caravaneers_basepointer</Address>
+                      <Offsets>
+                        <Offset>C</Offset>
+                        <Offset>8</Offset>
+                        <Offset>1C</Offset>
+                        <Offset>8</Offset>
+                        <Offset>C</Offset>
+                        <Offset>54</Offset>
+                      </Offsets>
+                    </CheatEntry>
+                    <CheatEntry>
+                      <ID>121435</ID>
+                      <Description>"titleId"</Description>
+                      <LastState Activated="0" RealAddress="00000000"/>
+                      <Color>80000008</Color>
+                      <VariableType>String</VariableType>
+                      <Length>32</Length>
+                      <Unicode>1</Unicode>
+                      <ZeroTerminate>1</ZeroTerminate>
+                      <Address>Avatar_Caravaneers_basepointer</Address>
+                      <Offsets>
+                        <Offset>C</Offset>
+                        <Offset>C</Offset>
+                        <Offset>1C</Offset>
+                        <Offset>8</Offset>
+                        <Offset>C</Offset>
+                        <Offset>54</Offset>
+                      </Offsets>
+                    </CheatEntry>
+                    <CheatEntry>
+                      <ID>121436</ID>
+                      <Description>"descId"</Description>
+                      <LastState Activated="0" RealAddress="00000000"/>
+                      <Color>80000008</Color>
+                      <VariableType>String</VariableType>
+                      <Length>32</Length>
+                      <Unicode>1</Unicode>
+                      <ZeroTerminate>1</ZeroTerminate>
+                      <Address>Avatar_Caravaneers_basepointer</Address>
+                      <Offsets>
+                        <Offset>C</Offset>
+                        <Offset>10</Offset>
+                        <Offset>1C</Offset>
+                        <Offset>8</Offset>
+                        <Offset>C</Offset>
+                        <Offset>54</Offset>
+                      </Offsets>
+                    </CheatEntry>
+                    <CheatEntry>
+                      <ID>121437</ID>
+                      <Description>"level"</Description>
+                      <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                      <Color>80000008</Color>
+                      <VariableType>4 Bytes</VariableType>
+                      <Address>Avatar_Caravaneers_basepointer</Address>
+                      <Offsets>
+                        <Offset>14</Offset>
+                        <Offset>1C</Offset>
+                        <Offset>8</Offset>
+                        <Offset>C</Offset>
+                        <Offset>54</Offset>
+                      </Offsets>
+                    </CheatEntry>
+                    <CheatEntry>
+                      <ID>121438</ID>
+                      <Description>"exp"</Description>
+                      <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                      <Color>80000008</Color>
+                      <VariableType>4 Bytes</VariableType>
+                      <Address>Avatar_Caravaneers_basepointer</Address>
+                      <Offsets>
+                        <Offset>18</Offset>
+                        <Offset>1C</Offset>
+                        <Offset>8</Offset>
+                        <Offset>C</Offset>
+                        <Offset>54</Offset>
+                      </Offsets>
+                    </CheatEntry>
+                    <CheatEntry>
+                      <ID>121439</ID>
+                      <Description>"expStep"</Description>
+                      <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                      <Color>80000008</Color>
+                      <VariableType>4 Bytes</VariableType>
+                      <Address>Avatar_Caravaneers_basepointer</Address>
+                      <Offsets>
+                        <Offset>1C</Offset>
+                        <Offset>1C</Offset>
+                        <Offset>8</Offset>
+                        <Offset>C</Offset>
+                        <Offset>54</Offset>
+                      </Offsets>
+                    </CheatEntry>
+                  </CheatEntries>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>121440</ID>
+                  <Description>"Slot 5"</Description>
+                  <Options moHideChildren="1"/>
+                  <LastState Value="" Activated="0" RealAddress="00000000"/>
+                  <Color>80000008</Color>
+                  <GroupHeader>1</GroupHeader>
+                  <CheatEntries>
+                    <CheatEntry>
+                      <ID>121441</ID>
+                      <Description>"Base Address"</Description>
+                      <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                      <Color>80000008</Color>
+                      <VariableType>4 Bytes</VariableType>
+                      <Address>Avatar_Caravaneers_basepointer</Address>
+                      <Offsets>
+                        <Offset>0</Offset>
+                        <Offset>20</Offset>
+                        <Offset>8</Offset>
+                        <Offset>C</Offset>
+                        <Offset>54</Offset>
+                      </Offsets>
+                    </CheatEntry>
+                    <CheatEntry>
+                      <ID>121442</ID>
+                      <Description>"id"</Description>
+                      <LastState Activated="0" RealAddress="00000000"/>
+                      <Color>80000008</Color>
+                      <VariableType>String</VariableType>
+                      <Length>32</Length>
+                      <Unicode>1</Unicode>
+                      <ZeroTerminate>1</ZeroTerminate>
+                      <Address>Avatar_Caravaneers_basepointer</Address>
+                      <Offsets>
+                        <Offset>C</Offset>
+                        <Offset>8</Offset>
+                        <Offset>20</Offset>
+                        <Offset>8</Offset>
+                        <Offset>C</Offset>
+                        <Offset>54</Offset>
+                      </Offsets>
+                    </CheatEntry>
+                    <CheatEntry>
+                      <ID>121443</ID>
+                      <Description>"titleId"</Description>
+                      <LastState Activated="0" RealAddress="00000000"/>
+                      <Color>80000008</Color>
+                      <VariableType>String</VariableType>
+                      <Length>32</Length>
+                      <Unicode>1</Unicode>
+                      <ZeroTerminate>1</ZeroTerminate>
+                      <Address>Avatar_Caravaneers_basepointer</Address>
+                      <Offsets>
+                        <Offset>C</Offset>
+                        <Offset>C</Offset>
+                        <Offset>20</Offset>
+                        <Offset>8</Offset>
+                        <Offset>C</Offset>
+                        <Offset>54</Offset>
+                      </Offsets>
+                    </CheatEntry>
+                    <CheatEntry>
+                      <ID>121444</ID>
+                      <Description>"descId"</Description>
+                      <LastState Activated="0" RealAddress="00000000"/>
+                      <Color>80000008</Color>
+                      <VariableType>String</VariableType>
+                      <Length>32</Length>
+                      <Unicode>1</Unicode>
+                      <ZeroTerminate>1</ZeroTerminate>
+                      <Address>Avatar_Caravaneers_basepointer</Address>
+                      <Offsets>
+                        <Offset>C</Offset>
+                        <Offset>10</Offset>
+                        <Offset>20</Offset>
+                        <Offset>8</Offset>
+                        <Offset>C</Offset>
+                        <Offset>54</Offset>
+                      </Offsets>
+                    </CheatEntry>
+                    <CheatEntry>
+                      <ID>121445</ID>
+                      <Description>"level"</Description>
+                      <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                      <Color>80000008</Color>
+                      <VariableType>4 Bytes</VariableType>
+                      <Address>Avatar_Caravaneers_basepointer</Address>
+                      <Offsets>
+                        <Offset>14</Offset>
+                        <Offset>20</Offset>
+                        <Offset>8</Offset>
+                        <Offset>C</Offset>
+                        <Offset>54</Offset>
+                      </Offsets>
+                    </CheatEntry>
+                    <CheatEntry>
+                      <ID>121446</ID>
+                      <Description>"exp"</Description>
+                      <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                      <Color>80000008</Color>
+                      <VariableType>4 Bytes</VariableType>
+                      <Address>Avatar_Caravaneers_basepointer</Address>
+                      <Offsets>
+                        <Offset>18</Offset>
+                        <Offset>20</Offset>
+                        <Offset>8</Offset>
+                        <Offset>C</Offset>
+                        <Offset>54</Offset>
+                      </Offsets>
+                    </CheatEntry>
+                    <CheatEntry>
+                      <ID>121447</ID>
+                      <Description>"expStep"</Description>
+                      <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                      <Color>80000008</Color>
+                      <VariableType>4 Bytes</VariableType>
+                      <Address>Avatar_Caravaneers_basepointer</Address>
+                      <Offsets>
+                        <Offset>1C</Offset>
+                        <Offset>20</Offset>
+                        <Offset>8</Offset>
+                        <Offset>C</Offset>
+                        <Offset>54</Offset>
+                      </Offsets>
+                    </CheatEntry>
+                  </CheatEntries>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>121448</ID>
+                  <Description>"Slot 6"</Description>
+                  <Options moHideChildren="1"/>
+                  <LastState Value="" Activated="0" RealAddress="00000000"/>
+                  <Color>80000008</Color>
+                  <GroupHeader>1</GroupHeader>
+                  <CheatEntries>
+                    <CheatEntry>
+                      <ID>121449</ID>
+                      <Description>"Base Address"</Description>
+                      <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                      <Color>80000008</Color>
+                      <VariableType>4 Bytes</VariableType>
+                      <Address>Avatar_Caravaneers_basepointer</Address>
+                      <Offsets>
+                        <Offset>0</Offset>
+                        <Offset>24</Offset>
+                        <Offset>8</Offset>
+                        <Offset>C</Offset>
+                        <Offset>54</Offset>
+                      </Offsets>
+                    </CheatEntry>
+                    <CheatEntry>
+                      <ID>121450</ID>
+                      <Description>"id"</Description>
+                      <LastState Activated="0" RealAddress="00000000"/>
+                      <Color>80000008</Color>
+                      <VariableType>String</VariableType>
+                      <Length>32</Length>
+                      <Unicode>1</Unicode>
+                      <ZeroTerminate>1</ZeroTerminate>
+                      <Address>Avatar_Caravaneers_basepointer</Address>
+                      <Offsets>
+                        <Offset>C</Offset>
+                        <Offset>8</Offset>
+                        <Offset>24</Offset>
+                        <Offset>8</Offset>
+                        <Offset>C</Offset>
+                        <Offset>54</Offset>
+                      </Offsets>
+                    </CheatEntry>
+                    <CheatEntry>
+                      <ID>121451</ID>
+                      <Description>"titleId"</Description>
+                      <LastState Activated="0" RealAddress="00000000"/>
+                      <Color>80000008</Color>
+                      <VariableType>String</VariableType>
+                      <Length>32</Length>
+                      <Unicode>1</Unicode>
+                      <ZeroTerminate>1</ZeroTerminate>
+                      <Address>Avatar_Caravaneers_basepointer</Address>
+                      <Offsets>
+                        <Offset>C</Offset>
+                        <Offset>C</Offset>
+                        <Offset>24</Offset>
+                        <Offset>8</Offset>
+                        <Offset>C</Offset>
+                        <Offset>54</Offset>
+                      </Offsets>
+                    </CheatEntry>
+                    <CheatEntry>
+                      <ID>121452</ID>
+                      <Description>"descId"</Description>
+                      <LastState Activated="0" RealAddress="00000000"/>
+                      <Color>80000008</Color>
+                      <VariableType>String</VariableType>
+                      <Length>32</Length>
+                      <Unicode>1</Unicode>
+                      <ZeroTerminate>1</ZeroTerminate>
+                      <Address>Avatar_Caravaneers_basepointer</Address>
+                      <Offsets>
+                        <Offset>C</Offset>
+                        <Offset>10</Offset>
+                        <Offset>24</Offset>
+                        <Offset>8</Offset>
+                        <Offset>C</Offset>
+                        <Offset>54</Offset>
+                      </Offsets>
+                    </CheatEntry>
+                    <CheatEntry>
+                      <ID>121453</ID>
+                      <Description>"level"</Description>
+                      <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                      <Color>80000008</Color>
+                      <VariableType>4 Bytes</VariableType>
+                      <Address>Avatar_Caravaneers_basepointer</Address>
+                      <Offsets>
+                        <Offset>14</Offset>
+                        <Offset>24</Offset>
+                        <Offset>8</Offset>
+                        <Offset>C</Offset>
+                        <Offset>54</Offset>
+                      </Offsets>
+                    </CheatEntry>
+                    <CheatEntry>
+                      <ID>121454</ID>
+                      <Description>"exp"</Description>
+                      <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                      <Color>80000008</Color>
+                      <VariableType>4 Bytes</VariableType>
+                      <Address>Avatar_Caravaneers_basepointer</Address>
+                      <Offsets>
+                        <Offset>18</Offset>
+                        <Offset>24</Offset>
+                        <Offset>8</Offset>
+                        <Offset>C</Offset>
+                        <Offset>54</Offset>
+                      </Offsets>
+                    </CheatEntry>
+                    <CheatEntry>
+                      <ID>121455</ID>
+                      <Description>"expStep"</Description>
+                      <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                      <Color>80000008</Color>
+                      <VariableType>4 Bytes</VariableType>
+                      <Address>Avatar_Caravaneers_basepointer</Address>
+                      <Offsets>
+                        <Offset>1C</Offset>
+                        <Offset>24</Offset>
+                        <Offset>8</Offset>
+                        <Offset>C</Offset>
+                        <Offset>54</Offset>
+                      </Offsets>
+                    </CheatEntry>
+                  </CheatEntries>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>121456</ID>
+                  <Description>"Slot 7"</Description>
+                  <Options moHideChildren="1"/>
+                  <LastState Value="" Activated="0" RealAddress="00000000"/>
+                  <Color>80000008</Color>
+                  <GroupHeader>1</GroupHeader>
+                  <CheatEntries>
+                    <CheatEntry>
+                      <ID>121457</ID>
+                      <Description>"Base Address"</Description>
+                      <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                      <Color>80000008</Color>
+                      <VariableType>4 Bytes</VariableType>
+                      <Address>Avatar_Caravaneers_basepointer</Address>
+                      <Offsets>
+                        <Offset>0</Offset>
+                        <Offset>28</Offset>
+                        <Offset>8</Offset>
+                        <Offset>C</Offset>
+                        <Offset>54</Offset>
+                      </Offsets>
+                    </CheatEntry>
+                    <CheatEntry>
+                      <ID>121458</ID>
+                      <Description>"id"</Description>
+                      <LastState Activated="0" RealAddress="00000000"/>
+                      <Color>80000008</Color>
+                      <VariableType>String</VariableType>
+                      <Length>32</Length>
+                      <Unicode>1</Unicode>
+                      <ZeroTerminate>1</ZeroTerminate>
+                      <Address>Avatar_Caravaneers_basepointer</Address>
+                      <Offsets>
+                        <Offset>C</Offset>
+                        <Offset>8</Offset>
+                        <Offset>28</Offset>
+                        <Offset>8</Offset>
+                        <Offset>C</Offset>
+                        <Offset>54</Offset>
+                      </Offsets>
+                    </CheatEntry>
+                    <CheatEntry>
+                      <ID>121459</ID>
+                      <Description>"titleId"</Description>
+                      <LastState Activated="0" RealAddress="00000000"/>
+                      <Color>80000008</Color>
+                      <VariableType>String</VariableType>
+                      <Length>32</Length>
+                      <Unicode>1</Unicode>
+                      <ZeroTerminate>1</ZeroTerminate>
+                      <Address>Avatar_Caravaneers_basepointer</Address>
+                      <Offsets>
+                        <Offset>C</Offset>
+                        <Offset>C</Offset>
+                        <Offset>28</Offset>
+                        <Offset>8</Offset>
+                        <Offset>C</Offset>
+                        <Offset>54</Offset>
+                      </Offsets>
+                    </CheatEntry>
+                    <CheatEntry>
+                      <ID>121460</ID>
+                      <Description>"descId"</Description>
+                      <LastState Activated="0" RealAddress="00000000"/>
+                      <Color>80000008</Color>
+                      <VariableType>String</VariableType>
+                      <Length>32</Length>
+                      <Unicode>1</Unicode>
+                      <ZeroTerminate>1</ZeroTerminate>
+                      <Address>Avatar_Caravaneers_basepointer</Address>
+                      <Offsets>
+                        <Offset>C</Offset>
+                        <Offset>10</Offset>
+                        <Offset>28</Offset>
+                        <Offset>8</Offset>
+                        <Offset>C</Offset>
+                        <Offset>54</Offset>
+                      </Offsets>
+                    </CheatEntry>
+                    <CheatEntry>
+                      <ID>121461</ID>
+                      <Description>"level"</Description>
+                      <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                      <Color>80000008</Color>
+                      <VariableType>4 Bytes</VariableType>
+                      <Address>Avatar_Caravaneers_basepointer</Address>
+                      <Offsets>
+                        <Offset>14</Offset>
+                        <Offset>28</Offset>
+                        <Offset>8</Offset>
+                        <Offset>C</Offset>
+                        <Offset>54</Offset>
+                      </Offsets>
+                    </CheatEntry>
+                    <CheatEntry>
+                      <ID>121462</ID>
+                      <Description>"exp"</Description>
+                      <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                      <Color>80000008</Color>
+                      <VariableType>4 Bytes</VariableType>
+                      <Address>Avatar_Caravaneers_basepointer</Address>
+                      <Offsets>
+                        <Offset>18</Offset>
+                        <Offset>28</Offset>
+                        <Offset>8</Offset>
+                        <Offset>C</Offset>
+                        <Offset>54</Offset>
+                      </Offsets>
+                    </CheatEntry>
+                    <CheatEntry>
+                      <ID>121463</ID>
+                      <Description>"expStep"</Description>
+                      <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                      <Color>80000008</Color>
+                      <VariableType>4 Bytes</VariableType>
+                      <Address>Avatar_Caravaneers_basepointer</Address>
+                      <Offsets>
+                        <Offset>1C</Offset>
+                        <Offset>28</Offset>
+                        <Offset>8</Offset>
+                        <Offset>C</Offset>
+                        <Offset>54</Offset>
+                      </Offsets>
+                    </CheatEntry>
+                  </CheatEntries>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>121464</ID>
+                  <Description>"Slot 8"</Description>
+                  <Options moHideChildren="1"/>
+                  <LastState Value="" Activated="0" RealAddress="00000000"/>
+                  <Color>80000008</Color>
+                  <GroupHeader>1</GroupHeader>
+                  <CheatEntries>
+                    <CheatEntry>
+                      <ID>121465</ID>
+                      <Description>"Base Address"</Description>
+                      <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                      <Color>80000008</Color>
+                      <VariableType>4 Bytes</VariableType>
+                      <Address>Avatar_Caravaneers_basepointer</Address>
+                      <Offsets>
+                        <Offset>0</Offset>
+                        <Offset>2C</Offset>
+                        <Offset>8</Offset>
+                        <Offset>C</Offset>
+                        <Offset>54</Offset>
+                      </Offsets>
+                    </CheatEntry>
+                    <CheatEntry>
+                      <ID>121466</ID>
+                      <Description>"id"</Description>
+                      <LastState Activated="0" RealAddress="00000000"/>
+                      <Color>80000008</Color>
+                      <VariableType>String</VariableType>
+                      <Length>32</Length>
+                      <Unicode>1</Unicode>
+                      <ZeroTerminate>1</ZeroTerminate>
+                      <Address>Avatar_Caravaneers_basepointer</Address>
+                      <Offsets>
+                        <Offset>C</Offset>
+                        <Offset>8</Offset>
+                        <Offset>2C</Offset>
+                        <Offset>8</Offset>
+                        <Offset>C</Offset>
+                        <Offset>54</Offset>
+                      </Offsets>
+                    </CheatEntry>
+                    <CheatEntry>
+                      <ID>121467</ID>
+                      <Description>"titleId"</Description>
+                      <LastState Activated="0" RealAddress="00000000"/>
+                      <Color>80000008</Color>
+                      <VariableType>String</VariableType>
+                      <Length>32</Length>
+                      <Unicode>1</Unicode>
+                      <ZeroTerminate>1</ZeroTerminate>
+                      <Address>Avatar_Caravaneers_basepointer</Address>
+                      <Offsets>
+                        <Offset>C</Offset>
+                        <Offset>C</Offset>
+                        <Offset>2C</Offset>
+                        <Offset>8</Offset>
+                        <Offset>C</Offset>
+                        <Offset>54</Offset>
+                      </Offsets>
+                    </CheatEntry>
+                    <CheatEntry>
+                      <ID>121468</ID>
+                      <Description>"descId"</Description>
+                      <LastState Activated="0" RealAddress="00000000"/>
+                      <Color>80000008</Color>
+                      <VariableType>String</VariableType>
+                      <Length>32</Length>
+                      <Unicode>1</Unicode>
+                      <ZeroTerminate>1</ZeroTerminate>
+                      <Address>Avatar_Caravaneers_basepointer</Address>
+                      <Offsets>
+                        <Offset>C</Offset>
+                        <Offset>10</Offset>
+                        <Offset>2C</Offset>
+                        <Offset>8</Offset>
+                        <Offset>C</Offset>
+                        <Offset>54</Offset>
+                      </Offsets>
+                    </CheatEntry>
+                    <CheatEntry>
+                      <ID>121469</ID>
+                      <Description>"level"</Description>
+                      <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                      <Color>80000008</Color>
+                      <VariableType>4 Bytes</VariableType>
+                      <Address>Avatar_Caravaneers_basepointer</Address>
+                      <Offsets>
+                        <Offset>14</Offset>
+                        <Offset>2C</Offset>
+                        <Offset>8</Offset>
+                        <Offset>C</Offset>
+                        <Offset>54</Offset>
+                      </Offsets>
+                    </CheatEntry>
+                    <CheatEntry>
+                      <ID>121470</ID>
+                      <Description>"exp"</Description>
+                      <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                      <Color>80000008</Color>
+                      <VariableType>4 Bytes</VariableType>
+                      <Address>Avatar_Caravaneers_basepointer</Address>
+                      <Offsets>
+                        <Offset>18</Offset>
+                        <Offset>2C</Offset>
+                        <Offset>8</Offset>
+                        <Offset>C</Offset>
+                        <Offset>54</Offset>
+                      </Offsets>
+                    </CheatEntry>
+                    <CheatEntry>
+                      <ID>121471</ID>
+                      <Description>"expStep"</Description>
+                      <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                      <Color>80000008</Color>
+                      <VariableType>4 Bytes</VariableType>
+                      <Address>Avatar_Caravaneers_basepointer</Address>
+                      <Offsets>
+                        <Offset>1C</Offset>
+                        <Offset>2C</Offset>
+                        <Offset>8</Offset>
+                        <Offset>C</Offset>
+                        <Offset>54</Offset>
+                      </Offsets>
+                    </CheatEntry>
+                  </CheatEntries>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>121472</ID>
+                  <Description>"Slot 9"</Description>
+                  <Options moHideChildren="1"/>
+                  <LastState Value="" Activated="0" RealAddress="00000000"/>
+                  <Color>80000008</Color>
+                  <GroupHeader>1</GroupHeader>
+                  <CheatEntries>
+                    <CheatEntry>
+                      <ID>121473</ID>
+                      <Description>"Base Address"</Description>
+                      <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                      <Color>80000008</Color>
+                      <VariableType>4 Bytes</VariableType>
+                      <Address>Avatar_Caravaneers_basepointer</Address>
+                      <Offsets>
+                        <Offset>0</Offset>
+                        <Offset>30</Offset>
+                        <Offset>8</Offset>
+                        <Offset>C</Offset>
+                        <Offset>54</Offset>
+                      </Offsets>
+                    </CheatEntry>
+                    <CheatEntry>
+                      <ID>121474</ID>
+                      <Description>"id"</Description>
+                      <LastState Activated="0" RealAddress="00000000"/>
+                      <Color>80000008</Color>
+                      <VariableType>String</VariableType>
+                      <Length>32</Length>
+                      <Unicode>1</Unicode>
+                      <ZeroTerminate>1</ZeroTerminate>
+                      <Address>Avatar_Caravaneers_basepointer</Address>
+                      <Offsets>
+                        <Offset>C</Offset>
+                        <Offset>8</Offset>
+                        <Offset>30</Offset>
+                        <Offset>8</Offset>
+                        <Offset>C</Offset>
+                        <Offset>54</Offset>
+                      </Offsets>
+                    </CheatEntry>
+                    <CheatEntry>
+                      <ID>121475</ID>
+                      <Description>"titleId"</Description>
+                      <LastState Activated="0" RealAddress="00000000"/>
+                      <Color>80000008</Color>
+                      <VariableType>String</VariableType>
+                      <Length>32</Length>
+                      <Unicode>1</Unicode>
+                      <ZeroTerminate>1</ZeroTerminate>
+                      <Address>Avatar_Caravaneers_basepointer</Address>
+                      <Offsets>
+                        <Offset>C</Offset>
+                        <Offset>C</Offset>
+                        <Offset>30</Offset>
+                        <Offset>8</Offset>
+                        <Offset>C</Offset>
+                        <Offset>54</Offset>
+                      </Offsets>
+                    </CheatEntry>
+                    <CheatEntry>
+                      <ID>121476</ID>
+                      <Description>"descId"</Description>
+                      <LastState Activated="0" RealAddress="00000000"/>
+                      <Color>80000008</Color>
+                      <VariableType>String</VariableType>
+                      <Length>32</Length>
+                      <Unicode>1</Unicode>
+                      <ZeroTerminate>1</ZeroTerminate>
+                      <Address>Avatar_Caravaneers_basepointer</Address>
+                      <Offsets>
+                        <Offset>C</Offset>
+                        <Offset>10</Offset>
+                        <Offset>30</Offset>
+                        <Offset>8</Offset>
+                        <Offset>C</Offset>
+                        <Offset>54</Offset>
+                      </Offsets>
+                    </CheatEntry>
+                    <CheatEntry>
+                      <ID>121477</ID>
+                      <Description>"level"</Description>
+                      <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                      <Color>80000008</Color>
+                      <VariableType>4 Bytes</VariableType>
+                      <Address>Avatar_Caravaneers_basepointer</Address>
+                      <Offsets>
+                        <Offset>14</Offset>
+                        <Offset>30</Offset>
+                        <Offset>8</Offset>
+                        <Offset>C</Offset>
+                        <Offset>54</Offset>
+                      </Offsets>
+                    </CheatEntry>
+                    <CheatEntry>
+                      <ID>121478</ID>
+                      <Description>"exp"</Description>
+                      <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                      <Color>80000008</Color>
+                      <VariableType>4 Bytes</VariableType>
+                      <Address>Avatar_Caravaneers_basepointer</Address>
+                      <Offsets>
+                        <Offset>18</Offset>
+                        <Offset>30</Offset>
+                        <Offset>8</Offset>
+                        <Offset>C</Offset>
+                        <Offset>54</Offset>
+                      </Offsets>
+                    </CheatEntry>
+                    <CheatEntry>
+                      <ID>121479</ID>
+                      <Description>"expStep"</Description>
+                      <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                      <Color>80000008</Color>
+                      <VariableType>4 Bytes</VariableType>
+                      <Address>Avatar_Caravaneers_basepointer</Address>
+                      <Offsets>
+                        <Offset>1C</Offset>
+                        <Offset>30</Offset>
+                        <Offset>8</Offset>
+                        <Offset>C</Offset>
+                        <Offset>54</Offset>
+                      </Offsets>
+                    </CheatEntry>
+                  </CheatEntries>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>121480</ID>
+                  <Description>"Slot 10"</Description>
+                  <Options moHideChildren="1"/>
+                  <LastState Value="" Activated="0" RealAddress="00000000"/>
+                  <Color>80000008</Color>
+                  <GroupHeader>1</GroupHeader>
+                  <CheatEntries>
+                    <CheatEntry>
+                      <ID>121481</ID>
+                      <Description>"Base Address"</Description>
+                      <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                      <Color>80000008</Color>
+                      <VariableType>4 Bytes</VariableType>
+                      <Address>Avatar_Caravaneers_basepointer</Address>
+                      <Offsets>
+                        <Offset>0</Offset>
+                        <Offset>34</Offset>
+                        <Offset>8</Offset>
+                        <Offset>C</Offset>
+                        <Offset>54</Offset>
+                      </Offsets>
+                    </CheatEntry>
+                    <CheatEntry>
+                      <ID>121482</ID>
+                      <Description>"id"</Description>
+                      <LastState Activated="0" RealAddress="00000000"/>
+                      <Color>80000008</Color>
+                      <VariableType>String</VariableType>
+                      <Length>32</Length>
+                      <Unicode>1</Unicode>
+                      <ZeroTerminate>1</ZeroTerminate>
+                      <Address>Avatar_Caravaneers_basepointer</Address>
+                      <Offsets>
+                        <Offset>C</Offset>
+                        <Offset>8</Offset>
+                        <Offset>34</Offset>
+                        <Offset>8</Offset>
+                        <Offset>C</Offset>
+                        <Offset>54</Offset>
+                      </Offsets>
+                    </CheatEntry>
+                    <CheatEntry>
+                      <ID>121483</ID>
+                      <Description>"titleId"</Description>
+                      <LastState Activated="0" RealAddress="00000000"/>
+                      <Color>80000008</Color>
+                      <VariableType>String</VariableType>
+                      <Length>32</Length>
+                      <Unicode>1</Unicode>
+                      <ZeroTerminate>1</ZeroTerminate>
+                      <Address>Avatar_Caravaneers_basepointer</Address>
+                      <Offsets>
+                        <Offset>C</Offset>
+                        <Offset>C</Offset>
+                        <Offset>34</Offset>
+                        <Offset>8</Offset>
+                        <Offset>C</Offset>
+                        <Offset>54</Offset>
+                      </Offsets>
+                    </CheatEntry>
+                    <CheatEntry>
+                      <ID>121484</ID>
+                      <Description>"descId"</Description>
+                      <LastState Activated="0" RealAddress="00000000"/>
+                      <Color>80000008</Color>
+                      <VariableType>String</VariableType>
+                      <Length>32</Length>
+                      <Unicode>1</Unicode>
+                      <ZeroTerminate>1</ZeroTerminate>
+                      <Address>Avatar_Caravaneers_basepointer</Address>
+                      <Offsets>
+                        <Offset>C</Offset>
+                        <Offset>10</Offset>
+                        <Offset>34</Offset>
+                        <Offset>8</Offset>
+                        <Offset>C</Offset>
+                        <Offset>54</Offset>
+                      </Offsets>
+                    </CheatEntry>
+                    <CheatEntry>
+                      <ID>121485</ID>
+                      <Description>"level"</Description>
+                      <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                      <Color>80000008</Color>
+                      <VariableType>4 Bytes</VariableType>
+                      <Address>Avatar_Caravaneers_basepointer</Address>
+                      <Offsets>
+                        <Offset>14</Offset>
+                        <Offset>34</Offset>
+                        <Offset>8</Offset>
+                        <Offset>C</Offset>
+                        <Offset>54</Offset>
+                      </Offsets>
+                    </CheatEntry>
+                    <CheatEntry>
+                      <ID>121486</ID>
+                      <Description>"exp"</Description>
+                      <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                      <Color>80000008</Color>
+                      <VariableType>4 Bytes</VariableType>
+                      <Address>Avatar_Caravaneers_basepointer</Address>
+                      <Offsets>
+                        <Offset>18</Offset>
+                        <Offset>34</Offset>
+                        <Offset>8</Offset>
+                        <Offset>C</Offset>
+                        <Offset>54</Offset>
+                      </Offsets>
+                    </CheatEntry>
+                    <CheatEntry>
+                      <ID>121487</ID>
+                      <Description>"expStep"</Description>
+                      <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                      <Color>80000008</Color>
+                      <VariableType>4 Bytes</VariableType>
+                      <Address>Avatar_Caravaneers_basepointer</Address>
+                      <Offsets>
+                        <Offset>1C</Offset>
+                        <Offset>34</Offset>
+                        <Offset>8</Offset>
+                        <Offset>C</Offset>
+                        <Offset>54</Offset>
+                      </Offsets>
+                    </CheatEntry>
+                  </CheatEntries>
+                </CheatEntry>
+              </CheatEntries>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>121351</ID>
+              <Description>"isPrimary"</Description>
+              <DropDownList DisplayValueAsItem="1">0:No
+1:Yes
+</DropDownList>
+              <LastState Value="??" Activated="0" RealAddress="00000000"/>
+              <Color>80000008</Color>
+              <VariableType>Byte</VariableType>
+              <Address>Avatar_Caravaneers_basepointer</Address>
+              <Offsets>
+                <Offset>58</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>121352</ID>
+              <Description>"level"</Description>
+              <LastState Value="??" Activated="0" RealAddress="00000000"/>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>Avatar_Caravaneers_basepointer</Address>
+              <Offsets>
+                <Offset>5C</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>121353</ID>
+              <Description>"experience"</Description>
+              <LastState Value="??" Activated="0" RealAddress="00000000"/>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>Avatar_Caravaneers_basepointer</Address>
+              <Offsets>
+                <Offset>60</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>121354</ID>
+              <Description>"experienceStep"</Description>
+              <LastState Value="??" Activated="0" RealAddress="00000000"/>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>Avatar_Caravaneers_basepointer</Address>
+              <Offsets>
+                <Offset>64</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>121355</ID>
+              <Description>"skillPoints"</Description>
+              <LastState Value="??" Activated="0" RealAddress="00000000"/>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>Avatar_Caravaneers_basepointer</Address>
+              <Offsets>
+                <Offset>68</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>121356</ID>
+              <Description>"killCount"</Description>
+              <LastState Value="??" Activated="0" RealAddress="00000000"/>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>Avatar_Caravaneers_basepointer</Address>
+              <Offsets>
+                <Offset>6C</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>121357</ID>
+              <Description>"recruitCost"</Description>
+              <LastState Value="??" Activated="0" RealAddress="00000000"/>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>Avatar_Caravaneers_basepointer</Address>
+              <Offsets>
+                <Offset>70</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>121358</ID>
+              <Description>"leveled"</Description>
+              <DropDownList DisplayValueAsItem="1">0:No
+1:Yes
+</DropDownList>
+              <LastState Value="??" Activated="0" RealAddress="00000000"/>
+              <Color>80000008</Color>
+              <VariableType>Byte</VariableType>
+              <Address>Avatar_Caravaneers_basepointer</Address>
+              <Offsets>
+                <Offset>74</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>121370</ID>
+              <Description>"isDead"</Description>
+              <DropDownList DisplayValueAsItem="1">0:No
+1:Yes
+</DropDownList>
+              <LastState Value="??" Activated="0" RealAddress="00000000"/>
+              <Color>80000008</Color>
+              <VariableType>Byte</VariableType>
+              <Address>Avatar_Caravaneers_basepointer</Address>
+              <Offsets>
+                <Offset>75</Offset>
+              </Offsets>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>121178</ID>
+      <Description>"Good Base Address Scan Initialization (Activate This First)"</Description>
+      <Options moHideChildren="1"/>
+      <LastState Activated="0"/>
+      <Color>800000</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>[ENABLE]
+registersymbol(Good_basepointer)
+registersymbol(Good_update_enable)
+registersymbol(Good_set_enable)
+
+alloc(Good_basepointer, 4)
+alloc(Good_update_enable, 4)
+alloc(Good_set_enable, 4)
+
+
+[DISABLE]
+unregistersymbol(Good_basepointer)
+unregistersymbol(Good_update_enable)
+unregistersymbol(Good_set_enable)
+
+dealloc(Good_basepointer)
+dealloc(Good_update_enable)
+dealloc(Good_set_enable)
+
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>121179</ID>
+          <Description>"Good Base Address Scan (To Activate: Exit Caravan Upgrade, To Update: Exit Caravan Upgrade)"</Description>
+          <LastState Activated="0"/>
+          <Color>804000</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[ENABLE]
+label(Good_savedAOB)
+label(Good_returnhere)
+label(Good_originalcode)
+label(Good_exit)
+
+label(Good_update_exit)
+label(Good_set_exit)
+
+registersymbol(Good_savedAOB)
+
+//04D2C2FD - 8B C8                 - mov ecx,eax
+//04D2C2FF - 39 09                 - cmp [ecx],ecx
+// MetaCaravanController:UpdateEconomy+a1
+//04D2C301 - D9 40 0C              - fld dword ptr [eax+0C]
+//04D2C304 - D9 5D A4              - fstp dword ptr [ebp-5C]
+//04D2C307 - D9 45 A4              - fld dword ptr [ebp-5C]
+//04D2C30A - D9 5E 0C              - fstp dword ptr [esi+0C]
+//04D2C30D - 8B 45 AC              - mov eax,[ebp-54]
+aobscan(Good_searchedAOB, D9 40 0C D9 5D A4 D9 45 A4)
+
+alloc(Good_newmem, 2048)
+
+
+Good_newmem:
+cmp dword ptr [Good_update_enable], #0
+je Good_update_exit
+mov [Good_basepointer], eax
+Good_update_exit:
+
+cmp dword ptr [Good_set_enable], #0
+je Good_set_exit
+fld [eax+18]
+fstp [eax+c]
+Good_set_exit:
+
+
+Good_originalcode:
+db D9 40 0C D9 5D A4
+//fld dword ptr [eax+0C]
+//fstp dword ptr [ebp-5C]
+
+
+Good_exit:
+jmp Good_returnhere
+
+
+Good_searchedAOB:
+Good_savedAOB:
+jmp Good_newmem
+nop
+Good_returnhere:
+
+
+[DISABLE]
+Good_savedAOB:
+db D9 40 0C D9 5D A4
+//fld dword ptr [eax+0C]
+//fstp dword ptr [ebp-5C]
+
+unregistersymbol(Good_savedAOB)
+
+dealloc(Good_newmem)
+
+</AssemblerScript>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>121180</ID>
+          <Description>"Scraps &amp; A2P Set to Max?"</Description>
+          <DropDownList DisplayValueAsItem="1">0:No
+1:Yes
+</DropDownList>
+          <LastState Value="??" Activated="0" RealAddress="00000000"/>
+          <Color>FF8000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>Good_set_enable</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>121183</ID>
+          <Description>"Good Update Base Address?"</Description>
+          <DropDownList DisplayValueAsItem="1">0:No
+1:Yes
+</DropDownList>
+          <LastState Value="??" Activated="0" RealAddress="00000000"/>
+          <Color>FF8000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>Good_update_enable</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>121184</ID>
+          <Description>"Good Stats"</Description>
+          <Options moHideChildren="1"/>
+          <LastState Value="" Activated="0" RealAddress="00000000"/>
+          <Color>80000008</Color>
+          <GroupHeader>1</GroupHeader>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>121185</ID>
+              <Description>"Base Address"</Description>
+              <LastState Value="??" Activated="0" RealAddress="00000000"/>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>Good_basepointer</Address>
+              <Offsets>
+                <Offset>0</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>121319</ID>
+              <Description>"id"</Description>
+              <LastState Activated="0" RealAddress="00000000"/>
+              <Color>80000008</Color>
+              <VariableType>String</VariableType>
+              <Length>32</Length>
+              <Unicode>1</Unicode>
+              <ZeroTerminate>1</ZeroTerminate>
+              <Address>Good_basepointer</Address>
+              <Offsets>
+                <Offset>C</Offset>
+                <Offset>8</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>121320</ID>
+              <Description>"current"</Description>
+              <LastState Value="??" Activated="0" RealAddress="00000000"/>
+              <Color>80000008</Color>
+              <VariableType>Float</VariableType>
+              <Address>Good_basepointer</Address>
+              <Offsets>
+                <Offset>C</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>121321</ID>
+              <Description>"currentPrev"</Description>
+              <LastState Value="??" Activated="0" RealAddress="00000000"/>
+              <Color>80000008</Color>
+              <VariableType>Float</VariableType>
+              <Address>Good_basepointer</Address>
+              <Offsets>
+                <Offset>10</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>121322</ID>
+              <Description>"min"</Description>
+              <LastState Value="??" Activated="0" RealAddress="00000000"/>
+              <Color>80000008</Color>
+              <VariableType>Float</VariableType>
+              <Address>Good_basepointer</Address>
+              <Offsets>
+                <Offset>14</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>121323</ID>
+              <Description>"max"</Description>
+              <LastState Value="??" Activated="0" RealAddress="00000000"/>
+              <Color>80000008</Color>
+              <VariableType>Float</VariableType>
+              <Address>Good_basepointer</Address>
+              <Offsets>
+                <Offset>18</Offset>
+              </Offsets>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+  </CheatEntries>
+</CheatTable>

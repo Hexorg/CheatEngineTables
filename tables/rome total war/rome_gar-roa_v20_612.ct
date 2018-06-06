@@ -1,0 +1,426 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="14">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>11</ID>
+      <Description>"[X] &lt;== Grand Ages Rome - RoA v2.0 Script v1.0"</Description>
+      <Options moHideChildren="1"/>
+      <Color>FF0000</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>{
+===========================================
+ Game Title    : Grand Ages Rome - Reign of Augustus
+ Game Version  : 2.0 (2.1.290.26707)
+ Game Sponsor  : RELOADED (Internet)
+ Proces Name   : Rome.exe
+ Script Version: 1.0
+ CE Version    : 6.2
+ Release date  : 11-Feb-2013
+ Author        : Recifense
+ History:
+ 31-May-09: Release for version 1.1.152.61624 (1.0) (CE5.5)
+ 11-Feb-13: Release for version 2.1.290.26707 (2.0) (CE6.2)
+ Features:
+ - Minimum Money      (default 50000)
+ - Minimum Resiources (default 500)
+ - God Mode (For Troops)
+===========================================
+}
+
+//=========================================
+// Definitions
+define(LUDO,"Rome.exe")
+
+//=========================================
+[ENABLE]
+//=========================================
+//LuaCall(CheckVersion())
+//=========================================
+// Check if script is compatible to this game version
+// If false the script will not be loaded
+
+assert(LUDO+00126cbb,8b 46 08 f6 40 05 03 ?? ?? 8b 4c 24 18 50 51) //_MI
+assert(LUDO+001196b5,8b 4d 00 8b 44 24 24 5f 5e 89 08 8b 55 04 5d) //_MR
+assert(LUDO+0011954e,89 0b 8b 50 04 89 53 04 83 78 04 04 ?? ?? ??) //_MH
+
+//=========================================
+alloc(MyCode,4096,LUDO)
+//=========================================
+// Declaration section
+label(_MonID)
+label(_BackMI)
+label(_ExitMI)
+label(_MonResources)
+label(_BackMR)
+label(_ExitMR)
+label(_MonR0)
+label(_MonR1)
+label(_MonHP)
+label(_BackMH)
+label(_ExitMH)
+label(pPlayerID)
+label(pResearch)
+label(iEnableMR)
+label(iEnableMM)
+label(iEnableGM)
+label(iMinMoney)
+label(iMinResource)
+label(iESI)
+
+//=========================================
+// Registering Symbols
+registersymbol(MyCode)
+registersymbol(pPlayerID)
+registersymbol(pResearch)
+registersymbol(iEnableMR)
+registersymbol(iEnableMM)
+registersymbol(iEnableGM)
+registersymbol(iMinMoney)
+registersymbol(iMinResource)
+registersymbol(iESI)
+
+//=========================================
+MyCode:
+//=========================================
+_MonID:
+ cmp dword ptr [esi+04],03      // Valid?
+ jne _ExitMI                    // Jump if false
+
+ cmp dword ptr [ebx+08],0       // Valid?
+ jne _ExitMI                    // Jump if false
+
+ cmp byte ptr [ebx+07],5        // Valid?
+ jne _ExitMI                    // Jump if false
+
+ mov eax,[ebx]                  // Get pointer
+ cmp byte ptr [eax+07],6        // Valid?
+ jne _ExitMI                    // Jump if false
+
+ mov [pPlayerID],ebx            // Save ptr for further use
+ mov [iESI],esi                 // For debugging
+
+_ExitMI:
+ mov eax,[esi+08]               // Original code
+ test byte ptr [eax+05],03      // Original code
+ jmp _BackMI                    // Back to main code
+
+//=========================================
+_MonResources:
+ cmp edi,03                     // Valid?
+ jne _ExitMR                    // Jump if false
+
+ cmp esi,[pPlayerID]            // PlayerÂ´s?
+ jne _ExitMR                    // Jump if false
+
+ mov ecx,[ebp+08]               // Get ptr to resource type
+ mov eax,[ecx+10]               // Get resource name
+
+ cmp eax,'Slav'                 // Slaves?
+ je _ExitMR                     // Jump if true (ignore it)
+
+ cmp eax,'Recr'                 // Recruits?
+ je _ExitMR                     // Jump if true (ignore it)
+
+ cmp eax,'Gold'                 // Gold?
+ je _ExitMR                     // Jump if true (ignore it)
+
+ cmp eax,'Rese'                 // Research Points?
+ jne _MonR0                     // Jump if true (ignore it)
+
+ mov [pResearch],ebp            // Save ptr for debugging
+ jmp _ExitMR
+
+_MonR0:
+ cmp eax,'Mone'                 // Money?
+ jne _MonR1                     // Jump if false
+
+ cmp dword ptr [ecx+0c],5       // Really money?
+ jne _ExitMR                    // Jump if false
+
+ cmp dword ptr [iEnableMM],0
+ je _ExitMR                     // Jump if feature is disabled
+
+ mov eax,[iMinMoney]            // Get minimum value
+ cmp eax,[ebp]                  // Compare it with current
+ jle _ExitMR                    // Jump if lower or equal
+
+ mov [ebp],eax                  // Update current money value
+ jmp _ExitMR
+
+ _MonR1:
+ cmp dword ptr [iEnableMR],0
+ je _ExitMR                     // Jump if feature is disabled
+
+ mov eax,[iMinResource]         // Get minimum value
+ cmp eax,[ebp]                  // Compare it with current
+ jle _ExitMR                    // Jump if lower or equal
+
+ mov [ebp],eax                  // Update current resource value
+
+_ExitMR:
+ mov ecx,[ebp+00]               // Original code
+ mov eax,[esp+24]               // Original code
+ jmp _BackMR                    // Back to main code
+
+//=========================================
+// EBP is important here
+_MonHP:
+ cmp dword ptr [ebx+04],03      // Valid ?
+ jne _ExitMH                    // Jump if false
+
+ cmp byte ptr [ebp+07],07       // Valid ?
+ jne _ExitMH                    // Jump if false
+
+ mov edx,[ebx+08]               // Get ptr to value type
+ or edx,edx                     // Valid?
+ jz _ExitMH                     // Jump if false
+
+ mov edx,[edx+10]               // Get value name
+ cmp edx,'heal'                 // Health?
+ jne _ExitMH                    // Jump if false
+
+// cmp dword ptr [iEnableGM],0
+// je _ExitMH                     // Jump if feature is disabled
+
+ cmp dword ptr [ebx+18],08      // Troop ?
+ jne _ExitMH                    // Jump if false
+
+ cmp dword ptr [ebx-000000a0],0 // PlayerÂ´s ? (side)
+ jne _ExitMH                    // Jump if false
+
+ cmp dword ptr [iEnableGM],0
+ je _ExitMH                     // Jump if feature is disabled
+
+ cmp ecx,[ebx]                  // New HP &gt;= current HP?
+ jge _ExitMH                    // Jump if true
+
+ mov ecx,[ebx-00000064]         // Get max HP
+
+_ExitMH:
+ mov [ebx],ecx                  // Original code
+ mov edx,[eax+04]               // Original code
+ jmp _BackMH                    // Back to main code
+
+//=========================================
+ db '==================================&gt;'
+ db 'CE6.2 Script by Recifense 021113'
+//=========================================
+// Variables
+iEnableMM:
+ dd 0
+iEnableMR:
+ dd 0
+iEnableGM:
+ dd 0
+pPlayerID:
+ dd MyCode
+pResearch:
+ dd 0
+iMinMoney:
+ dd #50000
+iMinResource:
+ dd #500
+iESI:
+ dd 0
+
+//=========================================
+// Hacking Points
+//LUDO+0010252d:
+LUDO+00126cbb:
+ jmp _MonID
+ nop
+ nop
+_BackMI:
+
+//LUDO+000f4be5:
+LUDO+001196b5:
+ jmp _MonResources
+ nop
+ nop
+_BackMR:
+
+//LUDO+000f4a7e:
+LUDO+0011954e:
+ jmp _MonHP
+_BackMH:
+
+//=========================================
+// Script for Restoring Original Codes
+[DISABLE]
+//LUDO+0010252d:
+LUDO+00126cbb:
+// mov eax,[esi+08]
+// test byte ptr [eax+05],03
+ db 8b 46 08 f6 40 05 03
+
+//LUDO+000f4be5:
+LUDO+001196b5:
+// mov ecx,[ebp+00]
+// mov eax,[esp+24]
+ db 8b 4d 00 8b 44 24 24
+
+//LUDO+000f4a7e:
+LUDO+0011954e:
+// mov [ebx],ecx
+// mov edx,[eax+04]
+ db 89 0b 8b 50 04
+
+//=========================================
+// Unregistering Symbols
+unregistersymbol(MyCode)
+unregistersymbol(pPlayerID)
+unregistersymbol(pResearch)
+unregistersymbol(iEnableMR)
+unregistersymbol(iEnableMM)
+unregistersymbol(iEnableGM)
+unregistersymbol(iMinMoney)
+unregistersymbol(iMinResource)
+unregistersymbol(iESI)
+
+//=========================================
+dealloc(MyCode)
+//============= Scripts End ===============
+
+// ****************************************
+// NOTES
+// ****************************************
+{
+}
+
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>2</ID>
+          <Description>"Enable/Disable Minimum Money =&gt; (1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMM</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>4</ID>
+              <Description>"Minimum Money Value ==&gt;"</Description>
+              <Color>0080FF</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>iMinMoney</Address>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>9</ID>
+          <Description>"Enable/Disable Minimum Resources =&gt; (1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMR</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>5</ID>
+              <Description>"Minimum Resources Value ==&gt;"</Description>
+              <Color>0080FF</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>iMinResource</Address>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>1</ID>
+          <Description>"Enable/Disable God Mode =&gt; (1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableGM</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>33</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>34</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols/>
+  <Comments>===========================================
+ Game Title    : Grand Ages Rome - Reign of Augustus
+ Game Version  : 2.0 (2.1.290.26707)
+ Game Sponsor  : RELOADED (Internet)
+ Proces Name   : Rome.exe
+ Script Version: 1.0
+ CE Version    : 6.2
+ Release date  : 11-Feb-2013
+ Author        : Recifense
+ History:
+ 31-May-09: Release for version 1.1.152.61624 (1.0) (CE5.5)
+ 11-Feb-13: Release for version 2.1.290.26707 (2.0) (CE6.2)
+ Features:
+ - Minimum Money      (default 50000) [1]
+ - Minimum Resources  (default 500)   [2]
+ - God Mode (For Troops)              [3]
+===========================================
+[1] That's it.
+[2] That's it. It will also affect Authority.
+[3] That't it.
+===========================================
+HOTKEYs:
+CTRL+Home     = Enable  Money and Resource Cheats;
+CTRL+End      = Disable Money and Resource Cheats;
+CTRL+PageUp   = Enable  God Mode cheat;
+CTRL+PageDown = Disable God Mode cheat;
+===========================================
+Cheers!
+
+
+</Comments>
+</CheatTable>

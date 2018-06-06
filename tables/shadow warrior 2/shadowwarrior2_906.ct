@@ -1,0 +1,2267 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="24">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>140</ID>
+      <Description>"Main Script"</Description>
+      <Options moHideChildren="1"/>
+      <LastState/>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>[ENABLE]
+aobscanmodule(zanzer,ShadowWarrior2.exe,81 39 0D 00 08 00 48 8D 54 24 20)
+alloc(newmem,$2000,zanzer)
+
+label(code)
+label(return)
+label(zanzer_ptr)
+label(is_equal)
+label(items_on)
+label(ammo_on)
+label(ammo_off)
+label(special_on)
+label(lore_on)
+label(cookie_on)
+label(weapon_on)
+label(heart_on)
+label(head_on)
+label(quality_on)
+label(money_ptr)
+label(perks_ptr)
+label(xp_ptr)
+label(level_on)
+label(drops_on)
+label(radius_on)
+label(modifiers_ptr)
+label(weapon_ptr)
+
+newmem:
+  // credits to mgr.inz.Player for compares
+  cmp [rcx+0C],00080006
+  jne code
+  cmp [rcx+10],00010000
+  jbe code
+  //cmp [rcx],00040000
+  //jb code
+  //cmp [rcx],00040001
+  //ja code
+  // find money structure for player pointers
+  mov rax,money
+  call is_equal
+  test al,al
+  jz @f
+  mov rdx,zanzer_ptr
+  mov [rdx],r11
+  mov rdx,money_ptr
+  mov [rdx],rcx
+@@: // set the % of item find
+  mov rax,items_on
+  cmp byte ptr [rax],1
+  jne @f
+  mov rax,items
+  call is_equal
+  test al,al
+  jz @f
+  mov [rcx+04],(float)101
+@@: // set special drop chance
+  mov rax,special_on
+  cmp byte ptr [rax],1
+  jne @f
+  mov rax,special
+  call is_equal
+  test al,al
+  jz @f
+  mov [rcx+04],(float)2
+@@: // set lore drop chance
+  mov rax,lore_on
+  cmp byte ptr [rax],1
+  jne @f
+  mov rax,lore
+  call is_equal
+  test al,al
+  jz @f
+  mov [rcx+04],(float)101
+@@: // set cookie drop chance
+  mov rax,cookie_on
+  cmp byte ptr [rax],1
+  jne @f
+  mov rax,cookie
+  call is_equal
+  test al,al
+  jz @f
+  mov [rcx+04],(float)101
+@@: // set weapon drop chance
+  mov rax,weapon_on
+  cmp byte ptr [rax],1
+  jne @f
+  mov rax,weapon
+  call is_equal
+  test al,al
+  jz @f
+  mov [rcx+04],(float)2
+@@: // set heart drop chance
+  mov rax,heart_on
+  cmp byte ptr [rax],1
+  jne @f
+  mov rax,heart
+  call is_equal
+  test al,al
+  jz @f
+  mov [rcx+04],(float)2
+@@: // set head drop chance
+  mov rax,head_on
+  cmp byte ptr [rax],1
+  jne @f
+  mov rax,head
+  call is_equal
+  test al,al
+  jz @f
+  mov [rcx+04],(float)2
+@@: // set quality drop chance
+  mov rax,quality_on
+  cmp byte ptr [rax],1
+  jne @f
+  mov rax,quality
+  call is_equal
+  test al,al
+  jz @f
+  mov [rcx+04],(float)5
+@@: // set number of drops
+  mov rax,drops_on
+  cmp byte ptr [rax],1
+  jne @f
+  mov rax,drops
+  call is_equal
+  test al,al
+  jz @f
+  mov [rcx+04],#10
+@@: // set upgrade level mult
+  mov rax,level_on
+  cmp byte ptr [rax],1
+  jne @f
+  mov rax,level
+  call is_equal
+  test al,al
+  jz @f
+  mov [rcx+04],(float)5
+@@: // set collect radius
+  mov rax,radius_on
+  cmp byte ptr [rax],1
+  jne @f
+  mov rax,radius
+  call is_equal
+  test al,al
+  jz @f
+  mov [rcx+04],(float)20
+@@: // get perks pointer
+  mov rax,perks
+  call is_equal
+  test al,al
+  jz @f
+  mov rdx,perks_ptr
+  mov [rdx],rcx
+@@: // xp pointer
+  mov rax,xp
+  call is_equal
+  test al,al
+  jz @f
+  mov rdx,xp_ptr
+  mov [rdx],rcx
+@@: // modifiers pointer
+  mov rax,modifiers
+  call is_equal
+  test al,al
+  jz @f
+  mov rdx,modifiers_ptr
+  mov [rdx],rcx
+@@: // weapon pointer
+  mov rax,basestats
+  call is_equal
+  test al,al
+  jz @f
+  mov rdx,weapon_ptr
+  mov [rdx],rcx
+@@: // unlimited ammo
+  mov rax,ammo_on
+  cmp byte ptr [ammo_on],1
+  jne ammo_off
+  mov rax,ammo
+  call is_equal
+  test al,al
+  jnz @f
+  mov rax,ammo_per
+  call is_equal
+  test al,al
+  jz ammo_off
+@@:
+  mov [rcx+04],0
+ammo_off:
+
+code:
+  cmp [rcx],0008000D
+  jmp return
+
+is_equal:
+  push rbx
+  push rdi
+  mov rdx,[rcx+10]
+  add rdx,20
+  mov di,[rdx]
+  cmp [rax],di
+  jne is_equal_false
+  add rdx,2
+  add rax,2
+is_equal_loop:
+  mov bl,[rdx]
+  cmp [rax],bl
+  jne is_equal_false
+  dec di
+  jz is_equal_true
+  inc rdx
+  inc rax
+  jmp is_equal_loop
+is_equal_true:
+  mov rax,1
+  pop rdi
+  pop rbx
+  ret
+is_equal_false:
+  xor rax,rax
+  pop rdi
+  pop rbx
+  ret
+
+money:
+  dw #5
+  db 'Money'
+perks:
+  dw #11
+  db 'PerksPoints'
+items:
+  dw #9
+  db 'FindItems'
+ammo:
+  dw #8
+  db 'AmmoCost'
+ammo_per:
+  dw #17
+  db 'AmmoCostPerSecond'
+special:
+  dw #22
+  db 'SpecialDropChance_mult'
+lore:
+  dw #19
+  db 'LoreDropChance_mult'
+cookie:
+  dw #21
+  db 'CookieDropChance_mult'
+weapon:
+  dw #21
+  db 'WeaponDropChance_mult'
+heart:
+  dw #17
+  db 'Heart_Drop_Chance'
+head:
+  dw #16
+  db 'Head_Drop_Chance'
+quality:
+  dw #16
+  db 'DropQuality_mult'
+xp:
+  dw #2
+  db 'XP'
+drops:
+  dw #18
+  db 'ItemsNumberToSpawn'
+level:
+  dw #24
+  db 'UpgradeDropLevelModifier'
+radius:
+  dw #22
+  db 'AutoCollectRadiusBonus'
+modifiers:
+  dw #9
+  db 'Modifiers'
+basestats:
+  dw #9
+  db 'BaseStats'
+
+zanzer_ptr:
+  dq 0
+
+items_on:
+  db 0
+ammo_on:
+  db 0
+special_on:
+  db 0
+lore_on:
+  db 0
+cookie_on:
+  db 0
+weapon_on:
+  db 0
+heart_on:
+  db 0
+head_on:
+  db 0
+quality_on:
+  db 0
+drops_on:
+  db 0
+level_on:
+  db 0
+radius_on:
+  db 0
+
+money_ptr:
+  dq 0
+perks_ptr:
+  dq 0
+xp_ptr:
+  dq 0
+modifiers_ptr:
+  dq 0
+weapon_ptr:
+  dq 0
+
+zanzer:
+  jmp newmem
+  nop
+return:
+registersymbol(zanzer)
+registersymbol(zanzer_ptr)
+registersymbol(items_on)
+registersymbol(ammo_on)
+registersymbol(money_ptr)
+registersymbol(perks_ptr)
+registersymbol(special_on)
+registersymbol(lore_on)
+registersymbol(cookie_on)
+registersymbol(weapon_on)
+registersymbol(heart_on)
+registersymbol(head_on)
+registersymbol(quality_on)
+registersymbol(xp_ptr)
+registersymbol(drops_on)
+registersymbol(level_on)
+registersymbol(radius_on)
+registersymbol(modifiers_ptr)
+registersymbol(weapon_ptr)
+
+[DISABLE]
+zanzer:
+  db 81 39 0D 00 08 00
+unregistersymbol(zanzer)
+unregistersymbol(zanzer_ptr)
+unregistersymbol(items_on)
+unregistersymbol(ammo_on)
+unregistersymbol(money_ptr)
+unregistersymbol(perks_ptr)
+unregistersymbol(special_on)
+unregistersymbol(lore_on)
+unregistersymbol(cookie_on)
+unregistersymbol(weapon_on)
+unregistersymbol(heart_on)
+unregistersymbol(head_on)
+unregistersymbol(quality_on)
+unregistersymbol(xp_ptr)
+unregistersymbol(drops_on)
+unregistersymbol(level_on)
+unregistersymbol(radius_on)
+unregistersymbol(modifiers_ptr)
+unregistersymbol(weapon_ptr)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: "ShadowWarrior2.exe"+5E951
+
+"ShadowWarrior2.exe"+5E934: 74 1B                       -  je ShadowWarrior2.exe+5E951
+"ShadowWarrior2.exe"+5E936: 8B 41 18                    -  mov eax,[rcx+18]
+"ShadowWarrior2.exe"+5E939: 83 F8 FF                    -  cmp eax,-01
+"ShadowWarrior2.exe"+5E93C: 75 E2                       -  jne ShadowWarrior2.exe+5E920
+"ShadowWarrior2.exe"+5E93E: 4D 8B 5B 28                 -  mov r11,[r11+28]
+"ShadowWarrior2.exe"+5E942: 4D 85 DB                    -  test r11,r11
+"ShadowWarrior2.exe"+5E945: 74 78                       -  je ShadowWarrior2.exe+5E9BF
+"ShadowWarrior2.exe"+5E947: 45 84 C9                    -  test r9l,r9l
+"ShadowWarrior2.exe"+5E94A: 75 73                       -  jne ShadowWarrior2.exe+5E9BF
+"ShadowWarrior2.exe"+5E94C: E9 6F FF FF FF              -  jmp ShadowWarrior2.exe+5E8C0
+// ---------- INJECTING HERE ----------
+"ShadowWarrior2.exe"+5E951: 81 39 0D 00 08 00           -  cmp [rcx],0008000D
+// ---------- DONE INJECTING  ----------
+"ShadowWarrior2.exe"+5E957: 48 8D 54 24 20              -  lea rdx,[rsp+20]
+"ShadowWarrior2.exe"+5E95C: 74 2E                       -  je ShadowWarrior2.exe+5E98C
+"ShadowWarrior2.exe"+5E95E: 8B 01                       -  mov eax,[rcx]
+"ShadowWarrior2.exe"+5E960: 89 44 24 20                 -  mov [rsp+20],eax
+"ShadowWarrior2.exe"+5E964: E9 97 16 F9 FF              -  jmp 13FFF0000
+"ShadowWarrior2.exe"+5E969: 90                          -  nop 
+"ShadowWarrior2.exe"+5E96A: 90                          -  nop 
+"ShadowWarrior2.exe"+5E96B: 8B 41 08                    -  mov eax,[rcx+08]
+"ShadowWarrior2.exe"+5E96E: 48 8B CE                    -  mov rcx,rsi
+"ShadowWarrior2.exe"+5E971: 89 44 24 28                 -  mov [rsp+28],eax
+}
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>160</ID>
+          <Description>"God Mode"</Description>
+          <LastState/>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[ENABLE]
+aobscanmodule(god,ShadowWarrior2.exe,49 8B CF F3 0F 5C C8 E8 ?? ?? ?? ?? EB ?? 4C 8D 45 B8)
+alloc(newmem,$1000,god)
+
+label(code)
+label(return)
+
+newmem:
+  mov rcx,zanzer_ptr
+  cmp [rcx],r11
+  jne code
+  mov rcx,r15
+  jmp return
+code:
+  mov rcx,r15
+  subss xmm1,xmm0
+  jmp return
+
+god:
+  jmp newmem
+  nop
+  nop
+return:
+registersymbol(god)
+
+[DISABLE]
+god:
+  db 49 8B CF F3 0F 5C C8
+unregistersymbol(god)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: "ShadowWarrior2.exe"+44FAC
+
+"ShadowWarrior2.exe"+44F87: F3 0F 10 4D BC           -  movss xmm1,[rbp-44]
+"ShadowWarrior2.exe"+44F8C: 3B C2                    -  cmp eax,edx
+"ShadowWarrior2.exe"+44F8E: 75 17                    -  jne ShadowWarrior2.exe+44FA7
+"ShadowWarrior2.exe"+44F90: 0F 57 C0                 -  xorps xmm0,xmm0
+"ShadowWarrior2.exe"+44F93: 49 8B CF                 -  mov rcx,r15
+"ShadowWarrior2.exe"+44F96: F3 48 0F 2A 46 04        -  cvtsi2ss xmm0,[rsi+04]
+"ShadowWarrior2.exe"+44F9C: F3 0F 5C C8              -  subss xmm1,xmm0
+"ShadowWarrior2.exe"+44FA0: E8 6B A4 FF FF           -  call ShadowWarrior2.exe+3F410
+"ShadowWarrior2.exe"+44FA5: EB 34                    -  jmp ShadowWarrior2.exe+44FDB
+"ShadowWarrior2.exe"+44FA7: F3 0F 10 46 04           -  movss xmm0,[rsi+04]
+// ---------- INJECTING HERE ----------
+"ShadowWarrior2.exe"+44FAC: 49 8B CF                 -  mov rcx,r15
+"ShadowWarrior2.exe"+44FAF: F3 0F 5C C8              -  subss xmm1,xmm0
+// ---------- DONE INJECTING  ----------
+"ShadowWarrior2.exe"+44FB3: E8 58 A4 FF FF           -  call ShadowWarrior2.exe+3F410
+"ShadowWarrior2.exe"+44FB8: EB 21                    -  jmp ShadowWarrior2.exe+44FDB
+"ShadowWarrior2.exe"+44FBA: 4C 8D 45 B8              -  lea r8,[rbp-48]
+"ShadowWarrior2.exe"+44FBE: 4C 8B CE                 -  mov r9,rsi
+"ShadowWarrior2.exe"+44FC1: BA 2D 00 00 00           -  mov edx,0000002D
+"ShadowWarrior2.exe"+44FC6: 49 8B CE                 -  mov rcx,r14
+"ShadowWarrior2.exe"+44FC9: 4C 89 7C 24 20           -  mov [rsp+20],r15
+"ShadowWarrior2.exe"+44FCE: E8 AD B0 FF FF           -  call ShadowWarrior2.exe+40080
+"ShadowWarrior2.exe"+44FD3: 84 C0                    -  test al,al
+"ShadowWarrior2.exe"+44FD5: 0F 84 46 2F 00 00        -  je ShadowWarrior2.exe+47F21
+}
+</AssemblerScript>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>156</ID>
+          <Description>"Unlimited Ammo"</Description>
+          <LastState/>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[ENABLE]
+ammo_on:
+db 1
+[DISABLE]
+ammo_on:
+db 0
+</AssemblerScript>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>169</ID>
+          <Description>"Set Quality Drops to 500%"</Description>
+          <LastState/>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[ENABLE]
+quality_on:
+db 1
+[DISABLE]
+quality_on:
+db 0
+</AssemblerScript>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>172</ID>
+          <Description>"Set Number of Drops to 10"</Description>
+          <LastState/>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[ENABLE]
+drops_on:
+db 1
+[DISABLE]
+drops_on:
+db 0
+</AssemblerScript>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>173</ID>
+          <Description>"Set Collection Radius to 20"</Description>
+          <LastState/>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[ENABLE]
+radius_on:
+db 1
+[DISABLE]
+radius_on:
+db 0
+</AssemblerScript>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>174</ID>
+          <Description>"Set Gem Level Multiplier to 5"</Description>
+          <LastState/>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[ENABLE]
+level_on:
+db 1
+[DISABLE]
+level_on:
+db 0
+</AssemblerScript>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>167</ID>
+          <Description>"Set Weapon Gem Drops to 100%"</Description>
+          <LastState/>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[ENABLE]
+weapon_on:
+db 1
+[DISABLE]
+weapon_on:
+db 0
+</AssemblerScript>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>168</ID>
+          <Description>"Set Heart Drops to 100%"</Description>
+          <LastState/>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[ENABLE]
+heart_on:
+db 1
+[DISABLE]
+heart_on:
+db 0
+</AssemblerScript>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>170</ID>
+          <Description>"Set Head Drops to 100%"</Description>
+          <LastState/>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[ENABLE]
+head_on:
+db 1
+[DISABLE]
+head_on:
+db 0
+</AssemblerScript>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>164</ID>
+          <Description>"Set Special Drops to 100%"</Description>
+          <LastState/>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[ENABLE]
+special_on:
+db 1
+[DISABLE]
+special_on:
+db 0
+</AssemblerScript>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>163</ID>
+          <Description>"Set Find Items to 10,000%"</Description>
+          <LastState/>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[ENABLE]
+items_on:
+db 1
+[DISABLE]
+items_on:
+db 0
+</AssemblerScript>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>165</ID>
+          <Description>"Set Lore Drops to 10,000%"</Description>
+          <LastState/>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[ENABLE]
+lore_on:
+db 1
+[DISABLE]
+lore_on:
+db 0
+</AssemblerScript>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>166</ID>
+          <Description>"Set Cookie Drops to 10,000%"</Description>
+          <LastState/>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[ENABLE]
+cookie_on:
+db 1
+[DISABLE]
+cookie_on:
+db 0
+</AssemblerScript>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>157</ID>
+          <Description>"Money Pointer"</Description>
+          <VariableType>Float</VariableType>
+          <Address>money_ptr</Address>
+          <Offsets>
+            <Offset>4</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>158</ID>
+          <Description>"Perks Pointer"</Description>
+          <VariableType>4 Bytes</VariableType>
+          <Address>perks_ptr</Address>
+          <Offsets>
+            <Offset>4</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>171</ID>
+          <Description>"XP Pointer"</Description>
+          <VariableType>Float</VariableType>
+          <Address>xp_ptr</Address>
+          <Offsets>
+            <Offset>4</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>292</ID>
+          <Description>"Masamune Orbs"</Description>
+          <VariableType>Float</VariableType>
+          <Address>money_ptr</Address>
+          <Offsets>
+            <Offset>AF4</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>291</ID>
+          <Description>"Masamune Orbs"</Description>
+          <VariableType>Float</VariableType>
+          <Address>xp_ptr</Address>
+          <Offsets>
+            <Offset>598</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>240</ID>
+          <Description>"Gem Editor"</Description>
+          <Options moHideChildren="1"/>
+          <LastState Value="" RealAddress="00000000"/>
+          <GroupHeader>1</GroupHeader>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>241</ID>
+              <Description>"Base Address"</Description>
+              <LastState RealAddress="00000000"/>
+              <VariableType>String</VariableType>
+              <Length>0</Length>
+              <Unicode>0</Unicode>
+              <ZeroTerminate>1</ZeroTerminate>
+              <Address>modifiers_ptr</Address>
+              <Offsets>
+                <Offset>0</Offset>
+                <Offset>10</Offset>
+                <Offset>4</Offset>
+              </Offsets>
+              <CheatEntries>
+                <CheatEntry>
+                  <ID>242</ID>
+                  <Description>"Count"</Description>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>modifiers_ptr</Address>
+                  <Offsets>
+                    <Offset>1C</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>283</ID>
+                  <Description>"Base"</Description>
+                  <ShowAsHex>1</ShowAsHex>
+                  <VariableType>8 Bytes</VariableType>
+                  <Address>modifiers_ptr</Address>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>243</ID>
+                  <Description>"Attribute"</Description>
+                  <LastState RealAddress="00000000"/>
+                  <VariableType>String</VariableType>
+                  <Length>0</Length>
+                  <Unicode>0</Unicode>
+                  <ZeroTerminate>1</ZeroTerminate>
+                  <Address>+1C*0</Address>
+                  <CheatEntries>
+                    <CheatEntry>
+                      <ID>244</ID>
+                      <Description>"Name"</Description>
+                      <VariableType>String</VariableType>
+                      <Length>64</Length>
+                      <Unicode>0</Unicode>
+                      <ZeroTerminate>1</ZeroTerminate>
+                      <Address>+10</Address>
+                      <Offsets>
+                        <Offset>22</Offset>
+                      </Offsets>
+                    </CheatEntry>
+                    <CheatEntry>
+                      <ID>245</ID>
+                      <Description>"Value (integer)"</Description>
+                      <VariableType>4 Bytes</VariableType>
+                      <Address>+4</Address>
+                    </CheatEntry>
+                    <CheatEntry>
+                      <ID>246</ID>
+                      <Description>"Value (float)"</Description>
+                      <VariableType>Float</VariableType>
+                      <Address>+4</Address>
+                    </CheatEntry>
+                  </CheatEntries>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>247</ID>
+                  <Description>"Attribute"</Description>
+                  <LastState RealAddress="0000001C"/>
+                  <VariableType>String</VariableType>
+                  <Length>0</Length>
+                  <Unicode>0</Unicode>
+                  <ZeroTerminate>1</ZeroTerminate>
+                  <Address>+1C*1</Address>
+                  <CheatEntries>
+                    <CheatEntry>
+                      <ID>248</ID>
+                      <Description>"Name"</Description>
+                      <VariableType>String</VariableType>
+                      <Length>64</Length>
+                      <Unicode>0</Unicode>
+                      <ZeroTerminate>1</ZeroTerminate>
+                      <Address>+10</Address>
+                      <Offsets>
+                        <Offset>22</Offset>
+                      </Offsets>
+                    </CheatEntry>
+                    <CheatEntry>
+                      <ID>249</ID>
+                      <Description>"Value (integer)"</Description>
+                      <VariableType>4 Bytes</VariableType>
+                      <Address>+4</Address>
+                    </CheatEntry>
+                    <CheatEntry>
+                      <ID>250</ID>
+                      <Description>"Value (float)"</Description>
+                      <VariableType>Float</VariableType>
+                      <Address>+4</Address>
+                    </CheatEntry>
+                  </CheatEntries>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>251</ID>
+                  <Description>"Attribute"</Description>
+                  <LastState RealAddress="00000038"/>
+                  <VariableType>String</VariableType>
+                  <Length>0</Length>
+                  <Unicode>0</Unicode>
+                  <ZeroTerminate>1</ZeroTerminate>
+                  <Address>+1C*2</Address>
+                  <CheatEntries>
+                    <CheatEntry>
+                      <ID>252</ID>
+                      <Description>"Name"</Description>
+                      <VariableType>String</VariableType>
+                      <Length>64</Length>
+                      <Unicode>0</Unicode>
+                      <ZeroTerminate>1</ZeroTerminate>
+                      <Address>+10</Address>
+                      <Offsets>
+                        <Offset>22</Offset>
+                      </Offsets>
+                    </CheatEntry>
+                    <CheatEntry>
+                      <ID>253</ID>
+                      <Description>"Value (integer)"</Description>
+                      <VariableType>4 Bytes</VariableType>
+                      <Address>+4</Address>
+                    </CheatEntry>
+                    <CheatEntry>
+                      <ID>254</ID>
+                      <Description>"Value (float)"</Description>
+                      <VariableType>Float</VariableType>
+                      <Address>+4</Address>
+                    </CheatEntry>
+                  </CheatEntries>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>255</ID>
+                  <Description>"Attribute"</Description>
+                  <LastState RealAddress="00000054"/>
+                  <VariableType>String</VariableType>
+                  <Length>0</Length>
+                  <Unicode>0</Unicode>
+                  <ZeroTerminate>1</ZeroTerminate>
+                  <Address>+1C*3</Address>
+                  <CheatEntries>
+                    <CheatEntry>
+                      <ID>256</ID>
+                      <Description>"Name"</Description>
+                      <VariableType>String</VariableType>
+                      <Length>64</Length>
+                      <Unicode>0</Unicode>
+                      <ZeroTerminate>1</ZeroTerminate>
+                      <Address>+10</Address>
+                      <Offsets>
+                        <Offset>22</Offset>
+                      </Offsets>
+                    </CheatEntry>
+                    <CheatEntry>
+                      <ID>257</ID>
+                      <Description>"Value (integer)"</Description>
+                      <VariableType>4 Bytes</VariableType>
+                      <Address>+4</Address>
+                    </CheatEntry>
+                    <CheatEntry>
+                      <ID>258</ID>
+                      <Description>"Value (float)"</Description>
+                      <VariableType>Float</VariableType>
+                      <Address>+4</Address>
+                    </CheatEntry>
+                  </CheatEntries>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>259</ID>
+                  <Description>"Attribute"</Description>
+                  <LastState RealAddress="00000070"/>
+                  <VariableType>String</VariableType>
+                  <Length>0</Length>
+                  <Unicode>0</Unicode>
+                  <ZeroTerminate>1</ZeroTerminate>
+                  <Address>+1C*4</Address>
+                  <CheatEntries>
+                    <CheatEntry>
+                      <ID>260</ID>
+                      <Description>"Name"</Description>
+                      <VariableType>String</VariableType>
+                      <Length>64</Length>
+                      <Unicode>0</Unicode>
+                      <ZeroTerminate>1</ZeroTerminate>
+                      <Address>+10</Address>
+                      <Offsets>
+                        <Offset>22</Offset>
+                      </Offsets>
+                    </CheatEntry>
+                    <CheatEntry>
+                      <ID>261</ID>
+                      <Description>"Value (integer)"</Description>
+                      <VariableType>4 Bytes</VariableType>
+                      <Address>+4</Address>
+                    </CheatEntry>
+                    <CheatEntry>
+                      <ID>262</ID>
+                      <Description>"Value (float)"</Description>
+                      <VariableType>Float</VariableType>
+                      <Address>+4</Address>
+                    </CheatEntry>
+                  </CheatEntries>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>263</ID>
+                  <Description>"Attribute"</Description>
+                  <LastState RealAddress="0000008C"/>
+                  <VariableType>String</VariableType>
+                  <Length>0</Length>
+                  <Unicode>0</Unicode>
+                  <ZeroTerminate>1</ZeroTerminate>
+                  <Address>+1C*5</Address>
+                  <CheatEntries>
+                    <CheatEntry>
+                      <ID>264</ID>
+                      <Description>"Name"</Description>
+                      <VariableType>String</VariableType>
+                      <Length>64</Length>
+                      <Unicode>0</Unicode>
+                      <ZeroTerminate>1</ZeroTerminate>
+                      <Address>+10</Address>
+                      <Offsets>
+                        <Offset>22</Offset>
+                      </Offsets>
+                    </CheatEntry>
+                    <CheatEntry>
+                      <ID>265</ID>
+                      <Description>"Value (integer)"</Description>
+                      <VariableType>4 Bytes</VariableType>
+                      <Address>+4</Address>
+                    </CheatEntry>
+                    <CheatEntry>
+                      <ID>266</ID>
+                      <Description>"Value (float)"</Description>
+                      <VariableType>Float</VariableType>
+                      <Address>+4</Address>
+                    </CheatEntry>
+                  </CheatEntries>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>267</ID>
+                  <Description>"Attribute"</Description>
+                  <LastState RealAddress="000000A8"/>
+                  <VariableType>String</VariableType>
+                  <Length>0</Length>
+                  <Unicode>0</Unicode>
+                  <ZeroTerminate>1</ZeroTerminate>
+                  <Address>+1C*6</Address>
+                  <CheatEntries>
+                    <CheatEntry>
+                      <ID>268</ID>
+                      <Description>"Name"</Description>
+                      <VariableType>String</VariableType>
+                      <Length>64</Length>
+                      <Unicode>0</Unicode>
+                      <ZeroTerminate>1</ZeroTerminate>
+                      <Address>+10</Address>
+                      <Offsets>
+                        <Offset>22</Offset>
+                      </Offsets>
+                    </CheatEntry>
+                    <CheatEntry>
+                      <ID>269</ID>
+                      <Description>"Value (integer)"</Description>
+                      <VariableType>4 Bytes</VariableType>
+                      <Address>+4</Address>
+                    </CheatEntry>
+                    <CheatEntry>
+                      <ID>270</ID>
+                      <Description>"Value (float)"</Description>
+                      <VariableType>Float</VariableType>
+                      <Address>+4</Address>
+                    </CheatEntry>
+                  </CheatEntries>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>271</ID>
+                  <Description>"Attribute"</Description>
+                  <LastState RealAddress="000000C4"/>
+                  <VariableType>String</VariableType>
+                  <Length>0</Length>
+                  <Unicode>0</Unicode>
+                  <ZeroTerminate>1</ZeroTerminate>
+                  <Address>+1C*7</Address>
+                  <CheatEntries>
+                    <CheatEntry>
+                      <ID>272</ID>
+                      <Description>"Name"</Description>
+                      <VariableType>String</VariableType>
+                      <Length>64</Length>
+                      <Unicode>0</Unicode>
+                      <ZeroTerminate>1</ZeroTerminate>
+                      <Address>+10</Address>
+                      <Offsets>
+                        <Offset>22</Offset>
+                      </Offsets>
+                    </CheatEntry>
+                    <CheatEntry>
+                      <ID>273</ID>
+                      <Description>"Value (integer)"</Description>
+                      <VariableType>4 Bytes</VariableType>
+                      <Address>+4</Address>
+                    </CheatEntry>
+                    <CheatEntry>
+                      <ID>274</ID>
+                      <Description>"Value (float)"</Description>
+                      <VariableType>Float</VariableType>
+                      <Address>+4</Address>
+                    </CheatEntry>
+                  </CheatEntries>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>275</ID>
+                  <Description>"Attribute"</Description>
+                  <LastState RealAddress="000000E0"/>
+                  <VariableType>String</VariableType>
+                  <Length>0</Length>
+                  <Unicode>0</Unicode>
+                  <ZeroTerminate>1</ZeroTerminate>
+                  <Address>+1C*8</Address>
+                  <CheatEntries>
+                    <CheatEntry>
+                      <ID>276</ID>
+                      <Description>"Name"</Description>
+                      <VariableType>String</VariableType>
+                      <Length>64</Length>
+                      <Unicode>0</Unicode>
+                      <ZeroTerminate>1</ZeroTerminate>
+                      <Address>+10</Address>
+                      <Offsets>
+                        <Offset>22</Offset>
+                      </Offsets>
+                    </CheatEntry>
+                    <CheatEntry>
+                      <ID>277</ID>
+                      <Description>"Value (integer)"</Description>
+                      <VariableType>4 Bytes</VariableType>
+                      <Address>+4</Address>
+                    </CheatEntry>
+                    <CheatEntry>
+                      <ID>278</ID>
+                      <Description>"Value (float)"</Description>
+                      <VariableType>Float</VariableType>
+                      <Address>+4</Address>
+                    </CheatEntry>
+                  </CheatEntries>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>279</ID>
+                  <Description>"Attribute"</Description>
+                  <LastState RealAddress="000000FC"/>
+                  <VariableType>String</VariableType>
+                  <Length>0</Length>
+                  <Unicode>0</Unicode>
+                  <ZeroTerminate>1</ZeroTerminate>
+                  <Address>+1C*9</Address>
+                  <CheatEntries>
+                    <CheatEntry>
+                      <ID>280</ID>
+                      <Description>"Name"</Description>
+                      <VariableType>String</VariableType>
+                      <Length>64</Length>
+                      <Unicode>0</Unicode>
+                      <ZeroTerminate>1</ZeroTerminate>
+                      <Address>+10</Address>
+                      <Offsets>
+                        <Offset>22</Offset>
+                      </Offsets>
+                    </CheatEntry>
+                    <CheatEntry>
+                      <ID>281</ID>
+                      <Description>"Value (integer)"</Description>
+                      <VariableType>4 Bytes</VariableType>
+                      <Address>+4</Address>
+                    </CheatEntry>
+                    <CheatEntry>
+                      <ID>282</ID>
+                      <Description>"Value (float)"</Description>
+                      <VariableType>Float</VariableType>
+                      <Address>+4</Address>
+                    </CheatEntry>
+                  </CheatEntries>
+                </CheatEntry>
+              </CheatEntries>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>286</ID>
+          <Description>"Weapon Editor"</Description>
+          <Options moHideChildren="1"/>
+          <LastState Value="" RealAddress="00000000"/>
+          <GroupHeader>1</GroupHeader>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>289</ID>
+              <Description>"Copy Value to Structure Dissect (Ctrl-D)"</Description>
+              <ShowAsHex>1</ShowAsHex>
+              <VariableType>8 Bytes</VariableType>
+              <Address>weapon_ptr</Address>
+              <Offsets>
+                <Offset>4</Offset>
+              </Offsets>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>159</ID>
+      <Description>"Ignore This"</Description>
+      <Options moHideChildren="1"/>
+      <LastState Value="" RealAddress="00000000"/>
+      <GroupHeader>1</GroupHeader>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>154</ID>
+          <Description>"Pointers"</Description>
+          <Options moHideChildren="1"/>
+          <LastState Value="" RealAddress="00000000"/>
+          <GroupHeader>1</GroupHeader>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>90</ID>
+              <Description>"Base Address"</Description>
+              <LastState RealAddress="00000000"/>
+              <VariableType>String</VariableType>
+              <Length>0</Length>
+              <Unicode>0</Unicode>
+              <ZeroTerminate>1</ZeroTerminate>
+              <Address>zanzer_ptr</Address>
+              <Offsets>
+                <Offset>0</Offset>
+                <Offset>10</Offset>
+              </Offsets>
+              <CheatEntries>
+                <CheatEntry>
+                  <ID>141</ID>
+                  <Description>"Current Health"</Description>
+                  <VariableType>Float</VariableType>
+                  <Address>+2224</Address>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>149</ID>
+                  <Description>"Maximum Health"</Description>
+                  <VariableType>Float</VariableType>
+                  <Address>+3254</Address>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>147</ID>
+                  <Description>"Current Chi"</Description>
+                  <VariableType>Float</VariableType>
+                  <Address>+1B40</Address>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>148</ID>
+                  <Description>"Maximum Chi"</Description>
+                  <VariableType>Float</VariableType>
+                  <Address>+2B70</Address>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>142</ID>
+                  <Description>"Zillyen"</Description>
+                  <VariableType>Float</VariableType>
+                  <Address>+1B78</Address>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>152</ID>
+                  <Description>"Skill Points"</Description>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>+9A4</Address>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>150</ID>
+                  <Description>"Bullets Light"</Description>
+                  <VariableType>Float</VariableType>
+                  <Address>+B80</Address>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>151</ID>
+                  <Description>"Bullets Medium"</Description>
+                  <VariableType>Float</VariableType>
+                  <Address>+2C34</Address>
+                </CheatEntry>
+              </CheatEntries>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>4</ID>
+          <Description>"Compare Variables"</Description>
+          <Options moHideChildren="1"/>
+          <LastState/>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[ENABLE]
+aobscanmodule(values,ShadowWarrior2.exe,8B 41 04 89 44 24 24 8B 41 08 48 8B)
+alloc(newmem,$1000,values)
+
+label(code)
+label(return)
+label(address)
+label(compare)
+label(offset)
+label(skip)
+
+newmem:
+  cmp [rcx+0C],00080006
+  jne code
+  cmp [rcx+10],00010000
+  jbe code
+  mov rax,[rcx+10]
+  add rax,20
+  //cmp word ptr [rax],#9
+  //jne @f
+  cmp dword ptr [rax+2],'Spaw'
+  jne @f
+  cmp dword ptr [rax+6],'nInC'
+  jne @f
+  lea rax,[rax]
+  lea rax,[rcx+04]
+@@:
+  mov rax,address
+  cmp [rax],0
+  je @f
+  cmp [rax],rcx
+  jne code
+  jmp skip
+@@:
+  mov rax,compare
+  mov eax,[rax]
+  cmp eax,[rcx+04]
+  jne code
+skip:
+  mov rax,offset
+  mov rax,[rax]
+  add rax,rsp
+  mov rax,[rax]
+  lea rax,[rax]
+  mov eax,[rcx+04]
+code:
+  mov eax,[rcx+04]
+  mov [rsp+24],eax
+  jmp return
+
+address:
+  dq 0
+
+compare:
+  dq 0
+
+offset:
+  dq 38
+
+values:
+  jmp newmem
+  nop
+  nop
+return:
+registersymbol(values)
+registersymbol(compare)
+registersymbol(offset)
+registersymbol(address)
+
+[DISABLE]
+values:
+  db 8B 41 04 89 44 24 24
+unregistersymbol(values)
+unregistersymbol(compare)
+unregistersymbol(offset)
+unregistersymbol(address)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: "ShadowWarrior2.exe"+5E964
+
+"ShadowWarrior2.exe"+5E942: 4D 85 DB                    -  test r11,r11
+"ShadowWarrior2.exe"+5E945: 74 78                       -  je ShadowWarrior2.exe+5E9BF
+"ShadowWarrior2.exe"+5E947: 45 84 C9                    -  test r9l,r9l
+"ShadowWarrior2.exe"+5E94A: 75 73                       -  jne ShadowWarrior2.exe+5E9BF
+"ShadowWarrior2.exe"+5E94C: E9 6F FF FF FF              -  jmp ShadowWarrior2.exe+5E8C0
+"ShadowWarrior2.exe"+5E951: 81 39 0D 00 08 00           -  cmp [rcx],0008000D
+"ShadowWarrior2.exe"+5E957: 48 8D 54 24 20              -  lea rdx,[rsp+20]
+"ShadowWarrior2.exe"+5E95C: 74 2E                       -  je ShadowWarrior2.exe+5E98C
+"ShadowWarrior2.exe"+5E95E: 8B 01                       -  mov eax,[rcx]
+"ShadowWarrior2.exe"+5E960: 89 44 24 20                 -  mov [rsp+20],eax
+// ---------- INJECTING HERE ----------
+"ShadowWarrior2.exe"+5E964: 8B 41 04                    -  mov eax,[rcx+04]
+"ShadowWarrior2.exe"+5E967: 89 44 24 24                 -  mov [rsp+24],eax
+// ---------- DONE INJECTING  ----------
+"ShadowWarrior2.exe"+5E96B: 8B 41 08                    -  mov eax,[rcx+08]
+"ShadowWarrior2.exe"+5E96E: 48 8B CE                    -  mov rcx,rsi
+"ShadowWarrior2.exe"+5E971: 89 44 24 28                 -  mov [rsp+28],eax
+"ShadowWarrior2.exe"+5E975: E8 C6 A1 FD FF              -  call ShadowWarrior2.exe+38B40
+"ShadowWarrior2.exe"+5E97A: B0 01                       -  mov al,01
+"ShadowWarrior2.exe"+5E97C: 48 8B 5C 24 40              -  mov rbx,[rsp+40]
+"ShadowWarrior2.exe"+5E981: 48 8B 74 24 48              -  mov rsi,[rsp+48]
+"ShadowWarrior2.exe"+5E986: 48 83 C4 30                 -  add rsp,30
+"ShadowWarrior2.exe"+5E98A: 5F                          -  pop rdi
+"ShadowWarrior2.exe"+5E98B: C3                          -  ret 
+}
+</AssemblerScript>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>62</ID>
+              <Description>"Compare"</Description>
+              <VariableType>4 Bytes</VariableType>
+              <Address>compare</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>63</ID>
+              <Description>"Compare"</Description>
+              <VariableType>Float</VariableType>
+              <Address>compare</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>64</ID>
+              <Description>"Address"</Description>
+              <ShowAsHex>1</ShowAsHex>
+              <VariableType>8 Bytes</VariableType>
+              <Address>address</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>162</ID>
+              <Description>"Offset"</Description>
+              <ShowAsHex>1</ShowAsHex>
+              <VariableType>4 Bytes</VariableType>
+              <Address>offset</Address>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>6</ID>
+          <Description>"No Subtraction"</Description>
+          <LastState/>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[ENABLE]
+aobscanmodule(no_sub,ShadowWarrior2.exe,F3 0F 5C C8 E8 ?? ?? ?? ?? EB ?? 4C 8D 45 B8)
+no_sub:
+  db 90 90 90 90
+registersymbol(no_sub)
+
+[DISABLE]
+no_sub:
+  db F3 0F 5C C8
+unregistersymbol(no_sub)
+
+{
+// ORIGINAL CODE - INJECTION POINT: "ShadowWarrior2.exe"+44F5F
+
+"ShadowWarrior2.exe"+44F3C: 3B C2                    -  cmp eax,edx
+"ShadowWarrior2.exe"+44F3E: 75 17                    -  jne ShadowWarrior2.exe+44F57
+"ShadowWarrior2.exe"+44F40: 0F 57 C0                 -  xorps xmm0,xmm0
+"ShadowWarrior2.exe"+44F43: 49 8B CF                 -  mov rcx,r15
+"ShadowWarrior2.exe"+44F46: F3 48 0F 2A 46 04        -  cvtsi2ss xmm0,[rsi+04]
+"ShadowWarrior2.exe"+44F4C: F3 0F 5C C8              -  subss xmm1,xmm0
+"ShadowWarrior2.exe"+44F50: E8 6B A4 FF FF           -  call ShadowWarrior2.exe+3F3C0
+"ShadowWarrior2.exe"+44F55: EB 34                    -  jmp ShadowWarrior2.exe+44F8B
+"ShadowWarrior2.exe"+44F57: F3 0F 10 46 04           -  movss xmm0,[rsi+04]
+"ShadowWarrior2.exe"+44F5C: 49 8B CF                 -  mov rcx,r15
+// ---------- INJECTING HERE ----------
+"ShadowWarrior2.exe"+44F5F: F3 0F 5C C8              -  subss xmm1,xmm0
+"ShadowWarrior2.exe"+44F63: E8 58 A4 FF FF           -  call ShadowWarrior2.exe+3F3C0
+// ---------- DONE INJECTING  ----------
+"ShadowWarrior2.exe"+44F68: EB 21                    -  jmp ShadowWarrior2.exe+44F8B
+"ShadowWarrior2.exe"+44F6A: 4C 8D 45 B8              -  lea r8,[rbp-48]
+"ShadowWarrior2.exe"+44F6E: 4C 8B CE                 -  mov r9,rsi
+"ShadowWarrior2.exe"+44F71: BA 2D 00 00 00           -  mov edx,0000002D
+"ShadowWarrior2.exe"+44F76: 49 8B CE                 -  mov rcx,r14
+"ShadowWarrior2.exe"+44F79: 4C 89 7C 24 20           -  mov [rsp+20],r15
+"ShadowWarrior2.exe"+44F7E: E8 AD B0 FF FF           -  call ShadowWarrior2.exe+40030
+"ShadowWarrior2.exe"+44F83: 84 C0                    -  test al,al
+"ShadowWarrior2.exe"+44F85: 0F 84 46 2F 00 00        -  je ShadowWarrior2.exe+47ED1
+"ShadowWarrior2.exe"+44F8B: 4C 8D 45 68              -  lea r8,[rbp+68]
+}
+</AssemblerScript>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>16</ID>
+          <Description>"Find Base"</Description>
+          <LastState/>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[ENABLE]
+aobscanmodule(base,ShadowWarrior2.exe,48 03 CA 4C 39 41 10 75 06 44 39 51)
+alloc(newmem,$1000,base)
+
+label(code)
+label(return)
+
+newmem:
+  add rcx,rdx
+  push rax
+  mov rax,652441EC
+  cmp rcx,rax
+  pop rax
+  jne code
+  lea rdx,[rdx]
+code:
+  cmp [rcx+10],r8
+  jmp return
+
+base:
+  jmp newmem
+  nop
+  nop
+return:
+registersymbol(base)
+
+[DISABLE]
+
+base:
+  db 48 03 CA 4C 39 41 10
+
+unregistersymbol(base)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: "ShadowWarrior2.exe"+5E927
+
+"ShadowWarrior2.exe"+5E8FE: F3 48 0F 2C 4F 04           -  cvttss2si rcx,[rdi+04]
+"ShadowWarrior2.exe"+5E904: EB 04                       -  jmp ShadowWarrior2.exe+5E90A
+"ShadowWarrior2.exe"+5E906: 48 8B 4F 04                 -  mov rcx,[rdi+04]
+"ShadowWarrior2.exe"+5E90A: 49 8B 53 10                 -  mov rdx,[r11+10]
+"ShadowWarrior2.exe"+5E90E: 4C 8B 47 04                 -  mov r8,[rdi+04]
+"ShadowWarrior2.exe"+5E912: 8D 43 FF                    -  lea eax,[rbx-01]
+"ShadowWarrior2.exe"+5E915: 23 C1                       -  and eax,ecx
+"ShadowWarrior2.exe"+5E917: 66 0F 1F 84 00 00 00 00 00  -  nop [rax+rax+00000000]
+"ShadowWarrior2.exe"+5E920: 48 63 C8                    -  movsxd  rcx,eax
+"ShadowWarrior2.exe"+5E923: 48 6B C9 1C                 -  imul rcx,rcx,1C
+// ---------- INJECTING HERE ----------
+"ShadowWarrior2.exe"+5E927: 48 03 CA                    -  add rcx,rdx
+"ShadowWarrior2.exe"+5E92A: 4C 39 41 10                 -  cmp [rcx+10],r8
+// ---------- DONE INJECTING  ----------
+"ShadowWarrior2.exe"+5E92E: 75 06                       -  jne ShadowWarrior2.exe+5E936
+"ShadowWarrior2.exe"+5E930: 44 39 51 0C                 -  cmp [rcx+0C],r10d
+"ShadowWarrior2.exe"+5E934: 74 1B                       -  je ShadowWarrior2.exe+5E951
+"ShadowWarrior2.exe"+5E936: 8B 41 18                    -  mov eax,[rcx+18]
+"ShadowWarrior2.exe"+5E939: 83 F8 FF                    -  cmp eax,-01
+"ShadowWarrior2.exe"+5E93C: 75 E2                       -  jne ShadowWarrior2.exe+5E920
+"ShadowWarrior2.exe"+5E93E: 4D 8B 5B 28                 -  mov r11,[r11+28]
+"ShadowWarrior2.exe"+5E942: 4D 85 DB                    -  test r11,r11
+"ShadowWarrior2.exe"+5E945: 74 78                       -  je ShadowWarrior2.exe+5E9BF
+"ShadowWarrior2.exe"+5E947: 45 84 C9                    -  test r9l,r9l
+}
+</AssemblerScript>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>285</ID>
+          <Description>"Read Values"</Description>
+          <LastState/>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[ENABLE]
+aobscanmodule(chests,ShadowWarrior2.exe,8B 47 04 44 8B 07 8B 55 B0)
+alloc(newmem,$1000,chests)
+
+label(code)
+label(return)
+
+newmem:
+  cmp [rdi+0C],00080006
+  jne code
+  cmp [rdi+10],00010000
+  jbe code
+  mov rax,[rdi+10]
+  add rax,22
+  cmp [rax+00],'Spaw'
+  jne code
+  cmp [rax+04],'nInC'
+  jne code
+  cmp [rax+08],'hest'
+  jne code
+  cmp [rax+0C],'Chan'
+  jne code
+  cmp word ptr [rax+10],'ce'
+  mov [rdi+04],(float)1
+code:
+  mov eax,[rdi+04]
+  mov r8d,[rdi]
+  jmp return
+
+chests:
+  jmp newmem
+  nop
+return:
+registersymbol(chests)
+
+[DISABLE]
+
+chests:
+  db 8B 47 04 44 8B 07
+
+unregistersymbol(chests)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: "ShadowWarrior2.exe"+5E77E
+
+"ShadowWarrior2.exe"+5E75E: 44 89 45 D0              -  mov [rbp-30],r8d
+"ShadowWarrior2.exe"+5E762: 41 0F BA E0 13           -  bt r8d,13
+"ShadowWarrior2.exe"+5E767: 73 02                    -  jae ShadowWarrior2.exe+5E76B
+"ShadowWarrior2.exe"+5E769: FF 00                    -  inc [rax]
+"ShadowWarrior2.exe"+5E76B: 41 0F BA E1 13           -  bt r9d,13
+"ShadowWarrior2.exe"+5E770: 73 0C                    -  jae ShadowWarrior2.exe+5E77E
+"ShadowWarrior2.exe"+5E772: FF 09                    -  dec [rcx]
+"ShadowWarrior2.exe"+5E774: 75 08                    -  jne ShadowWarrior2.exe+5E77E
+"ShadowWarrior2.exe"+5E776: 41 8B D1                 -  mov edx,r9d
+"ShadowWarrior2.exe"+5E779: E8 02 E0 FE FF           -  call ShadowWarrior2.exe+4C780
+// ---------- INJECTING HERE ----------
+"ShadowWarrior2.exe"+5E77E: 8B 47 04                 -  mov eax,[rdi+04]
+"ShadowWarrior2.exe"+5E781: 44 8B 07                 -  mov r8d,[rdi]
+// ---------- DONE INJECTING  ----------
+"ShadowWarrior2.exe"+5E784: 8B 55 B0                 -  mov edx,[rbp-50]
+"ShadowWarrior2.exe"+5E787: 48 8B 4D B4              -  mov rcx,[rbp-4C]
+"ShadowWarrior2.exe"+5E78B: 89 45 E4                 -  mov [rbp-1C],eax
+"ShadowWarrior2.exe"+5E78E: 8B 47 08                 -  mov eax,[rdi+08]
+"ShadowWarrior2.exe"+5E791: 89 45 E8                 -  mov [rbp-18],eax
+"ShadowWarrior2.exe"+5E794: 48 8B 45 E4              -  mov rax,[rbp-1C]
+"ShadowWarrior2.exe"+5E798: 44 89 45 B0              -  mov [rbp-50],r8d
+"ShadowWarrior2.exe"+5E79C: 48 89 45 B4              -  mov [rbp-4C],rax
+"ShadowWarrior2.exe"+5E7A0: 41 0F BA E0 13           -  bt r8d,13
+"ShadowWarrior2.exe"+5E7A5: 73 02                    -  jae ShadowWarrior2.exe+5E7A9
+}
+</AssemblerScript>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols>
+    <SymbolEntry>
+      <Name>modifiers_on</Name>
+      <Address>13FFF0588</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>chests</Name>
+      <Address>14005E77E</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>god</Name>
+      <Address>140044FAC</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>values</Name>
+      <Address>14005E9B4</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>compare</Name>
+      <Address>13FFE00B8</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>offset</Name>
+      <Address>13FFE00C0</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>address</Name>
+      <Address>13FFE00B0</Address>
+    </SymbolEntry>
+  </UserdefinedSymbols>
+  <Structures StructVersion="2">
+    <Structure Name="Object" AutoFill="0" AutoCreate="1" DefaultHex="0" AutoDestroy="0" DoNotSaveLocal="0" AutoCreateStructsize="4096">
+      <Elements>
+        <Element Offset="0" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="16" Vartype="Pointer" Bytesize="8" Description="Attributes" DisplayMethod="Unsigned Integer" BackgroundColor="80000005">
+          <Structure Name="Autocreated from 114FE6A90" AutoFill="0" AutoCreate="1" DefaultHex="0" AutoDestroy="0" DoNotSaveLocal="0" AutoCreateStructsize="4096">
+            <Elements>
+              <Element Offset="4" Vartype="Float" Bytesize="4" Description="value (float)" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="4" Vartype="4 Bytes" Bytesize="4" Description="value (int)" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="16" Vartype="Pointer" Bytesize="8" DisplayMethod="Unsigned Integer" BackgroundColor="80000005">
+                <Structure Name="Autocreated from 55360CC0" AutoFill="0" AutoCreate="1" DefaultHex="0" AutoDestroy="0" DoNotSaveLocal="0" AutoCreateStructsize="4096">
+                  <Elements>
+                    <Element Offset="32" Vartype="2 Bytes" Bytesize="2" Description="length" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+                    <Element Offset="34" Vartype="String" Bytesize="64" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+                  </Elements>
+                </Structure>
+              </Element>
+              <Element Offset="32" Vartype="Float" Bytesize="4" Description="value (float)" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="32" Vartype="4 Bytes" Bytesize="4" Description="value (int)" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="44" Vartype="Pointer" Bytesize="8" DisplayMethod="Unsigned Integer" BackgroundColor="80000005">
+                <Structure Name="Autocreated from 55360CC0" AutoFill="0" AutoCreate="1" DefaultHex="0" AutoDestroy="0" DoNotSaveLocal="0" AutoCreateStructsize="4096">
+                  <Elements>
+                    <Element Offset="32" Vartype="2 Bytes" Bytesize="2" Description="length" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+                    <Element Offset="34" Vartype="String" Bytesize="64" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+                  </Elements>
+                </Structure>
+              </Element>
+              <Element Offset="60" Vartype="Float" Bytesize="4" Description="value (float)" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="60" Vartype="4 Bytes" Bytesize="4" Description="value (int)" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="72" Vartype="Pointer" Bytesize="8" DisplayMethod="Unsigned Integer" BackgroundColor="80000005">
+                <Structure Name="Autocreated from 55360CC0" AutoFill="0" AutoCreate="1" DefaultHex="0" AutoDestroy="0" DoNotSaveLocal="0" AutoCreateStructsize="4096">
+                  <Elements>
+                    <Element Offset="32" Vartype="2 Bytes" Bytesize="2" Description="length" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+                    <Element Offset="34" Vartype="String" Bytesize="64" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+                  </Elements>
+                </Structure>
+              </Element>
+              <Element Offset="88" Vartype="4 Bytes" Bytesize="4" Description="value (int)" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="88" Vartype="Float" Bytesize="4" Description="value (float)" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="100" Vartype="Pointer" Bytesize="8" DisplayMethod="Unsigned Integer" BackgroundColor="80000005">
+                <Structure Name="Autocreated from 55360CC0" AutoFill="0" AutoCreate="1" DefaultHex="0" AutoDestroy="0" DoNotSaveLocal="0" AutoCreateStructsize="4096">
+                  <Elements>
+                    <Element Offset="32" Vartype="2 Bytes" Bytesize="2" Description="length" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+                    <Element Offset="34" Vartype="String" Bytesize="64" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+                  </Elements>
+                </Structure>
+              </Element>
+              <Element Offset="116" Vartype="Float" Bytesize="4" Description="value (float)" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="116" Vartype="4 Bytes" Bytesize="4" Description="value (int)" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="128" Vartype="Pointer" Bytesize="8" DisplayMethod="Unsigned Integer" BackgroundColor="80000005">
+                <Structure Name="Autocreated from 55360CC0" AutoFill="0" AutoCreate="1" DefaultHex="0" AutoDestroy="0" DoNotSaveLocal="0" AutoCreateStructsize="4096">
+                  <Elements>
+                    <Element Offset="32" Vartype="2 Bytes" Bytesize="2" Description="length" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+                    <Element Offset="34" Vartype="String" Bytesize="64" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+                  </Elements>
+                </Structure>
+              </Element>
+              <Element Offset="144" Vartype="4 Bytes" Bytesize="4" Description="value (int)" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="144" Vartype="Float" Bytesize="4" Description="value (float)" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="156" Vartype="Pointer" Bytesize="8" DisplayMethod="Unsigned Integer" BackgroundColor="80000005">
+                <Structure Name="Autocreated from 55360CC0" AutoFill="0" AutoCreate="1" DefaultHex="0" AutoDestroy="0" DoNotSaveLocal="0" AutoCreateStructsize="4096">
+                  <Elements>
+                    <Element Offset="32" Vartype="2 Bytes" Bytesize="2" Description="length" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+                    <Element Offset="34" Vartype="String" Bytesize="64" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+                  </Elements>
+                </Structure>
+              </Element>
+              <Element Offset="172" Vartype="Float" Bytesize="4" Description="value (float)" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="172" Vartype="4 Bytes" Bytesize="4" Description="value (int)" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="184" Vartype="Pointer" Bytesize="8" DisplayMethod="Unsigned Integer" BackgroundColor="80000005">
+                <Structure Name="Autocreated from 55360CC0" AutoFill="0" AutoCreate="1" DefaultHex="0" AutoDestroy="0" DoNotSaveLocal="0" AutoCreateStructsize="4096">
+                  <Elements>
+                    <Element Offset="32" Vartype="2 Bytes" Bytesize="2" Description="length" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+                    <Element Offset="34" Vartype="String" Bytesize="64" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+                  </Elements>
+                </Structure>
+              </Element>
+              <Element Offset="200" Vartype="4 Bytes" Bytesize="4" Description="value (int)" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="200" Vartype="Float" Bytesize="4" Description="value (float)" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="212" Vartype="Pointer" Bytesize="8" DisplayMethod="Unsigned Integer" BackgroundColor="80000005">
+                <Structure Name="Autocreated from 55360CC0" AutoFill="0" AutoCreate="1" DefaultHex="0" AutoDestroy="0" DoNotSaveLocal="0" AutoCreateStructsize="4096">
+                  <Elements>
+                    <Element Offset="32" Vartype="2 Bytes" Bytesize="2" Description="length" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+                    <Element Offset="34" Vartype="String" Bytesize="64" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+                  </Elements>
+                </Structure>
+              </Element>
+              <Element Offset="228" Vartype="Float" Bytesize="4" Description="value (float)" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="228" Vartype="4 Bytes" Bytesize="4" Description="value (int)" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="240" Vartype="Pointer" Bytesize="8" DisplayMethod="Unsigned Integer" BackgroundColor="80000005">
+                <Structure Name="Autocreated from 55360CC0" AutoFill="0" AutoCreate="1" DefaultHex="0" AutoDestroy="0" DoNotSaveLocal="0" AutoCreateStructsize="4096">
+                  <Elements>
+                    <Element Offset="32" Vartype="2 Bytes" Bytesize="2" Description="length" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+                    <Element Offset="34" Vartype="String" Bytesize="64" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+                  </Elements>
+                </Structure>
+              </Element>
+              <Element Offset="256" Vartype="4 Bytes" Bytesize="4" Description="value (int)" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="256" Vartype="Float" Bytesize="4" Description="value (float)" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="268" Vartype="Pointer" Bytesize="8" DisplayMethod="Unsigned Integer" BackgroundColor="80000005">
+                <Structure Name="Autocreated from 55360CC0" AutoFill="0" AutoCreate="1" DefaultHex="0" AutoDestroy="0" DoNotSaveLocal="0" AutoCreateStructsize="4096">
+                  <Elements>
+                    <Element Offset="32" Vartype="2 Bytes" Bytesize="2" Description="length" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+                    <Element Offset="34" Vartype="String" Bytesize="64" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+                  </Elements>
+                </Structure>
+              </Element>
+              <Element Offset="284" Vartype="Float" Bytesize="4" Description="value (float)" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="284" Vartype="4 Bytes" Bytesize="4" Description="value (int)" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="296" Vartype="Pointer" Bytesize="8" DisplayMethod="Unsigned Integer" BackgroundColor="80000005">
+                <Structure Name="Autocreated from 55360CC0" AutoFill="0" AutoCreate="1" DefaultHex="0" AutoDestroy="0" DoNotSaveLocal="0" AutoCreateStructsize="4096">
+                  <Elements>
+                    <Element Offset="32" Vartype="2 Bytes" Bytesize="2" Description="length" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+                    <Element Offset="34" Vartype="String" Bytesize="64" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+                  </Elements>
+                </Structure>
+              </Element>
+              <Element Offset="312" Vartype="4 Bytes" Bytesize="4" Description="value (int)" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="312" Vartype="Float" Bytesize="4" Description="value (float)" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="324" Vartype="Pointer" Bytesize="8" DisplayMethod="Unsigned Integer" BackgroundColor="80000005">
+                <Structure Name="Autocreated from 55360CC0" AutoFill="0" AutoCreate="1" DefaultHex="0" AutoDestroy="0" DoNotSaveLocal="0" AutoCreateStructsize="4096">
+                  <Elements>
+                    <Element Offset="32" Vartype="2 Bytes" Bytesize="2" Description="length" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+                    <Element Offset="34" Vartype="String" Bytesize="64" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+                  </Elements>
+                </Structure>
+              </Element>
+              <Element Offset="340" Vartype="Float" Bytesize="4" Description="value (float)" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="340" Vartype="4 Bytes" Bytesize="4" Description="value (int)" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="352" Vartype="Pointer" Bytesize="8" DisplayMethod="Unsigned Integer" BackgroundColor="80000005">
+                <Structure Name="Autocreated from 55360CC0" AutoFill="0" AutoCreate="1" DefaultHex="0" AutoDestroy="0" DoNotSaveLocal="0" AutoCreateStructsize="4096">
+                  <Elements>
+                    <Element Offset="32" Vartype="2 Bytes" Bytesize="2" Description="length" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+                    <Element Offset="34" Vartype="String" Bytesize="64" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+                  </Elements>
+                </Structure>
+              </Element>
+              <Element Offset="368" Vartype="4 Bytes" Bytesize="4" Description="value (int)" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="368" Vartype="Float" Bytesize="4" Description="value (float)" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="380" Vartype="Pointer" Bytesize="8" DisplayMethod="Unsigned Integer" BackgroundColor="80000005">
+                <Structure Name="Autocreated from 55360CC0" AutoFill="0" AutoCreate="1" DefaultHex="0" AutoDestroy="0" DoNotSaveLocal="0" AutoCreateStructsize="4096">
+                  <Elements>
+                    <Element Offset="32" Vartype="2 Bytes" Bytesize="2" Description="length" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+                    <Element Offset="34" Vartype="String" Bytesize="64" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+                  </Elements>
+                </Structure>
+              </Element>
+              <Element Offset="396" Vartype="Float" Bytesize="4" Description="value (float)" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="396" Vartype="4 Bytes" Bytesize="4" Description="value (int)" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="408" Vartype="Pointer" Bytesize="8" DisplayMethod="Unsigned Integer" BackgroundColor="80000005">
+                <Structure Name="Autocreated from 55360CC0" AutoFill="0" AutoCreate="1" DefaultHex="0" AutoDestroy="0" DoNotSaveLocal="0" AutoCreateStructsize="4096">
+                  <Elements>
+                    <Element Offset="32" Vartype="2 Bytes" Bytesize="2" Description="length" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+                    <Element Offset="34" Vartype="String" Bytesize="64" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+                  </Elements>
+                </Structure>
+              </Element>
+              <Element Offset="424" Vartype="4 Bytes" Bytesize="4" Description="value (int)" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="424" Vartype="Float" Bytesize="4" Description="value (float)" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="436" Vartype="Pointer" Bytesize="8" DisplayMethod="Unsigned Integer" BackgroundColor="80000005">
+                <Structure Name="Autocreated from 55360CC0" AutoFill="0" AutoCreate="1" DefaultHex="0" AutoDestroy="0" DoNotSaveLocal="0" AutoCreateStructsize="4096">
+                  <Elements>
+                    <Element Offset="32" Vartype="2 Bytes" Bytesize="2" Description="length" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+                    <Element Offset="34" Vartype="String" Bytesize="64" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+                  </Elements>
+                </Structure>
+              </Element>
+              <Element Offset="452" Vartype="Float" Bytesize="4" Description="value (float)" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="452" Vartype="4 Bytes" Bytesize="4" Description="value (int)" DisplayMethod="Signed Integer" BackgroundColor="80000005"/>
+              <Element Offset="464" Vartype="Pointer" Bytesize="8" DisplayMethod="Unsigned Integer" BackgroundColor="80000005">
+                <Structure Name="Autocreated from 55360CC0" AutoFill="0" AutoCreate="1" DefaultHex="0" AutoDestroy="0" DoNotSaveLocal="0" AutoCreateStructsize="4096">
+                  <Elements>
+                    <Element Offset="32" Vartype="2 Bytes" Bytesize="2" Description="length" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+                    <Element Offset="34" Vartype="String" Bytesize="64" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+                  </Elements>
+                </Structure>
+              </Element>
+              <Element Offset="480" Vartype="4 Bytes" Bytesize="4" Description="value (int)" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="480" Vartype="Float" Bytesize="4" Description="value (float)" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="492" Vartype="Pointer" Bytesize="8" DisplayMethod="Unsigned Integer" BackgroundColor="80000005">
+                <Structure Name="Autocreated from 55360CC0" AutoFill="0" AutoCreate="1" DefaultHex="0" AutoDestroy="0" DoNotSaveLocal="0" AutoCreateStructsize="4096">
+                  <Elements>
+                    <Element Offset="32" Vartype="2 Bytes" Bytesize="2" Description="length" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+                    <Element Offset="34" Vartype="String" Bytesize="64" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+                  </Elements>
+                </Structure>
+              </Element>
+              <Element Offset="508" Vartype="Float" Bytesize="4" Description="value (float)" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="508" Vartype="4 Bytes" Bytesize="4" Description="value (int)" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="520" Vartype="Pointer" Bytesize="8" DisplayMethod="Unsigned Integer" BackgroundColor="80000005">
+                <Structure Name="Autocreated from 55360CC0" AutoFill="0" AutoCreate="1" DefaultHex="0" AutoDestroy="0" DoNotSaveLocal="0" AutoCreateStructsize="4096">
+                  <Elements>
+                    <Element Offset="32" Vartype="2 Bytes" Bytesize="2" Description="length" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+                    <Element Offset="34" Vartype="String" Bytesize="64" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+                  </Elements>
+                </Structure>
+              </Element>
+              <Element Offset="536" Vartype="4 Bytes" Bytesize="4" Description="value (int)" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="536" Vartype="Float" Bytesize="4" Description="value (float)" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="548" Vartype="Pointer" Bytesize="8" DisplayMethod="Unsigned Integer" BackgroundColor="80000005">
+                <Structure Name="Autocreated from 55360CC0" AutoFill="0" AutoCreate="1" DefaultHex="0" AutoDestroy="0" DoNotSaveLocal="0" AutoCreateStructsize="4096">
+                  <Elements>
+                    <Element Offset="32" Vartype="2 Bytes" Bytesize="2" Description="length" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+                    <Element Offset="34" Vartype="String" Bytesize="64" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+                  </Elements>
+                </Structure>
+              </Element>
+              <Element Offset="564" Vartype="Float" Bytesize="4" Description="value (float)" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="564" Vartype="4 Bytes" Bytesize="4" Description="value (int)" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="576" Vartype="Pointer" Bytesize="8" DisplayMethod="Unsigned Integer" BackgroundColor="80000005">
+                <Structure Name="Autocreated from 55360CC0" AutoFill="0" AutoCreate="1" DefaultHex="0" AutoDestroy="0" DoNotSaveLocal="0" AutoCreateStructsize="4096">
+                  <Elements>
+                    <Element Offset="32" Vartype="2 Bytes" Bytesize="2" Description="length" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+                    <Element Offset="34" Vartype="String" Bytesize="64" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+                  </Elements>
+                </Structure>
+              </Element>
+              <Element Offset="592" Vartype="4 Bytes" Bytesize="4" Description="value (int)" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="592" Vartype="Float" Bytesize="4" Description="value (float)" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="604" Vartype="Pointer" Bytesize="8" DisplayMethod="Unsigned Integer" BackgroundColor="80000005">
+                <Structure Name="Autocreated from 55360CC0" AutoFill="0" AutoCreate="1" DefaultHex="0" AutoDestroy="0" DoNotSaveLocal="0" AutoCreateStructsize="4096">
+                  <Elements>
+                    <Element Offset="32" Vartype="2 Bytes" Bytesize="2" Description="length" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+                    <Element Offset="34" Vartype="String" Bytesize="64" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+                  </Elements>
+                </Structure>
+              </Element>
+              <Element Offset="620" Vartype="Float" Bytesize="4" Description="value (float)" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="620" Vartype="4 Bytes" Bytesize="4" Description="value (int)" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="632" Vartype="Pointer" Bytesize="8" DisplayMethod="Unsigned Integer" BackgroundColor="80000005">
+                <Structure Name="Autocreated from 55360CC0" AutoFill="0" AutoCreate="1" DefaultHex="0" AutoDestroy="0" DoNotSaveLocal="0" AutoCreateStructsize="4096">
+                  <Elements>
+                    <Element Offset="32" Vartype="2 Bytes" Bytesize="2" Description="length" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+                    <Element Offset="34" Vartype="String" Bytesize="64" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+                  </Elements>
+                </Structure>
+              </Element>
+              <Element Offset="648" Vartype="4 Bytes" Bytesize="4" Description="value (int)" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="648" Vartype="Float" Bytesize="4" Description="value (float)" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="660" Vartype="Pointer" Bytesize="8" DisplayMethod="Unsigned Integer" BackgroundColor="80000005">
+                <Structure Name="Autocreated from 55360CC0" AutoFill="0" AutoCreate="1" DefaultHex="0" AutoDestroy="0" DoNotSaveLocal="0" AutoCreateStructsize="4096">
+                  <Elements>
+                    <Element Offset="32" Vartype="2 Bytes" Bytesize="2" Description="length" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+                    <Element Offset="34" Vartype="String" Bytesize="64" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+                  </Elements>
+                </Structure>
+              </Element>
+              <Element Offset="676" Vartype="Float" Bytesize="4" Description="value (float)" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="676" Vartype="4 Bytes" Bytesize="4" Description="value (int)" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="688" Vartype="Pointer" Bytesize="8" DisplayMethod="Unsigned Integer" BackgroundColor="80000005">
+                <Structure Name="Autocreated from 55360CC0" AutoFill="0" AutoCreate="1" DefaultHex="0" AutoDestroy="0" DoNotSaveLocal="0" AutoCreateStructsize="4096">
+                  <Elements>
+                    <Element Offset="32" Vartype="2 Bytes" Bytesize="2" Description="length" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+                    <Element Offset="34" Vartype="String" Bytesize="64" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+                  </Elements>
+                </Structure>
+              </Element>
+              <Element Offset="704" Vartype="4 Bytes" Bytesize="4" Description="value (int)" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="704" Vartype="Float" Bytesize="4" Description="value (float)" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="716" Vartype="Pointer" Bytesize="8" DisplayMethod="Unsigned Integer" BackgroundColor="80000005">
+                <Structure Name="Autocreated from 55360CC0" AutoFill="0" AutoCreate="1" DefaultHex="0" AutoDestroy="0" DoNotSaveLocal="0" AutoCreateStructsize="4096">
+                  <Elements>
+                    <Element Offset="32" Vartype="2 Bytes" Bytesize="2" Description="length" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+                    <Element Offset="34" Vartype="String" Bytesize="64" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+                  </Elements>
+                </Structure>
+              </Element>
+              <Element Offset="732" Vartype="Float" Bytesize="4" Description="value (float)" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="732" Vartype="4 Bytes" Bytesize="4" Description="value (int)" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="744" Vartype="Pointer" Bytesize="8" DisplayMethod="Unsigned Integer" BackgroundColor="80000005">
+                <Structure Name="Autocreated from 55360CC0" AutoFill="0" AutoCreate="1" DefaultHex="0" AutoDestroy="0" DoNotSaveLocal="0" AutoCreateStructsize="4096">
+                  <Elements>
+                    <Element Offset="32" Vartype="2 Bytes" Bytesize="2" Description="length" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+                    <Element Offset="34" Vartype="String" Bytesize="64" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+                  </Elements>
+                </Structure>
+              </Element>
+              <Element Offset="760" Vartype="4 Bytes" Bytesize="4" Description="value (int)" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="760" Vartype="Float" Bytesize="4" Description="value (float)" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="772" Vartype="Pointer" Bytesize="8" DisplayMethod="Unsigned Integer" BackgroundColor="80000005">
+                <Structure Name="Autocreated from 55360CC0" AutoFill="0" AutoCreate="1" DefaultHex="0" AutoDestroy="0" DoNotSaveLocal="0" AutoCreateStructsize="4096">
+                  <Elements>
+                    <Element Offset="32" Vartype="2 Bytes" Bytesize="2" Description="length" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+                    <Element Offset="34" Vartype="String" Bytesize="64" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+                  </Elements>
+                </Structure>
+              </Element>
+              <Element Offset="788" Vartype="Float" Bytesize="4" Description="value (float)" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="788" Vartype="4 Bytes" Bytesize="4" Description="value (int)" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="800" Vartype="Pointer" Bytesize="8" DisplayMethod="Unsigned Integer" BackgroundColor="80000005">
+                <Structure Name="Autocreated from 55360CC0" AutoFill="0" AutoCreate="1" DefaultHex="0" AutoDestroy="0" DoNotSaveLocal="0" AutoCreateStructsize="4096">
+                  <Elements>
+                    <Element Offset="32" Vartype="2 Bytes" Bytesize="2" Description="length" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+                    <Element Offset="34" Vartype="String" Bytesize="64" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+                  </Elements>
+                </Structure>
+              </Element>
+              <Element Offset="816" Vartype="4 Bytes" Bytesize="4" Description="value (int)" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="816" Vartype="Float" Bytesize="4" Description="value (float)" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="828" Vartype="Pointer" Bytesize="8" DisplayMethod="Unsigned Integer" BackgroundColor="80000005">
+                <Structure Name="Autocreated from 55360CC0" AutoFill="0" AutoCreate="1" DefaultHex="0" AutoDestroy="0" DoNotSaveLocal="0" AutoCreateStructsize="4096">
+                  <Elements>
+                    <Element Offset="32" Vartype="2 Bytes" Bytesize="2" Description="length" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+                    <Element Offset="34" Vartype="String" Bytesize="64" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+                  </Elements>
+                </Structure>
+              </Element>
+              <Element Offset="844" Vartype="Float" Bytesize="4" Description="value (float)" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="844" Vartype="4 Bytes" Bytesize="4" Description="value (int)" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="856" Vartype="Pointer" Bytesize="8" DisplayMethod="Unsigned Integer" BackgroundColor="80000005">
+                <Structure Name="Autocreated from 55360CC0" AutoFill="0" AutoCreate="1" DefaultHex="0" AutoDestroy="0" DoNotSaveLocal="0" AutoCreateStructsize="4096">
+                  <Elements>
+                    <Element Offset="32" Vartype="2 Bytes" Bytesize="2" Description="length" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+                    <Element Offset="34" Vartype="String" Bytesize="64" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+                  </Elements>
+                </Structure>
+              </Element>
+              <Element Offset="872" Vartype="4 Bytes" Bytesize="4" Description="value (int)" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="872" Vartype="Float" Bytesize="4" Description="value (float)" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="884" Vartype="Pointer" Bytesize="8" DisplayMethod="Unsigned Integer" BackgroundColor="80000005">
+                <Structure Name="Autocreated from 55360CC0" AutoFill="0" AutoCreate="1" DefaultHex="0" AutoDestroy="0" DoNotSaveLocal="0" AutoCreateStructsize="4096">
+                  <Elements>
+                    <Element Offset="32" Vartype="2 Bytes" Bytesize="2" Description="length" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+                    <Element Offset="34" Vartype="String" Bytesize="64" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+                  </Elements>
+                </Structure>
+              </Element>
+              <Element Offset="900" Vartype="Float" Bytesize="4" Description="value (float)" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="900" Vartype="4 Bytes" Bytesize="4" Description="value (int)" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="912" Vartype="Pointer" Bytesize="8" DisplayMethod="Unsigned Integer" BackgroundColor="80000005">
+                <Structure Name="Autocreated from 55360CC0" AutoFill="0" AutoCreate="1" DefaultHex="0" AutoDestroy="0" DoNotSaveLocal="0" AutoCreateStructsize="4096">
+                  <Elements>
+                    <Element Offset="32" Vartype="2 Bytes" Bytesize="2" Description="length" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+                    <Element Offset="34" Vartype="String" Bytesize="64" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+                  </Elements>
+                </Structure>
+              </Element>
+              <Element Offset="928" Vartype="4 Bytes" Bytesize="4" Description="value (int)" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="928" Vartype="Float" Bytesize="4" Description="value (float)" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="940" Vartype="Pointer" Bytesize="8" DisplayMethod="Unsigned Integer" BackgroundColor="80000005">
+                <Structure Name="Autocreated from 55360CC0" AutoFill="0" AutoCreate="1" DefaultHex="0" AutoDestroy="0" DoNotSaveLocal="0" AutoCreateStructsize="4096">
+                  <Elements>
+                    <Element Offset="32" Vartype="2 Bytes" Bytesize="2" Description="length" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+                    <Element Offset="34" Vartype="String" Bytesize="64" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+                  </Elements>
+                </Structure>
+              </Element>
+              <Element Offset="956" Vartype="Float" Bytesize="4" Description="value (float)" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="956" Vartype="4 Bytes" Bytesize="4" Description="value (int)" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="968" Vartype="Pointer" Bytesize="8" DisplayMethod="Unsigned Integer" BackgroundColor="80000005">
+                <Structure Name="Autocreated from 55360CC0" AutoFill="0" AutoCreate="1" DefaultHex="0" AutoDestroy="0" DoNotSaveLocal="0" AutoCreateStructsize="4096">
+                  <Elements>
+                    <Element Offset="32" Vartype="2 Bytes" Bytesize="2" Description="length" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+                    <Element Offset="34" Vartype="String" Bytesize="64" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+                  </Elements>
+                </Structure>
+              </Element>
+              <Element Offset="984" Vartype="Float" Bytesize="4" Description="value (float)" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="984" Vartype="4 Bytes" Bytesize="4" Description="value (int)" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="996" Vartype="Pointer" Bytesize="8" DisplayMethod="Unsigned Integer" BackgroundColor="80000005">
+                <Structure Name="Autocreated from 55360CC0" AutoFill="0" AutoCreate="1" DefaultHex="0" AutoDestroy="0" DoNotSaveLocal="0" AutoCreateStructsize="4096">
+                  <Elements>
+                    <Element Offset="32" Vartype="2 Bytes" Bytesize="2" Description="length" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+                    <Element Offset="34" Vartype="String" Bytesize="64" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+                  </Elements>
+                </Structure>
+              </Element>
+              <Element Offset="1012" Vartype="Float" Bytesize="4" Description="value (float)" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="1012" Vartype="4 Bytes" Bytesize="4" Description="value (int)" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="1024" Vartype="Pointer" Bytesize="8" DisplayMethod="Unsigned Integer" BackgroundColor="80000005">
+                <Structure Name="Autocreated from 55360CC0" AutoFill="0" AutoCreate="1" DefaultHex="0" AutoDestroy="0" DoNotSaveLocal="0" AutoCreateStructsize="4096">
+                  <Elements>
+                    <Element Offset="32" Vartype="2 Bytes" Bytesize="2" Description="length" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+                    <Element Offset="34" Vartype="String" Bytesize="64" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+                  </Elements>
+                </Structure>
+              </Element>
+              <Element Offset="1040" Vartype="4 Bytes" Bytesize="4" Description="value (int)" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="1040" Vartype="Float" Bytesize="4" Description="value (float)" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="1052" Vartype="Pointer" Bytesize="8" DisplayMethod="Unsigned Integer" BackgroundColor="80000005">
+                <Structure Name="Autocreated from 55360CC0" AutoFill="0" AutoCreate="1" DefaultHex="0" AutoDestroy="0" DoNotSaveLocal="0" AutoCreateStructsize="4096">
+                  <Elements>
+                    <Element Offset="32" Vartype="2 Bytes" Bytesize="2" Description="length" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+                    <Element Offset="34" Vartype="String" Bytesize="64" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+                  </Elements>
+                </Structure>
+              </Element>
+              <Element Offset="1068" Vartype="Float" Bytesize="4" Description="value (float)" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="1068" Vartype="4 Bytes" Bytesize="4" Description="value (int)" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="1080" Vartype="Pointer" Bytesize="8" DisplayMethod="Unsigned Integer" BackgroundColor="80000005">
+                <Structure Name="Autocreated from 55360CC0" AutoFill="0" AutoCreate="1" DefaultHex="0" AutoDestroy="0" DoNotSaveLocal="0" AutoCreateStructsize="4096">
+                  <Elements>
+                    <Element Offset="32" Vartype="2 Bytes" Bytesize="2" Description="length" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+                    <Element Offset="34" Vartype="String" Bytesize="64" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+                  </Elements>
+                </Structure>
+              </Element>
+              <Element Offset="1096" Vartype="4 Bytes" Bytesize="4" Description="value (int)" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="1096" Vartype="Float" Bytesize="4" Description="value (float)" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="1108" Vartype="Pointer" Bytesize="8" DisplayMethod="Unsigned Integer" BackgroundColor="80000005">
+                <Structure Name="Autocreated from 55360CC0" AutoFill="0" AutoCreate="1" DefaultHex="0" AutoDestroy="0" DoNotSaveLocal="0" AutoCreateStructsize="4096">
+                  <Elements>
+                    <Element Offset="32" Vartype="2 Bytes" Bytesize="2" Description="length" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+                    <Element Offset="34" Vartype="String" Bytesize="64" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+                  </Elements>
+                </Structure>
+              </Element>
+              <Element Offset="1124" Vartype="Float" Bytesize="4" Description="value (float)" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="1124" Vartype="4 Bytes" Bytesize="4" Description="value (int)" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="1136" Vartype="Pointer" Bytesize="8" DisplayMethod="Unsigned Integer" BackgroundColor="80000005">
+                <Structure Name="Autocreated from 55360CC0" AutoFill="0" AutoCreate="1" DefaultHex="0" AutoDestroy="0" DoNotSaveLocal="0" AutoCreateStructsize="4096">
+                  <Elements>
+                    <Element Offset="32" Vartype="2 Bytes" Bytesize="2" Description="length" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+                    <Element Offset="34" Vartype="String" Bytesize="64" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+                  </Elements>
+                </Structure>
+              </Element>
+              <Element Offset="1152" Vartype="4 Bytes" Bytesize="4" Description="value (int)" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="1152" Vartype="Float" Bytesize="4" Description="value (float)" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="1164" Vartype="Pointer" Bytesize="8" DisplayMethod="Unsigned Integer" BackgroundColor="80000005">
+                <Structure Name="Autocreated from 55360CC0" AutoFill="0" AutoCreate="1" DefaultHex="0" AutoDestroy="0" DoNotSaveLocal="0" AutoCreateStructsize="4096">
+                  <Elements>
+                    <Element Offset="32" Vartype="2 Bytes" Bytesize="2" Description="length" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+                    <Element Offset="34" Vartype="String" Bytesize="64" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+                  </Elements>
+                </Structure>
+              </Element>
+              <Element Offset="1180" Vartype="Float" Bytesize="4" Description="value (float)" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="1180" Vartype="4 Bytes" Bytesize="4" Description="value (int)" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="1192" Vartype="Pointer" Bytesize="8" DisplayMethod="Unsigned Integer" BackgroundColor="80000005">
+                <Structure Name="Autocreated from 55360CC0" AutoFill="0" AutoCreate="1" DefaultHex="0" AutoDestroy="0" DoNotSaveLocal="0" AutoCreateStructsize="4096">
+                  <Elements>
+                    <Element Offset="32" Vartype="2 Bytes" Bytesize="2" Description="length" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+                    <Element Offset="34" Vartype="String" Bytesize="64" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+                  </Elements>
+                </Structure>
+              </Element>
+              <Element Offset="1208" Vartype="4 Bytes" Bytesize="4" Description="value (int)" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="1208" Vartype="Float" Bytesize="4" Description="value (float)" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="1220" Vartype="Pointer" Bytesize="8" DisplayMethod="Unsigned Integer" BackgroundColor="80000005">
+                <Structure Name="Autocreated from 55360CC0" AutoFill="0" AutoCreate="1" DefaultHex="0" AutoDestroy="0" DoNotSaveLocal="0" AutoCreateStructsize="4096">
+                  <Elements>
+                    <Element Offset="32" Vartype="2 Bytes" Bytesize="2" Description="length" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+                    <Element Offset="34" Vartype="String" Bytesize="64" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+                  </Elements>
+                </Structure>
+              </Element>
+              <Element Offset="1236" Vartype="Float" Bytesize="4" Description="value (float)" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="1236" Vartype="4 Bytes" Bytesize="4" Description="value (int)" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="1248" Vartype="Pointer" Bytesize="8" DisplayMethod="Unsigned Integer" BackgroundColor="80000005">
+                <Structure Name="Autocreated from 55360CC0" AutoFill="0" AutoCreate="1" DefaultHex="0" AutoDestroy="0" DoNotSaveLocal="0" AutoCreateStructsize="4096">
+                  <Elements>
+                    <Element Offset="32" Vartype="2 Bytes" Bytesize="2" Description="length" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+                    <Element Offset="34" Vartype="String" Bytesize="64" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+                  </Elements>
+                </Structure>
+              </Element>
+              <Element Offset="1264" Vartype="4 Bytes" Bytesize="4" Description="value (int)" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="1264" Vartype="Float" Bytesize="4" Description="value (float)" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="1276" Vartype="Pointer" Bytesize="8" DisplayMethod="Unsigned Integer" BackgroundColor="80000005">
+                <Structure Name="Autocreated from 55360CC0" AutoFill="0" AutoCreate="1" DefaultHex="0" AutoDestroy="0" DoNotSaveLocal="0" AutoCreateStructsize="4096">
+                  <Elements>
+                    <Element Offset="32" Vartype="2 Bytes" Bytesize="2" Description="length" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+                    <Element Offset="34" Vartype="String" Bytesize="64" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+                  </Elements>
+                </Structure>
+              </Element>
+              <Element Offset="1292" Vartype="Float" Bytesize="4" Description="value (float)" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="1292" Vartype="4 Bytes" Bytesize="4" Description="value (int)" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="1304" Vartype="Pointer" Bytesize="8" DisplayMethod="Unsigned Integer" BackgroundColor="80000005">
+                <Structure Name="Autocreated from 55360CC0" AutoFill="0" AutoCreate="1" DefaultHex="0" AutoDestroy="0" DoNotSaveLocal="0" AutoCreateStructsize="4096">
+                  <Elements>
+                    <Element Offset="32" Vartype="2 Bytes" Bytesize="2" Description="length" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+                    <Element Offset="34" Vartype="String" Bytesize="64" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+                  </Elements>
+                </Structure>
+              </Element>
+              <Element Offset="1320" Vartype="4 Bytes" Bytesize="4" Description="value (int)" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="1320" Vartype="Float" Bytesize="4" Description="value (float)" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="1332" Vartype="Pointer" Bytesize="8" DisplayMethod="Unsigned Integer" BackgroundColor="80000005">
+                <Structure Name="Autocreated from 55360CC0" AutoFill="0" AutoCreate="1" DefaultHex="0" AutoDestroy="0" DoNotSaveLocal="0" AutoCreateStructsize="4096">
+                  <Elements>
+                    <Element Offset="32" Vartype="2 Bytes" Bytesize="2" Description="length" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+                    <Element Offset="34" Vartype="String" Bytesize="64" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+                  </Elements>
+                </Structure>
+              </Element>
+              <Element Offset="1348" Vartype="Float" Bytesize="4" Description="value (float)" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="1348" Vartype="4 Bytes" Bytesize="4" Description="value (int)" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="1360" Vartype="Pointer" Bytesize="8" DisplayMethod="Unsigned Integer" BackgroundColor="80000005">
+                <Structure Name="Autocreated from 55360CC0" AutoFill="0" AutoCreate="1" DefaultHex="0" AutoDestroy="0" DoNotSaveLocal="0" AutoCreateStructsize="4096">
+                  <Elements>
+                    <Element Offset="32" Vartype="2 Bytes" Bytesize="2" Description="length" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+                    <Element Offset="34" Vartype="String" Bytesize="64" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+                  </Elements>
+                </Structure>
+              </Element>
+              <Element Offset="1376" Vartype="4 Bytes" Bytesize="4" Description="value (int)" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="1376" Vartype="Float" Bytesize="4" Description="value (float)" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="1388" Vartype="Pointer" Bytesize="8" DisplayMethod="Unsigned Integer" BackgroundColor="80000005">
+                <Structure Name="Autocreated from 55360CC0" AutoFill="0" AutoCreate="1" DefaultHex="0" AutoDestroy="0" DoNotSaveLocal="0" AutoCreateStructsize="4096">
+                  <Elements>
+                    <Element Offset="32" Vartype="2 Bytes" Bytesize="2" Description="length" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+                    <Element Offset="34" Vartype="String" Bytesize="64" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+                  </Elements>
+                </Structure>
+              </Element>
+              <Element Offset="1404" Vartype="Float" Bytesize="4" Description="value (float)" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="1404" Vartype="4 Bytes" Bytesize="4" Description="value (int)" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="1416" Vartype="Pointer" Bytesize="8" DisplayMethod="Unsigned Integer" BackgroundColor="80000005">
+                <Structure Name="Autocreated from 55360CC0" AutoFill="0" AutoCreate="1" DefaultHex="0" AutoDestroy="0" DoNotSaveLocal="0" AutoCreateStructsize="4096">
+                  <Elements>
+                    <Element Offset="32" Vartype="2 Bytes" Bytesize="2" Description="length" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+                    <Element Offset="34" Vartype="String" Bytesize="64" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+                  </Elements>
+                </Structure>
+              </Element>
+              <Element Offset="1432" Vartype="4 Bytes" Bytesize="4" Description="value (int)" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="1432" Vartype="Float" Bytesize="4" Description="value (float)" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="1444" Vartype="Pointer" Bytesize="8" DisplayMethod="Unsigned Integer" BackgroundColor="80000005">
+                <Structure Name="Autocreated from 55360CC0" AutoFill="0" AutoCreate="1" DefaultHex="0" AutoDestroy="0" DoNotSaveLocal="0" AutoCreateStructsize="4096">
+                  <Elements>
+                    <Element Offset="32" Vartype="2 Bytes" Bytesize="2" Description="length" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+                    <Element Offset="34" Vartype="String" Bytesize="64" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+                  </Elements>
+                </Structure>
+              </Element>
+              <Element Offset="1460" Vartype="Float" Bytesize="4" Description="value (float)" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="1460" Vartype="4 Bytes" Bytesize="4" Description="value (int)" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="1472" Vartype="Pointer" Bytesize="8" DisplayMethod="Unsigned Integer" BackgroundColor="80000005">
+                <Structure Name="Autocreated from 55360CC0" AutoFill="0" AutoCreate="1" DefaultHex="0" AutoDestroy="0" DoNotSaveLocal="0" AutoCreateStructsize="4096">
+                  <Elements>
+                    <Element Offset="32" Vartype="2 Bytes" Bytesize="2" Description="length" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+                    <Element Offset="34" Vartype="String" Bytesize="64" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+                  </Elements>
+                </Structure>
+              </Element>
+              <Element Offset="1488" Vartype="4 Bytes" Bytesize="4" Description="value (int)" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="1488" Vartype="Float" Bytesize="4" Description="value (float)" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="1500" Vartype="Pointer" Bytesize="8" DisplayMethod="Unsigned Integer" BackgroundColor="80000005">
+                <Structure Name="Autocreated from 55360CC0" AutoFill="0" AutoCreate="1" DefaultHex="0" AutoDestroy="0" DoNotSaveLocal="0" AutoCreateStructsize="4096">
+                  <Elements>
+                    <Element Offset="32" Vartype="2 Bytes" Bytesize="2" Description="length" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+                    <Element Offset="34" Vartype="String" Bytesize="64" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+                  </Elements>
+                </Structure>
+              </Element>
+              <Element Offset="1516" Vartype="Float" Bytesize="4" Description="value (float)" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="1516" Vartype="4 Bytes" Bytesize="4" Description="value (int)" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="1528" Vartype="Pointer" Bytesize="8" DisplayMethod="Unsigned Integer" BackgroundColor="80000005">
+                <Structure Name="Autocreated from 55360CC0" AutoFill="0" AutoCreate="1" DefaultHex="0" AutoDestroy="0" DoNotSaveLocal="0" AutoCreateStructsize="4096">
+                  <Elements>
+                    <Element Offset="32" Vartype="2 Bytes" Bytesize="2" Description="length" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+                    <Element Offset="34" Vartype="String" Bytesize="64" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+                  </Elements>
+                </Structure>
+              </Element>
+              <Element Offset="1544" Vartype="4 Bytes" Bytesize="4" Description="value (int)" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="1544" Vartype="Float" Bytesize="4" Description="value (float)" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="1556" Vartype="Pointer" Bytesize="8" DisplayMethod="Unsigned Integer" BackgroundColor="80000005">
+                <Structure Name="Autocreated from 55360CC0" AutoFill="0" AutoCreate="1" DefaultHex="0" AutoDestroy="0" DoNotSaveLocal="0" AutoCreateStructsize="4096">
+                  <Elements>
+                    <Element Offset="32" Vartype="2 Bytes" Bytesize="2" Description="length" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+                    <Element Offset="34" Vartype="String" Bytesize="64" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+                  </Elements>
+                </Structure>
+              </Element>
+              <Element Offset="1572" Vartype="Float" Bytesize="4" Description="value (float)" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="1572" Vartype="4 Bytes" Bytesize="4" Description="value (int)" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="1584" Vartype="Pointer" Bytesize="8" DisplayMethod="Unsigned Integer" BackgroundColor="80000005">
+                <Structure Name="Autocreated from 55360CC0" AutoFill="0" AutoCreate="1" DefaultHex="0" AutoDestroy="0" DoNotSaveLocal="0" AutoCreateStructsize="4096">
+                  <Elements>
+                    <Element Offset="32" Vartype="2 Bytes" Bytesize="2" Description="length" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+                    <Element Offset="34" Vartype="String" Bytesize="64" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+                  </Elements>
+                </Structure>
+              </Element>
+              <Element Offset="1600" Vartype="4 Bytes" Bytesize="4" Description="value (int)" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="1600" Vartype="Float" Bytesize="4" Description="value (float)" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="1612" Vartype="Pointer" Bytesize="8" DisplayMethod="Unsigned Integer" BackgroundColor="80000005">
+                <Structure Name="Autocreated from 55360CC0" AutoFill="0" AutoCreate="1" DefaultHex="0" AutoDestroy="0" DoNotSaveLocal="0" AutoCreateStructsize="4096">
+                  <Elements>
+                    <Element Offset="32" Vartype="2 Bytes" Bytesize="2" Description="length" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+                    <Element Offset="34" Vartype="String" Bytesize="64" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+                  </Elements>
+                </Structure>
+              </Element>
+              <Element Offset="1628" Vartype="Float" Bytesize="4" Description="value (float)" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="1628" Vartype="4 Bytes" Bytesize="4" Description="value (int)" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="1640" Vartype="Pointer" Bytesize="8" DisplayMethod="Unsigned Integer" BackgroundColor="80000005">
+                <Structure Name="Autocreated from 55360CC0" AutoFill="0" AutoCreate="1" DefaultHex="0" AutoDestroy="0" DoNotSaveLocal="0" AutoCreateStructsize="4096">
+                  <Elements>
+                    <Element Offset="32" Vartype="2 Bytes" Bytesize="2" Description="length" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+                    <Element Offset="34" Vartype="String" Bytesize="64" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+                  </Elements>
+                </Structure>
+              </Element>
+              <Element Offset="1656" Vartype="4 Bytes" Bytesize="4" Description="value (int)" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="1656" Vartype="Float" Bytesize="4" Description="value (float)" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="1668" Vartype="Pointer" Bytesize="8" DisplayMethod="Unsigned Integer" BackgroundColor="80000005">
+                <Structure Name="Autocreated from 55360CC0" AutoFill="0" AutoCreate="1" DefaultHex="0" AutoDestroy="0" DoNotSaveLocal="0" AutoCreateStructsize="4096">
+                  <Elements>
+                    <Element Offset="32" Vartype="2 Bytes" Bytesize="2" Description="length" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+                    <Element Offset="34" Vartype="String" Bytesize="64" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+                  </Elements>
+                </Structure>
+              </Element>
+              <Element Offset="1684" Vartype="Float" Bytesize="4" Description="value (float)" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="1684" Vartype="4 Bytes" Bytesize="4" Description="value (int)" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="1696" Vartype="Pointer" Bytesize="8" DisplayMethod="Unsigned Integer" BackgroundColor="80000005">
+                <Structure Name="Autocreated from 55360CC0" AutoFill="0" AutoCreate="1" DefaultHex="0" AutoDestroy="0" DoNotSaveLocal="0" AutoCreateStructsize="4096">
+                  <Elements>
+                    <Element Offset="32" Vartype="2 Bytes" Bytesize="2" Description="length" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+                    <Element Offset="34" Vartype="String" Bytesize="64" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+                  </Elements>
+                </Structure>
+              </Element>
+              <Element Offset="1712" Vartype="4 Bytes" Bytesize="4" Description="value (int)" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="1712" Vartype="Float" Bytesize="4" Description="value (float)" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="1724" Vartype="Pointer" Bytesize="8" DisplayMethod="Unsigned Integer" BackgroundColor="80000005">
+                <Structure Name="Autocreated from 55360CC0" AutoFill="0" AutoCreate="1" DefaultHex="0" AutoDestroy="0" DoNotSaveLocal="0" AutoCreateStructsize="4096">
+                  <Elements>
+                    <Element Offset="32" Vartype="2 Bytes" Bytesize="2" Description="length" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+                    <Element Offset="34" Vartype="String" Bytesize="64" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+                  </Elements>
+                </Structure>
+              </Element>
+              <Element Offset="1740" Vartype="Float" Bytesize="4" Description="value (float)" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="1740" Vartype="4 Bytes" Bytesize="4" Description="value (int)" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="1752" Vartype="Pointer" Bytesize="8" DisplayMethod="Unsigned Integer" BackgroundColor="80000005">
+                <Structure Name="Autocreated from 55360CC0" AutoFill="0" AutoCreate="1" DefaultHex="0" AutoDestroy="0" DoNotSaveLocal="0" AutoCreateStructsize="4096">
+                  <Elements>
+                    <Element Offset="32" Vartype="2 Bytes" Bytesize="2" Description="length" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+                    <Element Offset="34" Vartype="String" Bytesize="64" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+                  </Elements>
+                </Structure>
+              </Element>
+              <Element Offset="1768" Vartype="4 Bytes" Bytesize="4" Description="value (int)" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="1768" Vartype="Float" Bytesize="4" Description="value (float)" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="1780" Vartype="Pointer" Bytesize="8" DisplayMethod="Unsigned Integer" BackgroundColor="80000005">
+                <Structure Name="Autocreated from 55360CC0" AutoFill="0" AutoCreate="1" DefaultHex="0" AutoDestroy="0" DoNotSaveLocal="0" AutoCreateStructsize="4096">
+                  <Elements>
+                    <Element Offset="32" Vartype="2 Bytes" Bytesize="2" Description="length" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+                    <Element Offset="34" Vartype="String" Bytesize="64" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+                  </Elements>
+                </Structure>
+              </Element>
+              <Element Offset="1796" Vartype="Float" Bytesize="4" Description="value (float)" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="1796" Vartype="4 Bytes" Bytesize="4" Description="value (int)" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="1808" Vartype="Pointer" Bytesize="8" DisplayMethod="Unsigned Integer" BackgroundColor="80000005">
+                <Structure Name="Autocreated from 55360CC0" AutoFill="0" AutoCreate="1" DefaultHex="0" AutoDestroy="0" DoNotSaveLocal="0" AutoCreateStructsize="4096">
+                  <Elements>
+                    <Element Offset="32" Vartype="2 Bytes" Bytesize="2" Description="length" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+                    <Element Offset="34" Vartype="String" Bytesize="64" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+                  </Elements>
+                </Structure>
+              </Element>
+              <Element Offset="1824" Vartype="4 Bytes" Bytesize="4" Description="value (int)" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="1824" Vartype="Float" Bytesize="4" Description="value (float)" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="1836" Vartype="Pointer" Bytesize="8" DisplayMethod="Unsigned Integer" BackgroundColor="80000005">
+                <Structure Name="Autocreated from 55360CC0" AutoFill="0" AutoCreate="1" DefaultHex="0" AutoDestroy="0" DoNotSaveLocal="0" AutoCreateStructsize="4096">
+                  <Elements>
+                    <Element Offset="32" Vartype="2 Bytes" Bytesize="2" Description="length" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+                    <Element Offset="34" Vartype="String" Bytesize="64" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+                  </Elements>
+                </Structure>
+              </Element>
+              <Element Offset="1852" Vartype="Float" Bytesize="4" Description="value (float)" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="1852" Vartype="4 Bytes" Bytesize="4" Description="value (int)" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="1864" Vartype="Pointer" Bytesize="8" DisplayMethod="Unsigned Integer" BackgroundColor="80000005">
+                <Structure Name="Autocreated from 55360CC0" AutoFill="0" AutoCreate="1" DefaultHex="0" AutoDestroy="0" DoNotSaveLocal="0" AutoCreateStructsize="4096">
+                  <Elements>
+                    <Element Offset="32" Vartype="2 Bytes" Bytesize="2" Description="length" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+                    <Element Offset="34" Vartype="String" Bytesize="64" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+                  </Elements>
+                </Structure>
+              </Element>
+              <Element Offset="1880" Vartype="4 Bytes" Bytesize="4" Description="value (int)" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="1880" Vartype="Float" Bytesize="4" Description="value (float)" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="1892" Vartype="Pointer" Bytesize="8" DisplayMethod="Unsigned Integer" BackgroundColor="80000005">
+                <Structure Name="Autocreated from 55360CC0" AutoFill="0" AutoCreate="1" DefaultHex="0" AutoDestroy="0" DoNotSaveLocal="0" AutoCreateStructsize="4096">
+                  <Elements>
+                    <Element Offset="32" Vartype="2 Bytes" Bytesize="2" Description="length" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+                    <Element Offset="34" Vartype="String" Bytesize="64" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+                  </Elements>
+                </Structure>
+              </Element>
+              <Element Offset="1908" Vartype="Float" Bytesize="4" Description="value (float)" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="1908" Vartype="4 Bytes" Bytesize="4" Description="value (int)" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="1920" Vartype="Pointer" Bytesize="8" DisplayMethod="Unsigned Integer" BackgroundColor="80000005">
+                <Structure Name="Autocreated from 55360CC0" AutoFill="0" AutoCreate="1" DefaultHex="0" AutoDestroy="0" DoNotSaveLocal="0" AutoCreateStructsize="4096">
+                  <Elements>
+                    <Element Offset="32" Vartype="2 Bytes" Bytesize="2" Description="length" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+                    <Element Offset="34" Vartype="String" Bytesize="64" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+                  </Elements>
+                </Structure>
+              </Element>
+              <Element Offset="1936" Vartype="4 Bytes" Bytesize="4" Description="value (int)" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="1936" Vartype="Float" Bytesize="4" Description="value (float)" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="1948" Vartype="Pointer" Bytesize="8" DisplayMethod="Unsigned Integer" BackgroundColor="80000005">
+                <Structure Name="Autocreated from 55360CC0" AutoFill="0" AutoCreate="1" DefaultHex="0" AutoDestroy="0" DoNotSaveLocal="0" AutoCreateStructsize="4096">
+                  <Elements>
+                    <Element Offset="32" Vartype="2 Bytes" Bytesize="2" Description="length" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+                    <Element Offset="34" Vartype="String" Bytesize="64" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+                  </Elements>
+                </Structure>
+              </Element>
+              <Element Offset="1964" Vartype="Float" Bytesize="4" Description="value (float)" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="1964" Vartype="4 Bytes" Bytesize="4" Description="value (int)" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+              <Element Offset="1976" Vartype="Pointer" Bytesize="8" DisplayMethod="Unsigned Integer" BackgroundColor="80000005">
+                <Structure Name="Autocreated from 55360CC0" AutoFill="0" AutoCreate="1" DefaultHex="0" AutoDestroy="0" DoNotSaveLocal="0" AutoCreateStructsize="4096">
+                  <Elements>
+                    <Element Offset="32" Vartype="2 Bytes" Bytesize="2" Description="length" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+                    <Element Offset="34" Vartype="String" Bytesize="64" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+                  </Elements>
+                </Structure>
+              </Element>
+            </Elements>
+          </Structure>
+        </Element>
+        <Element Offset="24" Vartype="4 Bytes" Bytesize="4" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+        <Element Offset="28" Vartype="4 Bytes" Bytesize="4" Description="Attribute Count" DisplayMethod="Unsigned Integer" BackgroundColor="80000005"/>
+      </Elements>
+    </Structure>
+  </Structures>
+</CheatTable>

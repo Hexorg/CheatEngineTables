@@ -1,0 +1,250 @@
+<?xml version="1.0"?>
+<CheatTable CheatEngineTableVersion="12">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>37</ID>
+      <Description>"FIRST ENABLE THIS - everytime a zombie dies, we increase a counter"</Description>
+      <Color>80000008</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>[ENABLE]
+//code from here to '[DISABLE]' will be used to enable the cheat
+alloc(newmem,2048) //2kb should be enough
+label(returnhere)
+label(originalcode)
+label(exit)
+label(zombie_counter)
+registersymbol(zombie_counter)
+
+newmem: //this is allocated memory, you have read,write,execute access
+//place your code here
+jmp originalcode
+zombie_counter:
+db 0 0 0 0
+
+originalcode:
+inc [zombie_counter] //we increase this counter for every zombie killed
+// the counter will be decreased as we create new plants
+push ebp
+mov ebp,esp
+and esp,F8
+
+exit:
+jmp returnhere
+
+"PlantsVsZombies.exe"+140B00:
+jmp newmem
+nop
+returnhere:
+
+
+ 
+ 
+[DISABLE]
+//code from here till the end of the code will be used to disable the cheat
+dealloc(newmem)
+unregistersymbol(zombie_counter)
+"PlantsVsZombies.exe"+140B00:
+push ebp
+mov ebp,esp
+and esp,F8
+//Alt: db 55 8B EC 83 E4 F8
+</AssemblerScript>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>50</ID>
+      <Description>"THEN ENABLE THIS - plant changing"</Description>
+      <Color>80000008</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>[ENABLE]
+//code from here to '[DISABLE]' will be used to enable the cheat
+alloc(newmem,2048) //2kb should be enough
+label(returnhere)
+label(originalcode)
+label(exit)
+label(ok)
+label(root)
+label(x_axis)
+label(y_axis)
+label(back)
+label(back2)
+label(ok_rand)
+label(verif_rand)
+label(plants_id_array)
+label(saved_sun)
+
+newmem: //this is allocated memory, you have read,write,execute access
+//place your code here
+jmp originalcode
+plants_id_array:
+db 0 1 2 3 4 5 6 7
+//db 11 12 14 15 16 17
+//db 1A 1C 1D 20 22 24
+//db 26 27
+root:
+db 0 0 0 0
+x_axis:
+db 0 0 0 0
+y_axis:
+db 0 0 0 0
+back:
+db 0 0 0 0
+back2:
+db 0 0 0 0
+saved_sun:
+db 0 0 0 0
+
+originalcode:
+cmp [zombie_counter],0
+je ok // if current zombies dead is 0, we continue normally
+
+dec [zombie_counter] //decrease dead zombie counter
+
+///////// ebx holds base of current plant
+push [ebx+4]
+pop [root] ///// we save game root; important for further calculations
+
+/////// here we make backup of mouse selected plant id; if any
+push eax
+mov eax,[ebx+4] // game root
+mov eax,[eax+150]
+add eax,28
+mov eax,[eax]
+mov [back],eax
+pop eax
+/////////////
+
+////// retrive coordinates of current plant
+/////// to create a new one in the same place; ebx holds plant base
+push [ebx+8]
+pop [x_axis]
+push [ebx+c]
+pop [y_axis]
+//////////////////
+
+///// call kill plant function
+push ebx //base_plant
+call 46b470 // kill plant
+/////////////
+
+pushad
+
+////// random number generator; eax will return a random plant id
+/////// from the plants_id_table
+push edx //rdtsc modifies edx
+rdtsc
+and eax,0ff
+verif_rand:
+cmp eax,8
+jl ok_rand
+shr al,1
+jmp verif_rand
+ok_rand:
+push plants_id_array
+pop edx
+add edx,eax
+mov al,[edx]
+pop edx
+/////////////////////////
+
+////////////////// we put in mouse the random id for plant creation
+mov ebx,[root]
+mov ebx,[ebx+150]
+add ebx,28
+mov [ebx],eax
+sub ebx,4
+mov [ebx],eax
+//////////////////////
+
+///////////// this is in the mouse too, i think it should be 1
+///////// we make a backup first
+add ebx,0c
+push [ebx]
+pop [back2]
+mov [ebx],1
+//////////////////
+
+
+
+//////////////// save sun and add to it 200 for the new plant
+mov ebx,[729670]
+mov ebx,[ebx+868]
+add ebx,5578
+push [ebx]
+pop [saved_sun]
+add [ebx],(int)200
+///////////////////////////
+
+////////////// call create new plant functions
+push [y_axis]
+push [x_axis]
+push [root]
+mov ebx,1
+mov ecx,ebx
+mov eax,ebx
+mov esi,2
+call 4126F0
+call 410EA0
+//////////////////
+
+
+////// restore sun
+mov ebx,[729670]
+mov ebx,[ebx+868]
+add ebx,5578
+push [saved_sun]
+pop [ebx]
+///////////////
+
+
+//////////// restore mouse bytes
+mov eax,[root]
+mov eax,[eax+150]
+add eax,28
+push [back]
+pop [eax]
+sub eax,4
+push [back]
+pop [eax]
+add eax,0c
+push [back2]
+pop [eax]
+////////////////////////////////
+
+popad
+
+jmp 467923 //jump to main code
+
+/////// we get here if there are no dead zombies in the counter
+///// code flows normally
+ok:
+cmp dword ptr [ebx+40],00
+jnl 00467923
+
+exit:
+jmp returnhere
+
+"PlantsVsZombies.exe"+67917:
+jmp newmem
+nop
+returnhere:
+
+
+ 
+ 
+[DISABLE]
+//code from here till the end of the code will be used to disable the cheat
+dealloc(newmem)
+"PlantsVsZombies.exe"+67917:
+cmp dword ptr [ebx+40],00
+jnl 00467923
+//Alt: db 83 7B 40 00 7D 06
+</AssemblerScript>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols>
+    <SymbolEntry>
+      <Name>zombie_counter</Name>
+      <Address>01200005</Address>
+    </SymbolEntry>
+  </UserdefinedSymbols>
+</CheatTable>

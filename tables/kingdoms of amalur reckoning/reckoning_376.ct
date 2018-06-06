@@ -1,0 +1,2056 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="16">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>20</ID>
+      <Description>"README (double-click on &lt;script&gt; to the right) -----&gt;"</Description>
+      <Color>800080</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>{------------------------------------------------------------------------------
+ - README
+ ------------------------------------------------------------------------------
+
+Cheat flags:
+  bNoManaUse - prevent mana from being used
+  bNoCooldown - prevent cooldowns from being activated
+  bUpgradePoints - ENABLE: prevents available upgrade (ability and skill) points
+      from going below 1.  DISABLE: sets available upgrade points to 0.
+      DANGEROUS - code accesses other memory, only activate and deactivate when
+      levelling up and applying skill and ability points
+  bDurability - prevents durability loss
+  bNoItemUse - prevent quantity of items (i.e. potions) from going down
+  bGodMode - keeps health at max and prevents player from taking damage
+
+Variables:
+  Gold - Self-explanatory
+  XP - when above your level, you need to gain experience to level up
+
+
+Notes:
+
+bManaUse - tested with first spell only
+
+bNoCooldown - tested with first spell only, no effect if cooldown is already
+    in progress
+
+bUpgradePoints - also accesses other stuff, use only when upgrading skills
+    and abilities
+
+bDurability - tested only for weapon durability loss with rusty longsword
+
+bNoItemUse - looks like just for inventory use, but haven't looked at code much,
+    but this seems to be flaky.  After using an item, I can't seem to use the
+    item again from the radial, SOMETIMES.  For instance I can use one mana
+    potion from the radial, but then can't use any more.  I can still use the
+    mana potions using the 'E' key though and it doesn't decrease either...
+
+bGodMode - used by both SCRIPT: Health to max health every frame, and by
+    SCRIPT: Damage to prevent damage (using pointer from SCRIPT: Health to
+    see if is the player being damaged)
+
+}
+
+[ENABLE]
+[DISABLE]
+</AssemblerScript>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>1</ID>
+      <Description>"SCRIPT: Globals (MAIN - enable this)"</Description>
+      <Options moHideChildren="1"/>
+      <Color>80000008</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>{ Game   : Reckoning.exe
+  Version: Steam 2014-04-19
+  Date   : 2014-04-19
+  Author : Jason
+
+  This script allocates globals and registers symbols for variables we use.
+  Note that it does not set the initial values for the variables, that should
+  let the values remain for flags activated by scripts if disabling and
+  re-enabling this script.
+}
+
+[ENABLE]
+
+globalalloc(globals, $10000)
+
+{------------------------------------------------------------------------------
+ - Cheat flags, activated by scripts
+ ------------------------------------------------------------------------------}
+label(bNoManaUse)
+globals+1000:
+  bNoManaUse:
+registersymbol(bNoManaUse)
+
+label(bNoCooldown)
+globals+1004:
+  bNoCooldown:
+registersymbol(bNoCooldown)
+
+label(bUpgradePoints)
+globals+1008:
+  bUpgradePoints:
+registersymbol(bUpgradePoints)
+
+label(bHealth)
+globals+100C:
+  bHealth:
+registersymbol(bHealth)
+
+label(bDurability)
+globals+1010:
+  bDurability:
+registersymbol(bDurability)
+
+label(bNoItemUse)
+globals+1014:
+  bNoItemUse:
+registersymbol(bNoItemUse)
+
+label(bGodMode)
+globals+1018:
+  bGodMode:
+registersymbol(bGodMode)
+
+
+{------------------------------------------------------------------------------
+ - Pointers, mainly for investigation
+ ------------------------------------------------------------------------------}
+label(pManaUseBase)
+globals+1100:
+  pManaUseBase:
+registersymbol(pManaUseBase)
+
+label(pCooldownBase)
+globals+1104:
+  pCooldownBase:
+registersymbol(pCooldownBase)
+
+label(pUpgradePointBase)
+globals+1108:
+  pUpgradePointBase:
+registersymbol(pUpgradePointBase)
+
+label(pHealthBase)
+globals+110C:
+  pHealthBase:
+registersymbol(pHealthBase)
+
+label(pDurabilityBase)
+globals+1110:
+  pDurabilityBase:
+registersymbol(pDurabilityBase)
+
+label(pItemUseBase)
+globals+1114:
+  pItemUseBase:
+registersymbol(pItemUseBase)
+
+label(pHealthReadBase)
+globals+1118:
+  pHealthReadBase:
+registersymbol(pHealthReadBase)
+
+label(pGoldBase)
+globals+111C:
+  pGoldBase:
+registersymbol(pGoldBase)
+
+label(pReservedManaBase)
+globals+1120:
+  pReservedManaBase:
+registersymbol(pReservedManaBase)
+
+label(pBackpackBase)
+globals+1124:
+  pBackpackBase:
+registersymbol(pBackpackBase)
+
+[DISABLE]
+
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>4</ID>
+          <Description>"Scripts (enable these always)"</Description>
+          <Options moHideChildren="1"/>
+          <Color>80000008</Color>
+          <GroupHeader>1</GroupHeader>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>0</ID>
+              <Description>"SCRIPT: ManaUse"</Description>
+              <Color>80000008</Color>
+              <VariableType>Auto Assembler Script</VariableType>
+              <AssemblerScript>{ Game   : Reckoning.exe
+  Version: 
+  Date   : 2014-04-19
+  Author : Jason
+
+  This is what changes mana when you use it
+}
+
+[ENABLE]
+
+aobscanmodule(INJECT_ManaUse,Reckoning.exe,89 8D 84 00 00 00 EB) // should be unique
+alloc(newmem,$1000)
+
+label(code)
+label(skip)
+label(return)
+
+newmem:
+
+code:
+  mov [pManaUseBase],ebp
+  cmp dword ptr [bNoManaUse],1
+  je skip
+  mov [ebp+00000084],ecx
+skip:
+  jmp return
+
+INJECT_ManaUse:
+  jmp code
+  nop
+return:
+registersymbol(INJECT_ManaUse)
+
+[DISABLE]
+
+INJECT_ManaUse:
+  db 89 8D 84 00 00 00
+
+unregistersymbol(INJECT_ManaUse)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: "Reckoning.exe"+39AFC1
+
+"Reckoning.exe"+39AFA9: 5E                      - pop esi
+"Reckoning.exe"+39AFAA: 5D                      - pop ebp
+"Reckoning.exe"+39AFAB: 83 C4 0C                - add esp,0C
+"Reckoning.exe"+39AFAE: C2 0400                 - ret 0004
+"Reckoning.exe"+39AFB1: 8B 8D 84000000          - mov ecx,[ebp+00000084]
+"Reckoning.exe"+39AFB7: 8B D0                   - mov edx,eax
+"Reckoning.exe"+39AFB9: F7 DA                   - neg edx
+"Reckoning.exe"+39AFBB: 3B CA                   - cmp ecx,edx
+"Reckoning.exe"+39AFBD: 76 0A                   - jna Reckoning.exe+39AFC9
+"Reckoning.exe"+39AFBF: 03 C8                   - add ecx,eax
+// ---------- INJECTING HERE ----------
+"Reckoning.exe"+39AFC1: 89 8D 84000000          - mov [ebp+00000084],ecx
+// ---------- DONE INJECTING  ----------
+"Reckoning.exe"+39AFC7: EB 0A                   - jmp Reckoning.exe+39AFD3
+"Reckoning.exe"+39AFC9: C7 85 84000000 00000000 - mov [ebp+00000084],00000000
+"Reckoning.exe"+39AFD3: 8B 45 7C                - mov eax,[ebp+7C]
+"Reckoning.exe"+39AFD6: 33 C9                   - xor ecx,ecx
+"Reckoning.exe"+39AFD8: 85 C0                   - test eax,eax
+"Reckoning.exe"+39AFDA: 0F9C C1                 - setl cl
+"Reckoning.exe"+39AFDD: 49                      - dec ecx
+"Reckoning.exe"+39AFDE: 23 C8                   - and ecx,eax
+"Reckoning.exe"+39AFE0: 39 8D 84000000          - cmp [ebp+00000084],ecx
+"Reckoning.exe"+39AFE6: 73 10                   - jae Reckoning.exe+39AFF8
+}
+</AssemblerScript>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>2</ID>
+              <Description>"SCRIPT: Cooldown"</Description>
+              <Color>80000008</Color>
+              <VariableType>Auto Assembler Script</VariableType>
+              <AssemblerScript>{ Game   : Reckoning.exe
+  Version: Steam
+  Date   : 2014-04-19
+  Author : Jason
+
+  This is what sets the cooldown to a high number when casting a spell
+  (at least the first one you get)
+}
+
+[ENABLE]
+
+aobscanmodule(INJECT_COOLDOWN,Reckoning.exe,89 54 31 04 8B 43 04) // should be unique
+alloc(newmem,$1000)
+
+label(code)
+label(skip)
+label(return)
+
+newmem:
+
+code:
+  mov [pCooldownBase],ecx
+  cmp dword ptr [bNoCooldown],1
+  je skip
+  mov [ecx+esi+04],edx
+skip:
+  mov eax,[ebx+04]
+  jmp return
+
+INJECT_COOLDOWN:
+  jmp code
+  nop
+  nop
+return:
+registersymbol(INJECT_COOLDOWN)
+
+[DISABLE]
+
+INJECT_COOLDOWN:
+  db 89 54 31 04 8B 43 04
+
+unregistersymbol(INJECT_COOLDOWN)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: "Reckoning.exe"+494EB0
+
+"Reckoning.exe"+494E91: 83 F8 02          - cmp eax,02
+"Reckoning.exe"+494E94: 89 07             - mov [edi],eax
+"Reckoning.exe"+494E96: 7C 11             - jnge Reckoning.exe+494EA9
+"Reckoning.exe"+494E98: 8B 0D 4C8ABF00    - mov ecx,[Reckoning.exe+7F8A4C]
+"Reckoning.exe"+494E9E: 8B 11             - mov edx,[ecx]
+"Reckoning.exe"+494EA0: 50                - push eax
+"Reckoning.exe"+494EA1: 8B 82 A4000000    - mov eax,[edx+000000A4]
+"Reckoning.exe"+494EA7: FF D0             - call eax
+"Reckoning.exe"+494EA9: 8B 4B 04          - mov ecx,[ebx+04]
+"Reckoning.exe"+494EAC: 8B 54 24 1C       - mov edx,[esp+1C]
+// ---------- INJECTING HERE ----------
+"Reckoning.exe"+494EB0: 89 54 31 04       - mov [ecx+esi+04],edx
+"Reckoning.exe"+494EB4: 8B 43 04          - mov eax,[ebx+04]
+// ---------- DONE INJECTING  ----------
+"Reckoning.exe"+494EB7: 80 4C 30 08 01    - or byte ptr [eax+esi+08],01
+"Reckoning.exe"+494EBC: 5F                - pop edi
+"Reckoning.exe"+494EBD: 8D 44 30 08       - lea eax,[eax+esi+08]
+"Reckoning.exe"+494EC1: 5E                - pop esi
+"Reckoning.exe"+494EC2: 5D                - pop ebp
+"Reckoning.exe"+494EC3: 33 C0             - xor eax,eax
+"Reckoning.exe"+494EC5: 5B                - pop ebx
+"Reckoning.exe"+494EC6: C2 0C00           - ret 000C
+"Reckoning.exe"+494EC9: 83 79 04 00       - cmp dword ptr [ecx+04],00
+"Reckoning.exe"+494ECD: 74 8D             - je Reckoning.exe+494E5C
+}
+</AssemblerScript>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>12</ID>
+              <Description>"SCRIPT: Upgrade Points (DANGEROUS)"</Description>
+              <Color>80000008</Color>
+              <VariableType>Auto Assembler Script</VariableType>
+              <AssemblerScript>{ Game   : Reckoning.exe
+  Version: Steam
+  Date   : 2014-04-19
+  Author : Jason
+
+  When upgrading skills and abilities, this reads the skill points remaining.
+  DANGEROUS!  It seems to also be called for other things, I don't know what.
+  When backing out of the levelling up process it is called several times for
+  instance.  The cheat should only be enabled when looking at the skill
+  and ability level up screens.
+
+  Also used to load XP.
+}
+
+[ENABLE]
+
+aobscanmodule(INJECT_READ_SKILL_POINTS_REMAINING,Reckoning.exe,8B 50 18 89 53 18) // should be unique
+alloc(newmem,$1000)
+
+label(wasOn)
+label(onAddress)
+label(code)
+label(isOff)
+label(skip)
+label(return)
+
+newmem:
+wasOn:
+  dd 0
+onAddress:
+  dd 0
+
+code:
+  mov [pUpgradePointBase],eax
+  cmp dword ptr [bUpgradePoints],1
+  jne isOff
+
+  // it is on, make sure value is at least 1, and set flag letting us know
+  // it was on so when we turn it off we can zero out points
+  mov edx,[eax+18]
+  cmp edx,1
+  jae skip
+
+  mov edx,1
+  mov [wasOn],edx
+  mov [onAddress],eax
+  mov [eax+18],edx
+  jmp skip
+
+isOff:
+  // if it WAS on, set it to 0 (if address matches) and clear address
+  cmp dword ptr [wasOn],1
+  jne skip
+  xor edx,edx
+  mov [wasOn],edx
+  mov [onAddress],edx
+
+  // only zero value if it matches the address it was on for
+  cmp eax,[onAddress]
+  jne skip
+  mov [eax+18],edx
+
+skip:
+  mov edx,[eax+18]
+  mov [ebx+18],edx
+  jmp return
+
+INJECT_READ_SKILL_POINTS_REMAINING:
+  jmp code
+  nop
+return:
+registersymbol(INJECT_READ_SKILL_POINTS_REMAINING)
+
+[DISABLE]
+
+INJECT_READ_SKILL_POINTS_REMAINING:
+  db 8B 50 18 89 53 18
+
+unregistersymbol(INJECT_READ_SKILL_POINTS_REMAINING)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: "Reckoning.exe"+8C76E
+
+"Reckoning.exe"+8C754: 85 C9           - test ecx,ecx
+"Reckoning.exe"+8C756: 75 16           - jne Reckoning.exe+8C76E
+"Reckoning.exe"+8C758: 8D 70 08        - lea esi,[eax+08]
+"Reckoning.exe"+8C75B: 8D 43 08        - lea eax,[ebx+08]
+"Reckoning.exe"+8C75E: E8 1D3E4500     - call Reckoning.exe+4E0580
+"Reckoning.exe"+8C763: 5F              - pop edi
+"Reckoning.exe"+8C764: 5E              - pop esi
+"Reckoning.exe"+8C765: B8 01000000     - mov eax,00000001
+"Reckoning.exe"+8C76A: 5B              - pop ebx
+"Reckoning.exe"+8C76B: C2 0400         - ret 0004
+// ---------- INJECTING HERE ----------
+"Reckoning.exe"+8C76E: 8B 50 18        - mov edx,[eax+18]
+"Reckoning.exe"+8C771: 89 53 18        - mov [ebx+18],edx
+// ---------- DONE INJECTING  ----------
+"Reckoning.exe"+8C774: 8B 40 1C        - mov eax,[eax+1C]
+"Reckoning.exe"+8C777: 5F              - pop edi
+"Reckoning.exe"+8C778: 89 43 1C        - mov [ebx+1C],eax
+"Reckoning.exe"+8C77B: 5E              - pop esi
+"Reckoning.exe"+8C77C: B8 01000000     - mov eax,00000001
+"Reckoning.exe"+8C781: 5B              - pop ebx
+"Reckoning.exe"+8C782: C2 0400         - ret 0004
+"Reckoning.exe"+8C785: CC              - int 3 
+"Reckoning.exe"+8C786: CC              - int 3 
+"Reckoning.exe"+8C787: CC              - int 3 
+}
+</AssemblerScript>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>18</ID>
+              <Description>"SCRIPT: Durability"</Description>
+              <Color>80000008</Color>
+              <VariableType>Auto Assembler Script</VariableType>
+              <AssemblerScript>{ Game   : Reckoning.exe
+  Version: Steam
+  Date   : 2014-04-19
+  Author : Jason
+
+  This looks to be where durability is read for a weapon before having xmm0
+  subtracted from it, then being pushed to the stack for the other script
+  'TEST: Durability Lower Write' to store the result back on the weapon.
+
+  Structure:
+    50: Max durability (float)
+    88: Current durability (float)
+}
+
+[ENABLE]
+
+aobscanmodule(INJECT_DURABILITY_LOWER_SUBTRACT,Reckoning.exe,C2 F3 0F 59 C1 F3 0F 10 8E 88 00 00 00) // should be unique
+alloc(newmem,$1000)
+
+label(code)
+label(skip)
+label(return)
+
+newmem:
+  dd 0
+
+code:
+  mov [pDurabilityBase],esi
+  cmp dword ptr [bDurability],1
+  jne skip
+  // zero negative durability to add and set durability to max
+  movss xmm0,[newmem]
+  movss xmm1,[esi+50]
+  movss [esi+88],xmm1
+
+skip:
+  movss xmm1,[esi+00000088]
+  jmp return
+
+INJECT_DURABILITY_LOWER_SUBTRACT+05:
+  jmp code
+  nop
+  nop
+  nop
+return:
+registersymbol(INJECT_DURABILITY_LOWER_SUBTRACT)
+
+[DISABLE]
+
+INJECT_DURABILITY_LOWER_SUBTRACT+05:
+  db F3 0F 10 8E 88 00 00 00
+
+unregistersymbol(INJECT_DURABILITY_LOWER_SUBTRACT)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: "Reckoning.exe"+4BEE10
+
+"Reckoning.exe"+4BEDDE: 8B 8D F0010000       - mov ecx,[ebp+000001F0]
+"Reckoning.exe"+4BEDE4: F3 0F2A C8           - cvtsi2ss xmm1,eax
+"Reckoning.exe"+4BEDE8: A1 E890BF00          - mov eax,[Reckoning.exe+7F90E8]
+"Reckoning.exe"+4BEDED: 8B 90 14360000       - mov edx,[eax+00003614]
+"Reckoning.exe"+4BEDF3: F3 0F10 90 3C2F0000  - movss xmm2,[eax+00002F3C]
+"Reckoning.exe"+4BEDFB: F3 0F2A C7           - cvtsi2ss xmm0,edi
+"Reckoning.exe"+4BEDFF: F3 0F5E C8           - divss xmm1,xmm0
+"Reckoning.exe"+4BEE03: F3 0F10 04 8A        - movss xmm0,[edx+ecx*4]
+"Reckoning.exe"+4BEE08: F3 0F59 C2           - mulss xmm0,xmm2
+"Reckoning.exe"+4BEE0C: F3 0F59 C1           - mulss xmm0,xmm1
+// ---------- INJECTING HERE ----------
+"Reckoning.exe"+4BEE10: F3 0F10 8E 88000000  - movss xmm1,[esi+00000088]
+// ---------- DONE INJECTING  ----------
+"Reckoning.exe"+4BEE18: 51                   - push ecx
+"Reckoning.exe"+4BEE19: F3 0F5C C8           - subss xmm1,xmm0
+"Reckoning.exe"+4BEE1D: F3 0F11 0C 24        - movss [esp],xmm1
+"Reckoning.exe"+4BEE22: E8 E9F4FFFF          - call Reckoning.exe+4BE310
+"Reckoning.exe"+4BEE27: 8B 2D EC90BF00       - mov ebp,[Reckoning.exe+7F90EC]
+"Reckoning.exe"+4BEE2D: 83 7C 24 34 00       - cmp dword ptr [esp+34],00
+"Reckoning.exe"+4BEE32: 0F8E 37010000        - jng Reckoning.exe+4BEF6F
+"Reckoning.exe"+4BEE38: 8B 7C 24 2C          - mov edi,[esp+2C]
+"Reckoning.exe"+4BEE3C: 8D B5 BC210000       - lea esi,[ebp+000021BC]
+"Reckoning.exe"+4BEE42: 57                   - push edi
+}
+</AssemblerScript>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>21</ID>
+              <Description>"SCRIPT: Damage"</Description>
+              <Color>80000008</Color>
+              <VariableType>Auto Assembler Script</VariableType>
+              <AssemblerScript>{ Game   : Reckoning.exe
+  Version: Steam
+  Date   : 2014-04-19
+  Author : Jason
+
+  This alters health, adding negative health as damage to both friends and
+  enemies.
+
+  Possible Structure:
+    48: Current Health (int)
+    4C: Max Health (int)
+
+    14: 1 for me, 68 for boxx
+    34: 0 for me, FFFFFFFF for boss
+    38: 0 for me, float 0.1 for boss
+    3C: 0 for me, 100 for boss
+    40: 0 for me, 100000000 for boss
+    50: 0 for me, pointer for boss
+    5C: pointer for me, 0 for boss
+    7C: 0 for me, 100 for boss
+    84: small number for me, 0 for boss
+    88: small number (ABB6) for me, 0 for boss
+
+}
+
+[ENABLE]
+
+aobscanmodule(INJECT_DAMAGE,Reckoning.exe,03 CE 89 4F 48) // should be unique
+alloc(newmem,$1000)
+
+label(code)
+label(return)
+
+newmem:
+
+code:
+  add ecx,esi
+  mov [edi+48],ecx
+  jmp return
+
+INJECT_DAMAGE:
+  jmp code
+return:
+registersymbol(INJECT_DAMAGE)
+
+[DISABLE]
+
+INJECT_DAMAGE:
+  db 03 CE 89 4F 48
+
+unregistersymbol(INJECT_DAMAGE)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: "Reckoning.exe"+3A1979
+
+"Reckoning.exe"+3A1955: DDD8              - fstp st(0)
+"Reckoning.exe"+3A1957: 76 07             - jna Reckoning.exe+3A1960
+"Reckoning.exe"+3A1959: 80 A7 DC000000 BF - and byte ptr [edi+000000DC],-41
+"Reckoning.exe"+3A1960: 39 9F 84000000    - cmp [edi+00000084],ebx
+"Reckoning.exe"+3A1966: 0F8D B6000000     - jnl Reckoning.exe+3A1A22
+"Reckoning.exe"+3A196C: E9 A5000000       - jmp Reckoning.exe+3A1A16
+"Reckoning.exe"+3A1971: 8B C6             - mov eax,esi
+"Reckoning.exe"+3A1973: F7 D8             - neg eax
+"Reckoning.exe"+3A1975: 3B C8             - cmp ecx,eax
+"Reckoning.exe"+3A1977: 76 07             - jna Reckoning.exe+3A1980
+// ---------- INJECTING HERE ----------
+"Reckoning.exe"+3A1979: 03 CE             - add ecx,esi
+"Reckoning.exe"+3A197B: 89 4F 48          - mov [edi+48],ecx
+// ---------- DONE INJECTING  ----------
+"Reckoning.exe"+3A197E: EB 03             - jmp Reckoning.exe+3A1983
+"Reckoning.exe"+3A1980: 89 5F 48          - mov [edi+48],ebx
+"Reckoning.exe"+3A1983: B1 40             - mov cl,40
+"Reckoning.exe"+3A1985: 84 8F DC000000    - test [edi+000000DC],cl
+"Reckoning.exe"+3A198B: 0F85 85000000     - jne Reckoning.exe+3A1A16
+"Reckoning.exe"+3A1991: 8B 47 4C          - mov eax,[edi+4C]
+"Reckoning.exe"+3A1994: 83 F8 01          - cmp eax,01
+"Reckoning.exe"+3A1997: 7D 05             - jnl Reckoning.exe+3A199E
+"Reckoning.exe"+3A1999: B8 01000000       - mov eax,00000001
+"Reckoning.exe"+3A199E: 8B 15 E890BF00    - mov edx,[Reckoning.exe+7F90E8]
+}
+</AssemblerScript>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>23</ID>
+              <Description>"SCRIPT: Item Use (FLAKY - CAN'T USE RADIAL ANY MORE)"</Description>
+              <Color>80000008</Color>
+              <VariableType>Auto Assembler Script</VariableType>
+              <AssemblerScript>{ Game   : Reckoning.exe
+  Version: Steam
+  Date   : 2014-04-19
+  Author : Jason
+
+  This is called to decrease the number of an item you're using.
+}
+
+[ENABLE]
+
+aobscanmodule(INJECT_ITEM_USE,Reckoning.exe,8B 85 84 00 00 00 48) // should be unique
+alloc(newmem,$1000)
+
+label(code)
+label(skip)
+label(return)
+
+newmem:
+
+code:
+  mov [pItemUseBase],ebp
+  cmp dword ptr [bNoItemUse],1
+  jne skip
+  mov eax,[ebp+00000084]
+  jmp return+1 // skip dec instruction
+
+skip:
+  mov eax,[ebp+00000084]
+  jmp return
+
+INJECT_ITEM_USE:
+  jmp code
+  nop
+return:
+registersymbol(INJECT_ITEM_USE)
+
+[DISABLE]
+
+INJECT_ITEM_USE:
+  db 8B 85 84 00 00 00
+
+unregistersymbol(INJECT_ITEM_USE)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: "Reckoning.exe"+4C3870
+
+"Reckoning.exe"+4C384E: 3B C3                 - cmp eax,ebx
+"Reckoning.exe"+4C3850: 74 0F                 - je Reckoning.exe+4C3861
+"Reckoning.exe"+4C3852: F6 40 20 01           - test byte ptr [eax+20],01
+"Reckoning.exe"+4C3856: 74 09                 - je Reckoning.exe+4C3861
+"Reckoning.exe"+4C3858: 39 58 50              - cmp [eax+50],ebx
+"Reckoning.exe"+4C385B: 0F85 89040000         - jne Reckoning.exe+4C3CEA
+"Reckoning.exe"+4C3861: BF 01000000           - mov edi,00000001
+"Reckoning.exe"+4C3866: 39 7D 74              - cmp [ebp+74],edi // value is 10, max stack?
+"Reckoning.exe"+4C3869: C6 44 24 17 01        - mov byte ptr [esp+17],01
+"Reckoning.exe"+4C386E: 7E 30                 - jle Reckoning.exe+4C38A0
+// ---------- INJECTING HERE ----------
+"Reckoning.exe"+4C3870: 8B 85 84000000        - mov eax,[ebp+00000084] // load item quantity
+// ---------- DONE INJECTING  ----------
+"Reckoning.exe"+4C3876: 48                    - dec eax // decrement
+"Reckoning.exe"+4C3877: 3B C3                 - cmp eax,ebx // compare to 0?
+"Reckoning.exe"+4C3879: 7C 06                 - jnge Reckoning.exe+4C3881 // jump if out of item
+"Reckoning.exe"+4C387B: 89 85 84000000        - mov [ebp+00000084],eax // store new quantity
+"Reckoning.exe"+4C3881: 38 9C 24 F4010000     - cmp [esp+000001F4],bl // ? seems to be 0
+"Reckoning.exe"+4C3888: 74 08                 - je Reckoning.exe+4C3892
+"Reckoning.exe"+4C388A: 39 9D 84000000        - cmp [ebp+00000084],ebx // compare with 0 again?
+"Reckoning.exe"+4C3890: 7F DE                 - jg Reckoning.exe+4C3870
+"Reckoning.exe"+4C3892: 39 9D 84000000        - cmp [ebp+00000084],ebx // compare with 0 again?
+"Reckoning.exe"+4C3898: 7E 06                 - jle Reckoning.exe+4C38A0
+}
+</AssemblerScript>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>27</ID>
+              <Description>"SCRIPT: Health"</Description>
+              <Color>80000008</Color>
+              <VariableType>Auto Assembler Script</VariableType>
+              <AssemblerScript>{ Game   : Reckoning.exe
+  Version: 
+  Date   : 2014-04-19
+  Author : Jason
+
+  Loads player health many times a second.
+
+  Health: [eax+48]
+  Max Health: [eax+48]
+}
+
+[ENABLE]
+
+aobscanmodule(INJECT_HEALTH_DISPLAY,Reckoning.exe,8B 48 48 8B 40 4C 3B) // should be unique
+alloc(newmem,$1000)
+
+label(code)
+label(skip)
+label(return)
+
+newmem:
+
+code:
+  mov [pHealthReadBase],eax
+  cmp dword ptr [bGodMode],1
+  jne skip
+  mov ecx,[eax+4C]
+  mov [eax+48],ecx
+
+skip:
+  mov ecx,[eax+48]
+  mov eax,[eax+4C]
+  jmp return
+
+INJECT_HEALTH_DISPLAY:
+  jmp code
+  nop
+return:
+registersymbol(INJECT_HEALTH_DISPLAY)
+
+[DISABLE]
+
+INJECT_HEALTH_DISPLAY:
+  db 8B 48 48 8B 40 4C
+
+unregistersymbol(INJECT_HEALTH_DISPLAY)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: "Reckoning.exe"+63DF4E
+
+"Reckoning.exe"+63DF31: 33 DB             - xor ebx,ebx
+"Reckoning.exe"+63DF33: 50                - push eax
+"Reckoning.exe"+63DF34: 8D 7B 01          - lea edi,[ebx+01]
+"Reckoning.exe"+63DF37: 8D 74 24 14       - lea esi,[esp+14]
+"Reckoning.exe"+63DF3B: E8 A0319CFF       - call Reckoning.exe+10E0
+"Reckoning.exe"+63DF40: 8B 44 24 14       - mov eax,[esp+14]
+"Reckoning.exe"+63DF44: 85 C0             - test eax,eax
+"Reckoning.exe"+63DF46: 74 42             - je Reckoning.exe+63DF8A
+"Reckoning.exe"+63DF48: F6 40 20 01       - test byte ptr [eax+20],01
+"Reckoning.exe"+63DF4C: 74 3C             - je Reckoning.exe+63DF8A
+// ---------- INJECTING HERE ----------
+"Reckoning.exe"+63DF4E: 8B 48 48          - mov ecx,[eax+48]
+"Reckoning.exe"+63DF51: 8B 40 4C          - mov eax,[eax+4C]
+// ---------- DONE INJECTING  ----------
+"Reckoning.exe"+63DF54: 3B C7             - cmp eax,edi
+"Reckoning.exe"+63DF56: 7D 02             - jnl Reckoning.exe+63DF5A
+"Reckoning.exe"+63DF58: 8B C7             - mov eax,edi
+"Reckoning.exe"+63DF5A: 89 4C 24 20       - mov [esp+20],ecx
+"Reckoning.exe"+63DF5E: DB 44 24 20       - fild dword ptr [esp+20]
+"Reckoning.exe"+63DF62: 85 C9             - test ecx,ecx
+"Reckoning.exe"+63DF64: 7D 06             - jnl Reckoning.exe+63DF6C
+"Reckoning.exe"+63DF66: D8 05 A886BA00    - fadd dword ptr [Reckoning.exe+7A86A8]
+"Reckoning.exe"+63DF6C: 89 44 24 20       - mov [esp+20],eax
+"Reckoning.exe"+63DF70: DB 44 24 20       - fild dword ptr [esp+20]
+}
+</AssemblerScript>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>31</ID>
+              <Description>"SCRIPT: Gold"</Description>
+              <Color>80000008</Color>
+              <VariableType>Auto Assembler Script</VariableType>
+              <AssemblerScript>{ Game   : Reckoning.exe
+  Version: Steam
+  Date   : 2014-04-19
+  Author : Jason
+
+  This loads the amount of gold you have about once a second, and also once
+  when hitting 'ESC' where it is displayed.
+}
+
+[ENABLE]
+
+aobscanmodule(INJECT_GOLD,Reckoning.exe,8B 80 64 03 00 00 EB) // should be unique
+alloc(newmem,$1000)
+
+label(code)
+label(return)
+
+newmem:
+
+code:
+  mov [pGoldBase],eax
+  mov eax,[eax+00000364]
+  jmp return
+
+INJECT_GOLD:
+  jmp code
+  nop
+return:
+registersymbol(INJECT_GOLD)
+
+[DISABLE]
+
+INJECT_GOLD:
+  db 8B 80 64 03 00 00
+
+unregistersymbol(INJECT_GOLD)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: "Reckoning.exe"+703E6C
+
+"Reckoning.exe"+703E53: 83 E4 F8             - and esp,-08
+"Reckoning.exe"+703E56: 8B 45 08             - mov eax,[ebp+08]
+"Reckoning.exe"+703E59: 83 EC 28             - sub esp,28
+"Reckoning.exe"+703E5C: 56                   - push esi
+"Reckoning.exe"+703E5D: 8B 70 50             - mov esi,[eax+50]
+"Reckoning.exe"+703E60: 57                   - push edi
+"Reckoning.exe"+703E61: 33 FF                - xor edi,edi
+"Reckoning.exe"+703E63: E8 3891F3FF          - call Reckoning.exe+63CFA0
+"Reckoning.exe"+703E68: 85 C0                - test eax,eax
+"Reckoning.exe"+703E6A: 74 08                - je Reckoning.exe+703E74
+// ---------- INJECTING HERE ----------
+"Reckoning.exe"+703E6C: 8B 80 64030000       - mov eax,[eax+00000364]
+// ---------- DONE INJECTING  ----------
+"Reckoning.exe"+703E72: EB 02                - jmp Reckoning.exe+703E76
+"Reckoning.exe"+703E74: 33 C0                - xor eax,eax
+"Reckoning.exe"+703E76: 33 C9                - xor ecx,ecx
+"Reckoning.exe"+703E78: 33 D2                - xor edx,edx
+"Reckoning.exe"+703E7A: 89 44 24 20          - mov [esp+20],eax
+"Reckoning.exe"+703E7E: 8B 06                - mov eax,[esi]
+"Reckoning.exe"+703E80: BF 1C49B700          - mov edi,Reckoning.exe+77491C
+"Reckoning.exe"+703E85: 66 89 54 24 16       - mov [esp+16],dx
+"Reckoning.exe"+703E8A: 89 7C 24 08          - mov [esp+08],edi
+"Reckoning.exe"+703E8E: C7 44 24 10 00000000 - mov [esp+10],00000000
+}
+</AssemblerScript>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>41</ID>
+              <Description>"SCRIPT: Backpack Size"</Description>
+              <Color>80000008</Color>
+              <VariableType>Auto Assembler Script</VariableType>
+              <AssemblerScript>{ Game   : Reckoning.exe
+  Version: Steam
+  Date   : 2014-04-20
+  Author : Jason
+
+  This code accesses A LOT of addresses, including one that is the maximum
+  number of items you can carry :)
+}
+
+[ENABLE]
+aobscanmodule(INJECT_BACKPACKSIZE,Reckoning.exe,8B 51 0C 8B F9) // should be unique
+alloc(newmem,$1000)
+
+label(code)
+label(skip)
+label(return)
+
+newmem:
+code:
+
+//-----------------------------------------------------------------------------
+  pushad
+  pushfd
+
+  // test1: [ESP+14] should return to 473F17
+  mov eax,[ESP+38] // add 24 for pushad (20) and pushfd (04)
+  cmp eax,00473F17
+  jne skip
+
+  // tes2: [ESP+2C] should be 0
+  mov eax,[ESP+50] // add 24 for pushad (20) and pushfd (04)
+  test eax,eax
+  jnz skip
+
+  // [esp+4C] seems to be 1000 (3E8) for backpack, 0 1 or pointer for others
+  mov eax,[esp+70]
+  cmp eax,#1000
+  jne skip
+  // only 2 left, backpack (500) and something that is 300, don't know what, [ESP+44] solves it
+
+  // [esp+44] seems to be 40 for backpack 16 for others
+  mov eax,[esp+68]
+  cmp eax,#40
+  jne skip
+
+  // eax looks to be 3 for backpack, 9 for others
+  // [esp+34] seems to be 5 for backpack, 2 for others
+  // [esp+48] seems to be 3 for backpack, 0 1 or 5 for others
+
+  mov [pBackpackBase],ecx
+
+skip:
+  popfd
+  popad
+//-----------------------------------------------------------------------------
+
+  mov edx,[ecx+0C]
+  mov edi,ecx
+  jmp return
+
+INJECT_BACKPACKSIZE:
+  jmp code
+return:
+registersymbol(INJECT_BACKPACKSIZE)
+
+[DISABLE]
+
+INJECT_BACKPACKSIZE:
+  db 8B 51 0C 8B F9
+
+unregistersymbol(INJECT_BACKPACKSIZE)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: "Reckoning.exe"+4F651B
+
+"Reckoning.exe"+4F6501: 8B 55 0C           - mov edx,[ebp+0C]
+"Reckoning.exe"+4F6504: 8B CA              - mov ecx,edx
+"Reckoning.exe"+4F6506: C1 E9 03           - shr ecx,03
+"Reckoning.exe"+4F6509: 33 CA              - xor ecx,edx
+"Reckoning.exe"+4F650B: C1 E9 05           - shr ecx,05
+"Reckoning.exe"+4F650E: 33 CA              - xor ecx,edx
+"Reckoning.exe"+4F6510: 23 48 10           - and ecx,[eax+10]
+"Reckoning.exe"+4F6513: C1 E1 04           - shl ecx,04
+"Reckoning.exe"+4F6516: 03 CE              - add ecx,esi
+"Reckoning.exe"+4F6518: 8B 41 08           - mov eax,[ecx+08]
+// ---------- INJECTING HERE ----------
+"Reckoning.exe"+4F651B: 8B 51 0C           - mov edx,[ecx+0C]
+"Reckoning.exe"+4F651E: 8B F9              - mov edi,ecx
+// ---------- DONE INJECTING  ----------
+"Reckoning.exe"+4F6520: 2B FE              - sub edi,esi
+"Reckoning.exe"+4F6522: C1 FF 04           - sar edi,04
+"Reckoning.exe"+4F6525: 8D 3C BD 04000000  - lea edi,[edi*4+00000004]
+"Reckoning.exe"+4F652C: 8B DE              - mov ebx,esi
+"Reckoning.exe"+4F652E: 2B DF              - sub ebx,edi
+"Reckoning.exe"+4F6530: 8B 3B              - mov edi,[ebx]
+"Reckoning.exe"+4F6532: 8B 19              - mov ebx,[ecx]
+"Reckoning.exe"+4F6534: 3B 5D 08           - cmp ebx,[ebp+08]
+"Reckoning.exe"+4F6537: 75 08              - jne Reckoning.exe+4F6541
+"Reckoning.exe"+4F6539: 8B 49 04           - mov ecx,[ecx+04]
+
+
+For backpack, [ESP+14] is 473F17
+Reckoning.exe+73EE0 - 8B 44 24 1C           - mov eax,[esp+1C]
+Reckoning.exe+73EE4 - 8B 54 24 34           - mov edx,[esp+34]
+Reckoning.exe+73EE8 - C1 EB 08              - shr ebx,08
+Reckoning.exe+73EEB - 83 C1 04              - add ecx,04
+Reckoning.exe+73EEE - 81 E3 FFFF0100        - and ebx,0001FFFF : [00000000]
+Reckoning.exe+73EF4 - 8D 1C D8              - lea ebx,[eax+ebx*8]
+Reckoning.exe+73EF7 - 8B 03                 - mov eax,[ebx]
+Reckoning.exe+73EF9 - 89 4C 24 10           - mov [esp+10],ecx
+Reckoning.exe+73EFD - 8B 4B 04              - mov ecx,[ebx+04]
+Reckoning.exe+73F00 - 8B 5A 0C              - mov ebx,[edx+0C]
+Reckoning.exe+73F03 - 51                    - push ecx
+Reckoning.exe+73F04 - 89 44 24 7C           - mov [esp+7C],eax
+Reckoning.exe+73F08 - 50                    - push eax
+Reckoning.exe+73F09 - 8B C3                 - mov eax,ebx
+Reckoning.exe+73F0B - 89 8C 24 84000000     - mov [esp+00000084],ecx
+Reckoning.exe+73F12 - E8 D9254800           - call Reckoning.exe+4F64F0
+Reckoning.exe+73F17 - 89 44 24 28           - mov [esp+28],eax-----------------------return with backpack size
+Reckoning.exe+73F1B - 89 54 24 2C           - mov [esp+2C],edx
+Reckoning.exe+73F1F - A8 0F                 - test al,0F
+Reckoning.exe+73F21 - 74 1F                 - je Reckoning.exe+73F42
+Reckoning.exe+73F23 - 8B 4B 0C              - mov ecx,[ebx+0C]
+Reckoning.exe+73F26 - 89 0F                 - mov [edi],ecx
+Reckoning.exe+73F28 - 8B 4C 24 34           - mov ecx,[esp+34]
+Reckoning.exe+73F2C - 8B 49 0C              - mov ecx,[ecx+0C]
+Reckoning.exe+73F2F - 89 4F 04              - mov [edi+04],ecx
+Reckoning.exe+73F32 - 89 47 08              - mov [edi+08],eax
+Reckoning.exe+73F35 - 89 57 0C              - mov [edi+0C],edx
+Reckoning.exe+73F38 - 89 06                 - mov [esi],eax
+Reckoning.exe+73F3A - 89 56 04              - mov [esi+04],edx
+Reckoning.exe+73F3D - E9 4BE9FFFF           - jmp Reckoning.exe+7288D
+Reckoning.exe+73F42 - C7 47 04 00000000     - mov [edi+04],00000000
+Reckoning.exe+73F49 - 8B 43 08              - mov eax,[ebx+08]
+Reckoning.exe+73F4C - 85 C0                 - test eax,eax
+Reckoning.exe+73F4E - 74 15                 - je Reckoning.exe+73F65
+Reckoning.exe+73F50 - 8B 7D 08              - mov edi,[ebp+08]
+Reckoning.exe+73F53 - 57                    - push edi
+Reckoning.exe+73F54 - B9 01000000           - mov ecx,00000001
+Reckoning.exe+73F59 - E8 32A14800           - call Reckoning.exe+4FE090
+Reckoning.exe+73F5E - 83 C4 04              - add esp,04
+Reckoning.exe+73F61 - A8 0F                 - test al,0F
+Reckoning.exe+73F63 - 75 0B                 - jne Reckoning.exe+73F70
+
+}
+</AssemblerScript>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>5</ID>
+          <Description>"Cheats"</Description>
+          <Options moHideChildren="1"/>
+          <Color>80000008</Color>
+          <GroupHeader>1</GroupHeader>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>29</ID>
+              <Description>"bGodMode"</Description>
+              <Color>80000008</Color>
+              <VariableType>Auto Assembler Script</VariableType>
+              <AssemblerScript>[ENABLE]
+bGodMode:
+  dd 1
+
+[DISABLE]
+bGodMode:
+  dd 0
+
+</AssemblerScript>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>3</ID>
+              <Description>"bNoManaUse"</Description>
+              <Color>80000008</Color>
+              <VariableType>Auto Assembler Script</VariableType>
+              <AssemblerScript>[ENABLE]
+bNoManaUse:
+  dd 1
+
+[DISABLE]
+bNoManaUse:
+  dd 0
+
+</AssemblerScript>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>6</ID>
+              <Description>"bNoCooldown"</Description>
+              <Color>80000008</Color>
+              <VariableType>Auto Assembler Script</VariableType>
+              <AssemblerScript>[ENABLE]
+bNoCooldown:
+  dd 1
+
+[DISABLE]
+bNoCooldown:
+  dd 0
+
+</AssemblerScript>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>19</ID>
+              <Description>"bDurability"</Description>
+              <Color>80000008</Color>
+              <VariableType>Auto Assembler Script</VariableType>
+              <AssemblerScript>[ENABLE]
+bDurability:
+  dd 1
+
+[DISABLE]
+bDurability:
+  dd 0
+
+</AssemblerScript>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>25</ID>
+              <Description>"bNoItemUse"</Description>
+              <Color>80000008</Color>
+              <VariableType>Auto Assembler Script</VariableType>
+              <AssemblerScript>[ENABLE]
+bNoItemUse:
+  dd 1
+
+[DISABLE]
+bNoItemUse:
+  dd 0
+
+</AssemblerScript>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>15</ID>
+              <Description>"bUpgradePoints (DANGEROUS - use only on upgrade screen)"</Description>
+              <Color>80000008</Color>
+              <VariableType>Auto Assembler Script</VariableType>
+              <AssemblerScript>[ENABLE]
+bUpgradePoints:
+  dd 1
+
+[DISABLE]
+bUpgradePoints:
+  dd 0
+
+</AssemblerScript>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>38</ID>
+          <Description>"Values"</Description>
+          <Color>80000008</Color>
+          <GroupHeader>1</GroupHeader>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>39</ID>
+              <Description>"Gold"</Description>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pGoldBase</Address>
+              <Offsets>
+                <Offset>364</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>42</ID>
+              <Description>"Backpack Size"</Description>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pBackpackBase</Address>
+              <Offsets>
+                <Offset>C</Offset>
+              </Offsets>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>16</ID>
+          <Description>"TEST ADDRESSES"</Description>
+          <Options moHideChildren="1"/>
+          <Color>C0C0C0</Color>
+          <GroupHeader>1</GroupHeader>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>17</ID>
+              <Description>"pUpgradePointBase"</Description>
+              <ShowAsHex>1</ShowAsHex>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pUpgradePointBase</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>35</ID>
+              <Description>"pDurabilityBase"</Description>
+              <ShowAsHex>1</ShowAsHex>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pDurabilityBase</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>24</ID>
+              <Description>"pItemUseBase"</Description>
+              <ShowAsHex>1</ShowAsHex>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pItemUseBase</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>40</ID>
+              <Description>"pManaUseBase"</Description>
+              <ShowAsHex>1</ShowAsHex>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pManaUseBase</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>30</ID>
+              <Description>"pHealthBase (damage)"</Description>
+              <ShowAsHex>1</ShowAsHex>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pHealthBase</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>28</ID>
+              <Description>"pHealthReadBase"</Description>
+              <ShowAsHex>1</ShowAsHex>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pHealthReadBase</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>33</ID>
+              <Description>"pGoldBase"</Description>
+              <ShowAsHex>1</ShowAsHex>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pGoldBase</Address>
+              <CheatEntries>
+                <CheatEntry>
+                  <ID>34</ID>
+                  <Description>"Gold"</Description>
+                  <Color>80000008</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>pGoldBase</Address>
+                  <Offsets>
+                    <Offset>364</Offset>
+                  </Offsets>
+                </CheatEntry>
+              </CheatEntries>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>10</ID>
+          <Description>"TEST SCRIPTS"</Description>
+          <Options moHideChildren="1"/>
+          <Color>C0C0C0</Color>
+          <GroupHeader>1</GroupHeader>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>7</ID>
+              <Description>"TEST: Durability Lower Write"</Description>
+              <Color>80000008</Color>
+              <VariableType>Auto Assembler Script</VariableType>
+              <AssemblerScript>{ Game   : Reckoning.exe
+  Version: Steam
+  Date   : 2014-04-19
+  Author : Jason
+
+  This writes the new durability when lowered, at least for my trusty rusty
+  long sword when using it in combat.
+}
+
+[ENABLE]
+
+aobscanmodule(INJECT_DurabilityDecrease,Reckoning.exe,F3 0F 11 86 88 00 00 00 0F) // should be unique
+alloc(newmem,$1000)
+
+label(code)
+label(return)
+
+newmem:
+
+code:
+  movss [esi+00000088],xmm0
+  jmp return
+
+INJECT_DurabilityDecrease:
+  jmp code
+  nop
+  nop
+  nop
+return:
+registersymbol(INJECT_DurabilityDecrease)
+
+[DISABLE]
+
+INJECT_DurabilityDecrease:
+  db F3 0F 11 86 88 00 00 00
+
+unregistersymbol(INJECT_DurabilityDecrease)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: "Reckoning.exe"+4BE36F
+
+// start of proc, new value for durability is on the top of the stack
+Reckoning.exe+4BE310 - 83 EC 4C              - sub esp,4C
+Reckoning.exe+4BE313 - 80 3D D190BF00 00     - cmp byte ptr [Reckoning.exe+7F90D1],00
+Reckoning.exe+4BE31A - 57                    - push edi
+Reckoning.exe+4BE31B - 0F85 30020000         - jne Reckoning.exe+4BE551
+Reckoning.exe+4BE321 - 8B 46 54              - mov eax,[esi+54]
+Reckoning.exe+4BE324 - 85 C0                 - test eax,eax
+Reckoning.exe+4BE326 - 75 07                 - jne Reckoning.exe+4BE32F
+Reckoning.exe+4BE328 - F3 0F10 46 50         - movss xmm0,[esi+50]
+Reckoning.exe+4BE32D - EB 04                 - jmp Reckoning.exe+4BE333
+Reckoning.exe+4BE32F - F3 0F10 00            - movss xmm0,[eax]
+Reckoning.exe+4BE333 - 0F2E 05 6C6AB800      - ucomiss xmm0,[Reckoning.exe+786A6C]
+Reckoning.exe+4BE33A - 9F                    - lahf
+Reckoning.exe+4BE33B - F6 C4 44              - test ah,44
+Reckoning.exe+4BE33E - 0F8B 0D020000         - jnp Reckoning.exe+4BE551
+Reckoning.exe+4BE344 - F3 0F10 4E 50         - movss xmm1,[esi+50]
+Reckoning.exe+4BE349 - F3 0F10 44 24 54      - movss xmm0,[esp+54]
+
+"Reckoning.exe"+4BE34F: 0F2F C1              - comiss xmm0,xmm1
+"Reckoning.exe"+4BE352: F3 0F10 9E 88000000  - movss xmm3,[esi+00000088]
+"Reckoning.exe"+4BE35A: 0F57 D2              - xorps xmm2,xmm2
+"Reckoning.exe"+4BE35D: 72 05                - jb Reckoning.exe+4BE364
+"Reckoning.exe"+4BE35F: 0F28 C1              - movaps xmm0,xmm1
+"Reckoning.exe"+4BE362: EB 08                - jmp Reckoning.exe+4BE36C
+"Reckoning.exe"+4BE364: 0F2F D0              - comiss xmm2,xmm0
+"Reckoning.exe"+4BE367: 72 03                - jb Reckoning.exe+4BE36C
+"Reckoning.exe"+4BE369: 0F28 C2              - movaps xmm0,xmm2
+"Reckoning.exe"+4BE36C: 0F2F D0              - comiss xmm2,xmm0
+// ---------- INJECTING HERE ----------
+"Reckoning.exe"+4BE36F: F3 0F11 86 88000000  - movss [esi+00000088],xmm0
+// ---------- DONE INJECTING  ----------
+"Reckoning.exe"+4BE377: 0F82 3B010000        - jb Reckoning.exe+4BE4B8
+"Reckoning.exe"+4BE37D: 0F2F DA              - comiss xmm3,xmm2
+"Reckoning.exe"+4BE380: 0F86 32010000        - jbe Reckoning.exe+4BE4B8
+"Reckoning.exe"+4BE386: 8B 46 18             - mov eax,[esi+18]
+"Reckoning.exe"+4BE389: 50                   - push eax
+"Reckoning.exe"+4BE38A: A1 EC90BF00          - mov eax,[Reckoning.exe+7F90EC]
+"Reckoning.exe"+4BE38F: 05 BC210000          - add eax,000021BC
+"Reckoning.exe"+4BE394: E8 7773F9FF          - call Reckoning.exe+455710
+"Reckoning.exe"+4BE399: 8B 48 34             - mov ecx,[eax+34]
+"Reckoning.exe"+4BE39C: 51                   - push ecx
+}
+</AssemblerScript>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>8</ID>
+              <Description>"TEST: Durability Hover Read"</Description>
+              <Color>80000008</Color>
+              <VariableType>Auto Assembler Script</VariableType>
+              <AssemblerScript>{ Game   : Reckoning.exe
+  Version: Steam
+  Date   : 2014-04-19
+  Author : Jason
+
+  Called to load weapon durability, when hovering over a weapon it is
+  called twice I think, and is also called when hovering over OTHER weapons,
+  so maybe durability is loaded for all weapons once and for the one you're
+  hovering over a second time.
+}
+
+[ENABLE]
+
+aobscanmodule(INJECT_DurabilityHoverRead,Reckoning.exe,F3 0F 10 81 88 00 00 00 0F 2F) // should be unique
+alloc(newmem,$1000)
+
+label(code)
+label(return)
+
+newmem:
+
+code:
+  movss xmm0,[ecx+00000088]
+  jmp return
+
+INJECT_DurabilityHoverRead:
+  jmp code
+  nop
+  nop
+  nop
+return:
+registersymbol(INJECT_DurabilityHoverRead)
+
+[DISABLE]
+
+INJECT_DurabilityHoverRead:
+  db F3 0F 10 81 88 00 00 00
+
+unregistersymbol(INJECT_DurabilityHoverRead)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: "Reckoning.exe"+45B1AB
+
+"Reckoning.exe"+45B18C: 7A 15                - jp Reckoning.exe+45B1A3
+"Reckoning.exe"+45B18E: F3 0F10 05 E837B700  - movss xmm0,[Reckoning.exe+7737E8]
+"Reckoning.exe"+45B196: F3 0F2C C0           - cvttss2si eax,xmm0
+"Reckoning.exe"+45B19A: 5F                   - pop edi
+"Reckoning.exe"+45B19B: 5E                   - pop esi
+"Reckoning.exe"+45B19C: 5B                   - pop ebx
+"Reckoning.exe"+45B19D: 83 C4 0C             - add esp,0C
+"Reckoning.exe"+45B1A0: C2 0400              - ret 0004
+"Reckoning.exe"+45B1A3: 38 1D D190BF00       - cmp [Reckoning.exe+7F90D1],bl
+"Reckoning.exe"+45B1A9: 75 E3                - jne Reckoning.exe+45B18E
+// ---------- INJECTING HERE ----------
+"Reckoning.exe"+45B1AB: F3 0F10 81 88000000  - movss xmm0,[ecx+00000088]
+// ---------- DONE INJECTING  ----------
+"Reckoning.exe"+45B1B3: 0F2F 05 3436B700     - comiss xmm0,[Reckoning.exe+773634]
+"Reckoning.exe"+45B1BA: 76 10                - jna Reckoning.exe+45B1CC
+"Reckoning.exe"+45B1BC: F3 0F10 0D AC98B200  - movss xmm1,[Reckoning.exe+7298AC]
+"Reckoning.exe"+45B1C4: 0F2F C8              - comiss xmm1,xmm0
+"Reckoning.exe"+45B1C7: 76 03                - jna Reckoning.exe+45B1CC
+"Reckoning.exe"+45B1C9: 0F28 C1              - movaps xmm0,xmm1
+"Reckoning.exe"+45B1CC: F3 0F2C C0           - cvttss2si eax,xmm0
+"Reckoning.exe"+45B1D0: 5F                   - pop edi
+"Reckoning.exe"+45B1D1: 5E                   - pop esi
+"Reckoning.exe"+45B1D2: 5B                   - pop ebx
+}
+</AssemblerScript>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>9</ID>
+              <Description>"TEST: Durability Lower Subtract"</Description>
+              <Color>80000008</Color>
+              <VariableType>Auto Assembler Script</VariableType>
+              <AssemblerScript>{ Game   : Reckoning.exe
+  Version: Steam
+  Date   : 2014-04-19
+  Author : Jason
+
+  This looks to be where durability is read for a weapon before having xmm0
+  subtracted from it, then being pushed to the stack for the other script
+  'TEST: Durability Lower Write' to store the result back on the weapon.
+}
+
+[ENABLE]
+
+aobscanmodule(INJECT_DURABILITY_LOWER_SUBTRACT,Reckoning.exe,C2 F3 0F 59 C1 F3 0F 10 8E 88 00 00 00) // should be unique
+alloc(newmem,$1000)
+
+label(code)
+label(return)
+
+newmem:
+
+code:
+  movss xmm1,[esi+00000088]
+  jmp return
+
+INJECT_DURABILITY_LOWER_SUBTRACT+05:
+  jmp code
+  nop
+  nop
+  nop
+return:
+registersymbol(INJECT_DURABILITY_LOWER_SUBTRACT)
+
+[DISABLE]
+
+INJECT_DURABILITY_LOWER_SUBTRACT+05:
+  db F3 0F 10 8E 88 00 00 00
+
+unregistersymbol(INJECT_DURABILITY_LOWER_SUBTRACT)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: "Reckoning.exe"+4BEE10
+
+"Reckoning.exe"+4BEDDE: 8B 8D F0010000       - mov ecx,[ebp+000001F0]
+"Reckoning.exe"+4BEDE4: F3 0F2A C8           - cvtsi2ss xmm1,eax
+"Reckoning.exe"+4BEDE8: A1 E890BF00          - mov eax,[Reckoning.exe+7F90E8]
+"Reckoning.exe"+4BEDED: 8B 90 14360000       - mov edx,[eax+00003614]
+"Reckoning.exe"+4BEDF3: F3 0F10 90 3C2F0000  - movss xmm2,[eax+00002F3C]
+"Reckoning.exe"+4BEDFB: F3 0F2A C7           - cvtsi2ss xmm0,edi
+"Reckoning.exe"+4BEDFF: F3 0F5E C8           - divss xmm1,xmm0
+"Reckoning.exe"+4BEE03: F3 0F10 04 8A        - movss xmm0,[edx+ecx*4]
+"Reckoning.exe"+4BEE08: F3 0F59 C2           - mulss xmm0,xmm2
+"Reckoning.exe"+4BEE0C: F3 0F59 C1           - mulss xmm0,xmm1
+// ---------- INJECTING HERE ----------
+"Reckoning.exe"+4BEE10: F3 0F10 8E 88000000  - movss xmm1,[esi+00000088]
+// ---------- DONE INJECTING  ----------
+"Reckoning.exe"+4BEE18: 51                   - push ecx
+"Reckoning.exe"+4BEE19: F3 0F5C C8           - subss xmm1,xmm0
+"Reckoning.exe"+4BEE1D: F3 0F11 0C 24        - movss [esp],xmm1
+"Reckoning.exe"+4BEE22: E8 E9F4FFFF          - call Reckoning.exe+4BE310
+"Reckoning.exe"+4BEE27: 8B 2D EC90BF00       - mov ebp,[Reckoning.exe+7F90EC]
+"Reckoning.exe"+4BEE2D: 83 7C 24 34 00       - cmp dword ptr [esp+34],00
+"Reckoning.exe"+4BEE32: 0F8E 37010000        - jng Reckoning.exe+4BEF6F
+"Reckoning.exe"+4BEE38: 8B 7C 24 2C          - mov edi,[esp+2C]
+"Reckoning.exe"+4BEE3C: 8D B5 BC210000       - lea esi,[ebp+000021BC]
+"Reckoning.exe"+4BEE42: 57                   - push edi
+}
+</AssemblerScript>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>11</ID>
+              <Description>"TEST: Damage"</Description>
+              <Color>80000008</Color>
+              <VariableType>Auto Assembler Script</VariableType>
+              <AssemblerScript>{ Game   : Reckoning.exe
+  Version: Steam
+  Date   : 2014-04-19
+  Author : Jason
+
+  This alters health, adding negative health as damage to both friends and
+  enemies.
+
+  Possible Structure:
+    48: Current Health (int)
+    4C: Max Health (int)
+
+    14: 1 for me, 68 for boss
+    34: 0 for me, FFFFFFFF for boss
+    38: 0 for me, float 0.1 for boss
+    3C: 0 for me, 100 for boss
+    40: 0 for me, 100000000 for boss
+    50: 0 for me, pointer for boss
+    5C: pointer for me, 0 for boss
+    7C: 0 for me, 100 for boss
+    84: small number for me, 0 for boss
+    88: small number (ABB6) for me, 0 for boss
+
+}
+
+[ENABLE]
+
+aobscanmodule(INJECT_DAMAGE,Reckoning.exe,03 CE 89 4F 48) // should be unique
+alloc(newmem,$1000)
+
+label(code)
+label(isPlayer)
+label(skip)
+label(return)
+
+newmem:
+
+code:
+  // check if it is the player
+  cmp dword ptr [pHealthReadBase],edi // (other Health script must be active)
+  je isPlayer
+  jmp skip // TODO - add enemy one-hit-kill later
+
+isPlayer:
+  // make sure god mode is enabled
+  cmp dword ptr [bGodMode],1
+  jne skip
+  mov ecx,[edi+4C]
+  xor esi,esi
+
+skip:
+  add ecx,esi
+  mov [edi+48],ecx
+  jmp return
+
+INJECT_DAMAGE:
+  jmp code
+return:
+registersymbol(INJECT_DAMAGE)
+
+[DISABLE]
+
+INJECT_DAMAGE:
+  db 03 CE 89 4F 48
+
+unregistersymbol(INJECT_DAMAGE)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: "Reckoning.exe"+3A1979
+
+"Reckoning.exe"+3A1955: DDD8              - fstp st(0)
+"Reckoning.exe"+3A1957: 76 07             - jna Reckoning.exe+3A1960
+"Reckoning.exe"+3A1959: 80 A7 DC000000 BF - and byte ptr [edi+000000DC],-41
+"Reckoning.exe"+3A1960: 39 9F 84000000    - cmp [edi+00000084],ebx
+"Reckoning.exe"+3A1966: 0F8D B6000000     - jnl Reckoning.exe+3A1A22
+"Reckoning.exe"+3A196C: E9 A5000000       - jmp Reckoning.exe+3A1A16
+"Reckoning.exe"+3A1971: 8B C6             - mov eax,esi
+"Reckoning.exe"+3A1973: F7 D8             - neg eax
+"Reckoning.exe"+3A1975: 3B C8             - cmp ecx,eax
+"Reckoning.exe"+3A1977: 76 07             - jna Reckoning.exe+3A1980
+// ---------- INJECTING HERE ----------
+"Reckoning.exe"+3A1979: 03 CE             - add ecx,esi
+"Reckoning.exe"+3A197B: 89 4F 48          - mov [edi+48],ecx
+// ---------- DONE INJECTING  ----------
+"Reckoning.exe"+3A197E: EB 03             - jmp Reckoning.exe+3A1983
+"Reckoning.exe"+3A1980: 89 5F 48          - mov [edi+48],ebx
+"Reckoning.exe"+3A1983: B1 40             - mov cl,40
+"Reckoning.exe"+3A1985: 84 8F DC000000    - test [edi+000000DC],cl
+"Reckoning.exe"+3A198B: 0F85 85000000     - jne Reckoning.exe+3A1A16
+"Reckoning.exe"+3A1991: 8B 47 4C          - mov eax,[edi+4C]
+"Reckoning.exe"+3A1994: 83 F8 01          - cmp eax,01
+"Reckoning.exe"+3A1997: 7D 05             - jnl Reckoning.exe+3A199E
+"Reckoning.exe"+3A1999: B8 01000000       - mov eax,00000001
+"Reckoning.exe"+3A199E: 8B 15 E890BF00    - mov edx,[Reckoning.exe+7F90E8]
+}
+</AssemblerScript>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>14</ID>
+              <Description>"TEST: Skill Points"</Description>
+              <Color>80000008</Color>
+              <VariableType>Auto Assembler Script</VariableType>
+              <AssemblerScript>{ Game   : Reckoning.exe
+  Version: Steam
+  Date   : 2014-04-19
+  Author : Jason
+
+  When upgrading skills, this reads the skill points remaining.
+}
+
+[ENABLE]
+
+aobscanmodule(INJECT_READ_SKILL_POINTS_REMAINING,Reckoning.exe,8B 50 18 89 53 18) // should be unique
+alloc(newmem,$1000)
+
+label(code)
+label(return)
+
+newmem:
+
+code:
+  mov edx,[eax+18]
+  mov [ebx+18],edx
+  jmp return
+
+INJECT_READ_SKILL_POINTS_REMAINING:
+  jmp code
+  nop
+return:
+registersymbol(INJECT_READ_SKILL_POINTS_REMAINING)
+
+[DISABLE]
+
+INJECT_READ_SKILL_POINTS_REMAINING:
+  db 8B 50 18 89 53 18
+
+unregistersymbol(INJECT_READ_SKILL_POINTS_REMAINING)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: "Reckoning.exe"+8C76E
+
+"Reckoning.exe"+8C754: 85 C9           - test ecx,ecx
+"Reckoning.exe"+8C756: 75 16           - jne Reckoning.exe+8C76E
+"Reckoning.exe"+8C758: 8D 70 08        - lea esi,[eax+08]
+"Reckoning.exe"+8C75B: 8D 43 08        - lea eax,[ebx+08]
+"Reckoning.exe"+8C75E: E8 1D3E4500     - call Reckoning.exe+4E0580
+"Reckoning.exe"+8C763: 5F              - pop edi
+"Reckoning.exe"+8C764: 5E              - pop esi
+"Reckoning.exe"+8C765: B8 01000000     - mov eax,00000001
+"Reckoning.exe"+8C76A: 5B              - pop ebx
+"Reckoning.exe"+8C76B: C2 0400         - ret 0004
+// ---------- INJECTING HERE ----------
+"Reckoning.exe"+8C76E: 8B 50 18        - mov edx,[eax+18]
+"Reckoning.exe"+8C771: 89 53 18        - mov [ebx+18],edx
+// ---------- DONE INJECTING  ----------
+"Reckoning.exe"+8C774: 8B 40 1C        - mov eax,[eax+1C]
+"Reckoning.exe"+8C777: 5F              - pop edi
+"Reckoning.exe"+8C778: 89 43 1C        - mov [ebx+1C],eax
+"Reckoning.exe"+8C77B: 5E              - pop esi
+"Reckoning.exe"+8C77C: B8 01000000     - mov eax,00000001
+"Reckoning.exe"+8C781: 5B              - pop ebx
+"Reckoning.exe"+8C782: C2 0400         - ret 0004
+"Reckoning.exe"+8C785: CC              - int 3 
+"Reckoning.exe"+8C786: CC              - int 3 
+"Reckoning.exe"+8C787: CC              - int 3 
+}
+</AssemblerScript>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>13</ID>
+              <Description>"TEST: Ability Points (same as Skill points)"</Description>
+              <Color>80000008</Color>
+              <VariableType>Auto Assembler Script</VariableType>
+              <AssemblerScript>{ Game   : Reckoning.exe
+  Version: Steam
+  Date   : 2014-04-19
+  Author : Jason
+
+  This script reads the ability points remaining every frame when they are
+  being modified, as well as skill points.  It seems unusable though because
+  it can be used by all different kinds of things.
+}
+
+[ENABLE]
+
+aobscanmodule(INJECT_ABILITY_POINTS_READ,Reckoning.exe,8B 50 18 89 53 18) // should be unique
+alloc(newmem,$1000)
+
+label(code)
+label(return)
+
+newmem:
+
+code:
+  mov edx,[eax+18]
+  mov [ebx+18],edx
+  jmp return
+
+INJECT_ABILITY_POINTS_READ:
+  jmp code
+  nop
+return:
+registersymbol(INJECT_ABILITY_POINTS_READ)
+
+[DISABLE]
+
+INJECT_ABILITY_POINTS_READ:
+  db 8B 50 18 89 53 18
+
+unregistersymbol(INJECT_ABILITY_POINTS_READ)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: "Reckoning.exe"+8C76E
+
+"Reckoning.exe"+8C754: 85 C9           - test ecx,ecx
+"Reckoning.exe"+8C756: 75 16           - jne Reckoning.exe+8C76E
+"Reckoning.exe"+8C758: 8D 70 08        - lea esi,[eax+08]
+"Reckoning.exe"+8C75B: 8D 43 08        - lea eax,[ebx+08]
+"Reckoning.exe"+8C75E: E8 1D3E4500     - call Reckoning.exe+4E0580
+"Reckoning.exe"+8C763: 5F              - pop edi
+"Reckoning.exe"+8C764: 5E              - pop esi
+"Reckoning.exe"+8C765: B8 01000000     - mov eax,00000001
+"Reckoning.exe"+8C76A: 5B              - pop ebx
+"Reckoning.exe"+8C76B: C2 0400         - ret 0004
+// ---------- INJECTING HERE ----------
+"Reckoning.exe"+8C76E: 8B 50 18        - mov edx,[eax+18]
+"Reckoning.exe"+8C771: 89 53 18        - mov [ebx+18],edx
+// ---------- DONE INJECTING  ----------
+"Reckoning.exe"+8C774: 8B 40 1C        - mov eax,[eax+1C]
+"Reckoning.exe"+8C777: 5F              - pop edi
+"Reckoning.exe"+8C778: 89 43 1C        - mov [ebx+1C],eax
+"Reckoning.exe"+8C77B: 5E              - pop esi
+"Reckoning.exe"+8C77C: B8 01000000     - mov eax,00000001
+"Reckoning.exe"+8C781: 5B              - pop ebx
+"Reckoning.exe"+8C782: C2 0400         - ret 0004
+"Reckoning.exe"+8C785: CC              - int 3 
+"Reckoning.exe"+8C786: CC              - int 3 
+"Reckoning.exe"+8C787: CC              - int 3 
+}
+</AssemblerScript>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>22</ID>
+              <Description>"TEST: Item Use"</Description>
+              <Color>80000008</Color>
+              <VariableType>Auto Assembler Script</VariableType>
+              <AssemblerScript>{ Game   : Reckoning.exe
+  Version: Steam
+  Date   : 2014-04-19
+  Author : Jason
+
+  This is called to decrease the number of an item you're using.
+}
+
+[ENABLE]
+
+aobscanmodule(INJECT_ITEM_USE,Reckoning.exe,8B 85 84 00 00 00 48) // should be unique
+alloc(newmem,$1000)
+
+label(code)
+label(return)
+
+newmem:
+
+code:
+  mov eax,[ebp+00000084]
+  jmp return
+
+INJECT_ITEM_USE:
+  jmp code
+  nop
+return:
+registersymbol(INJECT_ITEM_USE)
+
+[DISABLE]
+
+INJECT_ITEM_USE:
+  db 8B 85 84 00 00 00
+
+unregistersymbol(INJECT_ITEM_USE)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: "Reckoning.exe"+4C3870
+
+"Reckoning.exe"+4C384E: 3B C3                 - cmp eax,ebx
+"Reckoning.exe"+4C3850: 74 0F                 - je Reckoning.exe+4C3861
+"Reckoning.exe"+4C3852: F6 40 20 01           - test byte ptr [eax+20],01
+"Reckoning.exe"+4C3856: 74 09                 - je Reckoning.exe+4C3861
+"Reckoning.exe"+4C3858: 39 58 50              - cmp [eax+50],ebx
+"Reckoning.exe"+4C385B: 0F85 89040000         - jne Reckoning.exe+4C3CEA
+"Reckoning.exe"+4C3861: BF 01000000           - mov edi,00000001
+"Reckoning.exe"+4C3866: 39 7D 74              - cmp [ebp+74],edi
+"Reckoning.exe"+4C3869: C6 44 24 17 01        - mov byte ptr [esp+17],01
+"Reckoning.exe"+4C386E: 7E 30                 - jle Reckoning.exe+4C38A0
+// ---------- INJECTING HERE ----------
+"Reckoning.exe"+4C3870: 8B 85 84000000        - mov eax,[ebp+00000084] // load item quantity
+// ---------- DONE INJECTING  ----------
+"Reckoning.exe"+4C3876: 48                    - dec eax // decrement
+"Reckoning.exe"+4C3877: 3B C3                 - cmp eax,ebx // compare to 0?
+"Reckoning.exe"+4C3879: 7C 06                 - jnge Reckoning.exe+4C3881 // jump if out of item
+"Reckoning.exe"+4C387B: 89 85 84000000        - mov [ebp+00000084],eax // store new quantity
+"Reckoning.exe"+4C3881: 38 9C 24 F4010000     - cmp [esp+000001F4],bl // ?
+"Reckoning.exe"+4C3888: 74 08                 - je Reckoning.exe+4C3892
+"Reckoning.exe"+4C388A: 39 9D 84000000        - cmp [ebp+00000084],ebx // compare with 0 again?
+"Reckoning.exe"+4C3890: 7F DE                 - jg Reckoning.exe+4C3870
+"Reckoning.exe"+4C3892: 39 9D 84000000        - cmp [ebp+00000084],ebx // compare with 0 again?
+"Reckoning.exe"+4C3898: 7E 06                 - jle Reckoning.exe+4C38A0
+}
+</AssemblerScript>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>26</ID>
+              <Description>"TEST: Health Every Frame"</Description>
+              <Color>80000008</Color>
+              <VariableType>Auto Assembler Script</VariableType>
+              <AssemblerScript>{ Game   : Reckoning.exe
+  Version: 
+  Date   : 2014-04-19
+  Author : Jason
+
+  Loads player health many times a second.
+
+  Health: [eax+48]
+  Max Health: [eax+48]
+}
+
+[ENABLE]
+
+aobscanmodule(INJECT_HEALTH_DISPLAY,Reckoning.exe,8B 48 48 8B 40 4C 3B) // should be unique
+alloc(newmem,$1000)
+
+label(code)
+label(return)
+
+newmem:
+
+code:
+  mov ecx,[eax+48]
+  mov eax,[eax+4C]
+  jmp return
+
+INJECT_HEALTH_DISPLAY:
+  jmp code
+  nop
+return:
+registersymbol(INJECT_HEALTH_DISPLAY)
+
+[DISABLE]
+
+INJECT_HEALTH_DISPLAY:
+  db 8B 48 48 8B 40 4C
+
+unregistersymbol(INJECT_HEALTH_DISPLAY)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: "Reckoning.exe"+63DF4E
+
+"Reckoning.exe"+63DF31: 33 DB             - xor ebx,ebx
+"Reckoning.exe"+63DF33: 50                - push eax
+"Reckoning.exe"+63DF34: 8D 7B 01          - lea edi,[ebx+01]
+"Reckoning.exe"+63DF37: 8D 74 24 14       - lea esi,[esp+14]
+"Reckoning.exe"+63DF3B: E8 A0319CFF       - call Reckoning.exe+10E0
+"Reckoning.exe"+63DF40: 8B 44 24 14       - mov eax,[esp+14]
+"Reckoning.exe"+63DF44: 85 C0             - test eax,eax
+"Reckoning.exe"+63DF46: 74 42             - je Reckoning.exe+63DF8A
+"Reckoning.exe"+63DF48: F6 40 20 01       - test byte ptr [eax+20],01
+"Reckoning.exe"+63DF4C: 74 3C             - je Reckoning.exe+63DF8A
+// ---------- INJECTING HERE ----------
+"Reckoning.exe"+63DF4E: 8B 48 48          - mov ecx,[eax+48]
+"Reckoning.exe"+63DF51: 8B 40 4C          - mov eax,[eax+4C]
+// ---------- DONE INJECTING  ----------
+"Reckoning.exe"+63DF54: 3B C7             - cmp eax,edi
+"Reckoning.exe"+63DF56: 7D 02             - jnl Reckoning.exe+63DF5A
+"Reckoning.exe"+63DF58: 8B C7             - mov eax,edi
+"Reckoning.exe"+63DF5A: 89 4C 24 20       - mov [esp+20],ecx
+"Reckoning.exe"+63DF5E: DB 44 24 20       - fild dword ptr [esp+20]
+"Reckoning.exe"+63DF62: 85 C9             - test ecx,ecx
+"Reckoning.exe"+63DF64: 7D 06             - jnl Reckoning.exe+63DF6C
+"Reckoning.exe"+63DF66: D8 05 A886BA00    - fadd dword ptr [Reckoning.exe+7A86A8]
+"Reckoning.exe"+63DF6C: 89 44 24 20       - mov [esp+20],eax
+"Reckoning.exe"+63DF70: DB 44 24 20       - fild dword ptr [esp+20]
+}
+</AssemblerScript>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>37</ID>
+              <Description>"TEST: Backpack Size"</Description>
+              <Color>80000008</Color>
+              <VariableType>Auto Assembler Script</VariableType>
+              <AssemblerScript>{ Game   : Reckoning.exe
+  Version: Steam
+  Date   : 2014-04-20
+  Author : Jason
+
+  This code accesses A LOT of addresses, including one that is the maximum
+  number of items you can carry :)
+}
+
+[ENABLE]
+
+aobscanmodule(INJECT_TEST_BACKPACKSIZE,Reckoning.exe,8B 51 0C 8B F9) // should be unique
+alloc(newmem,$1000)
+
+label(code)
+label(return)
+
+newmem:
+
+code:
+  mov edx,[ecx+0C]
+  mov edi,ecx
+  jmp return
+
+INJECT_TEST_BACKPACKSIZE:
+  jmp code
+return:
+registersymbol(INJECT_TEST_BACKPACKSIZE)
+
+[DISABLE]
+
+INJECT_TEST_BACKPACKSIZE:
+  db 8B 51 0C 8B F9
+
+unregistersymbol(INJECT_TEST_BACKPACKSIZE)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: "Reckoning.exe"+4F651B
+
+"Reckoning.exe"+4F6501: 8B 55 0C           - mov edx,[ebp+0C]
+"Reckoning.exe"+4F6504: 8B CA              - mov ecx,edx
+"Reckoning.exe"+4F6506: C1 E9 03           - shr ecx,03
+"Reckoning.exe"+4F6509: 33 CA              - xor ecx,edx
+"Reckoning.exe"+4F650B: C1 E9 05           - shr ecx,05
+"Reckoning.exe"+4F650E: 33 CA              - xor ecx,edx
+"Reckoning.exe"+4F6510: 23 48 10           - and ecx,[eax+10]
+"Reckoning.exe"+4F6513: C1 E1 04           - shl ecx,04
+"Reckoning.exe"+4F6516: 03 CE              - add ecx,esi
+"Reckoning.exe"+4F6518: 8B 41 08           - mov eax,[ecx+08]
+// ---------- INJECTING HERE ----------
+"Reckoning.exe"+4F651B: 8B 51 0C           - mov edx,[ecx+0C]
+"Reckoning.exe"+4F651E: 8B F9              - mov edi,ecx
+// ---------- DONE INJECTING  ----------
+"Reckoning.exe"+4F6520: 2B FE              - sub edi,esi
+"Reckoning.exe"+4F6522: C1 FF 04           - sar edi,04
+"Reckoning.exe"+4F6525: 8D 3C BD 04000000  - lea edi,[edi*4+00000004]
+"Reckoning.exe"+4F652C: 8B DE              - mov ebx,esi
+"Reckoning.exe"+4F652E: 2B DF              - sub ebx,edi
+"Reckoning.exe"+4F6530: 8B 3B              - mov edi,[ebx]
+"Reckoning.exe"+4F6532: 8B 19              - mov ebx,[ecx]
+"Reckoning.exe"+4F6534: 3B 5D 08           - cmp ebx,[ebp+08]
+"Reckoning.exe"+4F6537: 75 08              - jne Reckoning.exe+4F6541
+"Reckoning.exe"+4F6539: 8B 49 04           - mov ecx,[ecx+04]
+}
+</AssemblerScript>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols>
+    <SymbolEntry>
+      <Name>globals</Name>
+      <Address>09DD0000</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>pSkillPointBase</Name>
+      <Address>0AF31108</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>pAbilityPointBase</Name>
+      <Address>0AF3110C</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>INJECT_ManaUse</Name>
+      <Address>0079AFC1</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>INJECT_COOLDOWN</Name>
+      <Address>00894EB0</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>INJECT_READ_SKILL_POINTS_REMAINING</Name>
+      <Address>0048C76E</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>INJECT_DURABILITY_LOWER_SUBTRACT</Name>
+      <Address>008BEE0B</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>INJECT_DAMAGE</Name>
+      <Address>007A1979</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>INJECT_ITEM_USE</Name>
+      <Address>008C3870</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>INJECT_HEALTH_DISPLAY</Name>
+      <Address>00A3DF4E</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>bNoManaUse</Name>
+      <Address>09DD1000</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>bNoCooldown</Name>
+      <Address>09DD1004</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>bUpgradePoints</Name>
+      <Address>09DD1008</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>bHealth</Name>
+      <Address>09DD100C</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>bDurability</Name>
+      <Address>09DD1010</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>bNoItemUse</Name>
+      <Address>09DD1014</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>bGodMode</Name>
+      <Address>09DD1018</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>pManaUseBase</Name>
+      <Address>09DD1100</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>pCooldownBase</Name>
+      <Address>09DD1104</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>pUpgradePointBase</Name>
+      <Address>09DD1108</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>pHealthBase</Name>
+      <Address>09DD110C</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>pDurabilityBase</Name>
+      <Address>09DD1110</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>pItemUseBase</Name>
+      <Address>09DD1114</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>pHealthReadBase</Name>
+      <Address>09DD1118</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>pGoldBase</Name>
+      <Address>09DD111C</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>pReservedManaBase</Name>
+      <Address>09DD1120</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>pBackpackBase</Name>
+      <Address>09DD1124</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>INJECT_BACKPACKSIZE</Name>
+      <Address> 008F651B</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>INJECT_GOLD</Name>
+      <Address> 00B03E6C</Address>
+    </SymbolEntry>
+  </UserdefinedSymbols>
+</CheatTable>

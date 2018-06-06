@@ -1,0 +1,300 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="16">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>57</ID>
+      <Description>"Star Wolves AOB script update2"</Description>
+      <Options moHideChildren="1"/>
+      <Color>80000008</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>[ENABLE]
+aobscan(aobSkillPointTaker,D8 64 24 18 B8 01 00 00 00)
+aobscan(aobCreditUpdater,89 88 0C 01 00 00 8B 4F 64)
+aobscan(aobArmourGetter,D9 86 D8 03 00 00 D9 86 D0 00 00 00)
+aobscan(aobRocketTaker1,FF 53 50 50 8B CF FF 53 64 FF 8E 98 07 00 00) // Dirty!!!
+aobscan(aobRocketTaker2,FF 50 50 50 8B CF FF 53 64 FF 8E 98 07 00 00) // Dirty!!!
+aobscan(aobArmorChecker,D8 9E D0 00 00 00 DF E0 F6 C4 41)
+
+alloc(newmem,4096)
+
+label(aobSkillPointTaker_r)
+label(aobCreditUpdater_r)
+label(aobArmourGetter_r)
+label(aobRocketTaker1_r)
+label(aobRocketTaker2_r)
+label(aobArmorChecker_r)
+registersymbol(aobSkillPointTaker_r)
+registersymbol(aobCreditUpdater_r)
+registersymbol(aobArmourGetter_r)
+registersymbol(aobRocketTaker1_r)
+registersymbol(aobRocketTaker2_r)
+registersymbol(aobArmorChecker_r)
+
+label(lblSkillPointTaker)
+label(lblSkillPointTakerSkip)
+label(lblSkillPointTakerRet)
+
+label(lblCreditUpdater)
+label(lblCreditUpdaterSkip)
+label(lblCreditUpdaterRet)
+
+label(lblArmourGetter)
+label(lblArmourGetterSkip)
+label(lblArmourGetterRet)
+
+label(lblRocketTaker)
+label(lblRocketTakerSkip)
+
+label(lblArmorChecker)
+label(lblArmorCheckerSkip)
+label(lblArmorCheckerRet)
+
+label(bEnableInfiniteSkillPoints)
+label(bEnableMinCredits)
+label(iMinCredits)
+label(bEnableArmourHack)
+label(bEnableInfiniteRockets)
+registersymbol(bEnableInfiniteSkillPoints)
+registersymbol(bEnableMinCredits)
+registersymbol(iMinCredits)
+registersymbol(bEnableArmourHack)
+registersymbol(bEnableInfiniteRockets)
+
+label(sPlayer)
+registersymbol(sPlayer)
+
+newmem:
+bEnableInfiniteSkillPoints:
+dd 1
+bEnableMinCredits:
+dd 1
+iMinCredits:
+dd (int)500000
+bEnableArmourHack:
+dd 1
+bEnableInfiniteRockets:
+dd 1
+
+///////////////////////
+// Skill points
+
+lblSkillPointTaker:
+cmp dword ptr [bEnableInfiniteSkillPoints],1
+je short lblSkillPointTakerSkip
+fsub dword ptr [esp+18] // Original code
+lblSkillPointTakerSkip:
+mov eax,00000001        // Original code
+jmp lblSkillPointTakerRet
+
+///////////////////////
+// Credits
+
+lblCreditUpdater:
+cmp dword ptr [bEnableMinCredits],1
+jne short lblCreditUpdaterSkip
+cmp dword ptr [iMinCredits],ecx
+jle short lblCreditUpdaterSkip
+mov ecx,[iMinCredits]
+lblCreditUpdaterSkip:
+mov [eax+0000010C],ecx // Original code
+jmp lblCreditUpdaterRet
+
+///////////////////////
+// Armour
+
+lblArmourGetter:
+fld dword ptr [esi+000003D8] // Original code
+cmp dword ptr [bEnableArmourHack],1
+jne short lblArmourGetterSkip
+fst dword ptr [esi+D0]
+lblArmourGetterSkip:
+jmp lblArmourGetterRet
+
+///////////////////////
+// Rockets
+
+lblRocketTaker:
+dec [esi+00000798] // Original code
+push eax
+cmp dword ptr [bEnableInfiniteRockets],1
+jne lblRocketTakerSkip
+mov eax,[esi+760]
+cmp dword ptr [esi+798],eax
+jge short lblRocketTakerSkip
+mov [esi+798],eax
+lblRocketTakerSkip:
+pop eax
+ret
+
+///////////////////////
+// Armour
+
+lblArmorChecker:
+pushad
+cmp dword ptr [bEnableArmourHack],1
+jne lblArmorCheckerSkip
+mov eax,[esi+37c]
+test eax,eax
+jz lblArmorCheckerSkip
+push sPlayer
+push eax
+call strstr
+add esp,8
+test eax,eax
+jz lblArmorCheckerSkip
+mov eax,[esi+e74]
+test eax,eax
+jz lblArmorCheckerSkip
+mov eax,[eax+5fc]
+test eax,eax
+jz lblArmorCheckerSkip
+cmp byte ptr [eax],0
+je lblArmorCheckerSkip
+fld dword ptr [esi+3D8]
+fst dword ptr [esi+D0]
+mov dword ptr [esp+34],0
+fstp st(0)
+fldz
+lblArmorCheckerSkip:
+popad
+fcomp dword ptr [esi+000000D0] // Original code
+jmp lblArmorCheckerRet
+
+sPlayer:
+db '_player' 00
+
+//"StarWolves.exe"+E771E:
+aobSkillPointTaker:
+aobSkillPointTaker_r:
+jmp lblSkillPointTaker
+nop
+nop
+nop
+nop
+lblSkillPointTakerRet:
+
+//"StarWolves.exe"+128070:
+aobCreditUpdater:
+aobCreditUpdater_r:
+jmp lblCreditUpdater
+nop
+lblCreditUpdaterRet:
+
+//"StarWolves.exe"+12548B:
+aobArmourGetter:
+aobArmourGetter_r:
+jmp lblArmourGetter
+nop
+lblArmourGetterRet:
+
+//"StarWolves.exe"+1B5909:
+aobRocketTaker1+9:
+aobRocketTaker1_r:
+call lblRocketTaker
+nop
+
+//"StarWolves.exe"+1B3EA3:
+aobRocketTaker2+9:
+aobRocketTaker2_r:
+call lblRocketTaker
+nop
+
+//"StarWolves.exe"+192FEA:
+aobArmorChecker:
+aobArmorChecker_r:
+jmp lblArmorChecker
+nop
+lblArmorCheckerRet:
+
+[DISABLE]
+//"StarWolves.exe"+E771E:
+aobSkillPointTaker_r:
+//Alt: fsub dword ptr [esp+18]
+//Alt: mov eax,00000001
+db D8 64 24 18 B8 01 00 00 00
+
+//"StarWolves.exe"+128070:
+aobCreditUpdater_r:
+//Alt: mov [eax+0000010C],ecx
+db 89 88 0C 01 00 00
+
+//"StarWolves.exe"+12548B:
+aobArmourGetter_r:
+//Alt: fld dword ptr [esi+000003D8]
+db D9 86 D8 03 00 00
+
+//"StarWolves.exe"+1B5909:
+aobRocketTaker1_r:
+//Alt: dec [esi+00000798]
+db FF 8E 98 07 00 00
+
+//"StarWolves.exe"+1B3EA3:
+aobRocketTaker2_r:
+//Alt: dec [esi+00000798]
+db FF 8E 98 07 00 00
+
+//"StarWolves.exe"+192FEA:
+aobArmorChecker_r:
+//Alt: fcomp dword ptr [esi+000000D0]
+db D8 9E D0 00 00 00
+
+unregistersymbol(aobSkillPointTaker_r)
+unregistersymbol(aobCreditUpdater_r)
+unregistersymbol(aobArmourGetter_r)
+unregistersymbol(aobRocketTaker1_r)
+unregistersymbol(aobRocketTaker2_r)
+unregistersymbol(aobArmorChecker_r)
+
+unregistersymbol(bEnableInfiniteSkillPoints)
+unregistersymbol(bEnableMinCredits)
+unregistersymbol(iMinCredits)
+unregistersymbol(bEnableArmourHack)
+unregistersymbol(bEnableInfiniteRockets)
+
+unregistersymbol(sPlayer)
+
+dealloc(newmem)
+
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>58</ID>
+          <Description>"bEnableInfiniteSkillPoints"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>bEnableInfiniteSkillPoints</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>59</ID>
+          <Description>"bEnableMinCredits"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>bEnableMinCredits</Address>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>60</ID>
+              <Description>"iMinCredits"</Description>
+              <Color>FF0000</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>iMinCredits</Address>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>61</ID>
+          <Description>"bEnableArmourHack"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>bEnableArmourHack</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>62</ID>
+          <Description>"bEnableInfiniteRockets"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>bEnableInfiniteRockets</Address>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+  </CheatEntries>
+</CheatTable>

@@ -1,0 +1,424 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="24">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>0</ID>
+      <Description>"Main (F1)"</Description>
+      <LastState/>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>// Game   : ShadowWarrior2.exe
+// Version:
+// Date   : 17.10.2016
+// Author : mgr.inz.Player
+// define(ShadowWarrior2.exe,0)
+[ENABLE]
+aobscanmodule(aob_CheatManager,ShadowWarrior2.exe,8B 41 04 89 44 24 24 8B 41 08 48 8B)
+registersymbol(aob_CheatManager)
+alloc(newmem_CheatManager,1024,ShadowWarrior2.exe)
+
+label(exit_CheatManager)
+label(return_CheatManager)
+label(subroutine_CheatManager)
+label(string_compare_subroutine_CheatManager)
+label(WangIdentifier)
+
+registersymbol(Money_CheatManager)
+registersymbol(HP_CheatManager)
+registersymbol(Mana_CheatManager)
+registersymbol(Ammo_CheatManager)
+registersymbol(CollectRadius_CheatManager)
+registersymbol(Speed_CheatManager)
+label(Money_CheatManager)
+label(HP_CheatManager)
+label(Mana_CheatManager)
+label(Ammo_CheatManager)
+label(CollectRadius_CheatManager)
+label(Speed_CheatManager)
+
+newmem_CheatManager:
+  lea rsp,[rsp-18]   // room for regs
+  mov [rsp+00],rbx   // backup RBX
+  mov [rsp+08],rsi   // backup RSI (will change because of cmpsb)
+  mov [rsp+10],rdi   // backup RDI (-//-)
+  mov rbx,rcx        // backup RCX (-//-)
+  mov rax,[rcx+10]
+
+  // only integers and floats
+  cmp [rbx],00040000
+  jb exit_CheatManager
+  cmp [rbx],00040001
+  ja exit_CheatManager
+
+  // 1pass filtering
+  cmp [rbx+0C],00080006
+  jne exit_CheatManager
+  cmp [rbx+10],00010000
+  jbe exit_CheatManager
+
+  // 2pass filtering
+  mov rsi,WangIdentifier
+  cmp word ptr [rax+22],'XP'  // only Wang has XP points (XP, XPToLevelUp, XPToLevelUpGrow, XP_max, XP_max_mult whatever comes first)
+  jne @f
+    mov [rsi],r11
+  @@:
+  cmp [rsi],r11
+  jne exit_CheatManager
+
+  // mov esi,[rcx+04] // I'm using this to collect some floats
+
+  // compare in the forward direction
+  cld
+
+  // here we go
+  //hp
+  mov rsi,HP_CheatManager
+  call subroutine_CheatManager
+  test si,si
+  jz short @f
+    mov [rbx],00040001        // force float
+    mov [rbx+04],(float)100
+    jmp exit_CheatManager
+  @@:
+
+  //mana
+  mov rsi,Mana_CheatManager
+  call subroutine_CheatManager
+  test si,si
+  jz short @f
+    mov [rbx],00040001        // force float
+    mov [rbx+04],(float)200
+    jmp exit_CheatManager
+  @@:
+
+  //CollectRadius
+  mov rsi,CollectRadius_CheatManager
+  call subroutine_CheatManager
+  test si,si
+  jz short @f
+    mov [rbx],00040001        // force float
+    mov [rbx+04],(float)100
+    jmp exit_CheatManager
+  @@:
+
+  //speed
+  mov rsi,Speed_CheatManager
+  call string_compare_subroutine_CheatManager
+  test si,si
+  jz short @f
+    mov rsi,Speed_CheatManager
+    cmp [rsi],0
+    mov esi,(float)6    // super speed
+    mov edi,(float)1.5  // normal speed
+    cmove esi,edi
+    mov [rbx],00040001        // force float
+    mov [rbx+04],esi
+    jmp exit_CheatManager
+  @@:
+
+  //ammo
+  mov rsi,Ammo_CheatManager
+  cmp [rsi],0
+  jz short @f
+  cmp dword ptr [rax+22],'Ammo'
+  jne short @f
+  cmp  byte ptr [rax+26],'_'
+  jne short @f
+    mov [rbx],00040001        // force float
+    mov [rbx+04],(float)100
+    jmp exit_CheatManager
+  @@:
+
+
+  // money
+  mov rsi,Money_CheatManager
+  call subroutine_CheatManager
+  test si,si
+  jz short not_a_money
+    mov rsi,Money_CheatManager
+    cmp [rbx],00040001
+    je short money_is_float
+      mov edi,[rsi]
+      add rdi,[rbx+04]
+      mov [rbx+04],rdi
+      mov [rsi],0
+    jmp exit_CheatManager
+    money_is_float:
+      fild dword ptr [rsi]
+      fadd dword ptr [rbx+04]
+      fstp dword ptr [rbx+04]
+      mov [rsi],0
+    jmp exit_CheatManager
+  not_a_money:
+
+exit_CheatManager:
+  mov rcx,rbx        // restore RCX
+  mov rbx,[rsp+00]   // restore RBX
+  mov rsi,[rsp+08]   // restore RSI
+  mov rdi,[rsp+10]   // restore RDI
+  lea rsp,[rsp+18]       // free
+  mov eax,[rcx+04]       // orig
+  mov [rsp+24],eax       // orig
+  jmp return_CheatManager
+
+subroutine_CheatManager:
+  cmp [rsi],0        // enabled?
+  jne @f
+  mov si,0
+  ret
+string_compare_subroutine_CheatManager:
+  xor ecx,ecx
+  mov cx,[rsi+4]     // string length
+  lea rcx,[rcx+2]
+  lea rdi,[rsi+04]   // string to find
+  lea rsi,[rax+20]   // current string
+  repe cmpsb
+  jne short @f
+  mov si,1
+  ret
+@@:
+  mov si,0
+  ret
+WangIdentifier:
+dq 0
+
+
+HP_CheatManager:
+dd 0
+dw 2
+db 'HP'
+
+Mana_CheatManager:
+dd 0
+dw 4
+db 'Mana'
+
+CollectRadius_CheatManager:
+dd 0
+dw #22
+db 'AutoCollectRadiusBonus'
+
+Money_CheatManager:
+dd 0
+dw 5
+db 'Money'
+
+Speed_CheatManager:
+dd 0
+dw #11
+db 'SprintSpeed'
+
+Ammo_CheatManager:
+dd 0
+
+
+aob_CheatManager:
+  jmp newmem_CheatManager
+  nop
+  nop
+return_CheatManager:
+[DISABLE]
+aob_CheatManager:
+  db 8B 41 04 89 44 24 24
+
+unregistersymbol(aob_CheatManager)
+dealloc(newmem_CheatManager)
+
+unregistersymbol(Money_CheatManager)
+unregistersymbol(HP_CheatManager)
+unregistersymbol(Mana_CheatManager)
+unregistersymbol(Ammo_CheatManager)
+unregistersymbol(CollectRadius_CheatManager)
+unregistersymbol(Speed_CheatManager)
+
+{
+// ORIGINAL CODE - INJECTION POINT: "ShadowWarrior2.exe"+5E964
+
+"ShadowWarrior2.exe"+5E942: 4D 85 DB                    -  test r11,r11
+"ShadowWarrior2.exe"+5E945: 74 78                       -  je ShadowWarrior2.exe+5E9BF
+"ShadowWarrior2.exe"+5E947: 45 84 C9                    -  test r9l,r9l
+"ShadowWarrior2.exe"+5E94A: 75 73                       -  jne ShadowWarrior2.exe+5E9BF
+"ShadowWarrior2.exe"+5E94C: E9 6F FF FF FF              -  jmp ShadowWarrior2.exe+5E8C0
+"ShadowWarrior2.exe"+5E951: 81 39 0D 00 08 00           -  cmp [rcx],0008000D
+"ShadowWarrior2.exe"+5E957: 48 8D 54 24 20              -  lea rdx,[rsp+20]
+"ShadowWarrior2.exe"+5E95C: 74 2E                       -  je ShadowWarrior2.exe+5E98C
+"ShadowWarrior2.exe"+5E95E: 8B 01                       -  mov eax,[rcx]
+"ShadowWarrior2.exe"+5E960: 89 44 24 20                 -  mov [rsp+20],eax
+// ---------- INJECTING HERE ----------
+"ShadowWarrior2.exe"+5E964: 8B 41 04                    -  mov eax,[rcx+04]
+"ShadowWarrior2.exe"+5E967: 89 44 24 24                 -  mov [rsp+24],eax
+// ---------- DONE INJECTING  ----------
+"ShadowWarrior2.exe"+5E96B: 8B 41 08                    -  mov eax,[rcx+08]
+"ShadowWarrior2.exe"+5E96E: 48 8B CE                    -  mov rcx,rsi
+"ShadowWarrior2.exe"+5E971: 89 44 24 28                 -  mov [rsp+28],eax
+"ShadowWarrior2.exe"+5E975: E8 C6 A1 FD FF              -  call ShadowWarrior2.exe+38B40
+"ShadowWarrior2.exe"+5E97A: B0 01                       -  mov al,01
+"ShadowWarrior2.exe"+5E97C: 48 8B 5C 24 40              -  mov rbx,[rsp+40]
+"ShadowWarrior2.exe"+5E981: 48 8B 74 24 48              -  mov rsi,[rsp+48]
+"ShadowWarrior2.exe"+5E986: 48 83 C4 30                 -  add rsp,30
+"ShadowWarrior2.exe"+5E98A: 5F                          -  pop rdi
+"ShadowWarrior2.exe"+5E98B: C3                          -  ret 
+}
+</AssemblerScript>
+      <Hotkeys>
+        <Hotkey>
+          <Action>Toggle Activation</Action>
+          <Keys>
+            <Key>112</Key>
+          </Keys>
+          <Description>cheat manager</Description>
+          <ID>0</ID>
+          <ActivateSound TTS="EN">{Description} Activated</ActivateSound>
+          <DeactivateSound TTS="EN">{Description} Deactivated</DeactivateSound>
+        </Hotkey>
+      </Hotkeys>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>1</ID>
+          <Description>"HP Freeze (F2)"</Description>
+          <LastState/>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[ENABLE]
+HP_CheatManager:
+dd 1
+[DISABLE]
+HP_CheatManager:
+dd 0
+</AssemblerScript>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Toggle Activation</Action>
+              <Keys>
+                <Key>113</Key>
+              </Keys>
+              <Description>H.P.</Description>
+              <ID>0</ID>
+              <ActivateSound TTS="EN">{Description} Activated</ActivateSound>
+              <DeactivateSound TTS="EN">{Description} Deactivated</DeactivateSound>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>2</ID>
+          <Description>"Mana Freeze (F3)"</Description>
+          <LastState/>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[ENABLE]
+Mana_CheatManager:
+dd 1
+[DISABLE]
+Mana_CheatManager:
+dd 0
+</AssemblerScript>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Toggle Activation</Action>
+              <Keys>
+                <Key>114</Key>
+              </Keys>
+              <Description>Mana,</Description>
+              <ID>0</ID>
+              <ActivateSound TTS="EN">{Description} Activated</ActivateSound>
+              <DeactivateSound TTS="EN">{Description} Deactivated</DeactivateSound>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>3</ID>
+          <Description>"Add Money (F4)"</Description>
+          <VariableType>4 Bytes</VariableType>
+          <Address>Money_CheatManager</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Increase Value</Action>
+              <Keys>
+                <Key>115</Key>
+              </Keys>
+              <Value>5000</Value>
+              <Description>Money</Description>
+              <ID>0</ID>
+              <ActivateSound TTS="EN">Money added</ActivateSound>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>4</ID>
+          <Description>"Ammo Freeze (F5)"</Description>
+          <LastState/>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[ENABLE]
+Ammo_CheatManager:
+dd 1
+[DISABLE]
+Ammo_CheatManager:
+dd 0
+</AssemblerScript>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Toggle Activation</Action>
+              <Keys>
+                <Key>116</Key>
+              </Keys>
+              <Description>Infinite ammo</Description>
+              <ID>0</ID>
+              <ActivateSound TTS="EN">{Description} Activated</ActivateSound>
+              <DeactivateSound TTS="EN">{Description} Deactivated</DeactivateSound>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>5</ID>
+          <Description>"Super speed (F6)"</Description>
+          <LastState/>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[ENABLE]
+Speed_CheatManager:
+dd 1
+[DISABLE]
+Speed_CheatManager:
+dd 0
+</AssemblerScript>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Toggle Activation</Action>
+              <Keys>
+                <Key>117</Key>
+              </Keys>
+              <Description>Super speed</Description>
+              <ID>0</ID>
+              <ActivateSound TTS="EN">{Description} Activated</ActivateSound>
+              <DeactivateSound TTS="EN">{Description} Deactivated</DeactivateSound>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>6</ID>
+          <Description>"Collect Radius 100ft"</Description>
+          <LastState/>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[ENABLE]
+CollectRadius_CheatManager:
+dd 1
+[DISABLE]
+CollectRadius_CheatManager:
+dd 0
+</AssemblerScript>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols/>
+  <Comments>--[[
+-- add collected addresses to 'Group 1' header then run below script
+-- will adjust the type and name
+AL=getAddressList()
+mr = AL.getMemoryRecordByDescription('Group 1')
+for i=0,mr.Count-1 do
+  local name=readString('['..mr[i].Address..'+C]+22',200)
+  mr[i].Description = name
+  print(name)
+  local type = (readInteger(mr[i].Address..'-4')==0x40001) and vtSingle or vtDword
+  mr[i].Type = type
+end
+--]]
+</Comments>
+</CheatTable>

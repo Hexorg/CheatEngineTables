@@ -1,0 +1,816 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="18">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>41</ID>
+      <Description>"[X] &lt;== Supreme Ruler 1936 v8.1.7 Steam Script v1.0"</Description>
+      <Options moHideChildren="1"/>
+      <LastState Activated="0"/>
+      <Color>FF0000</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>{
+===========================================
+ Game Title    : Supreme Ruler 1936
+ Game Version  : 8.1.7 (steam)
+ Game Sponsor  : moneycheat
+ Process Name  : SupremeRuler1936.exe
+ Script Version: 1.0
+ CE Version    : 6.3
+ Release date  : 20-Aug-2014
+ Author        : Recifense
+ History:
+ 22-May-14: First Release (POSTMORTEM)
+ 27-May-14: Release for version 8.0.102 (Steam)
+ 20-Aug-14: Release for version 8.1.7 (CE64)
+ Features:
+ - Minimum Money
+ - Minimum GDP/c
+ - Research in 1 Day
+ - Production in 1 Day
+ - Unlimited Fuel
+ - God Mode
+ - Minimum Move Speed (160)
+ - Fire Speed x 2
+ - Construction in 1 Day
+ - Some Pointers
+===========================================
+}
+
+//=========================================
+// Definitions
+define(LUDO,"SupremeRuler1936.exe")
+define(MHPR,SupremeRuler1936.exe+000b438b) //==
+define(MOPR,SupremeRuler1936.exe+0011c1b3) //==
+define(MOPP,SupremeRuler1936.exe+001a9db3) //==
+define(MOVF,SupremeRuler1936.exe+00166c64) //==
+define(GDMD,SupremeRuler1936.exe+00127f4f) //==
+define(MOMS,SupremeRuler1936.exe+00146caf) //==
+define(MOFS,SupremeRuler1936.exe+0016e149) //==
+define(MOPC,SupremeRuler1936.exe+001190b8) //==
+
+//=========================================
+// Constants used in the script (that can be changed)
+define(ctCE64,(float)6.4)
+//define(ctMMON,#63000)  // Minimum Money
+//define(ctMATT,#10)     // Minimum Attributes
+
+//=========================================
+[ENABLE]
+//=========================================
+//LuaCall(CheckVersion())
+//=========================================
+// Check if script is compatible to this game version
+// If false the script will not be loaded
+
+assert(MHPR,f3 0f 10 8f 30 7b 00 00 33 d2 f3 0f 10 87 ec a7 00 00 0f 2f c1)
+assert(MOPR,f3 0f 11 46 1c 0f 57 c0 0f 2f 46 1c 0f 82 ?? ?? ?? ?? 56 8b cf)
+assert(MOPP,8d 77 7c f3 0f 10 06 0f 2f c4 ?? ?? f3 0f 5c c7 8d 84 24 d0 00)
+assert(MOVF,f3 0f 10 40 64 f3 0f 5c 84 24 a0 0d 00 00 0f 2f e8 f3 0f 11 40)
+assert(GDMD,f3 0f 10 42 74 f3 0f 5c 44 24 40 f3 0f 11 42 74 f6 83 90 00 00)
+assert(MOMS,66 0f 6e c8 0f 5b c9 f3 0f 59 0d ?? ?? ?? ?? 0f 2f c8 ?? ?? f3)
+assert(MOFS,f3 0f 10 b2 88 00 00 00 0f 2e f1 9f f6 c4 44 ?? ?? 0f 28 f1 e9)
+assert(MOPC,f3 0f 10 4e 74 f3 0f 10 02 0f 2f c8 0f 82 ?? ?? ?? ?? f7 86 b0)
+
+//=========================================
+alloc(MyCode,4096,LUDO)
+//=========================================
+// Declaration section
+label(_MonHumanPlayer)
+label(_MonHP00)
+label(_BackMHP)
+label(_ExitMHP)
+label(_MonPlayerResearch)
+label(_BackMPR)
+label(_ExitMPR)
+label(_MonPlayerProd)
+label(_BackMPP)
+label(_ExitMPP)
+label(_MonVehicleFuel)
+label(_BackMVF)
+label(_ExitMVF)
+label(_GodMode)
+label(_BackGMD)
+label(_ExitGMD)
+label(_MonMoveSpeed)
+label(_MonMS00)
+label(_BackMMS)
+label(_ExitMMS)
+label(_MonFireSpeed)
+label(_BackMFS)
+label(_ExitMFS)
+label(_MonPlayerConst)
+label(_BackMPC)
+label(_ExitMPC)
+label(iEnableMMM)
+label(iEnableMMG)
+label(iEnableMPR)
+label(iEnableMPP)
+label(iEnableMVF)
+label(iEnableGMD)
+label(iEnableMMS)
+label(iEnableMFS)
+label(iEnableMPC)
+label(iPlayerID)
+label(pPlayer)
+
+//=========================================
+// Registering Symbols
+registersymbol(MyCode)
+registersymbol(iEnableMMM)
+registersymbol(iEnableMMG)
+registersymbol(iEnableMPR)
+registersymbol(iEnableMPP)
+registersymbol(iEnableMVF)
+registersymbol(iEnableGMD)
+registersymbol(iEnableMMS)
+registersymbol(iEnableMFS)
+registersymbol(iEnableMPC)
+registersymbol(iPlayerID)
+registersymbol(pPlayer)
+
+//=========================================
+MyCode:
+//=========================================
+// Main game screen (Money and GDP/c)
+_MonHumanPlayer:
+ mov [pPlayer],edi
+
+ movzx edx,byte ptr [edi+04]
+ mov [iPlayerID],edx
+
+ cmp dword ptr [iEnableMMM],0
+ je _MonHP00                       // Jump if feature is disabled
+
+ mov edx,(float)16300000000.0      // Minimum Value for Money
+ cmp edx,[edi+00007B30]
+ js _MonHP00
+
+ mov [edi+00007B30],edx
+
+_MonHP00:
+ cmp dword ptr [iEnableMMG],0
+ je _ExitMHP                       // Jump if feature is disabled
+
+ mov edx,(float)200.0              // Minimum Value for GDP/c
+ cmp edx,[edi+00007BE0]
+ js _ExitMHP
+
+ mov [edi+00007BE0],edx
+
+_ExitMHP:
+ movss xmm1,[edi+00007B30]         // Original code (rds cMoney)
+ jmp _BackMHP                      // Back to main code
+
+//=========================================
+// When day changes
+_MonPlayerResearch:
+ push edx
+
+ cmp dword ptr [iEnableMPR],0
+ je _ExitMPR                       // Jump if feature is disabled
+
+ movzx edx,byte ptr [esi+23]
+ cmp edx,[iPlayerID]
+ jne _ExitMPR
+
+ xorps xmm0,xmm0
+
+_ExitMPR:
+ pop edx
+
+ movss [esi+1C],xmm0               // Original code (rds #days)
+ jmp _BackMPR                      // Back to main code
+
+//=========================================
+// When day changes
+_MonPlayerProd:
+ push edx
+
+ cmp dword ptr [iEnableMPP],0
+ je _ExitMPP                       // Jump if feature is disabled
+
+ movzx edx,byte ptr [edi+16]
+ cmp edx,[iPlayerID]
+ jne _ExitMPP
+
+ xor edx,edx
+ mov [edi+7C],edx
+
+_ExitMPP:
+ pop edx
+
+ lea esi,[edi+7C]                  // Original code
+ movss xmm0,[esi]                  // Original code (rds #days)
+ jmp _BackMPP                      // Back to main code
+
+//=========================================
+// When decreasing fuel
+_MonVehicleFuel:
+ push edx
+
+ cmp dword ptr [iEnableMVF],0
+ je _ExitMVF                       // Jump if feature is disabled
+
+ movzx edx,byte ptr [eax+16]
+ cmp edx,[iPlayerID]
+ jne _ExitMVF
+
+ xor edx,edx
+ mov [esp+00000da4],edx
+
+_ExitMVF:
+ pop edx
+
+ movss xmm0,[eax+64]               // Original code (rd fuel)
+ jmp _BackMVF                      // Back to main code
+
+//=========================================
+// During Combat
+_GodMode:
+ push ecx
+
+ cmp dword ptr [iEnableGMD],0
+ je _ExitGMD                       // Jump if feature is disabled
+
+ movzx ecx,byte ptr [edx+16]
+ cmp ecx,[iPlayerID]
+ jne _ExitGMD
+
+ movss xmm0,[edx+78]
+ movss [edx+74],xmm0
+
+ xor ecx,ecx
+ mov [esp+44],ecx
+
+_ExitGMD:
+ pop ecx
+
+ movss xmm0,[edx+74]               // Original code (rd cHP)
+ jmp _BackGMD                      // Back to main code
+
+//=========================================
+// When reading speed value (Minimum Speed = 160)
+// EDI = Unit
+_MonMoveSpeed:
+ push edx
+
+ cmp dword ptr [iEnableMMS],0
+ je _ExitMMS                       // Jump if feature is disabled
+
+ movzx edx,byte ptr [edi+16]
+ cmp edx,[iPlayerID]
+ jne _ExitMMS
+
+ mov edx,#80
+ cmp edx,eax
+ js _MonMS00
+
+ mov eax,edx
+
+_MonMS00:
+ add eax,eax
+
+_ExitMMS:
+ pop edx
+
+ movd xmm1,eax                     // Original code
+ cvtdq2ps xmm1,xmm1                // Original code (speed)
+ jmp _BackMMS                      // Back to main code
+
+//=========================================
+// When reading speed value (x 4)
+// EAX = Unit
+_MonFireSpeed:
+ push ecx
+
+ movss xmm6,[edx+00000088]         // Original code (rd speed)
+
+ cmp dword ptr [iEnableMFS],0
+ je _ExitMFS                       // Jump if feature is disabled
+
+ movzx ecx,byte ptr [eax+16]
+ cmp ecx,[iPlayerID]
+ jne _ExitMFS
+
+ addss xmm6,xmm6
+ addss xmm6,xmm6
+
+ mov ecx,[edx+00000088]            // For debug
+
+_ExitMFS:
+ pop ecx
+ jmp _BackMFS                      // Back to main code
+
+//=========================================
+// When day changes
+_MonPlayerConst:
+ push edx
+
+ cmp dword ptr [iEnableMPC],0
+ je _ExitMPC                       // Jump if feature is disabled
+
+ movzx edx,byte ptr [esi+16]
+ cmp edx,[iPlayerID]
+ jne _ExitMPC
+
+ mov edx,[esi+78]
+ mov [esi+74],edx
+
+_ExitMPC:
+ pop edx
+
+ movss xmm1,[esi+74]               // Original code (rds progress)
+ jmp _BackMPC                      // Back to main code
+
+//=========================================
+ db '==============================================&gt;'
+ db 'CE6.3 Script by Recifense 082014'
+//=========================================
+// Variables
+iEnableMMM:
+ dd 0
+iEnableMMG:
+ dd 0
+iEnableMPR:
+ dd 0
+iEnableMPP:
+ dd 0
+iEnableMVF:
+ dd 0
+iEnableGMD:
+ dd 0
+iEnableMMS:
+ dd 0
+iEnableMFS:
+ dd 0
+iEnableMPC:
+ dd 0
+iPlayerID:
+ dd ffffffff
+pPlayer:
+ dd MyCode
+
+//=========================================
+// Hacking Points
+MHPR:
+ jmp _MonHumanPlayer
+ nop
+ nop
+ nop
+_BackMHP:
+
+MOPR:
+ jmp _MonPlayerResearch
+_BackMPR:
+
+MOPP:
+ jmp _MonPlayerProd
+ nop
+ nop
+_BackMPP:
+
+MOVF:
+ jmp _MonVehicleFuel
+_BackMVF:
+
+GDMD:
+ jmp _GodMode
+_BackGMD:
+
+MOMS:
+ jmp _MonMoveSpeed
+ nop
+ nop
+_BackMMS:
+
+MOFS:
+ jmp _MonFireSpeed
+ nop
+ nop
+ nop
+_BackMFS:
+
+MOPC:
+ jmp _MonPlayerConst
+_BackMPC:
+
+//=========================================
+// Script for Restoring Original Codes
+[DISABLE]
+MHPR:
+// movss xmm1,[edi+00007B30]
+ db f3 0f 10 8f 30 7b 00 00
+
+MOPR:
+// movss [esi+1C],xmm0
+ db f3 0f 11 46 1c
+
+MOPP:
+// lea esi,[edi+7C]
+// movss xmm0,[esi]
+ db 8d 77 7c f3 0f 10 06
+
+MOVF:
+// movss xmm0,[eax+64]
+ db f3 0f 10 40 64
+
+GDMD:
+// movss xmm0,[edx+74]
+ db f3 0f 10 42 74
+
+MOMS:
+// movd xmm1,eax
+// cvtdq2ps xmm1,xmm1
+ db 66 0f 6e c8 0f 5b c9
+
+MOFS:
+// movss xmm6,[edx+00000088]
+ db f3 0f 10 b2 88 00 00 00
+
+MOPC:
+// movss xmm1,[esi+74]
+ db f3 0f 10 4e 74
+
+//=========================================
+// Unregistering Symbols
+unregistersymbol(MyCode)
+unregistersymbol(iEnableMMM)
+unregistersymbol(iEnableMMG)
+unregistersymbol(iEnableMPR)
+unregistersymbol(iEnableMPP)
+unregistersymbol(iEnableMVF)
+unregistersymbol(iEnableGMD)
+unregistersymbol(iEnableMMS)
+unregistersymbol(iEnableMFS)
+unregistersymbol(iEnableMPC)
+unregistersymbol(iPlayerID)
+unregistersymbol(pPlayer)
+
+//=========================================
+dealloc(MyCode)
+//============= Scripts End ===============
+
+// ****************************************
+// NOTES
+// ****************************************
+{
+v8.0.102:
+define(MHPR,SupremeRuler1936.exe+000b31ab) //=
+define(MOPR,SupremeRuler1936.exe+0011a073) //=
+define(MOPP,SupremeRuler1936.exe+001a7c63) //=
+define(MOVF,SupremeRuler1936.exe+00164b14) //=
+define(GDMD,SupremeRuler1936.exe+00125dff) //=
+define(MOMS,SupremeRuler1936.exe+00144b5f) //=
+define(MOFS,SupremeRuler1936.exe+0016bff9) //=
+define(MOPC,SupremeRuler1936.exe+00116f78) //=
+}
+
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>12</ID>
+          <Description>"Enable/Disable Minimum Money =============&gt;"</Description>
+          <DropDownList DescriptionOnly="1" DisplayValueAsItem="1">0:Disabled
+1:Enabled
+</DropDownList>
+          <LastState Value="??" Activated="0" RealAddress="04B40220"/>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMMM</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>18</ID>
+          <Description>"Enable/Disable Minimum GDP/c  ============&gt;"</Description>
+          <DropDownList DescriptionOnly="1" DisplayValueAsItem="1">0:Disabled
+1:Enabled
+</DropDownList>
+          <LastState Value="??" Activated="0" RealAddress="04B40224"/>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMMG</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>19</ID>
+          <Description>"Enable/Disable Research in 1 Day ===========&gt;"</Description>
+          <DropDownList DescriptionOnly="1" DisplayValueAsItem="1">0:Disabled
+1:Enabled
+</DropDownList>
+          <LastState Value="??" Activated="0" RealAddress="04B40228"/>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMPR</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>33</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>34</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>20</ID>
+          <Description>"Enable/Disable Production in 1 Day ==========&gt;"</Description>
+          <DropDownList DescriptionOnly="1" DisplayValueAsItem="1">0:Disabled
+1:Enabled
+</DropDownList>
+          <LastState Value="??" Activated="0" RealAddress="04B4022C"/>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMPP</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>33</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>34</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>21</ID>
+          <Description>"Enable/Disable Unlimited Fuel  ==============&gt;"</Description>
+          <DropDownList DescriptionOnly="1" DisplayValueAsItem="1">0:Disabled
+1:Enabled
+</DropDownList>
+          <LastState Value="??" Activated="0" RealAddress="04B40230"/>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMVF</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>22</ID>
+          <Description>"Enable/Disable God Mode =================&gt;"</Description>
+          <DropDownList DescriptionOnly="1" DisplayValueAsItem="1">0:Disabled
+1:Enabled
+</DropDownList>
+          <LastState Value="??" Activated="0" RealAddress="04B40234"/>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableGMD</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>23</ID>
+          <Description>"Enable/Disable Minimum Speed (160)  ========&gt;"</Description>
+          <DropDownList DescriptionOnly="1" DisplayValueAsItem="1">0:Disabled
+1:Enabled
+</DropDownList>
+          <LastState Value="??" Activated="0" RealAddress="04B40238"/>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMMS</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>45</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>46</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>24</ID>
+          <Description>"Enable/Disable Fire Rate x 4  ===============&gt;"</Description>
+          <DropDownList DescriptionOnly="1" DisplayValueAsItem="1">0:Disabled
+1:Enabled
+</DropDownList>
+          <LastState Value="??" Activated="0" RealAddress="04B4023C"/>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMFS</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>45</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>46</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>42</ID>
+          <Description>"Enable/Disable Construction in 1 Day  ========&gt;"</Description>
+          <DropDownList DescriptionOnly="1" DisplayValueAsItem="1">0:Disabled
+1:Enabled
+</DropDownList>
+          <LastState Value="??" Activated="0" RealAddress="04B40240"/>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMPC</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>33</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>34</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols/>
+  <Comments>===========================================
+ Game Title    : Supreme Ruler 1936
+ Game Version  : 8.1.7 (steam)
+ Game Sponsor  : moneycheat
+ Process Name  : SupremeRuler1936.exe
+ Script Version: 1.0
+ CE Version    : 6.3
+ Release date  : 20-Aug-2014
+ Author        : Recifense
+ History:
+ 22-May-14: First Release (POSTMORTEM)
+ 27-May-14: Release for version 8.0.102 (Steam)
+ 20-Aug-14: Release for version 8.1.7 (CE64)
+ Features:
+ - Minimum Money           [1]
+ - Minimum GDP/c           [2]
+ - Research in 1 Day       [3]
+ - Production in 1 Day     [4]
+ - Unlimited Fuel          [5]
+ - God Mode                [6]
+ - Minimum Move Speed (160)[7]
+ - Fire Speed x 2          [8] 
+ - Construction in 1 Day   [9]
+ - Some Pointers
+===========================================
+[1] For human player only;
+[2] For human player only;
+[3] For human player only;
+[4] For human player only;
+[5] For human player's units only;
+[6] For human player's units only;
+[7] For human player's units only;
+[8] For human player's units only;
+[9] For human player only;
+===========================================
+[USAGE]
+1) Run CE63;
+2) Run Game;
+3) Load the game process "SupremeRuler1936.exe" in CE;
+4) Load the table;
+5) Activate the script (in Blue)
+4) Change the value to 1 of each cheat you want to use (in Green);
+5) Game On;
+===========================================
+[HOTKEYS]
+CTRL+Home     = Enable  MM/MG/UF/GM cheats;
+CTRL+End      = Disable MM/MG/UF/GM cheats;
+-----------
+CTRL+PageUp   = Enable  R1D/P1D/C1D cheats;
+CTRL+PageDown = Disable R1D/P1D/C1D cheats;
+-----------
+CTRL+Insert   = Enable  MS/FR cheats;
+CTRL+Delete   = Disable MS/FR cheats;
+===========================================
+[ADVICE]
+When you can,save the game before starting using table/cheat. So you can always come back in case you don't like the result.
+===========================================
+[INFO]
+Tested on Win 7 64bits
+===========================================
+Cheers!
+ 
+</Comments>
+</CheatTable>

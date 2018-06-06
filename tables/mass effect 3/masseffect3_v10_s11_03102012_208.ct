@@ -1,0 +1,548 @@
+<?xml version="1.0"?>
+<CheatTable CheatEngineTableVersion="11">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>42</ID>
+      <Description>"[X] &lt;== Mass Effect 3 v1.0 Script v1.1"</Description>
+      <Options moHideChildren="1"/>
+      <Color>80000008</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>{
+===========================================
+ Game Title    : Mass Effect 3
+ Game Version  : 1.0.5427.1
+ Process Name  : MassEffect3.exe
+ Script Version: 1.1
+ CE Version    : 6.1
+ Release date  : 10-Mar-2012
+ Author        : Recifense
+ Features:
+ - God Mode
+ - Unlimited Ammo (No reload)
+ - Unlimited Shield (No decrease)
+ - Minimum Money
+ - Pointers
+===========================================
+}
+
+[ENABLE]
+//=========================================
+// Check if script is compatible to this game version
+// If false the script will not be loaded
+
+assert(MassEffect3.exe+980Ef6,f3 0f 10 43 6c)
+assert(MassEffect3.exe+03ea17,03 41 20 8b 4d 0c)
+assert(MassEffect3.exe+3c0b52,8b bf 20 02 00 00)
+
+//=========================================
+alloc(MyCode,1024)
+//=========================================
+// Declaration section
+label(_MonUnits)
+label(_MonU00)
+label(_BackMU)
+label(_ExitMU)
+label(_GodMode)
+label(_GodM00)
+label(_BackGM)
+label(_ExitGM)
+label(_MonWeapon)
+label(_MonW00)
+label(_MonW01)
+label(_MonW02)
+label(_BackMW)
+label(_ExitMW)
+label(pHP)
+label(pSHLD)
+label(pUnit)
+label(pPlayer)
+label(pShield)
+label(pWeapon)
+label(pSquad)
+label(iEnableGM)
+label(iEnableMA)
+label(iEnableMS)
+label(iEnableMM)
+label(fShieldMV)
+label(iMinMoney)
+label(iIndex)
+
+//=========================================
+// Registering Symbols
+registersymbol(MyCode)
+registersymbol(pUnit)
+registersymbol(pPlayer)
+registersymbol(pShield)
+registersymbol(pWeapon)
+registersymbol(pSquad)
+registersymbol(iEnableGM)
+registersymbol(iEnableMA)
+registersymbol(iEnableMS)
+registersymbol(iEnableMM)
+registersymbol(pHP)
+registersymbol(pSHLD)
+registersymbol(fShieldMV)
+registersymbol(iMinMoney)
+registersymbol(iIndex)
+
+//=========================================
+MyCode:
+//=========================================
+// Player + Visible Units
+_MonUnits:
+ push eax
+
+ cmp dword ptr [ebx+000001c0],0
+ jne _ExitMU
+
+ mov [pUnit],ebx                    // Save ptr for debugging
+
+ cmp dword ptr [ebx+00000088],0
+ jne _MonU00
+
+ mov [pPlayer],ebx
+ lea eax,[ebx+6c]
+ mov [pHP],eax
+
+_MonU00:
+ cmp dword ptr [iEnableGM],0
+ je _ExitMU                        // Jump if feature is disabled
+
+ mov eax,[ebx+64]
+ mov [ebx+6c],eax
+
+_ExitMU:
+ pop eax
+
+ movss xmm0,[ebx+6C]               // Original code
+ jmp _BackMU                       // Back to main code
+
+//=========================================
+// Player only
+_GodMode:
+ push ebx
+
+ add eax,[ecx+20]                   // Original code
+ mov ecx,[ebp+0C]                   // Original code
+ test ecx,ecx
+ jz _ExitGM
+
+ cmp ecx,[pHP]
+ jne _GodM00
+
+ cmp dword ptr [iEnableGM],0
+ je _ExitGM                        // Jump if feature is disabled
+
+ mov ebx,[ecx-08]
+ mov [eax],ebx
+ jmp _ExitGM
+//==
+_GodM00:
+ cmp ecx,[pSHLD]
+ jne _ExitGM
+
+ cmp dword ptr [iEnableMS],0
+ je _ExitGM                        // Jump if feature is disabled
+
+ mov ebx,[fShieldMV]
+ mov [eax],ebx
+
+_ExitGM:
+ pop ebx
+ jmp _BackGM                       // Back to main code
+
+//=========================================
+// Ammo and Shield(squad) and Money and Pointers
+_MonWeapon:
+ push eax
+ push ebx
+ pushfd
+
+ cmp byte ptr [edi+08],0
+ jne _MonW01
+
+ cmp dword ptr [edi+000002f0],0
+ je _ExitMW
+
+ mov [pShield],edi
+
+ mov eax,[edi+30]
+
+ mov ebx,[edi+0000019c]            // get pXP
+ test ebx,ebx
+ jz _MonW02
+
+ mov eax,[ebx+0000013c]
+ mov [iIndex],eax
+ test eax,eax
+ jz _MonW02
+
+ dec eax
+
+_MonW02:
+ mov [iIndex],eax
+
+ cmp eax,3
+ jge _MonW00
+
+ mov [pSquad+eax*4],edi
+
+_MonW00:
+ cmp dword ptr [iEnableMS],0
+ je _ExitMW                        // Jump if feature is disabled
+
+ mov eax,[edi+00000260]
+ mov [edi+000002f4],eax
+ mov [edi+000002f8],eax
+
+ cmp dword ptr [iIndex],0
+ jne _ExitMW
+
+ mov [fShieldMV],eax
+
+ lea eax,[edi+000002f4]
+ mov [pSHLD],eax
+
+ cmp dword ptr [iEnableMM],0
+ je _ExitMW                        // Jump if feature is disabled
+
+ mov ebx,[edi+0000019c]            // get pXP
+ test ebx,ebx
+ jz _ExitMW
+
+ mov ebx,[ebx+00000424]            // Get pMoney
+ test ebx,ebx
+ jz _ExitMW
+
+ mov eax,[iMinMoney]
+ cmp eax,[ebx+0000026c]
+ jle _ExitMW
+
+ mov [ebx+0000026c],eax
+ jmp _ExitMW
+//==
+_MonW01:
+ mov [pWeapon],edi
+
+ cmp dword ptr [iEnableMA],0
+ je _ExitMW                        // Jump if feature is disabled
+
+ mov dword ptr [edi+000002ec],0
+ mov eax,#200
+ cmp eax,[edi+000002e8]
+ jle _ExitMW
+
+ mov [edi+000002e8],eax
+
+_ExitMW:
+ popfd
+ pop ebx
+ pop eax
+
+ mov edi,[edi+00000220]            // Original code
+ jmp _BackMW                       // Back to main code
+
+//=========================================
+ db '=======================&gt;'
+ db 'CE6.1 Script by Recifense 031012'
+//=========================================
+// Variables
+iEnableMA:
+ dd 1
+iEnableGM:
+ dd 1
+iEnableMS:
+ dd 1
+iEnableMM:
+ dd 1
+iIndex:
+ dd 0
+pUnit:
+ dd 0
+pPlayer:
+ dd 0
+pWeapon:
+ dd 0
+pShield:
+ dd 0
+pHP:
+ dd MyCode
+pSHLD:
+ dd MyCode
+fShieldMV:
+ dd (float)500
+iMinMoney:
+ dd #610000
+pSquad:
+ dd 0
+ dd 0
+ dd 0
+ dd 0
+
+//=========================================
+// Hacking Points
+MassEffect3.exe+980Ef6:
+ jmp _MonUnits
+_BackMU:
+
+MassEffect3.exe+03ea17:
+ jmp _GodMode
+ xchg eax,eax
+_BackGM:
+
+MassEffect3.exe+3c0b52:
+ jmp _MonWeapon
+ xchg eax,eax
+_BackMW:
+
+//=========================================
+// Script for Restoring Original Codes
+[DISABLE]
+MassEffect3.exe+980Ef6:
+//movss xmm0,[ebx+6C]
+ db f3 0f 10 43 6c
+
+MassEffect3.exe+03ea17:
+//add eax,[ecx+20]
+//mov ecx,[ebp+0C]
+ db 03 41 20 8b 4d 0c
+
+MassEffect3.exe+3c0b52:
+//mov edi,[edi+00000220]
+ db 8b bf 20 02 00 00
+
+//=========================================
+// Unregistering Symbols
+unregistersymbol(MyCode)
+unregistersymbol(pUnit)
+unregistersymbol(iEnableGM)
+unregistersymbol(iEnableMA)
+unregistersymbol(iEnableMS)
+unregistersymbol(iEnableMM)
+unregistersymbol(pPlayer)
+unregistersymbol(pWeapon)
+unregistersymbol(pHP)
+unregistersymbol(pSHLD)
+unregistersymbol(pShield)
+unregistersymbol(pSquad)
+unregistersymbol(fShieldMV)
+unregistersymbol(iMinMoney)
+unregistersymbol(iIndex)
+
+//=========================================
+dealloc(MyCode)
+//============= Scripts End ===============
+
+// ****************************************
+// NOTES
+// ****************************************
+{
+}
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>14</ID>
+          <Description>"Enable/Disable God Mode =&gt; (1/0)"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableGM</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>15</ID>
+          <Description>"Enable/Disable Unlimited Ammo =&gt; (1/0)"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMA</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>16</ID>
+          <Description>"Enable/Disable Unlimited Shield =&gt; (1/0)"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMS</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>43</ID>
+          <Description>"Enable/Disable Minimum Money =&gt; (1/0)"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMM</Address>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>44</ID>
+              <Description>"Minimum Money Cheat Value ==&gt;"</Description>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>iMinMoney</Address>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>41</ID>
+          <Description>"Shepard's First Aids ==&gt;"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>pSquad</Address>
+          <Offsets>
+            <Offset>270</Offset>
+            <Offset>424</Offset>
+            <Offset>19C</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>35</ID>
+          <Description>"Shepard's Money ==&gt;"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>pSquad</Address>
+          <Offsets>
+            <Offset>26C</Offset>
+            <Offset>424</Offset>
+            <Offset>19C</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>39</ID>
+          <Description>"Shepard's XP ==&gt;"</Description>
+          <Color>80000008</Color>
+          <VariableType>Float</VariableType>
+          <Address>pSquad</Address>
+          <Offsets>
+            <Offset>1178</Offset>
+            <Offset>19C</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>38</ID>
+          <Description>"Shepard's Level-up Points ==&gt;"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>pSquad</Address>
+          <Offsets>
+            <Offset>9D4</Offset>
+            <Offset>19C</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>36</ID>
+          <Description>"Squad1's Level-up Points (*) ==&gt;"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>pSquad+4</Address>
+          <Offsets>
+            <Offset>9D4</Offset>
+            <Offset>19C</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>37</ID>
+          <Description>"Squad2's Level-up Points (*) ==&gt;"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>pSquad+8</Address>
+          <Offsets>
+            <Offset>9D4</Offset>
+            <Offset>19C</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>45</ID>
+          <Description>"Ship's Fuel"</Description>
+          <Color>80000008</Color>
+          <VariableType>Float</VariableType>
+          <Address>pSquad</Address>
+          <Offsets>
+            <Offset>28C</Offset>
+            <Offset>424</Offset>
+            <Offset>19C</Offset>
+          </Offsets>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols>
+    <SymbolEntry>
+      <Name>MyCode</Name>
+      <Address>21A20000</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>pUnit</Name>
+      <Address>21A20214</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>pPlayer</Name>
+      <Address>21A20218</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>pShield</Name>
+      <Address>21A20220</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>pWeapon</Name>
+      <Address>21A2021C</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>pSquad</Name>
+      <Address>21A20234</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>iEnableGM</Name>
+      <Address>21A20204</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>iEnableMA</Name>
+      <Address>21A20200</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>iEnableMS</Name>
+      <Address>21A20208</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>iEnableMM</Name>
+      <Address>21A2020C</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>pHP</Name>
+      <Address>21A20224</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>pSHLD</Name>
+      <Address>21A20228</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>fShieldMV</Name>
+      <Address>21A2022C</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>iMinMoney</Name>
+      <Address>21A20230</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>iIndex</Name>
+      <Address>21A20210</Address>
+    </SymbolEntry>
+  </UserdefinedSymbols>
+  <Comments>===========================================
+ Game Title    : Mass Effect 3
+ Game Version  : 1.0.5427.1
+ Process Name  : MassEffect3.exe
+ Script Version: 1.1
+ CE Version    : 6.1
+ Release date  : 10-Mar-2012
+ Author        : Recifense
+ Features:
+ - God Mode [1]
+ - Unlimited Ammo (No reload) [2]
+ - Unlimited Shield (No decrease) [3]
+ - Minimum Money
+ - Pointers [4]
+===========================================
+[1] For Shepard: a real GM.
+[1] For Squad: a fast HP recover;
+[2] For Shepard;
+[3] For Shepard: a real no decreasing shield power.
+[3] For Squad: a fast recover for shield power;
+[4] For Money, First Aid, XP and Level-up Points;
+(*) Valid for those in the current squad.
+</Comments>
+</CheatTable>

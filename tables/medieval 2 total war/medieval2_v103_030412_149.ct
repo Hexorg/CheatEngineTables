@@ -1,0 +1,739 @@
+<?xml version="1.0"?>
+<CheatTable CheatEngineTableVersion="12">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>66</ID>
+      <Description>"[X] &lt;== Medieval 2 Total War v1.03 Script v1.1"</Description>
+      <Options moHideChildren="1"/>
+      <Color>80000008</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>{
+===========================================
+ Game Title    : Medieval 2 Total War
+ Game Version  : 1.03
+ Proces Name   : medieval2.exe
+ Script Version: 1.1
+ CE Version    : 6.1
+ Release date  : 04-Mar-2012
+ Author        : Recifense
+ Features:
+ - God Mode
+ - Unlimited Ammo
+ - Minimum Gold
+ - Unlimited Movement Points
+ - Recover Troop Size
+ - Construction in 1 day
+ - Pointer to selected city
+===========================================
+}
+
+[ENABLE]
+//=========================================
+// Check if script is compatible to this game version
+// If false the script will not be loaded
+
+assert(medieval2.exe+5a3696,8b 34 b8 8b 16)
+assert(medieval2.exe+81136c,05 90 0a 00 00)
+assert(medieval2.exe+18dfc0,f3 0f 10 86 c8 00 00 00)
+assert(medieval2.exe+3244f1,f3 0f 11 86 e8 04 00 00)
+assert(medieval2.exe+324495,f3 0f 10 80 e8 04 00 00)
+assert(medieval2.exe+1ef27e,8b 4e 20 8b 56 24)
+assert(medieval2.exe+72c898,8d 86 88 01 00 00)
+assert(medieval2.exe+32baeb,8b b1 f4 04 00 00)
+assert(medieval2.exe+33f78f,8b 8e e8 04 00 00)
+assert(medieval2.exe+33f7e8,8b 86 e8 04 00 00)
+assert(medieval2.exe+33d6b4,89 9f f4 04 00 00)
+assert(medieval2.exe+3581d3,8b 8f e8 04 00 00)
+assert(medieval2.exe+35822b,8b 87 e8 04 00 00)
+
+//=========================================
+alloc(MyCode,1024)
+//=========================================
+// Declaration section
+label(_GodMode)
+label(_GodM00)
+label(_BackGM)
+label(_ExitGM)
+label(_MonPlayer)
+label(_BackMP)
+label(_ExitMP)
+label(_MonMP)
+label(_BackMM)
+label(_ExitMM)
+label(_MonMP1)
+label(_BackMM1)
+label(_ExitMM1)
+label(_MonMP2)
+label(_MonMM20)
+label(_BackMM2)
+label(_ExitMM2)
+label(_MonConst)
+label(_BackMC)
+label(_ExitMC)
+label(_MonSelCity)
+label(_BackMSC)
+label(_ExitMSC)
+label(_MonTroop)
+label(_BackMT)
+label(_ExitMT)
+label(_MonUnits)
+label(_BackMU)
+label(_ExitMU)
+label(_MonUnits1)
+label(_BackMU1)
+label(_ExitMU1)
+label(_MonBattle)
+label(_BackMB)
+label(_ExitMB)
+label(_MonUnits2)
+label(_BackMU2)
+label(_ExitMU2)
+label(_MonUnits3)
+label(_BackMU3)
+label(_ExitMU3)
+label(pUnit)
+label(pCity)
+label(pPlayer)
+label(iEnableGM)
+label(iEnableMA)
+label(iEnableMG)
+label(iEnableMM)
+label(iEnableTS)
+label(iEnableMC)
+label(iID)
+
+//=========================================
+// Registering Symbols
+registersymbol(MyCode)
+registersymbol(pUnit)
+registersymbol(pCity)
+registersymbol(pPlayer)
+registersymbol(iEnableGM)
+registersymbol(iEnableMA)
+registersymbol(iEnableMG)
+registersymbol(iEnableMM)
+registersymbol(iEnableTS)
+registersymbol(iEnableMC)
+
+//=========================================
+MyCode:
+//=========================================
+// RTS - During battle
+_GodMode:
+ mov [pUnit],ebp                   // Save ptr for debugging
+
+ push ebx
+ mov ebx,[iID]
+ cmp ebx,[ebp+0000029c]
+ pop ebx
+ jne _ExitGM
+
+ cmp dword ptr [iEnableGM],0
+ je _GodM00                        // Jump if feature is disabled
+
+// turn the units stronger
+ mov byte ptr [ebp+00000577],#250  // Charge Bonus
+ mov byte ptr [ebp+000005c4],#250  // Attack
+ mov byte ptr [ebp+000005c5],#250  // Armor
+
+ mov esi,[eax+edi*4]               // Get unit
+ test esi,esi                      // Valid?
+ jz _GodM00
+
+ mov byte ptr [esi+0000032b],#250  // Charge Bonus
+ mov byte ptr [esi+00000378],#250  // Attack
+ mov byte ptr [esi+00000379],#250  // Armor
+
+_GodM00:
+ cmp dword ptr [iEnableMA],0
+ je _ExitGM                        // Jump if feature is disabled
+
+ mov esi,[ebp+0000203c]
+ mov [ebp+00002040],esi
+
+_ExitGM:
+ mov esi,[eax+edi*4]               // Original code
+ mov edx,[esi]                     // Original code
+ jmp _BackGM                       // Back to main code
+
+//=========================================
+// TBS - Main Screen
+_MonPlayer:
+ mov [pPlayer],eax
+
+ cmp dword ptr [iEnableMG],0
+ je _ExitMP                        // Jump if feature is disabled
+
+ cmp dword ptr [eax+00000a94],#50000
+ jge _ExitMP
+
+ mov dword ptr [eax+00000a94],#50000
+
+_ExitMP:
+ add eax,00000A90                  // Original code (adjust pointer)
+ jmp _BackMP                       // Back to main code
+
+//=========================================
+// TBS - When moving (Army and Special Units)
+_MonMP:
+ push eax
+
+ cmp dword ptr [iEnableMM],0
+ je _ExitMM                        // Jump if feature is disabled
+
+ mov eax,[esi+00000084]
+ test eax,eax
+ jz _ExitMM
+
+ mov eax,[eax]
+ cmp eax,[pPlayer]
+ jne _ExitMM
+
+ xor eax,eax
+ mov [esp+0c],eax                  // value2decrease = 0
+
+ mov eax,(float)80
+ cmp eax,[esi+000000C8]
+ jle _ExitMM
+
+ mov [esi+000000C8],eax
+
+_ExitMM:
+ pop eax
+
+ movss xmm0,[esi+000000C8]         // Original code (get MP)
+ jmp _BackMM                       // Back to main code
+
+//=========================================
+// TBS - When moving (Officials)
+_MonMP1:
+ push eax
+ pushfd
+
+ cmp dword ptr [iEnableMM],0
+ je _ExitMM1                       // Jump if feature is disabled
+
+ mov eax,[esi+00000284]            // Get pArmy
+ test eax,eax
+ jz _ExitMM1
+
+ mov eax,[eax+4c]
+ cmp eax,[pPlayer]
+ jne _ExitMM1
+
+ movss xmm0,[esi+000004E8]
+
+ mov eax,(float)80
+ cmp eax,[esi+000004E8]
+ jle _ExitMM1
+
+ mov [esi+000004E8],eax
+ movss xmm0,[esi+000004E8]
+
+_ExitMM1:
+ popfd
+ pop eax
+
+ movss [esi+000004E8],xmm0         // Original code (get MP)
+ jmp _BackMM1                      // Back to main code
+
+//=========================================
+// TBS - When moving (Troop)
+_MonMP2:
+ push ecx
+
+ mov ecx,[eax+00000284]            // Get pArmy
+ test ecx,ecx
+ jz _ExitMM2
+
+ mov ecx,[ecx+4c]
+ cmp ecx,[pPlayer]
+ jne _ExitMM2
+
+ cmp dword ptr [iEnableMM],0
+ je _MonMM20                       // Jump if feature is disabled
+
+ xor ecx,ecx
+ mov [esp+08],ecx                  // value2decrease = 0
+
+ mov ecx,(float)80
+ cmp ecx,[eax+000004E8]
+ jle _MonMM20
+
+ mov [eax+000004E8],ecx
+
+_MonMM20:
+ cmp dword ptr [iEnableTS],0
+ je _ExitMM2                       // Jump if feature is disabled
+
+ mov ecx,[eax+000004F0]
+ mov [eax+000004EC],ecx
+
+_ExitMM2:
+ pop ecx
+
+ movss xmm0,[eax+000004E8]         // Original code (get MP)
+ jmp _BackMM2                      // Back to main code
+
+//=========================================
+// TBS - Construction (during turn)
+_MonConst:
+ cmp dword ptr [iEnableMC],0
+ je _ExitMC                        // Jump if feature is disabled
+
+ mov ecx,[esi+0c]
+ test ecx,ecx
+ jz _ExitMC
+
+ mov ecx,[ecx+00000160]
+ cmp ecx,[pPlayer]
+ jne _ExitMC
+
+ mov ecx,[esi+20]
+ cmp ecx,[esi+24]
+ je _ExitMC
+
+ dec ecx
+ mov [esi+24],ecx
+
+_ExitMC:
+ mov ecx,[esi+20]                  // Original code (get Turns Needed)
+ mov edx,[esi+24]                  // Original code (get Turns Passed)
+ jmp _BackMC                       // Back to main code
+
+//=========================================
+// TBS - City Status Screen
+_MonSelCity:
+ mov [pCity],ecx
+
+_ExitMSC:
+ lea eax,[esi+00000188]            // Original code (adjust pointer)
+ jmp _BackMSC                      // Back to main code
+
+//=========================================
+// RTS
+_MonTroop:
+ mov esi,[ecx+0000029c]
+ mov [iID],esi
+
+_ExitMT:
+ mov esi,[ecx+000004F4]            // Original code
+ jmp _BackMT                       // Back to main code
+
+//=========================================
+// RTS
+_MonUnits:
+ push ebp
+
+ mov ebp,[esi+000004dc]
+ mov ecx,[esi+000004E8]            // Original code
+
+ cmp dword ptr [iEnableGM],0
+ je _ExitMU                        // Jump if feature is disabled
+
+ push ebx
+ mov ebx,[iID]
+ cmp ebx,[ebp+0000029c]
+ pop ebx
+ jne _ExitMU                       // Jump if it's a player's troop
+
+ and ecx,7fffffff
+ mov [esi+000004E8],ecx
+
+_ExitMU:
+ pop ebp
+ jmp _BackMU                       // Back to main code
+
+//=========================================
+// RTS
+_MonUnits1:
+ push ebp
+
+ mov ebp,[esi+000004dc]
+ mov eax,[esi+000004E8]            // Original code
+
+ cmp dword ptr [iEnableGM],0
+ je _ExitMU1                       // Jump if feature is disabled
+
+ push ebx
+ mov ebx,[iID]
+ cmp ebx,[ebp+0000029c]
+ pop ebx
+ jne _ExitMU1                      // Jump if it's a player's troop
+
+ and eax,7fffffff
+ mov [esi+000004E8],eax
+
+_ExitMU1:
+ pop ebp
+ jmp _BackMU1                      // Back to main code
+
+//=========================================
+// RTS
+_MonBattle:
+ mov [iID],edi                     // Invalidate ID
+
+_ExitMB:
+ mov [edi+000004F4],ebx            // Original code
+ jmp _BackMB                       // Back to main code
+
+//=========================================
+// RTS
+_MonUnits2:
+ push ebp
+
+ mov ebp,[edi+000004dc]
+ mov ecx,[edi+000004E8]            // Original code
+
+ cmp dword ptr [iEnableGM],0
+ je _ExitMU2                       // Jump if feature is disabled
+
+ push ebx
+ mov ebx,[iID]
+ cmp ebx,[ebp+0000029c]
+ pop ebx
+ jne _ExitMU2                      // Jump if it's a player's troop
+
+ and ecx,7fffffff
+ mov [edi+000004E8],ecx
+
+_ExitMU2:
+ pop ebp
+ jmp _BackMU2                      // Back to main code
+
+//=========================================
+// RTS
+_MonUnits3:
+ push ebp
+
+ mov ebp,[edi+000004dc]
+ mov eax,[edi+000004E8]            // Original code
+
+ cmp dword ptr [iEnableGM],0
+ je _ExitMU3                       // Jump if feature is disabled
+
+ push ebx
+ mov ebx,[iID]
+ cmp ebx,[ebp+0000029c]
+ pop ebx
+ jne _ExitMU3                      // Jump if it's a player's troop
+
+ and eax,7fffffff
+ mov [edi+000004E8],eax
+
+_ExitMU3:
+ pop ebp
+ jmp _BackMU3                      // Back to main code
+
+//=========================================
+ db '=======================&gt;'
+ db 'CE6.1 Script by Recifense 030412'
+//=========================================
+// Variables
+iEnableGM:
+ dd 1
+iEnableMA:
+ dd 1
+iEnableMG:
+ dd 1
+iEnableMM:
+ dd 1
+iEnableTS:
+ dd 1
+iEnableMC:
+ dd 1
+pUnit:
+ dd 0
+pCity:
+ dd 0
+pPlayer:
+ dd MyCode
+iID:
+ dd #99
+
+//=========================================
+// Hacking Points
+medieval2.exe+5a3696:
+ jmp _GodMode
+_BackGM:
+
+medieval2.exe+81136c:
+ jmp _MonPlayer
+_BackMP:
+
+medieval2.exe+18dfc0:
+ jmp _MonMP
+ nop
+ nop
+ nop
+_BackMM:
+
+medieval2.exe+3244f1:
+ jmp _MonMP1
+ nop
+ nop
+ nop
+_BackMM1:
+
+medieval2.exe+324495:
+ jmp _MonMP2
+ nop
+ nop
+ nop
+_BackMM2:
+
+medieval2.exe+1ef27e:
+ jmp _MonConst
+ nop
+_BackMC:
+
+medieval2.exe+72c898:
+ jmp _MonSelCity
+ nop
+_BackMSC:
+
+medieval2.exe+32baeb:
+ jmp _MonTroop
+ nop
+_BackMT:
+
+medieval2.exe+33f78f:
+ jmp _MonUnits
+ nop
+_BackMU:
+
+medieval2.exe+33f7e8:
+ jmp _MonUnits1
+ nop
+_BackMU1:
+
+medieval2.exe+33d6b4:
+ jmp _MonBattle
+ nop
+_BackMB:
+
+medieval2.exe+3581d3:
+ jmp _MonUnits2
+ nop
+_BackMU2:
+
+medieval2.exe+35822b:
+ jmp _MonUnits3
+ nop
+_BackMU3:
+
+//=========================================
+// Script for Restoring Original Codes
+[DISABLE]
+medieval2.exe+5a3696:
+// mov esi,[eax+edi*4]
+// mov edx,[esi]
+ db 8b 34 b8 8b 16
+
+medieval2.exe+81136c:
+// add eax,00000A90
+ db 05 90 0a 00 00
+
+medieval2.exe+18dfc0:
+// movss xmm0,[esi+000000C8]
+ db f3 0f 10 86 c8 00 00 00
+
+medieval2.exe+3244f1:
+// movss [esi+000004E8],xmm0
+ db f3 0f 11 86 e8 04 00 00
+
+medieval2.exe+324495:
+// movss xmm0,[eax+000004E8]
+ db f3 0f 10 80 e8 04 00 00
+
+medieval2.exe+1ef27e:
+// mov ecx,[esi+20]
+// mov edx,[esi+24]
+ db 8b 4e 20 8b 56 24
+
+medieval2.exe+72c898:
+// lea eax,[esi+00000188]
+ db 8d 86 88 01 00 00
+
+medieval2.exe+32baeb:
+// mov esi,[ecx+000004F4]
+ db 8b b1 f4 04 00 00
+
+medieval2.exe+33f78f:
+// mov ecx,[esi+000004E8]
+ db 8b 8e e8 04 00 00
+
+medieval2.exe+33f7e8:
+// mov eax,[esi+000004E8]
+ db 8b 86 e8 04 00 00
+
+medieval2.exe+33d6b4:
+// mov [edi+000004F4],ebx
+ db 89 9f f4 04 00 00
+
+medieval2.exe+3581d3:
+// mov ecx,[edi+000004E8]
+ db 8b 8f e8 04 00 00
+
+medieval2.exe+35822b:
+// mov eax,[edi+000004E8]
+ db 8b 87 e8 04 00 00
+
+//=========================================
+// Unregistering Symbols
+unregistersymbol(MyCode)
+unregistersymbol(pUnit)
+unregistersymbol(pCity)
+unregistersymbol(iEnableGM)
+unregistersymbol(iEnableMA)
+unregistersymbol(iEnableMG)
+unregistersymbol(iEnableMM)
+unregistersymbol(iEnableTS)
+unregistersymbol(iEnableMC)
+unregistersymbol(pPlayer)
+
+//=========================================
+dealloc(MyCode)
+//============= Scripts End ===============
+
+// ****************************************
+// NOTES
+// ****************************************
+{
+}
+
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>11</ID>
+          <Description>"Enable/Disable God Mode ==&gt; (1/0)"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableGM</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>59</ID>
+          <Description>"Enable/Disable Unlimited Ammo ==&gt; (1/0)"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMA</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>58</ID>
+          <Description>"Enable/Disable Minimum Gold ==&gt; (1/0)"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMG</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>60</ID>
+          <Description>"Enable/Disable Unlimited Movement ==&gt; (1/0)"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMM</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>67</ID>
+          <Description>"Enable/Disable Recover Troop Size ==&gt; (1/0)"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableTS</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>68</ID>
+          <Description>"Enable/Disable Construction in 1 Day ==&gt; (1/0)"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMC</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>69</ID>
+          <Description>"Selected City Public Order"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>pCity</Address>
+          <Offsets>
+            <Offset>1898</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>70</ID>
+          <Description>"Selected City Population"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>pCity</Address>
+          <Offsets>
+            <Offset>1840</Offset>
+          </Offsets>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols>
+    <SymbolEntry>
+      <Name>MyCode</Name>
+      <Address>053D0000</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>pUnit</Name>
+      <Address>053D03A8</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>pCity</Name>
+      <Address>053D03AC</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>pPlayer</Name>
+      <Address>053D03B0</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>iEnableGM</Name>
+      <Address>053D0390</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>iEnableMA</Name>
+      <Address>053D0394</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>iEnableMG</Name>
+      <Address>053D0398</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>iEnableMM</Name>
+      <Address>053D039C</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>iEnableTS</Name>
+      <Address>053D03A0</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>iEnableMC</Name>
+      <Address>053D03A4</Address>
+    </SymbolEntry>
+  </UserdefinedSymbols>
+  <Comments>===========================================
+ Game Title    : Medieval 2 Total War
+ Game Version  : 1.03
+ Proces Name   : medieval2.exe
+ Script Version: 1.1
+ CE Version    : 6.1
+ Release date  : 04-Mar-2012
+ Author        : Recifense
+ Features:
+ - God Mode [1]
+ - Unlimited Ammo[2]
+ - Minimum Gold [3]
+ - Unlimited Movement Points [4]
+ - Recover Troop Size [5]
+ - Construction in 1 day 
+ - Pointer to selected city
+===========================================
+[1] Some units will still die, but you will win the battle;
+[2] Only for the troops (Cannons are not included);
+[3] 50000;
+[4] For armies and fleet;
+[5] Recover troop size during movement;
+===========================================
+[NOTE] You can create HOT KEYS for each cheat/value
+</Comments>
+</CheatTable>

@@ -1,0 +1,683 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="18">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>42</ID>
+      <Description>"[X] &lt;== Men of War Assault Squad II v3.040.0 RLD-3DM Script v2.1"</Description>
+      <Options moHideChildren="1"/>
+      <LastState Activated="0"/>
+      <Color>FF0000</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>{
+===========================================
+ Game Title    : Men of War: Assault Squad II
+ Game Version  : 3.040.0
+ Game Sponsor  : RELOADED
+ Process Name  : mowas_2.exe
+ Script Version: 2.1
+ CE Version    : 6.4
+ Release date  : 21-Dec-2014
+ Author        : Recifense
+ History:
+ 15-May-14: First Release
+ 16-May-14: Release for version 3.032.0 (Patch by RLD)
+ 22-May-14: Fixed Command Points (s2.1)
+ 26-May-14: Release for version 3.033.0 (Patch by RLD)
+ 06-Jun-14: Release for version 3.035.0 (Patch by 3DM)
+ 14-Jun-14: Release for version 3.036.0 (Patch by 3DM)
+ 23-Jul-14: Release for version 3.037.0 (Patch by 3DM)
+ 21-Dec-14: Release for version 3.040.0 (Patch by CODEX)
+ Features:
+ - God Mode
+ - Full Stamina
+ - Unlimited Ammo
+   - Soldiers (loaded ammo)
+   - Tanks (Missiles in Inv)
+ - Unlimited Fuel
+ - Unlimited Command Points
+===========================================
+}
+
+//=========================================
+// Definitions
+define(LUDO,"mowas_2.exe")
+define(GDMD,mowas_2.exe+00431715) //======
+define(MUSA,mowas_2.exe+004320af) //======
+define(MPAO,mowas_2.exe+00304020) //======
+define(MUFL,mowas_2.exe+0037f5cf) //======
+define(MOCP,mowas_2.exe+005c99bf) //======
+define(MTAO,mowas_2.exe+0030442a) //======
+define(GMD2,mowas_2.exe+002934fb) //n=====
+
+define(ACCP,mowas_2.exe+0091b924) //======
+define(AMCP,mowas_2.exe+0091b928) //======
+
+//=========================================
+// Constants used in the script (that can be changed)
+define(ctCE64,(float)6.4)
+define(ctMMON,#64000)  // Minimum Money
+define(ctMATT,#10)     // Minimum Attributes
+
+//=========================================
+[ENABLE]
+//=========================================
+//LuaCall(CheckVersion())
+//=========================================
+// Check if script is compatible to this game version
+// If false the script will not be loaded
+
+assert(GDMD,f3 0f 11 8e b8 00 00 00 f3 0f 5e 86 b4 00 00 00 f3 0f 11 44 24 04)
+assert(MUSA,f3 0f 11 47 40 f3 0f 5c 44 24 18 0f 54 05 ?? ?? ?? ?? 0f 2f c8 ??)
+assert(MPAO,8b 44 24 04 89 41 28 c2 04 00 cc cc cc cc cc cc 53 8b d9 83 7b 2c)
+assert(MUFL,8b 4e 18 89 46 08 e8 ?? ?? ?? ?? d9 46 08 5e 59 c2 04 00 cc cc cc)
+assert(MOCP,a1 ?? ?? ?? ?? 89 44 24 14 8d 44 24 10 50 8d 44 24 18 50 68 ?? ??)
+assert(MTAO,8b 54 24 08 89 50 20 29 56 20 5e c2 04 00 cc cc cc ?? ?? ?? ?? ??)
+assert(GMD2,f6 82 90 00 00 00 02 ?? ?? 8b 01 52 56 ff 50 10 5e c2 04 00 cc 56)
+
+//=========================================
+alloc(MyCode,4096,LUDO)
+//=========================================
+// Declaration section
+label(_GodMode)
+label(_BackGMD)
+label(_ExitGMD)
+label(_MonUnitStamina)
+label(_BackMUS)
+label(_ExitMUS)
+label(_MonPlayerAmmo)
+label(_BackMPA)
+label(_ExitMPA)
+label(_MonUnitFuel)
+label(_BackMUF)
+label(_ExitMUF)
+label(_MonCommandPoints)
+label(_BackMCP)
+label(_ExitMCP)
+label(_MonTankAmmo)
+label(_BackMTA)
+label(_ExitMTA)
+label(_GodMode2)
+label(_BackGM2)
+label(_ExitGM2)
+label(iEnableGMD)
+label(iEnableMUS)
+label(iEnableMPA)
+label(iEnableMUF)
+label(iEnableMCP)
+label(iOwnerID)
+label(pHero)
+label(pPoints)
+label(pUnit)
+label(pHero2)
+
+//=========================================
+// Registering Symbols
+registersymbol(MyCode)
+registersymbol(iEnableGMD)
+registersymbol(iEnableMUS)
+registersymbol(iEnableMPA)
+registersymbol(iEnableMUF)
+registersymbol(iEnableMCP)
+registersymbol(iOwnerID)
+registersymbol(pHero)
+registersymbol(pPoints)
+registersymbol(pUnit)
+registersymbol(pHero2)
+
+//=========================================
+MyCode:
+//=========================================
+// During Combat
+_GodMode:
+ pushfd                            // Save EFLAGS
+ push eax
+
+ mov [pHero],esi                   // Save pointer for debugging
+
+ cmp dword ptr [iEnableGMD],0
+ je _ExitGMD                       // Jump if feature is disabled
+
+ mov eax,[esi+10]
+ test eax,eax
+ jz _ExitGMD
+
+ movzx eax,byte ptr [eax+000002ec]
+ cmp eax,[iOwnerID]
+ jne _ExitGMD
+
+ movss xmm1,[esi+000000b4]
+
+_ExitGMD:
+ pop eax
+ popfd                             // Restore EFLAGS
+
+ movss [esi+000000B8],xmm1         // Original code
+ jmp _BackGMD                      // Back to main code
+
+//=========================================
+// When updating
+_MonUnitStamina:
+ push eax
+
+ cmp dword ptr [iEnableMUS],0
+ je _ExitMUS                       // Jump if feature is disabled
+
+ mov eax,[edi+10]
+ test eax,eax
+ jz _ExitMUS
+
+ movzx eax,byte ptr [eax+000002ec]
+ cmp eax,[iOwnerID]
+ jne _ExitMUS
+
+ mov eax,(float)100.0
+ mov [edi+40],eax
+ movss xmm0,[edi+40]
+
+_ExitMUS:
+ pop eax
+
+ movss [edi+40],xmm0               // Original code
+ jmp _BackMUS                      // Back to main code
+
+//=========================================
+// When updating
+_MonPlayerAmmo:
+ push ebx
+
+ mov eax,[esp+08]
+ test eax,eax
+ jz _ExitMPA
+
+ cmp dword ptr [iEnableMPA],0
+ je _ExitMPA                       // Jump if feature is disabled
+
+ mov ebx,[ecx+14]
+ test ebx,ebx
+ jz _ExitMPA
+
+ mov ebx,[ecx+18]
+ test ebx,ebx
+ jz _ExitMPA
+
+ mov eax,[ebx+20]
+ test eax,eax
+ jz _ExitMPA
+
+ mov eax,[ebx+48]
+ mov ebx,[ecx+14]
+ cmp eax,[ebx+24]
+ jne _ExitMPA
+
+ movzx eax,byte ptr [eax+000002ec]
+ cmp eax,[iOwnerID]
+ jne _ExitMPA
+
+ mov eax,[ecx+28]
+ cmp eax,[esp+08]
+ js _ExitMPA
+
+ mov [esp+08],eax
+
+_ExitMPA:
+ pop ebx
+
+ mov eax,[esp+04]                  // Original code
+ mov [ecx+28],eax                  // Original code (upd Ammo)
+ jmp _BackMPA                      // Back to main code
+
+//=========================================
+// When updating
+_MonUnitFuel:
+ push ebx
+
+ mov ecx,[esi+18]                  // Original code
+ mov [esi+08],eax                  // Original code (upd fuel)
+
+ cmp dword ptr [iEnableMUF],0
+ je _ExitMUF                       // Jump if feature is disabled
+
+ mov ebx,[ecx+0c]
+ test ebx,ebx
+ jz _ExitMUF
+
+ movzx eax,byte ptr [ebx+000002ec]
+ cmp eax,[iOwnerID]
+ jne _ExitMUF
+
+ mov eax,[esi+04]
+ mov [esi+08],eax
+
+ mov [pUnit],ecx
+
+_ExitMUF:
+ pop ebx
+ jmp _BackMUF                      // Back to main code
+
+//=========================================
+// Game Screen
+_MonCommandPoints:
+ cmp dword ptr [iEnableMCP],0
+ je _ExitMCP                       // Jump if feature is disabled
+
+ mov eax,[AMCP]
+ mov [ACCP],eax
+
+_ExitMCP:
+ mov eax,[ACCP]                    // Original code
+ jmp _BackMCP                      // Back to main code
+
+//=========================================
+// When decreasing ammo in Inv
+// ESI = Ammo Structure
+_MonTankAmmo:
+ mov edx,[esp+08]
+ cmp edx,[esi+20]
+ je _ExitMTA
+
+ cmp dword ptr [iEnableMPA],0
+ je _ExitMTA                       // Jump if feature is disabled
+
+ mov edx,[esi+14]
+ test edx,edx
+ jz _ExitMTA
+
+ mov edx,[edx+24]
+ test edx,edx
+ jz _ExitMTA
+
+ movzx edx,byte ptr [edx+000002ec]
+ cmp edx,[iOwnerID]
+ jne _ExitMTA
+
+ mov edx,[esp+08]
+ add [esi+20],edx
+
+_ExitMTA:
+ mov edx,[esp+08]                  // Original code
+ mov [eax+20],edx                  // Original code
+ jmp _BackMTA                      // Back to main code
+
+//=========================================
+// During Combat
+_GodMode2:
+ push eax
+
+ mov [pHero2],edx                  // Save pointer for debugging
+
+ cmp dword ptr [iEnableGMD],0
+ je _ExitGM2                       // Jump if feature is disabled
+
+ movzx eax,byte ptr [edx+000002ec]
+ cmp eax,[iOwnerID]
+ jne _ExitGM2
+
+ pop eax
+ pop esi
+ ret 0004
+//====
+_ExitGM2:
+ pop eax
+
+ test byte ptr [edx+00000090],02   // Original code
+ jmp _BackGM2                      // Back to main code
+
+//=========================================
+ db '=================================&gt;'
+ db 'CE6.4 Script by Recifense 122114'
+//=========================================
+// Variables
+iEnableGMD:
+ dd 0
+iEnableMUS:
+ dd 0
+iEnableMPA:
+ dd 0
+iEnableMUF:
+ dd 0
+iEnableMCP:
+ dd 0
+iOwnerID:
+ dd 0
+pHero:
+ dd 0
+pPoints:
+ dd 0
+pUnit:
+ dd 0
+pHero2:
+ dd 0
+
+//=========================================
+// Hacking Points
+GDMD:
+ jmp _GodMode
+ nop
+ nop
+ nop
+_BackGMD:
+
+MUSA:
+ jmp _MonUnitStamina
+_BackMUS:
+
+MPAO:
+ jmp _MonPlayerAmmo
+ nop
+ nop
+_BackMPA:
+
+MUFL:
+ jmp _MonUnitFuel
+ nop
+_BackMUF:
+
+MOCP:
+ jmp _MonCommandPoints
+_BackMCP:
+
+MTAO:
+ jmp _MonTankAmmo
+ nop
+ nop
+_BackMTA:
+
+GMD2:
+ jmp _GodMode2
+ nop
+ nop
+_BackGM2:
+
+//=========================================
+// Script for Restoring Original Codes
+[DISABLE]
+GDMD:
+// movss [esi+000000B8],xmm1
+ db f3 0f 11 8e b8 00 00 00
+
+MUSA:
+// movss [edi+40],xmm0
+ db f3 0f 11 47 40
+
+MPAO:
+// mov eax,[esp+04]
+// mov [ecx+28],eax
+ db 8b 44 24 04 89 41 28
+
+MUFL:
+// mov ecx,[esi+18]
+// mov [esi+08],eax
+ db 8b 4e 18 89 46 08
+
+MOCP:
+  mov eax,[ACCP]
+
+MTAO:
+// mov edx,[esp+08]
+// mov [eax+20],edx
+ db 8b 54 24 08 89 50 20
+
+GMD2:
+// test byte ptr [edx+00000090],02
+ db f6 82 90 00 00 00 02
+
+//=========================================
+// Unregistering Symbols
+unregistersymbol(MyCode)
+unregistersymbol(iEnableGMD)
+unregistersymbol(iEnableMUS)
+unregistersymbol(iEnableMPA)
+unregistersymbol(iEnableMUF)
+unregistersymbol(iEnableMCP)
+unregistersymbol(iOwnerID)
+unregistersymbol(pHero)
+unregistersymbol(pPoints)
+unregistersymbol(pUnit)
+
+//=========================================
+dealloc(MyCode)
+//============= Scripts End ===============
+
+// ****************************************
+// NOTES
+// ****************************************
+{
+3.037.0:
+define(GDMD,mowas_2.exe+00420e15) //=====
+define(MUSA,mowas_2.exe+004217af) //=====
+define(MPAO,mowas_2.exe+002f3e70) //=====
+define(MUFL,mowas_2.exe+0036f14f) //=====
+define(MOCP,mowas_2.exe+005b5f1f) //=====
+define(MTAO,mowas_2.exe+002f427a) //=====
+define(GMD2,mowas_2.exe+00282beb) //n====
+
+define(ACCP,mowas_2.exe+008ec564) //=====
+define(AMCP,mowas_2.exe+008ec568) //=====
+
+}
+
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>1</ID>
+          <Description>"Enable/Disable God Mode =================&gt;"</Description>
+          <DropDownList DescriptionOnly="1" DisplayValueAsItem="1">0:Disabled
+1:Enabled
+</DropDownList>
+          <LastState Value="??" Activated="0" RealAddress="00000000"/>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableGMD</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>31</ID>
+          <Description>"Enable/Disable Unlimited Stamina  ===========&gt;"</Description>
+          <DropDownList DescriptionOnly="1" DisplayValueAsItem="1">0:Disabled
+1:Enabled
+</DropDownList>
+          <LastState Value="??" Activated="0" RealAddress="00000000"/>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMUS</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>32</ID>
+          <Description>"Enable/Disable Unlimited Ammo =============&gt;"</Description>
+          <DropDownList DescriptionOnly="1" DisplayValueAsItem="1">0:Disabled
+1:Enabled
+</DropDownList>
+          <LastState Value="??" Activated="0" RealAddress="00000000"/>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMPA</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>37</ID>
+          <Description>"Enable/Disable Unlimited Fuel  ==============&gt;"</Description>
+          <DropDownList DescriptionOnly="1" DisplayValueAsItem="1">0:Disabled
+1:Enabled
+</DropDownList>
+          <LastState Value="??" Activated="0" RealAddress="00000000"/>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMUF</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>40</ID>
+          <Description>"Enable/Disable Command Points  ============&gt;"</Description>
+          <DropDownList DescriptionOnly="1" DisplayValueAsItem="1">0:Disabled
+1:Enabled
+</DropDownList>
+          <LastState Value="??" Activated="0" RealAddress="00000000"/>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMCP</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>33</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>34</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols>
+    <SymbolEntry>
+      <Name>pHero2</Name>
+      <Address>09620264</Address>
+    </SymbolEntry>
+  </UserdefinedSymbols>
+  <Comments>===========================================
+ Game Title    : Men of War: Assault Squad II
+ Game Version  : 3.040.0
+ Game Sponsor  : RELOADED
+ Process Name  : mowas_2.exe
+ Script Version: 2.1
+ CE Version    : 6.4
+ Release date  : 21-Dec-2014
+ Author        : Recifense
+ History:
+ 15-May-14: First Release
+ 16-May-14: Release for version 3.032.0 (Patch by RLD)
+ 22-May-14: Fixed Command Points (s2.1)
+ 26-May-14: Release for version 3.033.0 (Patch by RLD)
+ 06-Jun-14: Release for version 3.035.0 (Patch by 3DM)
+ 14-Jun-14: Release for version 3.036.0 (Patch by 3DM)
+ 23-Jul-14: Release for version 3.037.0 (Patch by 3DM)
+ 21-Dec-14: Release for version 3.040.0 (Patch by CODEX)
+ Features:
+ - God Mode                  [1]
+ - Full Stamina              [2]
+ - Unlimited Ammo            [3]
+   - Soldiers (loaded ammo)  
+   - Tanks (Missiles in Inv) 
+ - Unlimited Fuel            [4]
+ - Unlimited Command Points  [5]
+===========================================
+[1] Player's soldiers can still die, but not so easily;
+[2] For Player's soldiers only;
+[3] For Player's soldiers and vehicles only;
+[4] For player's vehicles only;
+[5] That's it;
+===========================================
+[USAGE]
+1) Run CE64;
+2) Run Game;
+3) Load the game process "mowas_2.exe" in CE;
+4) Load the table;
+5) Activate the script (in Blue)
+4) Change the value to "Enabled" of each cheat you want to use (in Green);
+5) Game On;
+===========================================
+[HOTKEYS]
+CTRL+Home  = Enable  GM/US/UA/UF cheats;
+CTRL+End   = Disable GM/US/UA/UF cheats;
+-----------
+CTRL+PageUp   = Enable  CP cheat;
+CTRL+PageDown = Disable CP cheat;
+===========================================
+[ADVICE]
+When you can,save the game before starting using table/cheat. So you can always come back in case you don't like the result.
+===========================================
+[INFO]
+Tested on Win 7 64bits
+===========================================
+Cheers!
+ 
+</Comments>
+</CheatTable>

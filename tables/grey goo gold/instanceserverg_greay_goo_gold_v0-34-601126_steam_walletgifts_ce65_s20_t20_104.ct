@@ -1,0 +1,680 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="24">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>93</ID>
+      <Description>"[X] &lt;== Grey Goo Gold v0.34.601126 Steam Script v2.0"</Description>
+      <Options moHideChildren="1" moDeactivateChildrenAsWell="1"/>
+      <LastState/>
+      <Color>FF0000</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>{
+===========================================
+ Game Title    : Grey Goo Gold
+ Game Version  : 0.34.601126
+ Game Sponsor  : Wallet Gifts (Steam)
+ Process Name  : InstanceServerG.exe
+ Script Version: 2.0
+ CE Version    : 6.6
+ Release date  : 28-Dec-2016
+ Author        : Recifense
+ History:
+ 28-Jan-15: First Release
+ 04-Feb-15: Release for version 0.15.522362 (patch by CODEX)
+ 23-Feb-15: Release for version 0.15.524791 (patch by CODEX)
+ 19-Jun-15: Release for version 0.14.528548 (patch by FitGirl)
+ 20-Jun-15: Fixed Resource (s1.1)
+ 28-Dec-16: Release for version 0.34.601126 (steam) (s2.0)
+ Features:
+ - Minimum Resources (new approach)
+ - God Mode
+ - Full Ammo
+ - Unlimited Units
+ - Some Pointers
+===========================================
+}
+
+//=========================================
+// Checking CE version
+{$lua}
+  if(getCEVersion() &lt; 6.5) then
+    ShowMessage('Sorry. CE version should be 6.5 or above')
+  end
+{$asm}
+
+//=========================================
+// Checking Selected Process
+{$lua}
+  if(process == nil) then
+    ShowMessage('No process was selected')
+  elseif (process ~= "InstanceServerG.exe") then
+    ShowMessage('Error. Expected Process = InstanceServerG.exe')
+  end
+{$asm}
+
+//=========================================
+// Definitions
+define(LUDO,"InstanceServerG.exe")
+define(MOHP,InstanceServerG.exe+00c38631) //==#=
+define(MOPR,InstanceServerG.exe+002b0f6c) //====
+define(GDMD,InstanceServerG.exe+002abf56) //==##
+define(MOFA,InstanceServerG.exe+00be25e7) //====
+define(MOUU,InstanceServerG.exe+001cacfe) //==#=
+define(MOMR,InstanceServerG.exe+00c26c73) //---N
+
+define(SELL,InstanceServerG.exe+0033430a) //===#
+define(CTRK,InstanceServerG.exe+00283b9a) //===#
+define(XXXX,InstanceServerG.exe+00301c85) //---N
+
+//=========================================
+// Constants used in the script (that can be changed)
+define(ctCE64,(float)6.6)
+define(ctMRES,#660)    // Minimum Resource
+
+//=========================================
+[ENABLE]
+//=========================================
+//LuaCall(CheckVersion())
+//=========================================
+// Check if script is compatible to this game version
+// If false the script will not be loaded
+
+assert(MOHP,8b 71 6c 85 f6 ?? ?? 8b 06 8b 50 08 8b ce ff d2 85 c0 ?? ?? 3d ??)
+assert(MOPR,8b 70 0c 89 58 0c 88 50 14 3b f3 ?? ?? 8b 7f 08 85 ff ?? ?? 8b 07)
+assert(GDMD,f3 0f 10 4d 0c 0f 57 d2 0f 2f ca f3 0f 10 47 18 f3 0f 11 4d 98 ??)
+assert(MOFA,df 7d 0c 8b 55 0c 89 11 d9 6d 0a 5e 5d c2 0c 00 cc cc cc cc cc cc)
+assert(MOUU,8b 47 10 6a 20 50 8b 42 04 8b ce 80 e3 01 ff d0 8b 16 22 d8 8b 47)
+assert(MOMR,8b 45 08 89 41 5c 39 41 58 ?? ?? 8b 11 50 8b 42 30 ff d0 5d c2 04)
+
+//=========================================
+alloc(MyCode,4096,$process)
+//=========================================
+// Declaration section
+label(_MonHumanPlayer)
+label(_BackMHP)
+label(_ExitMHP)
+label(_MonPlayerRes)
+label(_BackMPR)
+label(_ExitMPR)
+label(_GodMode)
+label(_BackGMD)
+label(_ExitGMD)
+label(_MonFullAmmo)
+label(_BackMFA)
+label(_ExitMFA)
+label(_MonUnlimitedUnits)
+label(_BackMUU)
+label(_ExitMUU)
+label(_MonMinRes)
+label(_BackMMR)
+label(_ExitMMR)
+
+label(iEnableMPR)
+label(iEnableGMD)
+label(iEnableMFA)
+label(iEnableMUU)
+
+label(iMinRes)
+
+label(pCommon)
+label(pUnit)
+label(pRes)
+label(pPop)
+
+label(fLast)
+label(aLast)
+
+//=========================================
+// Registering Symbols
+registersymbol(MyCode)
+registersymbol(iEnableMPR)
+registersymbol(iEnableGMD)
+registersymbol(iEnableMFA)
+registersymbol(iEnableMUU)
+registersymbol(iMinRes)
+registersymbol(pCommon)
+registersymbol(pUnit)
+registersymbol(pRes)
+registersymbol(pPop)
+
+registersymbol(fLast)
+registersymbol(aLast)
+
+//=========================================
+MyCode:
+//========================================= ok 601126
+// At the game main RTS screen
+_MonHumanPlayer:
+ mov [aLast],'_MHP'
+
+ push eax
+
+ mov esi,[ecx+6c]
+ test esi,esi
+ jz _ExitMHP
+
+ cmp esi,[ecx+68]
+ jne _ExitMHP
+
+ mov eax,[esi+14]
+ test eax,eax
+ jz _ExitMHP
+
+ mov eax,[eax]
+ cmp eax,'HUMA'
+ jne _ExitMHP
+
+ cmp [pCommon],esi
+ je _ExitMHP
+
+ mov [pCommon],esi
+ mov eax,ctMRES
+ mov [iMinRes],eax
+
+_ExitMHP:
+ pop eax
+
+ mov esi,[ecx+6C]                  // Original code (get pPlayer)
+ test esi,esi                      // Original code
+ jmp _BackMHP                      // Back to main code
+
+//========================================= ok 601126
+// When updating resource
+_MonPlayerRes:
+ mov [aLast],'_MPR'
+
+ push ecx
+
+ mov esi,[eax+0C]                  // Original code (get current value)
+
+ test edi,edi
+ jz _ExitMPR
+
+ mov ecx,[edi+08]
+ test ecx,ecx
+ jz _ExitMPR
+
+ mov ecx,[ecx+68]
+ test ecx,ecx
+ jz _ExitMPR
+
+ mov ecx,[ecx+68]
+ cmp ecx,[pCommon]
+ jne _ExitMPR
+
+ mov [pRes],edi
+
+ cmp dword ptr [iEnableMPR],0
+ je _ExitMPR                       // Jump if feature is disabled
+
+ cmp ebx,[iMinRes]
+ jns _ExitMPR
+
+ mov ebx,[iMinRes]
+
+ cmp ebx,esi
+ jne _ExitMPR
+
+ dec esi
+
+_ExitMPR:
+ pop ecx
+
+ mov [eax+0C],ebx                  // Original code (set new value)
+ jmp _BackMPR                      // Back to main code
+
+//========================================= 601126
+// When changing HP
+_GodMode:
+ mov [aLast],'_GMD'
+
+ push eax
+
+ mov eax,[ebp+00000114]
+
+ cmp eax,SELL
+ je _ExitGMD
+
+ cmp eax,CTRK
+ je _ExitGMD
+
+ cmp eax,XXXX
+ je _ExitGMD
+
+ mov [pUnit],edi
+
+ mov eax,[edi+08]
+ test eax,eax
+ jz _ExitGMD
+
+ mov eax,[eax+68]
+ test eax,eax
+ jz _ExitGMD
+
+ mov eax,[eax+68]
+ cmp eax,[pCommon]
+ jne _ExitGMD
+
+ mov eax,[edi+18]                  // Just for debugging
+ mov eax,[ebp+0c]                  // Just for debugging
+ mov [fLast],eax
+
+ cmp dword ptr [iEnableGMD],0
+ je _ExitGMD                       // Jump if feature is disabled
+
+ mov eax,[ebp+0c]
+ test eax,eax
+ jns _ExitGMD
+
+ mov eax,[edi+18]
+ mov [edi+14],eax
+
+ mov eax,(float)-1.0
+ mov [ebp+0c],eax
+
+_ExitGMD:
+ pop eax
+
+ movss xmm1,[ebp+0C]               // Original code (get value 2 add or dec)
+ jmp _BackGMD                      // Back to main code
+
+//========================================= ok 601126
+// When loading/unloading ammo (affects all)
+_MonFullAmmo:
+ mov [aLast],'_MFA'
+
+ fistp qword ptr [ebp+0C]          // Original code (convert new value)
+
+ cmp dword ptr [iEnableMFA],0
+ je _ExitMFA                       // Jump if feature is disabled
+
+ mov edx,[ecx+04]
+ mov [ebp+0C],edx
+
+_ExitMFA:
+ mov edx,[ebp+0C]                  // Original code (get new value)
+ jmp _BackMFA                      // Back to main code
+
+//========================================= ok 601126
+// When Inc/Dec spent unit points
+_MonUnlimitedUnits:
+ mov [aLast],'_MUU'
+
+ cmp dword ptr [iEnableMUU],0
+ je _ExitMUU                       // Jump if feature is disabled
+
+ mov eax,[edi+04]
+ cmp eax,[pCommon]
+ jne _ExitMUU
+
+ mov [pPop],edi
+
+ xor eax,eax
+ mov [edi+10],eax
+ mov [edi+18],eax
+
+_ExitMUU:
+ mov eax,[edi+10]                  // Original code (get spent points)
+ push 20                           // Original code
+ jmp _BackMUU                      // Back to main code
+
+//========================================= ok 601126
+// After updating Resource
+_MonMinRes:
+ mov [aLast],'_MMR'
+
+ mov eax,[ecx+04]
+ cmp eax,[pCommon]
+ jne _ExitMMR
+
+ mov eax,[ecx+5c]
+ shr eax,1
+ mov [iMinRes],eax
+
+_ExitMMR:
+ mov eax,[ebp+08]                  // Original code (get Max Resource)
+ mov [ecx+5C],eax                  // Original code
+ jmp _BackMMR                      // Back to main code
+
+//=========================================
+ db '==================================&gt;'
+ db 'CE6.6 Script by Recifense 122816'
+//=========================================
+// Variables
+iEnableMPR:
+ dd 0
+iEnableGMD:
+ dd 0
+iEnableMFA:
+ dd 0
+iEnableMUU:
+ dd 0
+iMinRes:
+ dd ctMRES
+pCommon:
+ dd MyCode
+pUnit:
+ dd 0
+pRes:
+ dd 0
+pPop:
+ dd 0
+fLast:
+ dd 0
+aLast:
+ db 'CE66'
+
+//=========================================
+// Hacking Points
+MOHP:
+ jmp _MonHumanPlayer
+_BackMHP:
+
+MOPR:
+ jmp _MonPlayerRes
+ nop
+_BackMPR:
+
+GDMD:
+ jmp _GodMode
+_BackGMD:
+
+MOFA:
+ jmp _MonFullAmmo
+ nop
+_BackMFA:
+
+MOUU:
+ jmp _MonUnlimitedUnits
+_BackMUU:
+
+MOMR:
+ jmp _MonMinRes
+ nop
+_BackMMR:
+
+//=========================================
+// Script for Restoring Original Codes
+[DISABLE]
+MOHP:
+// mov esi,[ecx+6C]
+// test esi,esi
+ db 8b 71 6c 85 f6
+
+MOPR:
+// mov esi,[eax+0C]
+// mov [eax+0C],ebx
+ db 8b 70 0c 89 58 0c
+
+GDMD:
+// movss xmm1,[ebp+0C]
+ db f3 0f 10 4d 0c
+
+MOFA:
+// fistp qword ptr [ebp+0C]
+// mov edx,[ebp+0C]
+ db df 7d 0c 8b 55 0c
+
+MOUU:
+// mov eax,[edi+10]
+// push 20
+ db 8b 47 10 6a 20
+
+MOMR:
+// mov eax,[ebp+08]
+// mov [ecx+5C],eax
+ db 8b 45 08 89 41 5c
+
+//=========================================
+// Unregistering Symbols
+unregistersymbol(MyCode)
+unregistersymbol(iEnableMPR)
+unregistersymbol(iEnableGMD)
+unregistersymbol(iEnableMFA)
+unregistersymbol(iEnableMUU)
+unregistersymbol(iMinRes)
+unregistersymbol(pCommon)
+unregistersymbol(pUnit)
+unregistersymbol(pRes)
+unregistersymbol(pPop)
+
+unregistersymbol(fLast)
+unregistersymbol(aLast)
+
+//=========================================
+dealloc(MyCode)
+//============= Scripts End ===============
+
+// ****************************************
+// NOTES
+// ****************************************
+{
+
+}
+
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>94</ID>
+          <Description>"[X] &lt;== Minimum Resource  ----------&gt; (HK: CTRL+Home / CTRL+End)"</Description>
+          <LastState/>
+          <Color>C08000</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[enable]
+define(test,LUDO)
+
+{$LUA}
+writeInteger("iEnableMPR",1)
+getAddressList().getMemoryRecordByID(94).Color=0x0008000
+{$ASM}
+
+[disable]
+{$LUA}
+writeInteger("iEnableMPR",0)
+getAddressList().getMemoryRecordByID(94).Color=0x0c08000
+{$ASM}
+
+</AssemblerScript>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Activate</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Deactivate</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>96</ID>
+          <Description>"[X] &lt;== God Mode  --------------------&gt; (HK: CTRL+Home / CTRL+End)"</Description>
+          <LastState/>
+          <Color>C08000</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[enable]
+define(test,LUDO)
+
+{$LUA}
+writeInteger("iEnableGMD",1)
+getAddressList().getMemoryRecordByID(96).Color=0x0008000
+{$ASM}
+
+[disable]
+{$LUA}
+writeInteger("iEnableGMD",0)
+getAddressList().getMemoryRecordByID(96).Color=0x0c08000
+{$ASM}
+
+</AssemblerScript>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Activate</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Deactivate</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>97</ID>
+          <Description>"[X] &lt;== Full Ammo  -------------------&gt; (HK: CTRL+Page Up / CTRL+Page Down)"</Description>
+          <LastState/>
+          <Color>C08000</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[enable]
+define(test,LUDO)
+
+{$LUA}
+writeInteger("iEnableMFA",1)
+getAddressList().getMemoryRecordByID(97).Color=0x0008000
+{$ASM}
+
+[disable]
+{$LUA}
+writeInteger("iEnableMFA",0)
+getAddressList().getMemoryRecordByID(97).Color=0x0c08000
+{$ASM}
+
+</AssemblerScript>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Activate</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>33</Key>
+              </Keys>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Deactivate</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>34</Key>
+              </Keys>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>98</ID>
+          <Description>"[X] &lt;== Unlimited Unit Points ---------&gt; (HK: CTRL+Insert / CTRL+Delete)"</Description>
+          <LastState/>
+          <Color>C08000</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[enable]
+define(test,LUDO)
+
+{$LUA}
+writeInteger("iEnableMUU",1)
+getAddressList().getMemoryRecordByID(98).Color=0x0008000
+{$ASM}
+
+[disable]
+{$LUA}
+writeInteger("iEnableMUU",0)
+getAddressList().getMemoryRecordByID(98).Color=0x0c08000
+{$ASM}
+
+</AssemblerScript>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Activate</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>45</Key>
+              </Keys>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Deactivate</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>46</Key>
+              </Keys>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols>
+    <SymbolEntry>
+      <Name>Recifense</Name>
+      <Address>20161228</Address>
+    </SymbolEntry>
+  </UserdefinedSymbols>
+  <Comments>===========================================
+ Game Title    : Grey Goo Gold
+ Game Version  : 0.34.601126
+ Game Sponsor  : Wallet Gifts (Steam)
+ Process Name  : InstanceServerG.exe
+ Script Version: 2.0
+ CE Version    : 6.6
+ Release date  : 28-Dec-2016
+ Author        : Recifense
+ History:
+ 28-Jan-15: First Release
+ 04-Feb-15: Release for version 0.15.522362 (patch by CODEX)
+ 23-Feb-15: Release for version 0.15.524791 (patch by CODEX)
+ 19-Jun-15: Release for version 0.14.528548 (patch by FitGirl)
+ 20-Jun-15: Fixed Resource (s1.1)
+ 28-Dec-16: Release for version 0.34.601126 (steam) (s2.0)
+ Features:
+ - Minimum Resources [1]
+ - God Mode          [2]
+ - Full Ammo         [3]
+ - Unlimited Units   [4]
+ - Some Pointers
+===========================================
+[1] For human player only (not AI);
+[2] For player's units and buildings (not AI's);
+[3] For Human player and AIs;
+[4] For Human player only (not AI);
+===========================================
+[USAGE]
+1) Run CE65;
+2) Run Game;
+3) Load the game process "InstanceServerG.exe" in CE;
+4) Load this table and activate the main script;
+5) Now Activate the script of each cheat you want to use;
+6) Game On;
+===========================================
+[HOTKEYS]
+CTRL+Home      = Enable  MR/GM cheats;
+CTRL+End       = Disable MR/GM cheats;
+-----------
+CTRL+PageUp    = Enable  FA cheat;
+CTRL+PageDown  = Disable FA cheat;
+-----------
+CTRL+Insert    = Enable  UUP cheat;
+CTRL+Delete    = Disable UUP cheat;
+===========================================
+[ADVICE]
+When you can,save the game before starting using table/cheat. So you can always come back in case you don't like the result.
+===========================================
+[INFO]
+Tested on Win 10 64bits
+===========================================
+Cheers!
+</Comments>
+</CheatTable>

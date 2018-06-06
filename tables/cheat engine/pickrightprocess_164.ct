@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="14">
+  <CheatEntries/>
+  <UserdefinedSymbols/>
+  <LuaScript>-- ############ Adjust those: ##################################################
+
+process = "chrome.exe" -- you can set this variable by using combobox,
+                       -- editbox or soemthing
+
+function enableCheatsGuiWhatEver()
+  -- initialize UI (or reinitialize UI)
+  -- or whatever you want to do afer finding right process:
+  -- enabling controls, cheats
+
+
+end
+
+-- this function returns true if good process, false if bad
+function checkProcessMajor()
+  reinitializeSymbolhandler()
+
+  -- for Chrome flash
+
+  if getAddress("pepflashplayer.dll")~=0 or
+     getAddress("AdobeCPGetAPI")     ~=0 then
+       return true
+  end
+
+  -- you can change above condition to something else.
+  -- for example you can make aobscan check -  if pattern found -&gt; return true
+
+
+  return false -- return false by default
+end
+
+-- #############################################################################
+
+
+
+
+
+
+
+-- do not thouch code below (unless you know what you are doing)
+errorOnLookupFailure(false)
+
+strings_add(getAutoAttachList(),process)
+
+alreadycheckedPIDS={} -- checked processes pids
+
+openNextProcTimer = createTimer(nil,false)
+timer_setInterval(openNextProcTimer, 1000)
+timer_onTimer(openNextProcTimer,
+function (sender)
+  local tempPIDtable = getPids()
+  if #tempPIDtable == 0 then return end
+
+  --OK, we have new PID
+  timer_setEnabled(sender,false)
+  openProcess(tempPIDtable[1])
+end
+)
+
+function getPids()
+  local SL=createStringlist()
+        getProcesslist(SL)
+  local tempPIDtable={}
+
+  for i=0,strings_getCount(SL)-1 do
+    local entry = strings_getString(SL,i)
+    local processname = entry:sub(10,255)
+    local PID = tonumber('0x'..entry:sub(1,8))
+    if processname == process then
+      if alreadycheckedPIDS[PID]~=true then
+        table.insert(tempPIDtable,PID)
+      end
+    end
+  end
+
+  object_destroy(SL)
+  return tempPIDtable
+end
+
+
+function checkProcess(sender)
+  timer_setEnabled(sender,false)
+
+  -- add currently opened process to ignore list
+  -- (openNextProc will ignore those)
+  alreadycheckedPIDS[getOpenedProcessID()]=true
+
+  if checkProcessMajor() then
+    -- OUR TARGET FOUND
+    timer_setEnabled(openNextProcTimer,false)
+    alreadycheckedPIDS={}
+    enableCheatsGuiWhatEver()
+  else
+    timer_setEnabled(openNextProcTimer,true)
+  end
+end
+
+
+function onOpenProcess()
+  timer_setEnabled(checkProcessTimer,true)
+end
+
+checkProcessTimer = createTimer(nil,false)
+timer_setInterval(checkProcessTimer, 1000)
+timer_onTimer(checkProcessTimer, checkProcess)
+
+
+</LuaScript>
+</CheatTable>

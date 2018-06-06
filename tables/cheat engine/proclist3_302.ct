@@ -1,0 +1,204 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="18">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>1</ID>
+      <Description>"*SPEED HACK ZERO"</Description>
+      <LastState Activated="0"/>
+      <Color>80000008</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>[ENABLE]
+
+luacall(speedhack_setSpeed(0))
+[DISABLE]
+luacall(speedhack_setSpeed(1))
+
+</AssemblerScript>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>2</ID>
+      <Description>"RNG"</Description>
+      <LastState Activated="0"/>
+      <Color>80000008</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>[ENABLE]
+
+globalalloc(RNG,1024)
+RNG+10: // seed
+dd 1
+label(genRng)
+RNG+20:
+
+mov ecx,30
+mov esi,RNG
+add esi,100
+@@:
+call genRng     // eax is rng(0-2^32-1)
+mov  ebx,#200
+xor  edx,edx
+div  ebx
+mov [esi],edx   // edx is remainder of rng/200
+add esi,04
+loop @b
+ret
+
+genRng:
+mov  eax,[RNG+10]
+mov  edx,#1103515245
+mul  edx
+add  eax,#12345
+mov  [RNG+10],eax
+ret
+createThread(RNG+20)
+[DISABLE]
+
+</AssemblerScript>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols>
+    <SymbolEntry>
+      <Name>RNG</Name>
+      <Address>002F0000</Address>
+    </SymbolEntry>
+  </UserdefinedSymbols>
+  <LuaScript>--
+
+
+function pidDialog(doPid,autoSelectFirst,pn,dn)
+
+  local PID,NAME,DESC -- return result for doPid
+
+  autoSelectFirst = autoSelectFirst or false
+  local plugname = type(pn)=='table' and pn or {"iexplore","flashplayerplugin","plugin-container","opera","chrome","awesomium_process","torch","dragon","maxthon","palemoon","safari" }
+  local dllname  = type(dn)=='table' and dn or {"flash","unity" }
+  if type(pn)=='string' then table.insert(plugname,pn) end
+  if type(dn)=='string' then table.insert(dllname,dn) end
+  local indexOf = function(s,m) for i=1,#m do if string.find(string.lower(s),string.lower(m[i]),1,true) then return i end end end -- cave insensitive find
+  local function tmerge(t,o,...) for k,v in pairs(o) do t[k]=v end if select('#',...)&gt;0 then return tmerge(t,...) else return t end end
+  local function callLater(f,...)
+    local a,n = {...},select('#',...)
+    return tmerge(createTimer(false),{Interval=1,Enabled=true,OnTimer=function(sender) sender.Enabled=false sender.Destroy() f(unpack(a,1,n)) end})
+  end
+  local function parseProc(i,s)
+    local dll=' ... '
+    for pid,name in string.gmatch(s,'([0-9A-F]+)-(.*)') do
+      local weight,pid = 0,tonumber(pid,16)
+      if type(plugname)=='table' and #plugname &gt; 0 and indexOf(name,plugname) then
+        weight = weight + 1
+        if type(dllname)=='table' and #dllname &gt; 0 then
+          local m = enumModules(pid)
+          for i=1,#m do
+            local ix = indexOf(m[i].Name,dllname)
+            if ix then
+              weight = weight + 1
+              dll = dllname[ix]
+              break
+            end
+          end
+        end
+      end
+      return {pid=pid,desc=string.format('%5d %04X &lt;%5s&gt; %s',pid,pid,string.sub(dll.."     ",1,5):upper(),name),name=name,w=weight+i/2048,dll=dll}
+    end
+  end
+
+  local FP = tmerge(createForm(false),{FormStyle='fsStayOnTop',AutoSize=true,BorderWidth=4,Color=0x80,Position='poScreenCenter',BorderStyle='bsToolWindow',Caption='Double Click to Select'})
+  local LB = tmerge(createListBox(FP),{MultiSelect=false,AutoSize=true,Color=0x80})
+  tmerge(LB.Constraints,{MinHeight=300,MinWidth=400})
+  tmerge(LB.Font,{Color=0xffffff,Name='Courier New',Height=-12,Style='[bsBold]'})
+
+  LB.OnDblClick = function()
+    local idx = LB.ItemIndex
+    if type(idx)=='number' and idx &gt;= 0 then
+      DESC = LB.Items[idx]
+      for pid,pID,name in string.gmatch(DESC,"([0-9]+) ([0-9A-F]+) &lt;.-&gt; (.*)") do
+
+        PID = tonumber(pid,10)
+        NAME = name
+      end
+    end
+    FP.close()
+  end -- LB.OnDblClick
+
+  FP.OnClose = function()
+    --- doPid should handle case of cancel
+    if PID ~= nil then callLater(doPid,PID,NAME,DESC) else callLater(doPid,nil,nil,'*cancel*') end
+    FP.destroy(); FP = nil
+  end
+
+  getProcesslist(LB.Items)
+  local plist = {}
+  for i=1,LB.Items.getCount() do plist[#plist+1] = parseProc(i,LB.Items[i-1]) end
+
+  table.sort(plist,function(a,b) return a.w &gt; b.w end)
+  local currProcId = getOpenedProcessID()
+  for i=1,LB.Items.getCount() do
+    LB.Items.setString(i-1,plist[i].desc)
+    if plist[i].pid == currProcId then LB.setItemIndex(i-1) end
+    if i==1 and autoSelectFirst == true or type(autoSelectFirst)=='string' and indexOf(plist[i].dll,{autoSelectFirst}) ~=nil then
+      LB.setItemIndex(i-1) LB.OnDblClick() return
+    end
+  end
+
+  FP.show()
+end
+
+-- usage:
+
+--pidDialog(print)
+
+--pidDialog(openProcess)
+
+--pidDialog(function(pid,name) print(string.format('%04X-%s',pid,name)) end)
+
+function ftest()
+
+  local function tmerge(t,o,...) for k,v in pairs(o) do t[k]=v end if select('#',...)&gt;0 then return tmerge(t,...) else return t end end
+
+  -- test form setup
+  dllname = {'cheat'}
+  local FT = tmerge(createForm(false),{FormStyle='fsStayOnTop',AutoSize=true,BorderWidth=4,Position='poScreenCenter',BorderStyle='bsToolWindow',Caption='Test Label/Button form'})
+  local LT = tmerge(createLabel(FT),{Caption='Click Me',Color=0xffffff})
+  tmerge(LT.Font,{Height=40,Style='[bsBold]'})
+
+  -- attack an action/function to click event
+  LT.OnClick = function(sender)
+
+    -- call pidDialog when clicked,
+    pidDialog(function(pid,name)
+
+      -- here do the action on RETURNED pid,name from pidDialog
+
+         -- check pid is valid number 1st
+      if type(pid)~='number' then return end
+
+      openProcess(pid)
+      sender.Caption = string.format('%04X-%s',pid,name)
+
+
+      --- autoAttachTest
+      sender.OnClick = function(sender)
+
+        pidDialog(function(pid,name)
+
+           if type(pid)~='number' then return end
+
+           openProcess(pid)
+           sender.Caption = "AutoAttached, Check CE's 'Process Selected'"
+        end,'flash')  -- here set autoAttach highest weight Flash if your browser has some flash process
+        -- 2nd pidDialog end
+
+      end -- OnClick, 2nd
+
+    end) -- or true for auto select first (highest weight), no form show
+--  1st pidDialog end
+
+  end -- OnClick , 1st
+  FT.show()
+
+end -- ftest
+
+ftest()
+
+
+</LuaScript>
+</CheatTable>

@@ -1,0 +1,154 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="16">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>1</ID>
+      <Description>"Script"</Description>
+      <Color>80000008</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>[ENABLE]
+aobscan(aobModifyValue,8B 44 24 1C 89 47 08)
+alloc(chunkZero,4096) // Page size
+
+// Pointers
+label(pointerGoldValue)
+
+// Injection points
+label(injectModifyValue)
+
+// Entries
+label(entryModifyValue)
+
+// Processing
+label(processGoldValue)
+label(processXPValue)
+label(processSPValue)
+label(processModifyValue)
+
+// Returns
+label(returnModifyValue)
+
+// Scope
+registersymbol(pointerGoldValue)
+registersymbol(injectModifyValue)
+
+
+chunkZero:
+  pointerGoldValue:
+    dd 0
+
+  // Entry
+  entryModifyValue:
+
+    // Gold
+    cmp [edi+04],33CA
+    je processGoldValue
+
+    // XP
+    cmp [edi+04],33C2
+    je processXPValue
+
+    // SP
+    // - Note the "+2" pattern; in the event this is not framed in the context
+    //   of the party (i.e. 4 slots only), there is probably one for each
+    //   character in the game.
+    //cmp [edi+04],0B
+    //je processSPValue
+    //cmp [edi+04],09
+    //je processSPValue
+    //cmp [edi+04],07
+    //je processSPValue
+    //cmp [edi+04],03
+    //je processSPValue
+
+    // Else
+    jmp processModifyValue
+
+  // Process
+  processGoldValue:
+    mov [pointerGoldValue],edi
+    mov [edi+08],C351 // 25k
+    jmp returnModifyValue
+  processXPValue:
+    mov [edi+08],030D41 // 100k
+    jmp returnModifyValue
+  processSPValue:
+    mov [edi+08],4E21 // 10k
+    jmp returnModifyValue
+  processModifyValue:
+    mov eax,[esp+1C]
+    mov [edi+08],eax
+    jmp returnModifyValue
+
+
+// Injection points
+aobModifyValue:
+injectModifyValue:
+  jmp entryModifyValue
+  nop
+  nop
+returnModifyValue:
+
+
+[DISABLE]
+injectModifyValue:
+    mov eax,[esp+1C]
+    mov [edi+08],eax
+
+// Housekeeping
+dealloc(chunkZero)
+unregistersymbol(pointerGoldValue)
+unregistersymbol(injectModifyValue)
+
+</AssemblerScript>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>3</ID>
+      <Description>"Pointers"</Description>
+      <Options moHideChildren="1"/>
+      <Color>80000008</Color>
+      <GroupHeader>1</GroupHeader>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>2</ID>
+          <Description>"Gold"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>pointerGoldValue</Address>
+          <Offsets>
+            <Offset>8</Offset>
+          </Offsets>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+  </CheatEntries>
+  <CheatCodes>
+    <CodeEntry>
+      <Description>Change of mov eax,[esp+1C]</Description>
+      <Address>1007FF0F</Address>
+      <ModuleName>RGSS202E.dll</ModuleName>
+      <ModuleNameOffset>7FF0F</ModuleNameOffset>
+      <Before>
+        <Byte>5D</Byte>
+        <Byte>33</Byte>
+        <Byte>C0</Byte>
+        <Byte>5B</Byte>
+        <Byte>C3</Byte>
+      </Before>
+      <Actual>
+        <Byte>8B</Byte>
+        <Byte>44</Byte>
+        <Byte>24</Byte>
+        <Byte>1C</Byte>
+      </Actual>
+      <After>
+        <Byte>89</Byte>
+        <Byte>47</Byte>
+        <Byte>08</Byte>
+        <Byte>5F</Byte>
+        <Byte>5E</Byte>
+      </After>
+    </CodeEntry>
+  </CheatCodes>
+  <UserdefinedSymbols/>
+</CheatTable>

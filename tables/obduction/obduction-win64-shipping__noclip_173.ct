@@ -1,0 +1,487 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="21">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>72404</ID>
+      <Description>"no-clip .2"</Description>
+      <Options moHideChildren="1"/>
+      <LastState/>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>[ENABLE]
+//code from here to '[DISABLE]' will be used to enable the cheat
+aobscanmodule(inputInfoReadAOB,Obduction-Win64-Shipping.exe,F3 0F 10 4B 50 48 8B CB)
+registersymbol(inputInfoReadAOB)
+
+label(fDirection)
+registersymbol(fDirection)
+
+alloc(newmem,2048,inputInfoReadAOB) //"Obduction-Win64-Shipping.exe"+13E7860)
+label(returnhere)
+label(originalcode)
+label(exit)
+
+newmem: //this is allocated memory, you have read,write,execute access
+//place your code here
+cmp rcx,33 //rcx==33, r8==99
+jne @f
+movss xmm1,[rbx+50]
+movss [fDirection],xmm1
+jmp originalcode
+
+@@:
+cmp rcx,34 //rcx==34, r8==9c
+jne @f
+movss xmm1,[rbx+50]
+movss [fDirection+4],xmm1
+
+originalcode:
+movss xmm1,[rbx+50]
+
+exit:
+jmp returnhere
+
+///
+fDirection:
+dq 0
+///
+
+inputInfoReadAOB: //"Obduction-Win64-Shipping.exe"+13E7860:
+jmp newmem
+returnhere:
+
+///*****************************************///
+
+aobscanmodule(someCamInfoReadAOB,Obduction-Win64-Shipping.exe,0F 10 82 20 05 00 00 41 0F 11 80 60 02 00 00)
+registersymbol(someCamInfoReadAOB)
+
+label(pSomeCamInfo)
+registersymbol(pSomeCamInfo)
+label(vx)
+registersymbol(vx)
+label(vy)
+registersymbol(vy)
+
+alloc(newmem2,2048,someCamInfoReadAOB) //"Obduction-Win64-Shipping.exe"+13EBED7)
+label(returnhere2)
+label(originalcode2)
+label(exit2)
+
+newmem2: //this is allocated memory, you have read,write,execute access
+//place your code here
+mov [pSomeCamInfo],r8
+mov [pSomeCamInfo+8],rdx
+
+//direction x
+movss xmm0,[rdx+520]
+movss [vx],xmm0         //x
+movss xmm0,[rdx+530]
+movss [vx+4],xmm0       //y
+
+//direction y
+movss xmm0,[rdx+52c]
+movss [vy],xmm0         //x
+movss xmm0,[rdx+53c]
+movss [vy+4],xmm0       //y
+movss xmm0,[rdx+54c]
+movss [vy+8],xmm0       //z
+
+originalcode2:
+movups xmm0,[rdx+00000520]
+
+exit2:
+jmp returnhere2
+
+///
+pSomeCamInfo:
+dq 0
+dq 0
+vx:
+dq 0
+dq 0
+vy:
+dq 0
+dq 0
+///
+
+someCamInfoReadAOB: //"Obduction-Win64-Shipping.exe"+13EBED7:
+jmp newmem2
+nop
+nop
+returnhere2:
+
+///*****************************************///
+
+//aobscanmodule(someCoordWriteMovementRetAOB,Obduction-Win64-Shipping.exe,80 3D ** ** ** ** 00 74 ** F6 83 ** ** ** ** 01 74)
+//registersymbol(someCoordWriteMovementRetAOB)
+aobscanmodule(someCoordWriteAOB,Obduction-Win64-Shipping.exe,44 0F 29 AB 30 01 00 00 44 0F 29 BB 40 01 00 00)
+registersymbol(someCoordWriteAOB)
+
+label(bNoClip)
+registersymbol(bNoClip)
+label(fNoClipSpeedMultiplier)
+registersymbol(fNoClipSpeedMultiplier)
+label(fZDirection)
+registersymbol(fZDirection)
+
+alloc(newmem3,2048,someCoordWriteAOB) //"Obduction-Win64-Shipping.exe"+100D388)
+label(returnhere3)
+label(originalcode3)
+label(exit3)
+
+newmem3: //this is allocated memory, you have read,write,execute access
+//place your code here
+//mov byte ptr [bNoClip],1
+cmp byte ptr [bNoClip],1
+jne originalcode3
+cmp [position_ptr],rbx
+jne originalcode3
+
+//freeze coord
+movaps xmm13,[rbx+130]
+
+//exit if not moving
+//push rax
+//mov rax,someCoordWriteMovementRetAOB
+//cmp [rsp+1d0],rax
+//pop rax
+//jne originalcode3
+
+//store registers, xmms
+push rax
+push r8
+push r9
+sub rsp,16
+movdqu dqword [rsp],xmm3
+sub rsp,16
+movdqu dqword [rsp],xmm4
+
+//do y
+//get y direction
+mov r8,fDirection
+test r8,r8
+jz @f
+movss xmm4,[r8+4]
+shufps xmm4,xmm4,00 //broadcast
+
+//apply speed
+mov eax,(float)8
+movd xmm3,eax
+shufps xmm3,xmm3,00 //broadcast
+mulps xmm4,xmm3
+movss xmm3,[fNoClipSpeedMultiplier]
+shufps xmm3,xmm3,00 //broadcast
+mulps xmm4,xmm3
+
+//apply vector
+mov r9,vy
+test r9,r9
+jz @f
+movups xmm3,[r9]
+mulps xmm4,xmm3
+
+//update new coord
+addps xmm13,xmm4
+
+//do x
+//get x direction
+movss xmm4,[r8]
+shufps xmm4,xmm4,e0 //copy to 2nd
+
+//apply speed
+mov eax,(float)8
+movd xmm3,eax
+shufps xmm3,xmm3,e0 //copy to 2nd
+mulps xmm4,xmm3
+movss xmm3,[fNoClipSpeedMultiplier]
+shufps xmm3,xmm3,00 //broadcast
+mulps xmm4,xmm3
+
+//apply vector
+mov r9,vx
+test r9,r9
+jz @f
+movups xmm3,[r9]
+mulps xmm4,xmm3
+
+//update new coord
+addps xmm13,xmm4
+
+//do z
+//get z direction
+movss xmm4,[fZDirection]
+shufps xmm4,xmm4,c6 //place z direction to 3rd element
+
+//apply speed
+mov eax,(float)8
+movd xmm3,eax
+shufps xmm3,xmm3,00
+mulps xmm4,xmm3
+movss xmm3,[fNoClipSpeedMultiplier]
+shufps xmm3,xmm3,00 //broadcast
+mulps xmm4,xmm3
+
+//update new coord
+addps xmm13,xmm4
+
+@@:
+//restore registers, xmms
+//end
+movdqu xmm4,dqword [rsp]
+add rsp,16
+movdqu xmm3,dqword [rsp]
+add rsp,16
+pop r9
+pop r8
+pop rax
+
+originalcode3:
+movaps [rbx+00000130],xmm13
+
+exit3:
+jmp returnhere3
+
+///
+bNoClip:
+dd 0
+fNoClipSpeedMultiplier:
+dd (float)1
+fZDirection:
+dd 0
+///
+
+someCoordWriteAOB: //"Obduction-Win64-Shipping.exe"+100D388:
+jmp newmem3
+nop
+nop
+nop
+returnhere3:
+
+///*****************************************///
+
+label(bEndThread_ObductionWin64Shipping_keylistener_mem)
+registersymbol(bEndThread_ObductionWin64Shipping_keylistener_mem)
+
+alloc(ObductionWin64Shipping_keylistener_mem,2048,"Obduction-Win64-Shipping.exe")
+registersymbol(ObductionWin64Shipping_keylistener_mem)
+createthread(ObductionWin64Shipping_keylistener_mem)
+label(keylistenerstart)
+label(keylistenerend)
+label(keylistenerexit)
+label(fTempZDirection)
+label(fTempNoClipSpeedMultiplier)
+label(fNoClipSpeedMultiplierMod1)
+registersymbol(fNoClipSpeedMultiplierMod1)
+label(fNoClipSpeedMultiplierMod2)
+registersymbol(fNoClipSpeedMultiplierMod2)
+
+ObductionWin64Shipping_keylistener_mem:
+sub rsp,28
+
+keylistenerstart:
+
+cmp byte ptr [bNoClip],1
+je @f
+jmp keylistenerend
+
+@@:
+mov dword ptr [fTempNoClipSpeedMultiplier],(float)1
+
+mov rcx,10 //SHIFT key
+push rcx
+call GetAsyncKeyState
+add rsp,08
+shr ax,#15
+cmp ax,1
+jne @f
+mov ecx,[fNoClipSpeedMultiplierMod1]
+mov [fTempNoClipSpeedMultiplier],ecx
+
+@@:
+mov rcx,12 //ALT key
+push rcx
+call GetAsyncKeyState
+add rsp,08
+shr ax,#15
+cmp ax,1
+jne @f
+mov ecx,[fNoClipSpeedMultiplierMod2]
+mov [fTempNoClipSpeedMultiplier],ecx
+
+@@:
+mov dword ptr [fTempZDirection],0
+
+mov rcx,'R'
+push rcx
+call GetAsyncKeyState
+add rsp,08
+shr ax,#15
+cmp ax,1
+jne @f
+mov dword ptr [fTempZDirection],(float)1
+jmp keylistenerend
+
+@@:
+
+mov rcx,'F'
+push rcx
+call GetAsyncKeyState
+add rsp,08
+shr ax,#15
+cmp ax,1
+jne @f
+mov dword ptr [fTempZDirection],(float)-1
+jmp keylistenerend
+
+keylistenerend:
+mov ecx,[fTempNoClipSpeedMultiplier]
+mov [fNoClipSpeedMultiplier],ecx
+mov ecx,[fTempZDirection]
+mov [fZDirection],ecx
+mov rcx,#100
+call Sleep
+cmp dword ptr [bEndThread_ObductionWin64Shipping_keylistener_mem],1
+jne keylistenerstart
+
+keylistenerexit:
+add rsp,28
+mov dword ptr [bEndThread_ObductionWin64Shipping_keylistener_mem],2
+ret
+
+///
+bEndThread_ObductionWin64Shipping_keylistener_mem:
+dd 0
+fTempZDirection:
+dd 0
+fTempNoClipSpeedMultiplier:
+dd 1
+fNoClipSpeedMultiplierMod1: //shift key pressed speed
+dd (float)2
+fNoClipSpeedMultiplierMod2: //alt key pressed speed
+dd (float)10
+///
+
+
+
+
+[DISABLE]
+//code from here till the end of the code will be used to disable the cheat
+//obtained from SubBeam's ACS script - start//
+{$lua}
+
+if( syntaxcheck == false ) then --actual execution
+  local starttime = getTickCount()
+
+if readInteger( "bEndThread_ObductionWin64Shipping_keylistener_mem" ) == 0 then --could be 2 already
+  writeInteger( "bEndThread_ObductionWin64Shipping_keylistener_mem", 1 ) --tell the thread to kill itself
+end
+
+while( getTickCount() &lt; starttime + 1000 ) and ( readInteger( "bEndThread_ObductionWin64Shipping_keylistener_mem" ) ~=2 ) do --wait till it has finished
+  sleep( 20 )
+end
+
+if( getTickCount() &gt; starttime + 1000 ) then --could happen when the window is shown
+  showMessage( 'Disabling the thread failed!' )
+  error( 'Thread disabling failed!' )
+end
+  sleep( 1 )
+end
+
+{$asm}
+//obtained from SubBeam's ACS script - end//
+
+//bEndThread_ObductionWin64Shipping_keylistener_mem:
+//dd 1
+
+///*****************************************///
+
+dealloc(newmem)
+inputInfoReadAOB: //"Obduction-Win64-Shipping.exe"+13E7860:
+db F3 0F 10 4B 50
+//Alt: movss xmm1,[rbx+50]
+
+unregistersymbol(fDirection)
+
+///*****************************************///
+
+dealloc(newmem2)
+someCamInfoReadAOB: //"Obduction-Win64-Shipping.exe"+13EBED7:
+db 0F 10 82 20 05 00 00
+//Alt: movups xmm0,[rdx+00000520]
+
+unregistersymbol(pSomeCamInfo)
+
+///*****************************************///
+
+dealloc(newmem3)
+someCoordWriteAOB: //"Obduction-Win64-Shipping.exe"+100D388:
+db 44 0F 29 AB 30 01 00 00
+//Alt: movaps [rbx+00000130],xmm13
+
+unregistersymbol(bNoClip)
+unregistersymbol(fNoClipSpeedMultiplier)
+unregistersymbol(fZDirection)
+
+
+
+///*****************************************///
+
+unregistersymbol(bEndThread_ObductionWin64Shipping_keylistener_mem)
+
+dealloc(ObductionWin64Shipping_keylistener_mem)
+unregistersymbol(ObductionWin64Shipping_keylistener_mem)
+unregistersymbol(fNoClipSpeedMultiplierMod1)
+unregistersymbol(fNoClipSpeedMultiplierMod2)
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>72405</ID>
+          <Description>"status (Alt+E: NoClip, Alt+Q: Disable)"</Description>
+          <DropDownList ReadOnly="1" DescriptionOnly="1" DisplayValueAsItem="1">0:Disable
+1:NoClip
+</DropDownList>
+          <VariableType>Byte</VariableType>
+          <Address>bNoClip</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>18</Key>
+                <Key>69</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+              <ActivateSound>Activate</ActivateSound>
+              <DeactivateSound/>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>18</Key>
+                <Key>81</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+              <ActivateSound>Deactivate</ActivateSound>
+              <DeactivateSound/>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>72406</ID>
+          <Description>"shift key x?"</Description>
+          <VariableType>Float</VariableType>
+          <Address>fNoClipSpeedMultiplierMod1</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>72407</ID>
+          <Description>"alt key x?"</Description>
+          <VariableType>Float</VariableType>
+          <Address>fNoClipSpeedMultiplierMod2</Address>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols/>
+  <Comments>http://forum.cheatengine.org/viewtopic.php?p=5689361#5689361
+</Comments>
+</CheatTable>

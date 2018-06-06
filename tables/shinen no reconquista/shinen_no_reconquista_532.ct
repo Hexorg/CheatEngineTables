@@ -1,0 +1,771 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="16">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>0</ID>
+      <Description>"Faster text speed"</Description>
+      <Options moHideChildren="1"/>
+      <Color>80000008</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>[ENABLE]
+aobscan(TextSpeedPatch,83 C2 ** 89 55 E4 8B 45 EC)
+/*
+00456E6C     83C2 01        ADD EDX,1                                ;  letter drawn at once
+00456E6F  |. 8955 E4        MOV [LOCAL.7],EDX
+00456E72  |&gt; 8B45 EC        MOV EAX,[LOCAL.5]
+00456E75  |. 8B4D E4        MOV ECX,[LOCAL.7]
+00456E78  |. 8948 58        MOV DWORD PTR DS:[EAX+58],ECX            ;  write typecount
+00456E7B  |. 8B55 EC        MOV EDX,[LOCAL.5]
+00456E7E  |. 8B45 08        MOV EAX,[ARG.1]
+*/
+registersymbol(TextSpeedPatch)
+
+TextSpeedPatch+2:
+db 64
+
+ 
+[DISABLE]
+TextSpeedPatch:
+ADD EDX,1
+
+unregistersymbol(TextSpeedPatch)
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>1</ID>
+          <Description>"Text speed (letters drawn at once)"</Description>
+          <Color>80000008</Color>
+          <VariableType>Byte</VariableType>
+          <Address>TextSpeedPatch+2</Address>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>3</ID>
+      <Description>"Fullscreen borderless windowed mode (must be hardcoded)"</Description>
+      <Options moHideChildren="1"/>
+      <Color>80000008</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>[ENABLE]
+aobscan(ResolutionPatch,8B 4D 08 C7 01 ** ** 00 00 8B 55 08 C7 42 04 ** ** 00 00 e9)
+/*
+lus001.exe+7D5F2 - 8B 4D 08              - mov ecx,[ebp+08]
+lus001.exe+7D5F5 - C7 01 00040000        - mov [ecx],00000400
+lus001.exe+7D5FB - 8B 55 08              - mov edx,[ebp+08]
+lus001.exe+7D5FE - C7 42 04 00030000     - mov [edx+04],00000300
+*/
+aobscan(WindowSizePatch,8B 45 D4 C7 80 14 02 00 00 00 00 00 80 8B 4D D4 C7 81 18 02 00 00 00 00 00 80)
+aobscan(WindowStylePatch,68 00 00 ** ** 8B 45 D4 05 10 01 00 00)
+label(XResolution)
+label(YResolution)
+
+registersymbol(XResolution)
+registersymbol(YResolution)
+registersymbol(WindowSizePatch)
+registersymbol(WindowStylePatch)
+
+ResolutionPatch+5:
+XResolution:
+dd #1280
+
+ResolutionPatch+F:
+YResolution:
+dd #1024
+
+WindowSizePatch+1a:
+mov edx,[ebp-2C]
+mov ecx,[edx+00000224]
+mov [edx+0000021C],ecx
+mov ecx,[edx+00000228]
+mov [edx+00000220],ecx
+db eb 27              //jmp lus001.exe+7F0CA
+
+WindowStylePatch:
+push 80000000
+ 
+[DISABLE]
+XResolution:
+dd 400
+
+YResolution:
+dd 300
+
+WindowSizePatch+1a:
+push 07
+db FF 15 A8 22 4A 00 //call dword ptr [lus001.exe+A22A8]
+mov edx,[ebp-2C]
+mov ecx,[edx+00000224]
+lea edx,[ecx+eax*2]
+mov eax,[ebp-2C]
+mov [eax+0000021C],edx
+push 08
+db FF 15 A8 22 4A 00 //call dword ptr [lus001.exe+A22A8]
+mov ecx,[ebp-2C]
+mov edx,[ecx+00000228]
+lea esi,[edx+eax*2]
+push 04
+db FF 15 A8 22 4A 00 //call dword ptr [lus001.exe+A22A8]
+add esi,eax
+mov eax,[ebp-2C]
+mov [eax+00000220],esi
+
+WindowStylePatch:
+push 2c80000
+
+unregistersymbol(XResolution)
+unregistersymbol(YResolution)
+unregistersymbol(WindowSizePatch)
+unregistersymbol(WindowStylePatch)
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>4</ID>
+          <Description>"Your screen's width"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>XResolution</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>5</ID>
+          <Description>"Your screen's height"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>YResolution</Address>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>41</ID>
+      <Description>"Move all troops by default"</Description>
+      <Color>80000008</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>[ENABLE]
+//code from here to '[DISABLE]' will be used to enable the cheat
+aobscan(CodeCave,d9 e8 d91d * * * * 5D C3)
+aobscan(SelectionPatch,8B 91 CC 0F 00 00 * * * * * 68 * * * 00 8B 4D F4 81 C1 E0 1A 00 00 51 ff 15 * * * 00 83 C4 0C 8B 55 F4 81 C2 E0 1A 00 00)
+aobscan(SelectionPatch2,E8 ** ** ** ** 8B 45 F4 83 B8 CC 0F 00 00 FF)
+registersymbol(SelectionPatch)
+registersymbol(SelectionPatch2)
+
+label(TroopMove)
+label(TroopMove_SomeTroopsAreCommited)
+label(TroopMove_ScanComittedLoop)
+label(TroopMove_ReturnHere)
+
+
+CodeCave+A+3c:  //3c=size of the no spell damage hack
+TroopMove:
+  pushad
+  //read commited troops
+  //here eax=ptr to commited troop buffer
+  mov ebx,dword [ebp-0C]
+  mov ebx,dword [ebx+19D4]
+  imul ebx,ebx,314
+  mov edx,[400000+124040]
+  mov ecx,#20               //number of different units
+  TroopMove_ScanComittedLoop:
+    cmp dword [eax+ecx*4+4],0
+    jne TroopMove_SomeTroopsAreCommited
+    dec ecx
+  jne TroopMove_ScanComittedLoop
+  //if we're here, the no troop is commited, so commit ALL reserve troops
+  lea esi,[edx+ebx+1124+4]
+  lea edi,[eax+4]
+  mov ecx,#20
+  db F3 A5 //REP MOVS DWORD [EDI],DWORD [ESI] //copy reserve troop buffer to commited troop buffer
+  lea edi,[edx+ebx+1124+4]       //edi=reserve buffer
+  xor eax,eax   //zero eax
+  mov ecx,#20
+  db F3 AB //REP STOS DWORD [EDI]  //zero the reserve troop buffer
+  TroopMove_SomeTroopsAreCommited:
+  popad
+  //original code
+  mov eax,[eax+edx*4+04]
+  push eax
+jmp TroopMove_ReturnHere
+
+SelectionPatch+6:
+jmp TroopMove
+TroopMove_ReturnHere:
+
+SelectionPatch2+f:
+db 90 90 90 90 90 90
+
+
+ 
+ 
+[DISABLE]
+SelectionPatch+6 :
+mov eax,[eax+edx*4+04]
+push eax
+
+SelectionPatch2+f:
+db 0F 84 03 02 00 00 //je lus001.exe+5D3B2
+
+unregistersymbol(SelectionPatch)
+unregistersymbol(SelectionPatch2)
+</AssemblerScript>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>7</ID>
+      <Description>"No time limit"</Description>
+      <Color>80000008</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>[ENABLE]
+aobscan(TimerPatch,8B 48 04 83 E9 01 8B 55 DC)
+registersymbol(TimerPatch)
+
+TimerPatch+9:
+nop
+nop
+nop
+ 
+ 
+[DISABLE]
+unregistersymbol(TimerPatch)
+TimerPatch+9:
+mov [edx+04],ecx
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>8</ID>
+          <Description>"Battle time"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>"lus001.exe"+001275B8</Address>
+          <Offsets>
+            <Offset>4</Offset>
+            <Offset>AE0</Offset>
+          </Offsets>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>29</ID>
+      <Description>"Godmode"</Description>
+      <Color>80000008</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>[ENABLE]
+aobscan(CodeCave,d9 e8 d91d * * * * 5D C3)
+aobscan(GodmodePatch,0F BF 8C 32 EE 1C 00 00 2B C8 8B 55 F0 69 D2 A4 00 00 00 8B 85 5C FF FF FF)
+aobscan(GodmodePatch2,2B C8 8B 55 FC 69 D2 A4 00 00 00 8B 45 E0) //for area of effect regular attacks
+registersymbol(GodmodePatch)
+registersymbol(GodmodePatch2)
+label(GodmodeFunc)
+
+label(exit)
+
+CodeCave+a+91:      //26=A+1C, 1C=size of the spell damage hack
+GodmodeFunc:
+cmp word [eax+edx+00001CEC],0      //player has 0, enemy 1
+je exit
+  mov word [eax+edx+00001CEE],cx
+exit:
+ret
+
+GodmodePatch+19:
+call GodmodeFunc
+nop
+nop
+nop
+
+GodmodePatch2+e:
+call GodmodeFunc
+nop
+nop
+nop
+ 
+ 
+[DISABLE]
+GodmodePatch+19:
+mov word [eax+edx+00001CEE],cx
+//Alt: db 66 89 8C 10 EE 1C 00 00
+
+GodmodePatch2+e:
+MOV WORD [EAX+EDX+1CEE],CX
+
+unregistersymbol(GodmodePatch)
+unregistersymbol(GodmodePatch2)
+</AssemblerScript>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>30</ID>
+      <Description>"No enemy spell damage"</Description>
+      <Color>80000008</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>[ENABLE]
+aobscan(CodeCave,d9 e8 d91d * * * * 5D C3)
+aobscan(SpellPatch ,2B 85 24 FF FF FF 8B 4D DC 69 C9 A4 00 00 00 8B 95 1C FF FF FF)
+aobscan(SpellPatch2,2B 85 54 FF FF FF 8B 4D DC 69 C9 A4 00 00 00 8B 95 1C FF FF FF)
+aobscan(SpellPatch3,2B 8D 30 FF FF FF 8B 55 DC 69 D2 A4 00 00 00 8B 85 1C FF FF FF)
+aobscan(SpellPatch4,2B 95 2C FF FF FF 8B 45 DC 69 C0 A4 00 00 00 8B 8D 1C FF FF FF)
+aobscan(SpellPatch5,2B 8D 28 FF FF FF 8B 55 DC 69 D2 A4 00 00 00 8B 85 1C FF FF FF)
+aobscan(SpellPatch6,2B 8D 20 FF FF FF 8B 55 DC 69 D2 A4 00 00 00 8B 85 1C FF FF FF)
+//aobscan(SpellPatch7,2B C8 8B 55 FC 69 D2 A4 00 00 00 8B 45 E0) is for area of effect regular attacks
+
+registersymbol(SpellPatch)
+registersymbol(SpellPatch2)
+registersymbol(SpellPatch3)
+registersymbol(SpellPatch4)
+registersymbol(SpellPatch5)
+registersymbol(SpellPatch6)
+//registersymbol(SpellPatch7)
+
+label(SpellGM1)
+label(SpellGM2)
+label(SpellGM3)
+label(exit)
+
+CodeCave+A:
+SpellGM1:
+cmp word [edx+ecx+00001CEC],0      //player has 0, enemy 1
+je short exit
+  mov word [edx+ecx+00001CEE],ax
+exit:
+ret
+
+SpellGM2:
+cmp word [eax+edx+00001CEC],0      //player has 0, enemy 1
+je short exit
+  mov word [eax+edx+00001CEE],cx
+ret
+
+SpellGM3:
+cmp word [ecx+eax+00001CEC],0      //player has 0, enemy 1
+je short exit
+  mov word [ecx+eax+00001CEE],dx
+ret
+
+SpellPatch+15:
+call SpellGM1
+nop
+nop
+nop
+
+SpellPatch2+15:
+call SpellGM1
+nop
+nop
+nop
+
+SpellPatch3+15:
+call SpellGM2
+nop
+nop
+nop
+
+SpellPatch4+15:
+call SpellGM3
+nop
+nop
+nop
+
+SpellPatch5+15:
+call SpellGM2
+nop
+nop
+nop
+
+SpellPatch6+15:
+call SpellGM2
+nop
+nop
+nop
+
+/*
+SpellPatch7+e:
+call SpellGM2
+nop
+nop
+nop
+*/
+ 
+[DISABLE]
+SpellPatch+15:
+mov word [edx+ecx+00001CEE],ax
+
+SpellPatch2+15:
+mov word [edx+ecx+00001CEE],ax
+
+SpellPatch3+15:
+MOV WORD [EAX+EDX+1CEE],CX
+
+SpellPatch4+15:
+MOV WORD [ECX+EAX+1CEE],DX
+
+SpellPatch5+15:
+MOV WORD [EAX+EDX+1CEE],CX
+
+SpellPatch6+15:
+MOV WORD [EAX+EDX+1CEE],CX
+
+/*
+SpellPatch7+e:
+MOV WORD [EAX+EDX+1CEE],CX
+*/
+
+unregistersymbol(SpellPatch)
+unregistersymbol(SpellPatch2)
+unregistersymbol(SpellPatch3)
+unregistersymbol(SpellPatch4)
+unregistersymbol(SpellPatch5)
+unregistersymbol(SpellPatch6)
+//unregistersymbol(SpellPatch7)
+</AssemblerScript>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>50</ID>
+      <Description>"Player Battle points"</Description>
+      <Color>80000008</Color>
+      <VariableType>4 Bytes</VariableType>
+      <Address>"lus001.exe"+001275B8</Address>
+      <Offsets>
+        <Offset>18</Offset>
+        <Offset>AE0</Offset>
+      </Offsets>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>25</ID>
+      <Description>"Enemy Battle points"</Description>
+      <Color>80000008</Color>
+      <VariableType>4 Bytes</VariableType>
+      <Address>"lus001.exe"+001275B8</Address>
+      <Offsets>
+        <Offset>1C</Offset>
+        <Offset>AE0</Offset>
+      </Offsets>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>53</ID>
+      <Description>"More sacrifices !"</Description>
+      <Options moHideChildren="1"/>
+      <Color>80000008</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>[ENABLE]
+aobscan(SacrificePatch,89 82 E8 5C 0A 00 E9 ** ** ** ** 8B 4D F8 E8)
+registersymbol(SacrificePatch)
+
+label(SacrificeFactor)
+registersymbol(SacrificeFactor)
+
+
+SacrificePatch+13:
+mov eax,dword [ecx+a5ce4]
+add eax,dword [ecx+a5ce8]
+imul eax,eax,4
+mov dword [ecx+a5ce0],eax
+mov esp,ebp
+pop ebp
+ret
+
+SacrificePatch+21:
+SacrificeFactor:
+
+ 
+[DISABLE]
+unregistersymbol(SacrificePatch)
+unregistersymbol(SacrificeFactor)
+
+SacrificePatch+13:
+mov eax,[ebp-08]
+mov ecx,[eax+000A5CE4]
+mov edx,[ebp-08]
+add ecx,[edx+000A5CE8]
+mov eax,[ebp-08]
+mov [eax+000A5CE0],ecx
+mov esp,ebp
+pop ebp
+ret
+int 3
+int 3
+int 3
+int 3
+
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>54</ID>
+          <Description>"Sacrifice income factor"</Description>
+          <Color>80000008</Color>
+          <VariableType>Byte</VariableType>
+          <Address>SacrificeFactor</Address>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>45</ID>
+      <Description>"Override DEFAULT sound volume (must be hardcoded)"</Description>
+      <Options moHideChildren="1"/>
+      <Color>80000008</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>[ENABLE]
+aobscan(DefaultDisplayedSettings,C7 80 68 86 13 00 * * * * 8B 4D FC)
+aobscan(DefaultSettings,51 D9 E8 D9 1C 24 6A 04 8B 8D 98 FB FF FF)
+registersymbol(DefaultSettings)
+
+label(BGMVolume)
+label(SEVolume)
+label(VoiceVolume)
+label(RealBGMVolume)
+label(RealSEVolume)
+label(RealVoiceVolume)
+registersymbol(BGMVolume)
+registersymbol(SEVolume)
+registersymbol(VoiceVolume)
+registersymbol(RealBGMVolume)
+registersymbol(RealSEVolume)
+registersymbol(RealVoiceVolume)
+
+DefaultSettings+1a:
+fstp st(0)                     //I don't overwrite the FLD DWORD PTR DS:[4BAEFC] just above because after a patch
+mov dword [esp],(float)0.3     //the 4BAEFC is likely to change
+push 0
+
+DefaultSettings+2B:
+mov dword [esp],(float)0.5
+push 1
+nop
+nop
+nop
+nop
+
+DefaultSettings+3e:
+mov dword [esp],(float)0.6
+push 2
+nop
+nop
+nop
+nop
+
+DefaultSettings+1a+5:
+RealBGMVolume:
+
+DefaultSettings+2B+3:
+RealSEVolume:
+
+DefaultSettings+3e+3:
+RealVoiceVolume:
+
+DefaultDisplayedSettings+6:
+BGMVolume:
+dd #3
+
+DefaultDisplayedSettings+6+d:
+SEVolume:
+dd #5
+
+DefaultDisplayedSettings+6+d+d:
+VoiceVolume:
+dd #6
+ 
+[DISABLE]
+DefaultSettings+1a:
+FSTP DWORD [ESP]
+PUSH 0
+MOV ECX,DWORD [EBP-468]
+
+DefaultSettings+2B:
+FLD1
+FSTP DWORD [ESP]
+PUSH 1
+MOV ECX,DWORD [EBP-468]
+
+DefaultSettings+3e:
+FLD1
+FSTP DWORD [ESP]
+PUSH 2
+MOV ECX,DWORD [EBP-468]
+
+
+
+BGMVolume:
+dd #8
+
+SEVolume:
+dd #10
+
+VoiceVolume:
+dd #10
+
+unregistersymbol(DefaultSettings)
+unregistersymbol(BGMVolume)
+unregistersymbol(SEVolume)
+unregistersymbol(VoiceVolume)
+unregistersymbol(RealBGMVolume)
+unregistersymbol(RealSEVolume)
+unregistersymbol(RealVoiceVolume)
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>46</ID>
+          <Description>"Default BGM volume (displayed value)"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>BGMVolume</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>59</ID>
+          <Description>"Default BGM volume (real value, min:0.0 max:1.0)"</Description>
+          <Color>80000008</Color>
+          <VariableType>Float</VariableType>
+          <Address>RealBGMVolume</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>48</ID>
+          <Description>"Default SE volume (displayed value)"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>SEVolume</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>60</ID>
+          <Description>"Default SE volume (real value, min:0.0 max:1.0)"</Description>
+          <Color>80000008</Color>
+          <VariableType>Float</VariableType>
+          <Address>RealSEVolume</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>47</ID>
+          <Description>"Default voice volume (displayed value)"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>VoiceVolume</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>61</ID>
+          <Description>"Default voice volume (real value, min:0.0 max:1.0)"</Description>
+          <Color>80000008</Color>
+          <VariableType>Float</VariableType>
+          <Address>RealVoiceVolume</Address>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>31</ID>
+      <Description>"Hacking leftovers"</Description>
+      <Options moHideChildren="1"/>
+      <Color>80000008</Color>
+      <GroupHeader>1</GroupHeader>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>19</ID>
+          <Description>"Sacrifices at end of battle"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>"lus001.exe"+001275B8</Address>
+          <Offsets>
+            <Offset>A5CE0</Offset>
+            <Offset>AE0</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>24</ID>
+          <Description>"1st soldier position"</Description>
+          <Color>80000008</Color>
+          <VariableType>Float</VariableType>
+          <Address>"lus001.exe"+001275B8</Address>
+          <Offsets>
+            <Offset>1D60</Offset>
+            <Offset>AE0</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>21</ID>
+          <Description>"1st soldier HP"</Description>
+          <Color>80000008</Color>
+          <VariableType>2 Bytes</VariableType>
+          <Address>"lus001.exe"+001275B8</Address>
+          <Offsets>
+            <Offset>1D92</Offset>
+            <Offset>AE0</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>16</ID>
+          <Description>"notes on faster fade (not working)"</Description>
+          <Color>80000008</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[ENABLE]
+//code from here to '[DISABLE]' will be used to enable the cheat
+lus001.exe+81E30:
+RETN
+
+
+ 
+ 
+[DISABLE]
+lus001.exe+81E30:
+push ebp
+
+/*
+ALL functions containing this pattern are related to fade ins/outs
+00481F1F     6A 1E          PUSH 1E
+00481F21  |. 68 000000FF    PUSH FF000000                            ; |Arg1 = FF000000
+00481F26     6A 0C          PUSH 0C
+*/
+</AssemblerScript>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>42</ID>
+          <Description>"Displayed BGM volume"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>lus001.exe+124040</Address>
+          <Offsets>
+            <Offset>138668</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>43</ID>
+          <Description>"Displayed SE volume"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>lus001.exe+124040</Address>
+          <Offsets>
+            <Offset>13866C</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>44</ID>
+          <Description>"Displayed Voice volume"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>lus001.exe+124040</Address>
+          <Offsets>
+            <Offset>138670</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>62</ID>
+          <Description>"Real BGM volume"</Description>
+          <Color>80000008</Color>
+          <VariableType>Float</VariableType>
+          <Address>lus001.exe+127620</Address>
+          <Offsets>
+            <Offset>2C</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>64</ID>
+          <Description>"Real SE volume"</Description>
+          <Color>80000008</Color>
+          <VariableType>Float</VariableType>
+          <Address>lus001.exe+127620</Address>
+          <Offsets>
+            <Offset>30</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>63</ID>
+          <Description>"Real voice volume"</Description>
+          <Color>80000008</Color>
+          <VariableType>Float</VariableType>
+          <Address>lus001.exe+127620</Address>
+          <Offsets>
+            <Offset>34</Offset>
+          </Offsets>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+  </CheatEntries>
+</CheatTable>

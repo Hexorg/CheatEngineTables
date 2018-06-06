@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="16">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>999</ID>
+      <Description>"Enable"</Description>
+      <Color>80000008</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>[ENABLE]
+	    alloc(newmem, 2048)
+
+		newmem:
+          LuaCall(BuildList())
+[DISABLE]
+		LuaCall(CleanList())
+		dealloc(newmem) 
+		
+      
+</AssemblerScript>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols/>
+  <LuaScript>function GetDesc(index)
+    if index &gt; 0 and index &lt; 31 then
+        result = lookupTable[index]
+    else
+        result = "Not assigned"
+    end
+    return result
+end
+
+function HexDumpString(str,spacer)
+  return (
+    string.gsub(str,"(.)",
+    function (c)
+      return string.format("%02X%s",string.byte(c), spacer or "")
+    end)
+  )
+end
+
+function InttoHex(decInput)
+   if decInput == 0 then
+      return '0'
+   end
+   local B,K,hexOutput,I,D=16,"0123456789ABCDEF","",0
+   while decInput&gt;0 do
+      I=I+1
+      decInput,D=math.floor(decInput/B),math.mod(decInput,B)+1
+      hexOutput=string.sub(K,D,D)..hexOutput
+   end
+   return hexOutput
+end
+
+function HextoInt(bytesTable)
+  result=0
+  for i,v in ipairs(bytesTable) do
+    nextDec=tonumber(v,16)
+	nextDec=nextDec*2^((i-1)*8)
+	result=result+nextDec
+  end
+  return result
+end
+
+function SubtractHex(bytesTable1,bytesTable2) --&gt; subtract bytesTable2 from bytesTable1
+  result=0
+  for i,v in ipairs(bytesTable1) do
+    nextDec1=tonumber(v)
+    nextDec2=tonumber(bytesTable2[i])
+	nextDec1=nextDec1*2^((i-1)*8)
+ 	nextDec2=nextDec2*2^((i-1)*8)
+	result=result+(nextDec1-nextDec2)
+  end
+  return result
+end
+
+function CreateRecord(index, address)
+  local List=getAddressList()
+  local NewRec=List.createMemoryRecord()
+  local baseOffset = index*8
+  local valueOffset = baseOffset+4
+  local baseAddress = "00"
+  baseAddress = address
+  NewRec.setAddress(address..'+'..InttoHex(valueOffset))
+  local lookupAddress = '' .. baseAddress .. '+' .. InttoHex(baseOffset)
+  lookupVal=readInteger(lookupAddress)
+  NewRec.setDescription(GetDesc(lookupVal))
+  NewRec.Type=vtDWord
+end
+
+function BuildList()
+  local PlayerStruct=AOBScan("2c cb f3 00 04 01 00 00 01 * * * 00 00 80 3f * * * * 18 00 00 00 16 00 00 00 * * * * 02 00 00 00", "*X-C+W")
+  local PlayerAddress=PlayerStruct[0]
+--&gt;print('PA:  '..PlayerAddress)
+  local StoreHouseStartAddress=PlayerAddress .. '+23c' --&gt;572
+  local StoreHouseEndAddress=PlayerAddress .. '+240' --&gt;576
+  pStoreHouse1Start=readBytes(StoreHouseStartAddress,4,true)
+  pStoreHouse1End=readBytes(StoreHouseEndAddress,4,true)
+  local sStoreHouse1Start=string.format("%02X",pStoreHouse1Start[4])..string.format("%02X",pStoreHouse1Start[3])..string.format("%02X",pStoreHouse1Start[2])..string.format("%02X",pStoreHouse1Start[1])
+  size=SubtractHex(pStoreHouse1End,pStoreHouse1Start)
+  itemCount=size/8
+--&gt;print(size)
+  for tempCount=1,itemCount do
+    CreateRecord(tempCount-1, sStoreHouse1Start)
+  end
+  object_destroy(PlayerStruct)
+  return 1
+end
+
+function CleanList()
+  local addressList=getAddressList()
+  local count=addresslist_getCount(addressList)
+  for i=count-1,1,-1 do
+    local memoryRecord=addresslist_getMemoryRecord(addressList,i)
+	memoryrecord_delete(memoryRecord)
+  end
+end
+
+lookupTable = {"a", "b", "c", "d", "animal", "beer", "book", "bread", "cloth", "coal", "coin", "fish", "flour", "garment", "gold", "grain", "horse", "iron", "ironore", "jewelry", "meat", "paper", "plank", "stone", "tools", "water", "weapon", "wheel", "wood", "wool"} --&gt; 30 entries
+
+</LuaScript>
+</CheatTable>

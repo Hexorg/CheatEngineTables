@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="18">
+  <Forms>
+    <MyForm Class="TCEForm" Encoding="Ascii85">ZIL?ugFqC8c@Eb%F:Jz8lN64fuO;ARVlopG1k_x_Hn0ej4U5Z-BY)^qf0M1HJVRr)[uk!ezS)mvNf2CXc8y%aoH4#r=z7?JT9N=dL^#P@dJ91(qU@Fn^t]ORkq?E#Eg{Oa5V2Spx)22s[Aws.Nnv2nh^SNv@^c+-3H:.($Jsv7,2:^4Yz8G)8aC8lp]c2W8cJK{u@w;/eVmP@7*aN{n;F[d(p#umIY8e7uvl%1o67gJ[La@^TU6U#w6/rqIkQb=ezja^)}/FL,vdt0SxfE3v/EX5!:)^o=hrr(ZRIRpjk#t!rrWEo7-bwGkLnbA,kQE#fj=@5t=-U09gRnrRuU?$FGRf^dBXW^LrDdB+kc,(hEVW6/v4*qu;%/.eI-bBM+VJ)E,Bv931{VX5qn!S.3VKA4a:?*VV:ic2*k]O.:l3SR?+k4ZA.?apKg[pG(#i6aqtHjAAoA:vrSpHgkl4K</MyForm>
+  </Forms>
+  <UserdefinedSymbols/>
+  <LuaScript>getAutoAttachList().add('Cricket2013.exe')
+
+edob        = "[[[Cricket2013.exe+005D4D20]+c8]+b0]+14"
+
+function refreshClick(sender)
+  readDateOfBirth()
+end
+
+function sdobClick(sender)
+  writeDateOfBirth()
+  refreshClick(nil)
+end
+
+function FormClose(form)
+  form.hide()
+  closeCE()
+  return caFree
+end
+
+MyForm.setOnClose(FormClose)
+MyForm.show()
+
+if calcCal~=nil then calcCal.destroy();calcCal=nil end
+calcCal = createCalendar(nil) -- calendar object for indirect calculations
+
+function diffDays(date1,date2)
+  calcCal.Date=date1; local DayNumber1 = calcCal.DateTime
+  print('DEBUG: date1 date '..calcCal.Date)
+  print('DEBUG: date1 dateTime '..calcCal.DateTime)
+
+  calcCal.Date=date2; local DayNumber2 = calcCal.DateTime
+  print('DEBUG: date2 date '..calcCal.Date)
+  print('DEBUG: date2 dateTime '..calcCal.DateTime)
+
+  return math.abs(DayNumber1-DayNumber2)
+end
+
+function dateOfBirthToCode(Date)
+ local epoch1 = '1944-11-8'
+ local epoch2 = '1989-9-17'
+ local epoch3 = '2079-6-5'
+
+ local diff = diffDays(epoch1,Date)
+ local mult=1
+ local startZ=208
+
+
+ if diff&gt;16384 then
+  diff = diffDays(epoch2,Date)
+  mult=2
+  startZ=224
+ end
+ if diff&gt;49152 then
+  diff = diffDays(epoch3,Date)
+  mult=4
+  startZ=240
+ end
+
+ local b0 = math.floor(diff%(4*mult))*math.floor(64/mult)
+ local b1 = math.floor(diff/(4*mult)) % 256
+ local b2 = math.floor(diff/(1024*mult)) + startZ
+
+ return b0+b1*256+b2*256*256
+end
+
+
+function codeToDateOfBirth(code)
+ local epoch1 = '1944-11-8'
+ local epoch2 = '1989-9-17'
+ local epoch3 = '2079-6-5'
+
+ local startDate=epoch1
+ local mult = 1
+ local startZ = 208
+
+ local b0 = math.fmod(code,256); code = math.floor(code/256)
+ local b1 = math.fmod(code,256); code = math.floor(code/256)
+ local b2 = math.fmod(code,256); code = math.floor(code/256)
+
+ if (b2 &gt;= 224) and (b2 &lt;= 239) then
+  startDate=epoch2
+  mult=2
+  startZ=224
+ end
+ if (b2 &gt;= 240) and (b2 &lt;= 255) then
+  startDate=epoch3
+  mult=4
+  startZ=240
+ end
+
+ local xOffset = math.floor(b0 / math.floor(64/mult))
+ local yOffset = b1*4*mult
+ local zOffset = (b2 - startZ) * 1024 * mult
+ local numDays = xOffset + yOffset + zOffset
+
+ calcCal.Date     = startDate
+ calcCal.DateTime = calcCal.DateTime + numDays
+
+ return calcCal.Date
+end
+
+
+
+if calendar~=nil
+then calendar.destroy();calendar=nil
+end
+calendar = createCalendar(MyForm.CalendarGroupBox)
+calendar.Top = 10
+calendar.Left = 20
+calendar.Visible = false
+
+function readDateOfBirth()
+ local code = readInteger(edob)
+ if code~=nil then
+  print('DEBUG: readed DOB code '..code)
+  calendar.Date = codeToDateOfBirth(code)
+  calendar.Visible = true
+  print('DEBUG: converted to Date '..calendar.Date)
+ end
+end
+
+function writeDateOfBirth()
+ if calendar.Visible == true then
+  local code = dateOfBirthToCode(calendar.Date)
+  writeInteger(edob,code)
+  print('DEBUG: writing '..code)
+ end
+end
+
+
+</LuaScript>
+</CheatTable>

@@ -1,0 +1,653 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="18">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>67800</ID>
+      <Description>"Ship Data Base Address Scan Initialization (Activate This First)"</Description>
+      <Options moHideChildren="1"/>
+      <LastState Activated="0"/>
+      <Color>800000</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>[ENABLE]
+//code from here to '[DISABLE]' will be used to enable the cheat
+
+
+registersymbol(playeridentifier_basepointer)
+registersymbol(playeridentifier1_value)
+registersymbol(playeridentifier2_value)
+registersymbol(playeridentifier3_value)
+registersymbol(shipdata_basepointer)
+registersymbol(shipdataupdate_enable)
+registersymbol(shipdataset_enable)
+registersymbol(shipdataenemyset_enable)
+
+alloc(playeridentifier_basepointer,4)
+alloc(playeridentifier1_value,4)
+alloc(playeridentifier2_value,4)
+alloc(playeridentifier3_value,4)
+alloc(shipdata_basepointer,4)
+alloc(shipdataupdate_enable,4)
+alloc(shipdataset_enable,4)
+alloc(shipdataenemyset_enable,4)
+
+
+[DISABLE]
+
+unregistersymbol(playeridentifier_basepointer)
+unregistersymbol(playeridentifier1_value)
+unregistersymbol(playeridentifier2_value)
+unregistersymbol(playeridentifier3_value)
+unregistersymbol(shipdata_basepointer)
+unregistersymbol(shipdataupdate_enable)
+unregistersymbol(shipdataset_enable)
+unregistersymbol(shipdataenemyset_enable)
+
+dealloc(playeridentifier_basepointer)
+dealloc(playeridentifier1_value)
+dealloc(playeridentifier2_value)
+dealloc(playeridentifier3_value)
+dealloc(shipdata_basepointer)
+dealloc(shipdataupdate_enable)
+dealloc(shipdataset_enable)
+dealloc(shipdataenemyset_enable)
+
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>67904</ID>
+          <Description>"Player Identifier Base Address Scan (To Activate: Pause Menu, To Update: Pause Menu)"</Description>
+          <Options moHideChildren="1"/>
+          <LastState Activated="0"/>
+          <Color>804000</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[ENABLE]
+//code from here to '[DISABLE]' will be used to enable the cheat
+label(playeridentifier_savedAOB)
+label(playeridentifier_returnhere)
+label(playeridentifier_originalcode)
+label(playeridentifier_exit)
+
+registersymbol(playeridentifier_savedAOB)
+
+aobscan(searchedAOB,8D 44 B7 10 8B 00 89 45 E4)
+
+alloc(playeridentifier_newmem,2048) //2kb should be enough
+alloc(playeridentifier_temp,4) //2kb should be enough
+
+
+playeridentifier_newmem:
+mov [playeridentifier_temp], ebx
+
+mov [playeridentifier_basepointer], eax
+mov ebx, [eax-c8]
+mov [playeridentifier1_value], ebx
+mov ebx, [eax-c4]
+mov [playeridentifier2_value], ebx
+mov ebx, [eax-c0]
+mov [playeridentifier3_value], ebx
+
+mov ebx, [playeridentifier_temp]
+
+playeridentifier_originalcode:
+db 8B 00 89 45 E4
+//mov eax,[eax]
+//mov [ebp-1C],eax
+
+
+playeridentifier_exit:
+jmp playeridentifier_returnhere
+
+
+searchedAOB + 4:
+playeridentifier_savedAOB:
+jmp playeridentifier_newmem
+playeridentifier_returnhere:
+
+
+[DISABLE]
+playeridentifier_savedAOB:
+db 8B 00 89 45 E4
+//mov eax,[eax]
+//mov [ebp-1C],eax
+
+unregistersymbol(playeridentifier_savedAOB)
+
+dealloc(playeridentifier_newmem)
+
+</AssemblerScript>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>67801</ID>
+              <Description>"Ship Data Base Address Scan (To Activate: Battle, To Update: Battle)"</Description>
+              <LastState Activated="0"/>
+              <Color>804000</Color>
+              <VariableType>Auto Assembler Script</VariableType>
+              <AssemblerScript>[ENABLE]
+//code from here to '[DISABLE]' will be used to enable the cheat
+label(shipdata_savedAOB)
+label(shipdata_returnhere)
+label(shipdata_originalcode)
+label(shipdata_exit)
+
+label(shipdataupdate_entry)
+label(shipdataupdate_exit)
+label(shipdataset_entry)
+label(shipdataset_exit)
+
+registersymbol(shipdata_savedAOB)
+
+aobscan(searchedAOB,8B 45 08 D9 80 9C 01 00 00 C9 C3)
+
+alloc(shipdata_newmem,2048) //2kb should be enough
+alloc(shipdata_temp,4)
+
+
+shipdata_newmem:
+mov [shipdata_temp], ebx
+
+cmp dword ptr [shipdataupdate_enable], #0
+je shipdataupdate_exit
+
+mov ebx, [playeridentifier1_value]
+// Check if initialized
+cmp ebx, #0
+je shipdataset_exit
+
+mov ebx, [playeridentifier1_value]
+cmp dword ptr [eax+8c], ebx
+je shipdataupdate_entry
+mov ebx, [playeridentifier3_value]
+cmp dword ptr [eax+8c], ebx
+je shipdataupdate_entry
+jmp shipdataupdate_exit
+
+shipdataupdate_entry:
+mov [shipdata_basepointer], eax
+shipdataupdate_exit:
+
+cmp dword ptr [shipdataset_enable], #0
+je shipdataset_exit
+
+mov ebx, [playeridentifier1_value]
+cmp dword ptr [eax+8c], ebx
+je shipdataset_entry
+mov ebx, [playeridentifier3_value]
+cmp dword ptr [eax+8c], ebx
+je shipdataset_entry
+jmp shipdataset_exit
+
+shipdataset_entry:
+mov [eax+188], #99999
+mov [eax+19c], (float)99999
+shipdataset_exit:
+
+
+mov ebx, [shipdata_temp]
+
+
+shipdata_originalcode:
+db D9 80 9C 01 00 00
+//fld dword ptr [eax+0000019C]
+
+
+shipdata_exit:
+jmp shipdata_returnhere
+
+
+searchedAOB + 3:
+shipdata_savedAOB:
+jmp shipdata_newmem
+nop
+shipdata_returnhere:
+
+
+[DISABLE]
+shipdata_savedAOB:
+db D9 80 9C 01 00 00
+//fld dword ptr [eax+0000019C]
+
+unregistersymbol(shipdata_savedAOB)
+
+dealloc(shipdata_newmem)
+
+</AssemblerScript>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>67802</ID>
+              <Description>"Player Ship HP Set to 99999? (0 = No, 1 = Yes)"</Description>
+              <LastState Value="??" Activated="0" RealAddress="00000000"/>
+              <Color>FF8000</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>shipdataset_enable</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>67803</ID>
+              <Description>"Ship Data Update Base Address? (0 = No, 1 = Yes)"</Description>
+              <LastState Value="??" Activated="0" RealAddress="00000000"/>
+              <Color>FF8000</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>shipdataupdate_enable</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>67804</ID>
+              <Description>"Ship Data"</Description>
+              <Options moHideChildren="1"/>
+              <LastState Value="??" Activated="0" RealAddress="00000000"/>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>shipdata_basepointer</Address>
+              <Offsets>
+                <Offset>0</Offset>
+              </Offsets>
+              <CheatEntries>
+                <CheatEntry>
+                  <ID>67807</ID>
+                  <Description>"Player Identifier"</Description>
+                  <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                  <Color>80000008</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>shipdata_basepointer</Address>
+                  <Offsets>
+                    <Offset>8C</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>67808</ID>
+                  <Description>"Max HP"</Description>
+                  <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                  <Color>80000008</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>shipdata_basepointer</Address>
+                  <Offsets>
+                    <Offset>188</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>67806</ID>
+                  <Description>"HP"</Description>
+                  <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                  <Color>80000008</Color>
+                  <VariableType>Float</VariableType>
+                  <Address>shipdata_basepointer</Address>
+                  <Offsets>
+                    <Offset>19C</Offset>
+                  </Offsets>
+                </CheatEntry>
+              </CheatEntries>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>67941</ID>
+              <Description>"Player Identifiers"</Description>
+              <Options moHideChildren="1"/>
+              <LastState Value="" Activated="0" RealAddress="00000000"/>
+              <Color>80000008</Color>
+              <GroupHeader>1</GroupHeader>
+              <CheatEntries>
+                <CheatEntry>
+                  <ID>67906</ID>
+                  <Description>"Player Identifier Basepointer"</Description>
+                  <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                  <Color>80000008</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>playeridentifier_basepointer</Address>
+                  <Offsets>
+                    <Offset>FFFFFF38</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>67905</ID>
+                  <Description>"Player Identifier 1"</Description>
+                  <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                  <Color>000000</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>playeridentifier1_value</Address>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>67908</ID>
+                  <Description>"Player Identifier 2 (Enemy)"</Description>
+                  <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                  <Color>000000</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>playeridentifier2_value</Address>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>67907</ID>
+                  <Description>"Player Identifier 3"</Description>
+                  <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                  <Color>000000</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>playeridentifier3_value</Address>
+                </CheatEntry>
+              </CheatEntries>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>63297</ID>
+      <Description>"Resources Base Address Scan Initialization (Activate This First)"</Description>
+      <Options moHideChildren="1"/>
+      <LastState Activated="0"/>
+      <Color>800000</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>[ENABLE]
+//code from here to '[DISABLE]' will be used to enable the cheat
+
+registersymbol(resources_basepointer)
+registersymbol(resourcesupdate_enable)
+registersymbol(resourcesset_enable)
+
+alloc(resources_basepointer,4)
+alloc(resourcesupdate_enable,4)
+alloc(resourcesset_enable,4)
+
+
+[DISABLE]
+
+unregistersymbol(resources_basepointer)
+unregistersymbol(resourcesupdate_enable)
+unregistersymbol(resourcesset_enable)
+
+dealloc(resources_basepointer)
+dealloc(resourcesupdate_enable)
+dealloc(resourcesset_enable)
+
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>63298</ID>
+          <Description>"Resources Base Address Scan (To Activate: Battle, To Update: Battle)"</Description>
+          <LastState Activated="0"/>
+          <Color>804000</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[ENABLE]
+//code from here to '[DISABLE]' will be used to enable the cheat
+label(resources_savedAOB)
+label(resources_returnhere)
+label(resources_originalcode)
+label(resources_exit)
+
+label(resourcesupdate_exit)
+label(resourcesset_exit)
+
+registersymbol(resources_savedAOB)
+
+aobscan(searchedAOB,8B 88 0C 01 00 00 89 8D 3C FE FF FF)
+
+alloc(resources_newmem,2048) //2kb should be enough
+
+
+resources_newmem:
+cmp dword ptr [resourcesupdate_enable], #0
+je resourcesupdate_exit
+mov [resources_basepointer], eax
+resourcesupdate_exit:
+
+cmp dword ptr [resourcesset_enable], #0
+je resourcesset_exit
+mov [eax+10c], #9999
+mov [eax+110], #9999
+resourcesset_exit:
+
+
+resources_originalcode:
+db 8B 88 0C 01 00 00
+//mov ecx,[eax+0000010C]
+
+
+resources_exit:
+jmp resources_returnhere
+
+
+searchedAOB:
+resources_savedAOB:
+jmp resources_newmem
+nop
+resources_returnhere:
+
+
+[DISABLE]
+resources_savedAOB:
+db 8B 88 0C 01 00 00
+//mov ecx,[eax+0000010C]
+
+unregistersymbol(resources_savedAOB)
+
+dealloc(resources_newmem)
+
+</AssemblerScript>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>63299</ID>
+          <Description>"Resources Set to 9999? (0 = No, 1 = Yes)"</Description>
+          <LastState Value="??" Activated="0" RealAddress="00000000"/>
+          <Color>FF8000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>resourcesset_enable</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>63300</ID>
+          <Description>"Resources Update Base Address? (0 = No, 1 = Yes)"</Description>
+          <LastState Value="??" Activated="0" RealAddress="00000000"/>
+          <Color>FF8000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>resourcesupdate_enable</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>67925</ID>
+          <Description>"Resources"</Description>
+          <Options moHideChildren="1"/>
+          <LastState Value="" Activated="0" RealAddress="00000000"/>
+          <Color>80000008</Color>
+          <GroupHeader>1</GroupHeader>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>63301</ID>
+              <Description>"Energy"</Description>
+              <LastState Value="??" Activated="0" RealAddress="00000000"/>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>resources_basepointer</Address>
+              <Offsets>
+                <Offset>10C</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>67911</ID>
+              <Description>"Tritium"</Description>
+              <LastState Value="??" Activated="0" RealAddress="00000000"/>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>resources_basepointer</Address>
+              <Offsets>
+                <Offset>110</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>67912</ID>
+              <Description>"Energy Production"</Description>
+              <LastState Value="??" Activated="0" RealAddress="00000000"/>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>resources_basepointer</Address>
+              <Offsets>
+                <Offset>114</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>67913</ID>
+              <Description>"Tritium Production"</Description>
+              <LastState Value="??" Activated="0" RealAddress="00000000"/>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>resources_basepointer</Address>
+              <Offsets>
+                <Offset>118</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>67914</ID>
+              <Description>"Replicants Max"</Description>
+              <LastState Value="??" Activated="0" RealAddress="00000000"/>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>resources_basepointer</Address>
+              <Offsets>
+                <Offset>11C</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>67915</ID>
+              <Description>"Replicants Used"</Description>
+              <LastState Value="??" Activated="0" RealAddress="00000000"/>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>resources_basepointer</Address>
+              <Offsets>
+                <Offset>120</Offset>
+              </Offsets>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>67935</ID>
+      <Description>"Fleet Base Address Scan Initialization (Activate This First)"</Description>
+      <Options moHideChildren="1"/>
+      <LastState Activated="0"/>
+      <Color>800000</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>[ENABLE]
+//code from here to '[DISABLE]' will be used to enable the cheat
+
+registersymbol(fleet_basepointer)
+registersymbol(fleetupdate_enable)
+registersymbol(fleetset_enable)
+
+alloc(fleet_basepointer,4)
+alloc(fleetupdate_enable,4)
+alloc(fleetset_enable,4)
+
+
+[DISABLE]
+
+unregistersymbol(fleet_basepointer)
+unregistersymbol(fleetupdate_enable)
+unregistersymbol(fleetset_enable)
+
+dealloc(fleet_basepointer)
+dealloc(fleetupdate_enable)
+dealloc(fleetset_enable)
+
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>67936</ID>
+          <Description>"Fleet Base Address Scan (To Activate: View Fleet, To Update: View Fleet)"</Description>
+          <LastState Activated="0"/>
+          <Color>804000</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[ENABLE]
+//code from here to '[DISABLE]' will be used to enable the cheat
+label(fleet_savedAOB)
+label(fleet_returnhere)
+label(fleet_originalcode)
+label(fleet_exit)
+
+label(fleetupdate_exit)
+label(fleetset_exit)
+
+registersymbol(fleet_savedAOB)
+
+aobscan(searchedAOB,8B 50 24 B9 02 00 00 00 33 C0)
+
+alloc(fleet_newmem,2048) //2kb should be enough
+
+
+fleet_newmem:
+cmp dword ptr [fleetupdate_enable], #0
+je fleetupdate_exit
+mov [fleet_basepointer], eax
+fleetupdate_exit:
+
+cmp dword ptr [fleetset_enable], #0
+je fleetset_exit
+mov [eax+24], #2000
+fleetset_exit:
+
+
+fleet_originalcode:
+db 8B 50 24 B9 02 00 00 00
+//mov edx,[eax+24]
+//mov ecx,00000002
+
+
+fleet_exit:
+jmp fleet_returnhere
+
+
+searchedAOB:
+fleet_savedAOB:
+jmp fleet_newmem
+nop
+nop
+nop
+fleet_returnhere:
+
+
+[DISABLE]
+fleet_savedAOB:
+db 8B 50 24 B9 02 00 00 00
+//mov edx,[eax+24]
+//mov ecx,00000002
+
+unregistersymbol(fleet_savedAOB)
+
+dealloc(fleet_newmem)
+
+</AssemblerScript>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>67937</ID>
+          <Description>"Titanium Parts Set to 2000? (0 = No, 1 = Yes)"</Description>
+          <LastState Value="??" Activated="0" RealAddress="00000000"/>
+          <Color>FF8000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>fleetset_enable</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>67938</ID>
+          <Description>"Fleet Update Base Address? (0 = No, 1 = Yes)"</Description>
+          <LastState Value="??" Activated="0" RealAddress="00000000"/>
+          <Color>FF8000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>fleetupdate_enable</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>67939</ID>
+          <Description>"Fleet"</Description>
+          <Options moHideChildren="1"/>
+          <LastState Value="" Activated="0" RealAddress="00000000"/>
+          <Color>80000008</Color>
+          <GroupHeader>1</GroupHeader>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>67940</ID>
+              <Description>"Titanium Parts"</Description>
+              <LastState Value="??" Activated="0" RealAddress="00000000"/>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>fleet_basepointer</Address>
+              <Offsets>
+                <Offset>24</Offset>
+              </Offsets>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols/>
+</CheatTable>

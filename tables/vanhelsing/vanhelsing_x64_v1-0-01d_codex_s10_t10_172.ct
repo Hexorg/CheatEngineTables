@@ -1,0 +1,497 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="16">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>52</ID>
+      <Description>"[X] &lt;== The Incredible Adventures of Van Helsing II v1.0.01d x64 CODEX Script v1.0"</Description>
+      <Options moHideChildren="1"/>
+      <Color>FF0000</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>{
+===========================================
+ Game Title    : The Incredible Adventures of Van Helsing II
+ Game Version  : 1.0.01d
+ Game Sponsor  : CODEX
+ Process Name  : VanHelsing_x64.exe
+ Script Version: 1.0
+ CE Version    : 6.3
+ Release date  : 24-May-2014
+ Author        : Recifense
+ History:
+ 23-May-14: First Release
+ 24-May-14: Release for version 1.0.01d
+ Features:
+ - God Mode
+ - Full Mana
+ - Minimum Gold
+ - Some Pointers
+===========================================
+}
+
+//=========================================
+// Definitions
+define(LUDO,"VanHelsing_x64.exe")
+define(MOVH,VanHelsing_x64.exe+007a1f42)
+define(MOCN,VanHelsing_x64.exe+0088145e)
+define(GDMD,VanHelsing_x64.exe+00152c87)
+define(MPGD,VanHelsing_x64.exe+008e4210)
+
+//=========================================
+// Constants used in the script (that can be changed)
+define(ctMMON,#630000)  // Minimum Money
+
+//=========================================
+[ENABLE]
+//=========================================
+//LuaCall(CheckVersion())
+//=========================================
+// Check if script is compatible to this game version
+// If false the script will not be loaded
+
+assert(MOVH,41 8b 8d 58 09 00 00 2b cb 66 44 0f 6e c1 45 0f 5b c0 2b c3 66)
+assert(MOCN,41 8b 84 24 58 09 00 00 89 45 10 49 8b 04 24 41 8b 94 24 5c 09)
+assert(GDMD,f3 0f 11 86 84 04 00 00 ?? ?? 48 8b 06 ba 11 00 00 00 48 8b ce)
+assert(MPGD,44 8b 87 a0 0f 00 00 48 8d 15 ?? ?? ?? ?? 48 8d 4d 28 e8 ?? ??)
+
+//=========================================
+alloc(MyCode,4096,LUDO)
+//=========================================
+// Declaration section
+label(_MonVanHelsing)
+label(_MonVH00)
+label(_BackMVH)
+label(_ExitMVH)
+label(_MonCompanion)
+label(_MonCN00)
+label(_BackMCN)
+label(_ExitMCN)
+label(_GodMode)
+label(_GodMD00)
+label(_BackGMD)
+label(_ExitGMD)
+label(_MonPlayerGold)
+label(_BackMPG)
+label(_ExitMPG)
+label(iEnableGMD)
+label(iEnableMMA)
+label(iEnableMPG)
+label(qXMM8)
+label(pVanHelsing)
+label(pCompanion)
+label(pGold)
+
+//=========================================
+// Registering Symbols
+registersymbol(MyCode)
+registersymbol(iEnableGMD)
+registersymbol(iEnableMMA)
+registersymbol(iEnableMPG)
+registersymbol(pVanHelsing)
+registersymbol(pCompanion)
+registersymbol(pGold)
+
+//=========================================
+MyCode:
+//=========================================
+// Main game screen
+_MonVanHelsing:
+ mov [pVanHelsing],r13
+
+ cmp dword ptr [iEnableGMD],0
+ je _MonVH00                       // Jump if feature is disabled
+
+ cvtsi2ss xmm8,[r13+00000490]
+ movss [r13+00000484],xmm8
+
+_MonVH00:
+ cmp dword ptr [iEnableMMA],0
+ je _ExitMVH                       // Jump if feature is disabled
+
+ cvtsi2ss xmm8,[r13+00000e78]
+ movss [r13+00000a14],xmm8
+
+_ExitMVH:
+ mov ecx,[r13+00000958]            // Original code (rd XP)
+ jmp _BackMVH                      // Back to main code
+
+//=========================================
+// Main game screen
+_MonCompanion:
+ movsd [qXMM8],xmm8
+
+ mov [pCompanion],r12
+
+ cmp dword ptr [iEnableGMD],0
+ je _MonCN00                       // Jump if feature is disabled
+
+ cvtsi2ss xmm8,[r12+00000490]
+ movss [r12+00000484],xmm8
+
+_MonCN00:
+ cmp dword ptr [iEnableMMA],0
+ je _ExitMCN                       // Jump if feature is disabled
+
+ cvtsi2ss xmm8,[r12+00000e78]
+ movss [r12+00000a14],xmm8
+
+_ExitMCN:
+ movsd xmm8,[qXMM8]
+
+ mov eax,[r12+00000958]            // Original code (rd XP)
+ jmp _BackMCN                      // Back to main code
+
+//=========================================
+// During Combat
+_GodMode:
+ cmp dword ptr [iEnableGMD],0
+ je _ExitGMD                       // Jump if feature is disabled
+
+ cmp rsi,[pVanHelsing]
+ je _GodMD00
+
+ cmp rsi,[pCompanion]
+ jne _ExitGMD
+
+_GodMD00:
+ cvtsi2ss xmm0,[rsi+00000490]
+
+_ExitGMD:
+ movss [rsi+00000484],xmm0         // Original code (upd HP)
+ jmp _BackGMD                      // Back to main code
+
+//=========================================
+// In Inventory Screen
+_MonPlayerGold:
+ mov [pGold],rdi
+
+ cmp dword ptr [iEnableMPG],0
+ je _ExitMPG                       // Jump if feature is disabled
+
+ mov r8d,ctMMON
+ cmp r8d,[rdi+00000FA0]
+ js _ExitMPG
+
+ mov [rdi+00000FA0],r8d
+
+_ExitMPG:
+ mov r8d,[rdi+00000FA0]            // Original code (rd GOLD)
+ jmp _BackMPG                      // Back to main code
+
+//=========================================
+ db '============================&gt;'
+ db 'CE6.3 Script by Recifense 052414'
+//=========================================
+// Variables
+iEnableGMD:
+ dd 0
+iEnableMMA:
+ dd 0
+iEnableMPG:
+ dd 0
+ dd 0
+pVanHelsing:
+ dq MyCode
+pCompanion:
+ dq MyCode
+pGold:
+ dq 0
+qXMM8:
+ dq 0
+
+//=========================================
+// Hacking Points
+MOVH:
+ jmp _MonVanHelsing
+ nop
+ nop
+_BackMVH:
+
+MOCN:
+ jmp _MonCompanion
+ nop
+ nop
+ nop
+_BackMCN:
+
+GDMD:
+ jmp _GodMode
+ nop
+ nop
+ nop
+_BackGMD:
+
+MPGD:
+ jmp _MonPlayerGold
+ nop
+ nop
+_BackMPG:
+
+//=========================================
+// Script for Restoring Original Codes
+[DISABLE]
+MOVH:
+// mov ecx,[r13+00000958]
+ db 41 8b 8d 58 09 00 00
+
+MOCN:
+// mov eax,[r12+00000958]
+ db 41 8b 84 24 58 09 00 00
+
+GDMD:
+// movss [rsi+00000484],xmm0
+ db f3 0f 11 86 84 04 00 00
+
+MPGD:
+// mov r8d,[rdi+00000FA0]
+ db 44 8b 87 a0 0f 00 00
+
+//=========================================
+// Unregistering Symbols
+unregistersymbol(MyCode)
+unregistersymbol(iEnableGMD)
+unregistersymbol(iEnableMMA)
+unregistersymbol(iEnableMPG)
+unregistersymbol(pVanHelsing)
+unregistersymbol(pCompanion)
+unregistersymbol(pGold)
+
+//=========================================
+dealloc(MyCode)
+//============= Scripts End ===============
+
+// ****************************************
+// NOTES
+// ****************************************
+{
+v1.00:
+define(MOVH,VanHelsing_x64.exe+007a4462)
+define(MOCN,VanHelsing_x64.exe+008832ee)
+define(GDMD,VanHelsing_x64.exe+001533c7)
+define(MPGD,VanHelsing_x64.exe+008e60f0)
+}
+
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>11</ID>
+          <Description>"Enable/Disable God Mode =&gt; (1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableGMD</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>12</ID>
+          <Description>"Enable/Disable Full Mana =&gt; (1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMMA</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>22</ID>
+          <Description>"Enable/Disable Minimum Gold =&gt; (1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMPG</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>33</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>34</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>53</ID>
+          <Description>"============== Van Helsing Info =============="</Description>
+          <ShowAsHex>1</ShowAsHex>
+          <Color>000040</Color>
+          <VariableType>8 Bytes</VariableType>
+          <Address>pVanHelsing</Address>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>55</ID>
+              <Description>"Skill Points Available ==&gt; "</Description>
+              <Color>0000FF</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pVanHelsing</Address>
+              <Offsets>
+                <Offset>950</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>62</ID>
+              <Description>"Attribute Points Available ==&gt; "</Description>
+              <Color>0000FF</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pVanHelsing</Address>
+              <Offsets>
+                <Offset>954</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>56</ID>
+              <Description>"Current XP ==&gt; "</Description>
+              <Color>0000FF</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pVanHelsing</Address>
+              <Offsets>
+                <Offset>958</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>57</ID>
+              <Description>"Current Gold ==&gt;"</Description>
+              <Color>0000FF</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pGold</Address>
+              <Offsets>
+                <Offset>FA0</Offset>
+              </Offsets>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>58</ID>
+          <Description>"============== Companion Info =============="</Description>
+          <ShowAsHex>1</ShowAsHex>
+          <Color>000040</Color>
+          <VariableType>8 Bytes</VariableType>
+          <Address>pCompanion</Address>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>59</ID>
+              <Description>"Skill Points Available ==&gt; "</Description>
+              <Color>0000FF</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pCompanion</Address>
+              <Offsets>
+                <Offset>950</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>60</ID>
+              <Description>"Attribute Points Available ==&gt; "</Description>
+              <Color>0000FF</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pCompanion</Address>
+              <Offsets>
+                <Offset>954</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>61</ID>
+              <Description>"Current XP ==&gt; "</Description>
+              <Color>0000FF</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pCompanion</Address>
+              <Offsets>
+                <Offset>958</Offset>
+              </Offsets>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols/>
+  <Comments>===========================================
+ Game Title    : The Incredible Adventures of Van Helsing II
+ Game Version  : 1.0.01d
+ Game Sponsor  : CODEX
+ Process Name  : VanHelsing_x64.exe
+ Script Version: 1.0
+ CE Version    : 6.3
+ Release date  : 24-May-2014
+ Author        : Recifense
+ History:
+ 23-May-14: First Release
+ 24-May-14: Release for version 1.0.01d
+ Features:
+ - God Mode       [1]
+ - Full Mana      [2]
+ - Minimum Gold   [3]
+ - Some Pointers  [4]
+===========================================
+[1] For Van Helsing and Companion only;
+[2] For Van Helsing and Companion only;
+[3] For Van Helsing only (on inventory view);
+[4] Used in the table;
+===========================================
+[USAGE]
+1) Run CE63;
+2) Run Game;
+3) Load the game process "VanHelsing_x64.exe" in CE;
+4) Load the table;
+5) Activate the script (in Blue)
+4) Change the value to 1 of each cheat you want to use (in Green);
+5) Game On;
+===========================================
+[HOTKEYS]
+CTRL+Home     = Enable  GM/FM cheats;
+CTRL+End      = Disable GM/FM cheats;
+-----------
+CTRL+PageUp   = Enable  MG cheat;
+CTRL+PageDown = Disable MG cheat;
+===========================================
+[ADVICE]
+When you can,save the game before starting using table/cheat. So you can always come back in case you don't like the result.
+===========================================
+[INFO]
+Tested on Win 7 64bits
+===========================================
+Cheers!
+</Comments>
+</CheatTable>

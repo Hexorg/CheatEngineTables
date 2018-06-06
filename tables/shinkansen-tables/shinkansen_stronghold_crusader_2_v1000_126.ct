@@ -1,0 +1,810 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="18">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>114495</ID>
+      <Description>"Player Stats Base Address Scan Initialization (Activate This First)"</Description>
+      <Options moHideChildren="1"/>
+      <LastState Activated="0"/>
+      <Color>800000</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>[ENABLE]
+registersymbol(playerstats_basepointer)
+registersymbol(playerstats_update_enable)
+registersymbol(playerstats_set_enable)
+registersymbol(playerstats_popularityset_enable)
+registersymbol(playerstats_housingusedset_enable)
+registersymbol(playerstats_housingavailableset_enable)
+
+alloc(playerstats_basepointer, 4)
+alloc(playerstats_update_enable, 4)
+alloc(playerstats_set_enable, 4)
+alloc(playerstats_popularityset_enable, 4)
+alloc(playerstats_housingusedset_enable, 4)
+alloc(playerstats_housingavailableset_enable, 4)
+
+
+[DISABLE]
+unregistersymbol(playerstats_basepointer)
+unregistersymbol(playerstats_update_enable)
+unregistersymbol(playerstats_set_enable)
+unregistersymbol(playerstats_popularityset_enable)
+unregistersymbol(playerstats_housingusedset_enable)
+unregistersymbol(playerstats_housingavailableset_enable)
+
+dealloc(playerstats_basepointer)
+dealloc(playerstats_update_enable)
+dealloc(playerstats_set_enable)
+dealloc(playerstats_popularityset_enable)
+dealloc(playerstats_housingusedset_enable)
+dealloc(playerstats_housingavailableset_enable)
+
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>114496</ID>
+          <Description>"Player Stats Base Address Scan (To Activate: Build Stockpile &amp; Granary, To Update: Play Level)"</Description>
+          <LastState Activated="0"/>
+          <Color>804000</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[ENABLE]
+label(playerstats_savedAOB)
+label(playerstats_returnhere)
+label(playerstats_originalcode)
+label(playerstats_exit)
+
+label(playerstats_update_exit)
+label(playerstats_set_exit)
+label(playerstats_popularityset_exit)
+label(playerstats_housingusedset_exit)
+label(playerstats_housingavailableset_exit)
+
+registersymbol(playerstats_savedAOB)
+
+//StrongholdBase.StrongholdBase::Estate::GetKeep+9D6 - 8B BE 0C020000        - mov edi,[esi+0000020C]
+//StrongholdBase.StrongholdBase::Estate::GetKeep+9DC - 8B 1F                 - mov ebx,[edi]
+//StrongholdBase.StrongholdBase::Estate::GetKeep+9DE - E8 FD1D0000           - call StrongholdBase.StrongholdBase::Estate::GetKeep+27E0
+// Total Popularity
+//StrongholdBase.StrongholdBase::Estate::GetKeep+9E3 - 89 07                 - mov [edi],eax
+//StrongholdBase.StrongholdBase::Estate::GetKeep+9E5 - 8B 86 0C020000        - mov eax,[esi+0000020C]
+//StrongholdBase.StrongholdBase::Estate::GetKeep+9EB - 3B 18                 - cmp ebx,[eax]
+//StrongholdBase.StrongholdBase::Estate::GetKeep+9ED - 0F84 81000000         - je StrongholdBase.StrongholdBase::Estate::GetKeep+A74
+//StrongholdBase.StrongholdBase::Estate::GetKeep+9F3 - 8B 15 BCC9BD6E        - mov edx,[StrongholdBase.std::_Mutex::_Mutex+3F536]
+aobscan(playerstats_searchedAOB, 89 07 8B 86 0C 02 00 00 3B 18)
+
+alloc(playerstats_newmem, 2048)
+alloc(playerstats_temp1, 4)
+
+
+playerstats_newmem:
+mov [playerstats_temp1], ebx
+
+// Controller
+cmp dword ptr [esi+1cc], #3
+jne playerstats_housingavailableset_exit
+
+cmp dword ptr [playerstats_update_enable], #0
+je playerstats_update_exit
+mov [playerstats_basepointer], esi
+playerstats_update_exit:
+
+cmp dword ptr [playerstats_set_enable], #0
+je playerstats_set_exit
+playerstats_set_exit:
+
+cmp dword ptr [playerstats_popularityset_enable], #0
+je playerstats_popularityset_exit
+cmp dword ptr [esi+20c], #0
+je playerstats_popularityset_exit
+mov ebx, [esi+20c]
+mov [ebx], #999999
+playerstats_popularityset_exit:
+
+cmp dword ptr [playerstats_housingusedset_enable], #0
+je playerstats_housingusedset_exit
+cmp dword ptr [esi+20c], #0
+je playerstats_housingusedset_exit
+mov ebx, [esi+20c]
+mov [ebx+cc], #9000
+playerstats_housingusedset_exit:
+
+cmp dword ptr [playerstats_housingavailableset_enable], #0
+je playerstats_housingavailableset_exit
+cmp dword ptr [esi+20c], #0
+je playerstats_housingavailableset_exit
+mov ebx, [esi+20c]
+mov [ebx+d8], #9999
+playerstats_housingavailableset_exit:
+
+mov ebx, [playerstats_temp1]
+
+
+playerstats_originalcode:
+db 8B 86 0C 02 00 00
+//mov eax,[esi+0000020C]
+
+
+playerstats_exit:
+jmp playerstats_returnhere
+
+
+playerstats_searchedAOB + 2:
+playerstats_savedAOB:
+jmp playerstats_newmem
+nop
+playerstats_returnhere:
+
+
+[DISABLE]
+playerstats_savedAOB:
+db 8B 86 0C 02 00 00
+//mov eax,[esi+0000020C]
+
+unregistersymbol(playerstats_savedAOB)
+
+dealloc(playerstats_newmem)
+dealloc(playerstats_temp1)
+
+</AssemblerScript>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>114497</ID>
+          <Description>"Total Popularity Set to Massive?"</Description>
+          <DropDownList DisplayValueAsItem="1">0:No
+1:Yes
+</DropDownList>
+          <LastState Value="??" Activated="0" RealAddress="00000000"/>
+          <Color>FF8000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>playerstats_popularityset_enable</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>114498</ID>
+          <Description>"Housing Used Set to 9000? (Increases Tax Gold)"</Description>
+          <DropDownList DisplayValueAsItem="1">0:No
+1:Yes
+</DropDownList>
+          <LastState Value="??" Activated="0" RealAddress="00000000"/>
+          <Color>FF8000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>playerstats_housingusedset_enable</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>114499</ID>
+          <Description>"Housing Available Set to 9999?"</Description>
+          <DropDownList DisplayValueAsItem="1">0:No
+1:Yes
+</DropDownList>
+          <LastState Value="??" Activated="0" RealAddress="00000000"/>
+          <Color>FF8000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>playerstats_housingavailableset_enable</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>114500</ID>
+          <Description>"Player Stats Update Base Address?"</Description>
+          <DropDownList DisplayValueAsItem="1">0:No
+1:Yes
+</DropDownList>
+          <LastState Value="??" Activated="0" RealAddress="00000000"/>
+          <Color>FF8000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>playerstats_update_enable</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>114501</ID>
+          <Description>"Player Stats"</Description>
+          <Options moHideChildren="1"/>
+          <LastState Value="" Activated="0" RealAddress="00000000"/>
+          <Color>80000008</Color>
+          <GroupHeader>1</GroupHeader>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>114502</ID>
+              <Description>"Base Address"</Description>
+              <LastState Value="??" Activated="0" RealAddress="00000000"/>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>playerstats_basepointer</Address>
+              <Offsets>
+                <Offset>0</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>114590</ID>
+              <Description>"Estate"</Description>
+              <LastState Activated="0" RealAddress="00000000"/>
+              <Color>80000008</Color>
+              <VariableType>String</VariableType>
+              <Length>16</Length>
+              <Unicode>0</Unicode>
+              <ZeroTerminate>1</ZeroTerminate>
+              <Address>playerstats_basepointer</Address>
+              <Offsets>
+                <Offset>50</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>114621</ID>
+              <Description>"Controller"</Description>
+              <DropDownList DisplayValueAsItem="1">0:AI
+3:Player
+</DropDownList>
+              <LastState Value="??" Activated="0" RealAddress="00000000"/>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>playerstats_basepointer</Address>
+              <Offsets>
+                <Offset>1CC</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>114503</ID>
+              <Description>"Keep"</Description>
+              <Options moHideChildren="1"/>
+              <LastState Value="" Activated="0" RealAddress="00000000"/>
+              <Color>80000008</Color>
+              <GroupHeader>1</GroupHeader>
+              <CheatEntries>
+                <CheatEntry>
+                  <ID>114504</ID>
+                  <Description>"Base Address"</Description>
+                  <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                  <Color>80000008</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>playerstats_basepointer</Address>
+                  <Offsets>
+                    <Offset>0</Offset>
+                    <Offset>20C</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>114505</ID>
+                  <Description>"Overall Popularity"</Description>
+                  <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                  <ShowAsSigned>0</ShowAsSigned>
+                  <Color>80000008</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>playerstats_basepointer</Address>
+                  <Offsets>
+                    <Offset>0</Offset>
+                    <Offset>20C</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>114506</ID>
+                  <Description>"Tax Rate"</Description>
+                  <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                  <Color>80000008</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>playerstats_basepointer</Address>
+                  <Offsets>
+                    <Offset>C</Offset>
+                    <Offset>20C</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>114507</ID>
+                  <Description>"Set Tax Rate"</Description>
+                  <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                  <Color>80000008</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>playerstats_basepointer</Address>
+                  <Offsets>
+                    <Offset>10</Offset>
+                    <Offset>20C</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>114509</ID>
+                  <Description>"Rations Rate"</Description>
+                  <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                  <Color>80000008</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>playerstats_basepointer</Address>
+                  <Offsets>
+                    <Offset>44</Offset>
+                    <Offset>20C</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>114510</ID>
+                  <Description>"Set Rations Rate"</Description>
+                  <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                  <Color>80000008</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>playerstats_basepointer</Address>
+                  <Offsets>
+                    <Offset>48</Offset>
+                    <Offset>20C</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>114511</ID>
+                  <Description>"Ale Rate"</Description>
+                  <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                  <Color>80000008</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>playerstats_basepointer</Address>
+                  <Offsets>
+                    <Offset>74</Offset>
+                    <Offset>20C</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>114512</ID>
+                  <Description>"Set Ale Rate"</Description>
+                  <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                  <Color>80000008</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>playerstats_basepointer</Address>
+                  <Offsets>
+                    <Offset>78</Offset>
+                    <Offset>20C</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>114513</ID>
+                  <Description>"Religion"</Description>
+                  <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                  <Color>80000008</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>playerstats_basepointer</Address>
+                  <Offsets>
+                    <Offset>A0</Offset>
+                    <Offset>20C</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>114514</ID>
+                  <Description>"Set Religion"</Description>
+                  <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                  <Color>80000008</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>playerstats_basepointer</Address>
+                  <Offsets>
+                    <Offset>A4</Offset>
+                    <Offset>20C</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>114515</ID>
+                  <Description>"?"</Description>
+                  <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                  <Color>80000008</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>playerstats_basepointer</Address>
+                  <Offsets>
+                    <Offset>BC</Offset>
+                    <Offset>20C</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>114516</ID>
+                  <Description>"Housing Used"</Description>
+                  <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                  <Color>80000008</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>playerstats_basepointer</Address>
+                  <Offsets>
+                    <Offset>CC</Offset>
+                    <Offset>20C</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>114517</ID>
+                  <Description>"Peasants Available"</Description>
+                  <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                  <Color>80000008</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>playerstats_basepointer</Address>
+                  <Offsets>
+                    <Offset>D0</Offset>
+                    <Offset>20C</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>114518</ID>
+                  <Description>"?"</Description>
+                  <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                  <Color>80000008</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>playerstats_basepointer</Address>
+                  <Offsets>
+                    <Offset>D4</Offset>
+                    <Offset>20C</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>114519</ID>
+                  <Description>"Housing Available"</Description>
+                  <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                  <Color>80000008</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>playerstats_basepointer</Address>
+                  <Offsets>
+                    <Offset>D8</Offset>
+                    <Offset>20C</Offset>
+                  </Offsets>
+                </CheatEntry>
+              </CheatEntries>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>114574</ID>
+      <Description>"Unit Stats Base Address Scan Initialization (Activate This First)"</Description>
+      <Options moHideChildren="1"/>
+      <LastState Activated="0"/>
+      <Color>800000</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>[ENABLE]
+registersymbol(unitstats_basepointer)
+registersymbol(unitstats_update_enable)
+registersymbol(unitstats_set_enable)
+registersymbol(unitstats_friendlyset_enable)
+registersymbol(unitstats_enemyset_enable)
+
+alloc(unitstats_basepointer, 4)
+alloc(unitstats_update_enable, 4)
+alloc(unitstats_set_enable, 4)
+alloc(unitstats_friendlyset_enable, 4)
+alloc(unitstats_enemyset_enable, 4)
+
+
+[DISABLE]
+unregistersymbol(unitstats_basepointer)
+unregistersymbol(unitstats_update_enable)
+unregistersymbol(unitstats_set_enable)
+unregistersymbol(unitstats_friendlyset_enable)
+unregistersymbol(unitstats_enemyset_enable)
+
+dealloc(unitstats_basepointer)
+dealloc(unitstats_update_enable)
+dealloc(unitstats_set_enable)
+dealloc(unitstats_friendlyset_enable)
+dealloc(unitstats_enemyset_enable)
+
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>114575</ID>
+          <Description>"Unit Stats Select Base Address Scan (To Update: Select Unit)"</Description>
+          <LastState Activated="0"/>
+          <Color>804000</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[ENABLE]
+label(unitstats_select_savedAOB)
+label(unitstats_select_returnhere)
+label(unitstats_select_originalcode)
+label(unitstats_select_exit)
+
+label(unitstats_select_update_exit)
+label(unitstats_select_set_exit)
+label(unitstats_select_friendlyset_exit)
+label(unitstats_select_enemyset_exit)
+
+registersymbol(unitstats_select_savedAOB)
+
+//StrongholdBase.StrongholdBase::ScriptChore::GetClassTypeId+18E7 - FF D2                 - call edx
+//StrongholdBase.StrongholdBase::ScriptChore::GetClassTypeId+18E9 - 8B D0                 - mov edx,eax
+//StrongholdBase.StrongholdBase::ScriptChore::GetClassTypeId+18EB - D9 82 8C030000        - fld dword ptr [edx+0000038C]
+//StrongholdBase.StrongholdBase::ScriptChore::GetClassTypeId+18F1 - 89 55 08              - mov [ebp+08],edx
+//StrongholdBase.StrongholdBase::ScriptChore::GetClassTypeId+18F4 - D9EE                  - fldz
+//StrongholdBase.StrongholdBase::ScriptChore::GetClassTypeId+18F6 - D8D1                  - fcom st(0),st(1)
+aobscan(unitstats_select_searchedAOB, D9 82 8C 03 00 00 89 55 08)
+
+alloc(unitstats_select_newmem, 2048)
+alloc(unitstats_select_temp1, 4)
+
+
+unitstats_select_newmem:
+mov [unitstats_select_temp1], ebx
+
+cmp dword ptr [unitstats_update_enable], #0
+je unitstats_select_update_exit
+mov [unitstats_basepointer], edx
+unitstats_select_update_exit:
+
+cmp dword ptr [unitstats_set_enable], #0
+je unitstats_select_set_exit
+unitstats_select_set_exit:
+
+cmp dword ptr [unitstats_friendlyset_enable], #0
+je unitstats_select_friendlyset_exit
+cmp dword ptr [edx+39c], #0
+je unitstats_select_friendlyset_exit
+mov ebx, [edx+39c]
+// Controller
+cmp dword ptr [ebx+1cc], #3
+jne unitstats_select_friendlyset_exit
+fld [edx+390]
+fstp [edx+38c]
+unitstats_select_friendlyset_exit:
+
+cmp dword ptr [unitstats_enemyset_enable], #0
+je unitstats_select_enemyset_exit
+cmp dword ptr [edx+39c], #0
+je unitstats_select_enemyset_exit
+mov ebx, [edx+39c]
+// Controller
+cmp dword ptr [ebx+1cc], #3
+je unitstats_select_enemyset_exit
+mov [edx+38c], (float)0
+unitstats_select_enemyset_exit:
+
+mov ebx, [unitstats_select_temp1]
+
+
+unitstats_select_originalcode:
+db D9 82 8C 03 00 00
+//fld dword ptr [edx+0000038C]
+
+
+unitstats_select_exit:
+jmp unitstats_select_returnhere
+
+
+unitstats_select_searchedAOB:
+unitstats_select_savedAOB:
+jmp unitstats_select_newmem
+nop
+unitstats_select_returnhere:
+
+
+[DISABLE]
+unitstats_select_savedAOB:
+db D9 82 8C 03 00 00
+//fld dword ptr [edx+0000038C]
+
+unregistersymbol(unitstats_select_savedAOB)
+
+dealloc(unitstats_select_newmem)
+dealloc(unitstats_select_temp1)
+
+</AssemblerScript>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>114576</ID>
+          <Description>"Unit Stats All Base Address Scan (To Update: Play Level)"</Description>
+          <LastState Activated="0"/>
+          <Color>804000</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[ENABLE]
+label(unitstats_all_savedAOB)
+label(unitstats_all_returnhere)
+label(unitstats_all_originalcode)
+label(unitstats_all_exit)
+
+label(unitstats_all_update_exit)
+label(unitstats_all_set_exit)
+label(unitstats_all_friendlyset_exit)
+label(unitstats_all_enemyset_exit)
+
+registersymbol(unitstats_all_savedAOB)
+
+//StrongholdBase.StrongholdBase::HealthReceiverComponent::~HealthReceiverComponent+1E1 - 50                    - push eax
+//StrongholdBase.StrongholdBase::HealthReceiverComponent::~HealthReceiverComponent+1E2 - FF 15 D0D6BD6E        - call dword ptr [StrongholdBase.std::_Mutex::_Mutex+4024A]
+//StrongholdBase.StrongholdBase::HealthReceiverComponent::~HealthReceiverComponent+1E8 - D9 87 8C030000        - fld dword ptr [edi+0000038C]
+//StrongholdBase.StrongholdBase::HealthReceiverComponent::~HealthReceiverComponent+1EE - D9EE                  - fldz
+//StrongholdBase.StrongholdBase::HealthReceiverComponent::~HealthReceiverComponent+1F0 - D8D1                  - fcom st(0),st(1)
+//StrongholdBase.StrongholdBase::HealthReceiverComponent::~HealthReceiverComponent+1F2 - DFE0                  - fnstsw ax
+//StrongholdBase.StrongholdBase::HealthReceiverComponent::~HealthReceiverComponent+1F4 - DDD9                  - fstp st(1)
+//StrongholdBase.StrongholdBase::HealthReceiverComponent::~HealthReceiverComponent+1F6 - F6 C4 01              - test ah,01
+//StrongholdBase.StrongholdBase::HealthReceiverComponent::~HealthReceiverComponent+1F9 - 75 50                 - jne StrongholdBase.StrongholdBase::HealthReceiverComponent::~HealthReceiverComponent+24B
+//StrongholdBase.StrongholdBase::HealthReceiverComponent::~HealthReceiverComponent+1FB - D9 87 90030000        - fld dword ptr [edi+00000390]
+//StrongholdBase.StrongholdBase::HealthReceiverComponent::~HealthReceiverComponent+201 - DED9                  - fcompp
+aobscan(unitstats_all_searchedAOB, D9 87 8C 03 00 00 D9 EE D8 D1 DF E0 DD D9 F6 C4 01 75 50)
+
+alloc(unitstats_all_newmem, 2048)
+alloc(unitstats_all_temp1, 4)
+
+
+unitstats_all_newmem:
+mov [unitstats_all_temp1], ebx
+
+cmp dword ptr [unitstats_update_enable], #0
+je unitstats_all_update_exit
+unitstats_all_update_exit:
+
+cmp dword ptr [unitstats_set_enable], #0
+je unitstats_all_set_exit
+unitstats_all_set_exit:
+
+cmp dword ptr [unitstats_friendlyset_enable], #0
+je unitstats_all_friendlyset_exit
+cmp dword ptr [edi+39c], #0
+je unitstats_all_friendlyset_exit
+mov ebx, [edi+39c]
+// Controller
+cmp dword ptr [ebx+1cc], #3
+jne unitstats_all_friendlyset_exit
+fld [edi+390]
+fstp [edi+38c]
+unitstats_all_friendlyset_exit:
+
+cmp dword ptr [unitstats_enemyset_enable], #0
+je unitstats_all_enemyset_exit
+cmp dword ptr [edi+39c], #0
+je unitstats_all_enemyset_exit
+mov ebx, [edi+39c]
+// Controller
+cmp dword ptr [ebx+1cc], #3
+je unitstats_all_enemyset_exit
+mov [edi+38c], (float)0
+unitstats_all_enemyset_exit:
+
+mov ebx, [unitstats_all_temp1]
+
+
+unitstats_all_originalcode:
+db D9 87 8C 03 00 00
+//fld dword ptr [edi+0000038C]
+
+
+unitstats_all_exit:
+jmp unitstats_all_returnhere
+
+
+unitstats_all_searchedAOB:
+unitstats_all_savedAOB:
+jmp unitstats_all_newmem
+nop
+unitstats_all_returnhere:
+
+
+[DISABLE]
+unitstats_all_savedAOB:
+db D9 87 8C 03 00 00
+//fld dword ptr [edi+0000038C]
+
+unregistersymbol(unitstats_all_savedAOB)
+
+dealloc(unitstats_all_newmem)
+dealloc(unitstats_all_temp1)
+
+</AssemblerScript>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>114577</ID>
+          <Description>"Player HP Set to Max?"</Description>
+          <DropDownList DisplayValueAsItem="1">0:No
+1:Yes
+</DropDownList>
+          <LastState Value="??" Activated="0" RealAddress="00000000"/>
+          <Color>FF8000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>unitstats_friendlyset_enable</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>114578</ID>
+          <Description>"Enemy HP Set to 0?"</Description>
+          <DropDownList DisplayValueAsItem="1">0:No
+1:Yes
+</DropDownList>
+          <LastState Value="??" Activated="0" RealAddress="00000000"/>
+          <Color>FF8000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>unitstats_enemyset_enable</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>114580</ID>
+          <Description>"Unit Stats Update Base Address?"</Description>
+          <DropDownList DisplayValueAsItem="1">0:No
+1:Yes
+</DropDownList>
+          <LastState Value="??" Activated="0" RealAddress="00000000"/>
+          <Color>FF8000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>unitstats_update_enable</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>114581</ID>
+          <Description>"Unit Stats"</Description>
+          <Options moHideChildren="1"/>
+          <LastState Value="" Activated="0" RealAddress="00000000"/>
+          <Color>80000008</Color>
+          <GroupHeader>1</GroupHeader>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>114582</ID>
+              <Description>"Base Address"</Description>
+              <LastState Value="??" Activated="0" RealAddress="00000000"/>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>unitstats_basepointer</Address>
+              <Offsets>
+                <Offset>0</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>114583</ID>
+              <Description>"HP"</Description>
+              <LastState Value="??" Activated="0" RealAddress="00000000"/>
+              <Color>80000008</Color>
+              <VariableType>Float</VariableType>
+              <Address>unitstats_basepointer</Address>
+              <Offsets>
+                <Offset>38C</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>114584</ID>
+              <Description>"Max HP"</Description>
+              <LastState Value="??" Activated="0" RealAddress="00000000"/>
+              <Color>80000008</Color>
+              <VariableType>Float</VariableType>
+              <Address>unitstats_basepointer</Address>
+              <Offsets>
+                <Offset>390</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>114585</ID>
+              <Description>"Max HP"</Description>
+              <LastState Value="??" Activated="0" RealAddress="00000000"/>
+              <Color>80000008</Color>
+              <VariableType>Float</VariableType>
+              <Address>unitstats_basepointer</Address>
+              <Offsets>
+                <Offset>394</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>114586</ID>
+              <Description>"Owner"</Description>
+              <Options moHideChildren="1"/>
+              <LastState Value="" Activated="0" RealAddress="00000000"/>
+              <Color>80000008</Color>
+              <GroupHeader>1</GroupHeader>
+              <CheatEntries>
+                <CheatEntry>
+                  <ID>114587</ID>
+                  <Description>"Base Address"</Description>
+                  <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                  <Color>80000008</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>unitstats_basepointer</Address>
+                  <Offsets>
+                    <Offset>0</Offset>
+                    <Offset>39C</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>114588</ID>
+                  <Description>"Estate"</Description>
+                  <LastState Activated="0" RealAddress="00000000"/>
+                  <Color>80000008</Color>
+                  <VariableType>String</VariableType>
+                  <Length>16</Length>
+                  <Unicode>0</Unicode>
+                  <ZeroTerminate>1</ZeroTerminate>
+                  <Address>unitstats_basepointer</Address>
+                  <Offsets>
+                    <Offset>50</Offset>
+                    <Offset>39C</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>114622</ID>
+                  <Description>"Controller"</Description>
+                  <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                  <Color>80000008</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>unitstats_basepointer</Address>
+                  <Offsets>
+                    <Offset>1CC</Offset>
+                    <Offset>39C</Offset>
+                  </Offsets>
+                </CheatEntry>
+              </CheatEntries>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols/>
+</CheatTable>

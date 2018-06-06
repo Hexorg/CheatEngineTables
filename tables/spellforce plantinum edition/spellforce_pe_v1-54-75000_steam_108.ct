@@ -1,0 +1,585 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="14">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>23</ID>
+      <Description>"[X] &lt;== Spellforce Platinum Edition v1.54.75000 Script"</Description>
+      <Options moHideChildren="1"/>
+      <Color>FF0000</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>{
+===========================================
+ Game Title    : Spellforce - Platinum Edition
+ Game Version  : 1.54.75000 (steam)
+ Game Sponsor  : MySelf (via Steam)
+ Proces Name   : SpellForce.exe
+ Script Version: 1.0
+ CE Version    : 6.2
+ Release date  : 19-Dec-2012
+ Author        : Recifense
+ History:
+ 01-Aug-10: First Release
+ 19-Aug-12: Adapted to new template and added minimum gold.
+ Features:
+ - God Mode (for player's units and buildings)
+ - Unlimited Mana
+ - Minimum Resources (RTS)
+ - Quick Level Up (One level per kill)
+ - Unlimited Points (this could invalidate the character)
+ - Minimum Gold
+ - pointers
+===========================================
+}
+
+//=========================================
+// Definitions
+define(LUDO,SpellForce.exe)
+
+//=========================================
+[ENABLE]
+//=========================================
+//LuaCall(CheckVersion())
+//=========================================
+// Check if script is compatible to this game version
+// If false the script will not be loaded
+
+assert(LUDO+003fdc38,66 8b 44 01 48 66 89 85 3c fe ff ff)
+assert(LUDO+003fdc62,66 8b 44 01 56 66 89 85 38 fe ff ff)
+assert(LUDO+0023e96c,03 d0 8b 44 91 0b c2 0c 00)
+assert(LUDO+00674c89,8b 4a 04 66 8b 52 08 03 c6 3b c1)
+assert(LUDO+006741e4,66 ff 88 d3 00 00 00 8b c7 5f 5e)
+assert(LUDO+0067415b,66 ff 88 d1 00 00 00 8b c7 5f 5e)
+assert(LUDO+00454890,66 89 41 06 5b 59 c2 04 00)
+assert(LUDO+003418b1,2b c2 66 89 01 c2 08 00)
+assert(LUDO+00694910,8b 01 8b 48 04 85 c9 56 57 8b 7c 24 0c)
+
+//=========================================
+alloc(MyCode,4096,LUDO)
+//=========================================
+// Declaration section
+label(_MonHP)
+label(_BackMH)
+label(_ExitMH)
+label(_MonMana)
+label(_BackMM)
+label(_ExitMM)
+label(_MonRes)
+label(_BackMR)
+label(_ExitMR)
+label(_MonXP)
+label(_BackMX)
+label(_ExitMX)
+label(_MonSP)
+label(_BackMS)
+label(_ExitMS)
+label(_MonAP)
+label(_BackMA)
+label(_ExitMA)
+label(_GodMode)
+label(_BackGM)
+label(_ExitGM)
+label(_GodModeB)
+label(_BackGMB)
+label(_ExitGMB)
+label(_MonGold)
+label(_BackMG)
+label(_ExitMG)
+label(pHero)
+label(pRes)
+label(pGold)
+label(iEnableMH)
+label(iEnableMM)
+label(iEnableMR)
+label(iEnableMX)
+label(iEnableMSA)
+label(iEnableMG)
+label(iMinGold)
+label(iEAX)
+
+//=========================================
+// Registering Symbols
+registersymbol(MyCode)
+registersymbol(pHero)
+registersymbol(pRes)
+registersymbol(pGold)
+registersymbol(iEnableMH)
+registersymbol(iEnableMM)
+registersymbol(iEnableMR)
+registersymbol(iEnableMX)
+registersymbol(iEnableMSA)
+registersymbol(iEnableMG)
+registersymbol(iMinGold)
+
+//=========================================
+MyCode:
+//=========================================
+_MonHP:
+ cmp dword ptr [iEnableMH],0
+ je _ExitMH                     // Jump if feature is disabled
+
+ cmp byte ptr [ecx+eax+1c],01   // Player's unit ?
+ jne _ExitMH
+
+ mov word ptr [ecx+eax+48],0000 // Negative HP = 0
+
+_ExitMH:
+ mov ax,[ecx+eax+48]            // Original code
+ jmp _BackMH                    // Back to main code
+
+//=========================================
+_MonMana:
+ cmp dword ptr [iEnableMM],0
+ je _ExitMM                     // Jump if feature is disabled
+
+ cmp byte ptr [ecx+eax+1c],01   // Player's unit ?
+ jne _ExitMM
+
+ mov word ptr [ecx+eax+56],0000 // Negative HP = 0
+
+_ExitMM:
+ mov ax,[ecx+eax+56]            // Original code
+ jmp _BackMM                    // Back to main code
+
+//=========================================
+_MonRes:
+ add edx,eax                    // Original code
+
+ mov [pRes],ecx                 // Save pointer for debugging
+
+ cmp dword ptr [iEnableMR],0
+ je _ExitMR                     // Jump if feature is disabled
+
+ cmp dword ptr [ecx+edx*4+0b],0 // Is thare some of this resource?
+ je _ExitMR                     // Jump if false
+
+ mov eax,#4000                  // Get minimum resource value
+
+ cmp eax,[ecx+edx*4+0b]         // Current value &gt;= minimum?
+ jle _ExitMR                    // Jump if true
+
+ mov [ecx+edx*4+0b],eax         // Update current resource value
+
+_ExitMR:
+ mov eax,[ecx+edx*4+0b]         // Original code
+ jmp _BackMR                    // Back to main code
+
+//=========================================
+_MonXP:
+ mov ecx,[edx+04]               // Original code
+ mov dx,[edx+08]                // Original code
+
+ cmp dword ptr [iEnableMX],0
+ je _ExitMX                     // Jump if feature is disabled
+
+ mov eax,ecx                    // Make current XP = Next Level Value
+
+_ExitMX:
+ jmp _BackMX                    // Back to main code
+
+//=========================================
+// Stat Points
+_MonSP:
+ cmp dword ptr [iEnableMSA],0
+ je _ExitMS                     // Jump if feature is disabled
+
+ inc word ptr [eax+000000d3]    // Points = Points + 1
+
+_ExitMS:
+ dec word ptr [eax+000000d3]    // Original code
+ jmp _BackMS                    // Back to main code
+
+//=========================================
+// Ability Points
+_MonAP:
+ cmp dword ptr [iEnableMSA],0
+ je _ExitMA                     // Jump if feature is disabled
+
+ inc word ptr [eax+000000d1]    // Points = Points + 1
+
+_ExitMA:
+ dec word ptr [eax+000000d1]    // Original code
+ jmp _BackMA                    // Back to main code
+
+//=========================================
+_GodMode:
+ cmp dword ptr [iEnableMH],0
+ je _ExitGM                     // Jump if feature is disabled
+
+ cmp byte ptr [ecx-26],01       // Player's unit ?
+ jne _ExitGM
+
+ xor eax,eax                    // Negative HP = 0
+
+_ExitGM:
+ mov [ecx+06],ax                // Original code
+ pop ebx                        // Original code
+ jmp _BackGM                    // Back to main code
+
+//=========================================
+_GodModeB:
+ cmp dword ptr [iEnableMH],0
+ je _ExitGMB                    // Jump if feature is disabled
+
+ cmp byte ptr [ecx-09],01       // Player's Building ?
+ jne _ExitGMB                   // Jump if false
+
+ xor edx,edx                    // Value2Decrease = 0
+ mov ax,[ecx+04]                // Gt maximum HP
+
+_ExitGMB:
+ sub eax,edx                    // Original code
+ mov [ecx],ax                   // Original code
+ jmp _BackGMB                   // Back to main code
+
+//=========================================
+// Gold
+_MonGold:
+ push ebx
+
+ mov eax,[ecx]                  // Original code
+ mov ecx,[eax+04]               // Original code
+ test ecx,ecx
+ jz _ExitMG
+
+ cmp dword ptr [iEnableMG],0
+ je _ExitMG                     // Jump if feature is disabled
+
+ mov [pGold],ecx
+ mov ebx,[iMinGold]
+ cmp ebx,[ecx+000000bd]
+ jle _ExitMG
+
+ mov [ecx+000000bd],ebx
+
+_ExitMG:
+ pop ebx
+ jmp _BackMG                    // Back to main code
+
+//=========================================
+ db '=============================&gt;'
+ db 'CE6.2 Script by Recifense 121912'
+//=========================================
+// Variables
+iEnableMH:
+ dd 0
+iEnableMM:
+ dd 0
+iEnableMR:
+ dd 0
+iEnableMX:
+ dd 0
+iEnableMSA:
+ dd 0
+iEnableMG:
+ dd 0
+pHero:
+ dd 0
+pRes:
+ dd 0
+pGold:
+ dd 0
+iEAX:
+ dd 0
+iMinGold:
+ dd #1000
+
+//=========================================
+// Hacking Points
+LUDO+003fdc38:
+ jmp _MonHP
+_BackMH:
+
+LUDO+003fdc62:
+ jmp _MonMana
+_BackMM:
+
+LUDO+0023e96c:
+ jmp _MonRes
+ nop
+_BackMR:
+
+LUDO+00674c89:
+ jmp _MonXP
+ nop
+ nop
+_BackMX:
+
+LUDO+006741e4:
+ jmp _MonSP
+ nop
+ nop
+_BackMS:
+
+LUDO+0067415b:
+ jmp _MonAP
+ nop
+ nop
+_BackMA:
+
+LUDO+00454890:
+ jmp _GodMode
+_BackGM:
+
+LUDO+003418b1:
+ jmp _GodModeB
+_BackGMB:
+
+LUDO+00694910:
+ jmp _MonGold
+_BackMG:
+
+//=========================================
+// Script for Restoring Original Codes
+[DISABLE]
+LUDO+003fdc38:
+// mov ax,[ecx+eax+48]
+ db 66 8b 44 01 48
+
+LUDO+003fdc62:
+// mov ax,[ecx+eax+56]
+ db 66 8b 44 01 56
+
+LUDO+0023e96c:
+// add edx,eax
+// mov eax,[ecx+edx*4+0b]
+ db 03 d0 8b 44 91 0b
+
+LUDO+00674c89:
+// mov ecx,[edx+04]
+// mov dx,[edx+08]
+ db 8b 4a 04 66 8b 52 08
+
+LUDO+006741e4:
+// dec word ptr [eax+000000d3]
+ db 66 ff 88 d3 00 00 00
+
+LUDO+0067415b:
+// dec word ptr [eax+000000d1]
+ db 66 ff 88 d1 00 00 00
+
+LUDO+00454890:
+// mov [ecx+06],ax
+// pop ebx
+ db 66 89 41 06 5b
+
+LUDO+003418b1:
+// sub eax,edx
+// mov [ecx],ax
+ db 2b c2 66 89 01
+
+LUDO+00694910:
+// mov eax,[ecx]
+// mov ecx,[eax+04]
+ db 8b 01 8b 48 04
+
+//=========================================
+// Unregistering Symbols
+unregistersymbol(MyCode)
+unregistersymbol(pHero)
+unregistersymbol(pRes)
+unregistersymbol(pGold)
+unregistersymbol(iEnableMH)
+unregistersymbol(iEnableMM)
+unregistersymbol(iEnableMR)
+unregistersymbol(iEnableMX)
+unregistersymbol(iEnableMSA)
+unregistersymbol(iEnableMG)
+unregistersymbol(iMinGold)
+
+//=========================================
+dealloc(MyCode)
+//============= Scripts End ===============
+
+// ****************************************
+// NOTES
+// ****************************************
+{
+}
+
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>6</ID>
+          <Description>"Enable/Disable God Mode"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMH</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>7</ID>
+          <Description>"Enable/Disable Fast Mana Refuel"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMM</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>8</ID>
+          <Description>"Enable/Disable Minimum Resources"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMR</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>24</ID>
+          <Description>"Enable/Disable Minimum Gold"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMG</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>25</ID>
+              <Description>"Minimum Gold Value ==&gt;"</Description>
+              <Color>0080FF</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>iMinGold</Address>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>9</ID>
+          <Description>"Enable/Disable Quick Level Up"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMX</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>33</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>34</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols/>
+  <Comments>===========================================
+ Game Title    : Spellforce - Platinum Edition
+ Game Version  : 1.54.75000 (steam)
+ Game Sponsor  : MySelf (via Steam)
+ Proces Name   : SpellForce.exe
+ Script Version: 1.0
+ CE Version    : 6.2
+ Release date  : 19-Dec-2012
+ Author        : Recifense
+ History:
+ 01-Aug-10: First Release
+ 19-Aug-12: Adapted to new template and added minimum gold.
+ Features:
+ - God Mode (for player's units and buildings) [1]
+ - Unlimited Mana                              [2]
+ - Minimum Resources (RTS)                     [3]
+ - Quick Level Up (One level per kill)         [4]
+ - Unlimited Points (this could invalidate the character)
+ - Minimum Gold                                [5]
+ - pointers
+===========================================
+[1] That's it;
+[2] Player's characters;
+[3] The existing resources will have a mnimum value (4000);
+[4] That's it. Each kill, a level up;
+[5] Gold will be set to a minimum value. It will work only when a change occurs in the inventory, including money.
+===========================================
+HOTKEYS:
+CTRL+Home   = Enable  all cheats (but level up);
+CTRL+End    = Disable all cheats (but level up);
+CTRL+PageUp   = Enable  Quick Level Up
+CTRL+PageDown = Disable Quick Level Up
+===========================================
+Cheers!
+
+</Comments>
+</CheatTable>

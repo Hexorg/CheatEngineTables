@@ -1,0 +1,1208 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="26">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>98</ID>
+      <Description>"Easy Build"</Description>
+      <LastState/>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>{ Game   : TheForest.exe x64
+  Version: v0.65b
+  Date   : 2017-07-25
+  Author : Vlad-00003
+
+  This script would allow you to build anything even if you don't have required
+  ammount of resource in your hands.
+  After activating the script just hold E to make it auto-fill the ghost with
+  resources.
+
+  There is a kind of problem with structures, that require only logs -
+  it still working even if you don't have any logs in your hands, but you should
+  hold E and move your eyes over the structure.... I know that sounds wierd
+  but I'm gonna make a video that will show how to use it.
+}
+
+usemono()
+define(_AddIngredient,"TheForest.Buildings.Creation:Craft_Structure:AddIngredient"+6d)
+define(_AddIngredientBytes,41 FF D3 48 83 C4 30)
+define(_CSUpdate,"TheForest.Buildings.Creation:Craft_Structure:Update")
+[ENABLE]
+
+assert(_AddIngredient,_AddIngredientBytes)
+alloc(_AddIngredientNew,$1000,_AddIngredient)
+
+label(_AddIngredientRet)
+
+_AddIngredientNew://insted of deleting item form inventory
+  //call r11
+  mov eax, 1//we just think that we already did it with success
+  add rsp,30
+  jmp _AddIngredientRet
+
+_AddIngredient://Calling delete item function
+  jmp _AddIngredientNew
+  nop
+  nop
+  _AddIngredientRet:
+
+assert(_CSUpdate+43a,0F 85)
+_CSUpdate+43a://let the game think that we are in creative mode
+  db 0F 84// so we now own everything =)
+
+assert(_CSUpdate+7fe,0F 84)
+_CSUpdate+7fe://let the game think that we are in creative mode
+  db 0F 85// so we can hold E insted of pushing it every time
+[DISABLE]
+
+_AddIngredient:
+  db _AddIngredientBytes
+dealloc(_AddIngredientNew)
+
+_CSUpdate+43a:
+  db 0F 85
+
+_CSUpdate+7fe:
+  db 0F 84
+{
+_AddIngredient:
+  5835155A: 6A 01                          -  push 01
+  5835155C: 48 83 EC 20                    -  sub rsp,20
+  58351560: 83 38 00                       -  cmp dword ptr [rax],00
+  58351563: 49 BB D0 5A 31 58 00 00 00 00  -  mov r11,TheForest.Items.Inventory:PlayerInventory:RemoveItem
+  // ---------- INJECTING HERE ----------
+  5835156D: 41 FF D3                       -  call r11
+  58351570: 48 83 C4 30                    -  add rsp,30
+  // ---------- DONE INJECTING  ----------
+  58351574: 85 C0                          -  test eax,eax
+  58351576: 75 11                          -  jne TheForest.Buildings.Creation:Craft_Structure:AddIngredient+89
+  58351578: B8 0A CE 1B 05                 -  mov eax,051BCE0A
+  5835157D: 48 0F B6 00                    -  movzx rax,byte ptr [rax]
+  58351581: 85 C0                          -  test eax,eax
+  58351583: 0F 84 A0 02 00 00              -  je TheForest.Buildings.Creation:Craft_Structure:AddIngredient+329
+
+_CSUpdate+43a:
+  583505FF: 48 83 EC 20                    -  sub rsp,20
+  58350603: 83 38 00                       -  cmp dword ptr [rax],00
+  58350606: 49 BB 60 9D E0 4A 00 00 00 00  -  mov r11,TheForest.Items.Inventory:PlayerInventory:Owns
+  58350610: 41 FF D3                       -  call r11
+  58350613: 48 83 C4 20                    -  add rsp,20
+  58350617: 85 C0                          -  test eax,eax
+  58350619: 0F 85 D4 00 00 00              -  jne TheForest.Buildings.Creation:Craft_Structure:Update+503
+  5835061F: B8 0A CE 1B 05                 -  mov eax,[Cheats.Creative]
+  58350624: 48 0F B6 00                    -  movzx rax,byte ptr [rax]
+  58350628: 85 C0                          -  test eax,eax
+  // ---------- MODIFYING HERE ----------
+  5835062A: 0F 85 C3 00 00 00              -  jne TheForest.Buildings.Creation:Craft_Structure:Update+503
+  // ---------- DONE MODIFYING  ----------
+
+_CSUpdate+7fe:
+  583509CA: 49 BB 80 91 D8 1B 00 00 00 00  -  mov r11,TheForest.Utils:Input:GetButtonDown
+  583509D4: 41 FF D3                       -  call r11
+  583509D7: 48 83 C4 20                    -  add rsp,20
+  583509DB: 85 C0                          -  test eax,eax
+  583509DD: 0F 85 33 00 00 00              -  jne TheForest.Buildings.Creation:Craft_Structure:Update+826
+  583509E3: B8 0A CE 1B 05                 -  mov eax,[Cheats.Creative]
+  583509E8: 48 0F B6 00                    -  movzx rax,byte ptr [rax]
+  583509EC: 85 C0                          -  test eax,eax
+  // ---------- MODIFYING HERE ----------
+  583509EE: 0F 84 83 00 00 00              -  je TheForest.Buildings.Creation:Craft_Structure:Update+887
+  // ---------- DONE MODIFYING  ----------
+}
+</AssemblerScript>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>50</ID>
+      <Description>"Infinite Items"</Description>
+      <LastState/>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>{ Game   : TheForest.exe x64
+  Version: v0.65b
+  Date   : 2017-07-25
+  Author : Vlad-00003
+
+  This script gives you max ammount of items instead using it.
+  Also it prevents some items from being duplicated, plain axe for example.
+
+  *It didn't makes arrow infinite, cos it could create much errors
+  if done this way.*
+}
+usemono()
+define(RemoveItem,TheForest.Items.Inventory:InventoryItem:Remove+23)
+[ENABLE]
+
+assert(RemoveItem,89 47 14 B8 01 00 00 00) // should be unique
+alloc(InfiniteItems,$1000)
+registersymbol(RemoveItem)
+
+label(InfiniteItemsRet)
+label(exit)
+
+InfiniteItems:
+
+  cmp [rdi+10], #83
+  je exit //prevent arrows form being infinite
+
+  cmp [rdi+10], #51
+  je exit //prevent PlasticTorch form being infinite. for some reason max
+          //ammount for PlasticTorch is 2... =_=
+
+  cmp [rdi+18], #1
+  je exit // prevent any item with max ammount = 1 form being infinite
+
+  mov eax, [rdi+18] // set item to the max ammount
+  add eax, [rdi+1C] // add bonus ammount
+  cmp eax, (int)100000 // check if count &lt; 100
+  jl exit //if so - we cool
+  mov eax, (int)100000 // if not - set count to 100 (cos in over case it would be
+                    // too much and you will loose this item forever.
+  exit:
+  mov [rdi+14],eax
+  mov eax,00000001
+  jmp InfiniteItemsRet
+
+RemoveItem:
+  jmp InfiniteItems
+  nop
+  nop
+  nop
+  InfiniteItemsRet:
+
+
+[DISABLE]
+
+RemoveItem:
+  db 89 47 14 B8 01 00 00 00
+
+unregistersymbol(RemoveItem)
+dealloc(InfiniteItems)
+
+{
+rdi+10 - _itemId
+rdi+14 - _ammount
+rdi+18 - _maxAmmount
+rdi+1c - _maxAmmountBonus
+}
+</AssemblerScript>
+      <Hotkeys>
+        <Hotkey>
+          <Action>Toggle Activation</Action>
+          <Keys>
+            <Key>97</Key>
+          </Keys>
+          <ID>0</ID>
+        </Hotkey>
+      </Hotkeys>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>59</ID>
+      <Description>"Infinite Logs"</Description>
+      <LastState/>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>{ Game   : TheForest.exe x64
+  Version: v0.65b
+  Date   : 2017-07-25
+  Author : Vlad-00003
+
+  Infinite logs in the hand. I see no reason for it to be, but hey - didn't you
+  ever wanted to spam the whole map with logs? (this usually end up
+  with game crash or getting you inside the texture...)
+}
+usemono()
+define(_Log,"TheForest.Items.Special:LogControler:RemoveLog"+22)
+[ENABLE]
+assert(_Log, FF C8)
+
+_Log:
+  db 90 90
+[DISABLE]
+_Log:
+  db FF C8
+</AssemblerScript>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>100</ID>
+      <Description>"Infinite Fuel For Axes + light settings(Intensity doesn't work!)"</Description>
+      <Options moHideChildren="1"/>
+      <LastState/>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>{ Game   : TheForest.exe x64
+  Version: v0.65b
+  Date   : 2017-07-25
+  Author : Vlad-00003
+
+  This script always keep "fuel" at 100, so you wouldn't have to keep using
+  clothes on axe. Also it allows you to set the light range and intensity.
+  Enjoy =3
+}
+
+define(BurnDur,TheForest.Items.World:BurnableCloth:Burning)
+[ENABLE]
+//===========================Infinite fuel===========================
+assert(BurnDur+a,48 8B F1 F3 0F 10 86 A4 00 00 00)
+alloc(infBurning,$1000,BurnDur+a)
+label(infBurningRet)
+
+infBurning:
+  mov rsi,rcx
+  mov [rsi+000000A4], (float)100.0
+  movss xmm0,[rsi+000000A4]
+  jmp infBurningRet
+
+BurnDur+a:
+  jmp infBurning
+  nop
+  nop
+  nop
+  nop
+  nop
+  nop
+  infBurningRet:
+
+//===========================Light settings===========================
+assert(BurnDur+3e9,48 83 EC 20 83 3F 00)
+
+alloc(_Light,2048)
+alloc(_LightRange,4)
+alloc(_LightIntensity,4)
+alloc(_uLight,4)
+
+label(LightIntensRet)
+
+registersymbol(_LightIntensity)
+registersymbol(_LightRange)
+registersymbol(_uLight)
+
+_uLight:
+   //dd "UnityEngine:Light:set_intensity"
+   dd "UnityEngine:Light:set_range"//jit set range address
+_LightIntensity:
+  dd (float)0.3
+_LightRange:
+  dd (float)35
+
+_Light:
+  movss xmm1, [_LightRange]
+  sub rsp,20
+  cmp dword ptr [rdi],00
+  mov r11,[_uLight]
+  call r11
+  add rsp, 20
+
+  movss xmm1, [_LightIntensity]
+  sub rsp,20
+  cmp dword ptr [rdi],00
+  jmp LightIntensRet
+
+BurnDur+3e9:
+  jmp _Light
+  nop
+  nop
+  LightIntensRet:
+[DISABLE]
+
+BurnDur+a:
+  db 48 8B F1 F3 0F 10 86 A4 00 00 00
+dealloc(infBurning)
+//====================================
+BurnDur+3e9:
+  db 48 83 EC 20 83 3F 00
+unregistersymbol(_LightIntensity)
+unregistersymbol(_LightRange)
+unregistersymbol(_uLight)
+
+dealloc(_uLight)
+dealloc(_LightRange)
+dealloc(_LightIntensity)
+dealloc(_Light)
+{
+BurnDur+a: //Inf fuel
+  1E47E854: 56                             -  push rsi
+  1E47E855: 57                             -  push rdi
+  1E47E856: 48 83 EC 30                    -  sub rsp,30
+  // ---------- INJECTING HERE ----------
+  1E47E85A: 48 8B F1                       -  mov rsi,rcx
+  1E47E85D: F3 0F 10 86 A4 00 00 00        -  movss xmm0,[rsi+000000A4]
+  // ---------- DONE INJECTING  ----------
+  1E47E865: F3 0F 5A C0                    -  cvtss2sd xmm0,xmm0
+  1E47E869: 66 0F 57 C9                    -  xorpd xmm1,xmm1
+  1E47E86D: 66 0F 2F C8                    -  comisd xmm1,xmm0
+  1E47E871: 0F 8A 33 04 00 00              -  jp TheForest.Items.World:BurnableCloth:Burning+45a
+  1E47E877: 0F 87 2D 04 00 00              -  ja TheForest.Items.World:BurnableCloth:Burning+45a
+BurnDur+3e9: //Light settings
+  1E47EC2A: F2 0F 59 C1                    -  mulsd xmm0,xmm1
+  1E47EC2E: 48 8B CF                       -  mov rcx,rdi
+  1E47EC31: F2 0F 10 C8                    -  movsd xmm1,xmm0
+  1E47EC35: F2 0F 5A C9                    -  cvtsd2ss xmm1,xmm1
+  // ---------- INJECTING HERE ----------
+  1E47EC39: 48 83 EC 20                    -  sub rsp,20
+  1E47EC3D: 83 3F 00                       -  cmp dword ptr [rdi],00
+  // ---------- DONE INJECTING  ----------
+  1E47EC40: 49 BB 20 8D DD 1B 00 00 00 00  -  mov r11,UnityEngine:Light:set_intensity
+  1E47EC4A: 41 FF D3                       -  call r11
+  1E47EC4D: 48 83 C4 20                    -  add rsp,20
+}
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>70</ID>
+          <Description>"Light Intensity"</Description>
+          <Color>0000FF</Color>
+          <VariableType>Float</VariableType>
+          <Address>_LightIntensity</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>73</ID>
+          <Description>"Light Range"</Description>
+          <VariableType>Float</VariableType>
+          <Address>_LightRange</Address>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>0</ID>
+      <Description>"Player Scripts + pointers"</Description>
+      <Options moHideChildren="1" moAllowManualCollapseAndExpand="1"/>
+      <LastState/>
+      <Color>00A600</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>{ Game   : TheForest.exe x64
+  Version: v0.65b
+  Date   : 2017-07-25
+  Author : Vlad-00003
+
+  This script provides base pointers for the:
+    FisrtPersonCharachter - pBase
+    PlayerStats - pStats
+    PlayerInventory - pInv
+
+  Also it runs thaumaturge thread, wich would be used to
+  set player stats to the required calue every 10 ms.
+}
+usemono()
+define(FPC,FirstPersonCharacter:Update+13)
+define(FPCBytes,48 8B F1 33 C0)
+[ENABLE]
+//Check if bytes are correct
+assert(FPC,FPCBytes)
+// Getting pointers to the player and his stats
+alloc(FPCnew,$1000)
+alloc(pBase,8)
+alloc(pStats,8)
+alloc(pInv,8)
+
+label(FPCRet)
+
+registersymbol(FPC)
+registersymbol(pBase)
+registersymbol(pStats)
+registersymbol(pInv)
+
+FPCnew:
+  mov rsi,rcx
+
+  mov [pBase], rsi
+  mov rsi, [rsi+50]
+  mov [pStats], rsi
+  mov rsi, [rsi+108]
+  mov [pInv], rsi
+
+  mov rsi,rcx
+  xor eax,eax
+  jmp FPCRet
+
+FPC:
+  jmp FPCnew
+  FPCRet:
+
+pBase:
+  db 0
+pStats:
+  db 0
+pInv:
+  db 0
+//------------------------------------------------------------
+//Creating thread, that would set stats to max, then needed ;)
+globalalloc(thaumaturge,4096)
+CREATETHREAD(thaumaturge);
+
+alloc(infStamina,1)
+alloc(infFullness,1)
+alloc(infThirst,1)
+alloc(infHP,1)
+alloc(infBreath,1)
+
+label(thaumaturgeEnabled)
+label(exit)
+label(next1)
+label(next2)
+label(next3)
+label(next4)
+
+registersymbol(thaumaturgeEnabled)
+registersymbol(infStamina)
+registersymbol(infFullness)
+registersymbol(infThirst)
+registersymbol(infHP)
+registersymbol(infBreath)
+
+thaumaturge:
+
+  push rax
+  //push ebx
+
+  cmp [pStats], 0
+  je exit
+
+
+  mov rax, [pStats]
+
+  cmp byte ptr [infStamina], 1
+  jne next1
+  mov [rax+22c], (float)100.0// stamina
+  mov [rax+238], (float)100.0// energy
+
+  next1:
+  cmp byte ptr [infFullness], 1
+  jne next2
+  mov [rax+264], (float)1.0
+
+  next2:
+  cmp byte ptr [infThirst], 1
+  jne next3
+  mov [rax+268], (float)0.0
+
+  next3:
+  cmp byte ptr [infHP], 1
+  jne next4
+  mov [rax+230], (float)100//Health
+  mov [rax+234], (float)100//HealthTarget
+
+  next4:
+  cmp byte ptr [infBreath], 1
+  jne exit
+  mov rax, [rax+48] //AirBreathing class
+  mov [rax+30], (float)600 //CurrentRebreatherAir
+  mov rax, [rax+10] //CurrentLungAirTimer - stopwatch struct
+  mov [rax+20], 0 //is_running
+  mov rax, [pStats]
+
+
+  exit:
+  //pop ebx
+  pop rax
+
+  //push #10
+  //call sleep// wait 10 ms
+  push rbp
+  sub rsp, 32
+  mov rbp, rsp
+  mov ecx, 10
+  call sleep
+  lea rsp, [rbp+32]
+  pop rbp
+
+  cmp byte ptr [thaumaturgeEnabled],1
+  je thaumaturge
+  ret
+
+thaumaturgeEnabled:
+  db 1
+infStamina:
+  db 0
+infFullness:
+  db 0
+infThirst:
+  db 0
+infHP:
+  db 0
+[DISABLE]
+
+FPC:
+  db FPCBytes
+
+unregistersymbol(FPC)
+unregistersymbol(pBase)
+unregistersymbol(pStats)
+unregistersymbol(pInv)
+
+dealloc(FPCnew)
+dealloc(pBase)
+dealloc(pStats)
+dealloc(pInv)
+{
+FPC:
+  5DD83AB4: 56                             -  push rsi
+  5DD83AB5: 57                             -  push rdi
+  5DD83AB6: 41 55                          -  push r13
+  5DD83AB8: 41 56                          -  push r14
+  5DD83ABA: 41 57                          -  push r15
+  5DD83ABC: 48 81 EC F8 00 00 00           -  sub rsp,000000F8
+  // ---------- INJECTING HERE ----------
+  5DD83AC3: 48 8B F1                       -  mov rsi,rcx
+  5DD83AC6: 33 C0                          -  xor eax,eax
+  // ---------- DONE INJECTING  ----------
+  5DD83AC8: 48 89 85 F8 FE FF FF           -  mov [rbp-00000108],rax
+  5DD83ACF: 89 85 00 FF FF FF              -  mov [rbp-00000100],eax
+  5DD83AD5: 48 8B 0C 25 60 DF 43 42        -  mov rcx,[4243DF60]
+  5DD83ADD: 33 D2                          -  xor edx,edx
+  5DD83ADF: 48 83 EC 20                    -  sub rsp,20
+  5DD83AE3: 49 BB E0 9C 63 05 00 00 00 00  -  mov r11,UnityEngine:Object:op_Equality
+  5DD83AED: 41 FF D3                       -  call r11
+  5DD83AF0: 48 83 C4 20                    -  add rsp,20
+  5DD83AF4: 85 C0                          -  test eax,eax
+  5DD83AF6: 0F 85 66 0F 00 00              -  jne FirstPersonCharacter:Update+fb2
+}
+thaumaturgeEnabled:
+  dd 0
+
+unregistersymbol(infStamina)
+unregistersymbol(infFullness)
+unregistersymbol(infThirst)
+unregistersymbol(infHP)
+unregistersymbol(infBreath)
+
+dealloc(infStamina)
+dealloc(infFullness)
+dealloc(infThirst)
+dealloc(infHP)
+dealloc(infBreath)
+
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>41</ID>
+          <Description>"Infinite Health"</Description>
+          <LastState/>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>{ Game   : TheForest.exe x64
+  Version: v0.65b
+  Date   : 2017-07-25
+  Author : Vlad-00003
+
+  This script keeps player health at 100 (thaumaturge thread) and noping the
+  fall damage sturcture, so the player won't die no matter what.
+}
+define(_pStatsUpdate,"PlayerStats:Update")
+define(_pStatsHit, "PlayerStats:Hit")
+define(_pStatsCheckDeath, "PlayerStats:CheckDeath")
+[ENABLE]
+assert(_pStatsUpdate+3494, 74 34)
+_pStatsUpdate+3494://Emitting Cheats.God on
+  db 75 34
+
+assert(_pStatsHit+675, 74 1A)
+_pStatsHit+675: //Emitting Cheats.God on
+  db 75 1A
+
+assert(_pStatsCheckDeath+17,0F 85)
+_pStatsCheckDeath+17://Emitting Cheats.God on
+  db 0F 84
+
+infHP:
+  db 1
+
+[DISABLE]
+infHP:
+  db 0
+
+_pStatsUpdate+3494:
+  db 74 34
+
+_pStatsHit+675:
+  db 74 1A
+
+_pStatsCheckDeath+17:
+  db 0F 85
+</AssemblerScript>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>42</ID>
+              <Description>"Health"</Description>
+              <Color>4080FF</Color>
+              <VariableType>Float</VariableType>
+              <Address>pStats</Address>
+              <Offsets>
+                <Offset>230</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>97</ID>
+              <Description>"HealthTarget (No idea what is this)"</Description>
+              <VariableType>Float</VariableType>
+              <Address>pStats</Address>
+              <Offsets>
+                <Offset>234</Offset>
+              </Offsets>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>28</ID>
+          <Description>"Infinite Stamina"</Description>
+          <LastState/>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>{ Game   : TheForest.exe
+  Version: v0.64
+  Date   : 2017-07-25
+  Author : Vlad-00003
+
+  This script activates setting stamina and energy in the thaumaturge thread
+  to 100. So it doesn't matter would you use this script or just freeze value
+  in CE
+}
+[ENABLE]
+infStamina:
+  db 1
+[DISABLE]
+infStamina:
+  db 0
+</AssemblerScript>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>8</ID>
+              <Description>"Stamina (green bar)"</Description>
+              <Color>008000</Color>
+              <VariableType>Float</VariableType>
+              <Address>pStats</Address>
+              <Offsets>
+                <Offset>22c</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>10</ID>
+              <Description>"Energy (Blue bar)"</Description>
+              <Color>C08000</Color>
+              <VariableType>Float</VariableType>
+              <Address>pStats</Address>
+              <Offsets>
+                <Offset>238</Offset>
+              </Offsets>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>30</ID>
+          <Description>"No Thirst"</Description>
+          <LastState/>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>{ Game   : TheForest.exe
+  Version: v0.64
+  Date   : 2017-07-25
+  Author : Vlad-00003
+
+  This script activates setting thirst in the thaumaturge thread
+  to 0. So it doesn't matter would you use this script or just freeze value
+  in CE.
+}
+[ENABLE]
+infThirst:
+  db 1
+[DISABLE]
+infThirst:
+  db 0
+</AssemblerScript>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>12</ID>
+              <Description>"Thirst (Max - 0)"</Description>
+              <VariableType>Float</VariableType>
+              <Address>pStats</Address>
+              <Offsets>
+                <Offset>268</Offset>
+              </Offsets>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>29</ID>
+          <Description>"No Hunger"</Description>
+          <LastState/>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>{ Game   : TheForest.exe
+  Version: v0.64
+  Date   : 2017-07-25
+  Author : Vlad-00003
+
+  This script activates setting fullness in the thaumaturge thread
+  to 1.So it doesn't matter would you use this script or just freeze value
+  in CE.
+}
+[ENABLE]
+infFullness:
+  db 1
+[DISABLE]
+infFullness:
+  db 0
+</AssemblerScript>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>11</ID>
+              <Description>"Fullness (max - 1)"</Description>
+              <VariableType>Float</VariableType>
+              <Address>pStats</Address>
+              <Offsets>
+                <Offset>264</Offset>
+              </Offsets>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>104</ID>
+          <Description>"BatteryCharge"</Description>
+          <VariableType>Float</VariableType>
+          <Address>pstats</Address>
+          <Offsets>
+            <Offset>248</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>74</ID>
+          <Description>"Infinite Air+no screen cover"</Description>
+          <LastState/>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>{ Game   : TheForest.exe x64
+  Version: v0.65b
+  Date   : 2017-07-25
+  Author : Vlad-00003
+
+  This script not just disable breathing, but also removes
+  all off the underwater overlay and destroes annoying bubbles
+  from the screen =3
+}
+define(WaterScreen,WaterViz:Update)
+[ENABLE]
+assert(WaterScreen+765,BF 01 00 00 00)
+WaterScreen+765:
+  db BF 00 00 00 00 // set inWater always to 0. In this case - flag(dil)
+  //WaterViz:Update+9a4
+
+{WaterViz:Update+901
+assert(WaterScreen+64b,6A 01)
+WaterScreen+64b:
+  db 6A 00 // Bubbles.}
+
+infBreath:
+  db 1
+
+[DISABLE]
+WaterScreen+765:
+  db BF 01 00 00 00
+
+{WaterScreen+64b:
+  db 6A 01}
+
+infBreath:
+  db 0
+</AssemblerScript>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>58</ID>
+              <Description>"Just Infinite Air"</Description>
+              <LastState/>
+              <VariableType>Auto Assembler Script</VariableType>
+              <AssemblerScript>{ Game   : TheForest.exe
+  Version: v0.44c
+  Date   : 2016-08-08
+  Author : Vlad-00003
+
+  This script activates setting reabreather air in the thaumaturge thread
+  to 600 and CurrentLungAirTimer to 0.So you would have infinite air both with
+  and withou reabreather.
+}
+
+[ENABLE]
+infBreath:
+  db 1
+[DISABLE]
+infBreath:
+  db 0
+</AssemblerScript>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>64</ID>
+          <Description>"Speed and Height"</Description>
+          <Options moManualExpandCollapse="1" moAllowManualCollapseAndExpand="1"/>
+          <LastState/>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>{ Game   : TheForest.exe
+  Version: v0.64
+  Date   : 2017-07-25
+  Author : Vlad-00003
+
+  This group contain information all types of speed and jump height.
+  Don't forget to freeze value after changing it.
+}
+[ENABLE]
+
+[DISABLE]
+
+</AssemblerScript>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>2</ID>
+              <Description>"Walk Speed (def= 6.5)"</Description>
+              <VariableType>Float</VariableType>
+              <Address>pBase</Address>
+              <Offsets>
+                <Offset>b4</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>3</ID>
+              <Description>"Run Speed (def= 13.5)"</Description>
+              <VariableType>Float</VariableType>
+              <Address>pBase</Address>
+              <Offsets>
+                <Offset>b8</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>4</ID>
+              <Description>"Strafe Speed (def= 6)"</Description>
+              <VariableType>Float</VariableType>
+              <Address>pBase</Address>
+              <Offsets>
+                <Offset>bc</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>5</ID>
+              <Description>"Crouch Speed (def= 4.5)"</Description>
+              <VariableType>Float</VariableType>
+              <Address>pBase</Address>
+              <Offsets>
+                <Offset>c0</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>6</ID>
+              <Description>"Swimming Speed (def= 3.75)"</Description>
+              <VariableType>Float</VariableType>
+              <Address>pBase</Address>
+              <Offsets>
+                <Offset>c4</Offset>
+              </Offsets>
+              <CheatEntries>
+                <CheatEntry>
+                  <ID>101</ID>
+                  <Description>"maxDiveVelocity(def = 6.5)"</Description>
+                  <VariableType>Float</VariableType>
+                  <Address>pbase</Address>
+                  <Offsets>
+                    <Offset>f4</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>102</ID>
+                  <Description>"maxSwimVelocity(def = 3)"</Description>
+                  <VariableType>Float</VariableType>
+                  <Address>pbase</Address>
+                  <Offsets>
+                    <Offset>f8</Offset>
+                  </Offsets>
+                </CheatEntry>
+              </CheatEntries>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>7</ID>
+              <Description>"Jump Height (def= 8)"</Description>
+              <VariableType>Float</VariableType>
+              <Address>pBase</Address>
+              <Offsets>
+                <Offset>e4</Offset>
+              </Offsets>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>65</ID>
+          <Description>"Player stats"</Description>
+          <Options moManualExpandCollapse="1" moAllowManualCollapseAndExpand="1"/>
+          <LastState/>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>{ Game   : TheForest.exe
+  Version: v0.64
+  Date   : 2017-07-25
+  Author : Vlad-00003
+
+  This group contain information about some player stats.
+}
+[ENABLE]
+
+[DISABLE]
+
+</AssemblerScript>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>16</ID>
+              <Description>"Strength"</Description>
+              <VariableType>Float</VariableType>
+              <Address>pStats</Address>
+              <Offsets>
+                <Offset>74</Offset>
+                <Offset>70</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>15</ID>
+              <Description>"Sanity"</Description>
+              <VariableType>Float</VariableType>
+              <Address>pStats</Address>
+              <Offsets>
+                <Offset>10</Offset>
+                <Offset>68</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>18</ID>
+              <Description>"Infected?"</Description>
+              <DropDownList ReadOnly="1" DescriptionOnly="1" DisplayValueAsItem="1">1:Yes
+0:No
+</DropDownList>
+              <VariableType>Byte</VariableType>
+              <Address>pStats</Address>
+              <Offsets>
+                <Offset>18</Offset>
+                <Offset>80</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>13</ID>
+              <Description>"DaySurvived"</Description>
+              <VariableType>Float</VariableType>
+              <Address>pStats</Address>
+              <Offsets>
+                <Offset>258</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>67</ID>
+              <Description>"CurrentWeight"</Description>
+              <VariableType>Float</VariableType>
+              <Address>pStats</Address>
+              <Offsets>
+                <Offset>7c</Offset>
+                <Offset>70</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>103</ID>
+              <Description>"HeartRate"</Description>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pstats</Address>
+              <Offsets>
+                <Offset>224</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>105</ID>
+              <Description>"Flammable(damage from fire multiplier)"</Description>
+              <VariableType>Float</VariableType>
+              <Address>pstats</Address>
+              <Offsets>
+                <Offset>254</Offset>
+              </Offsets>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>66</ID>
+          <Description>"Time and Light"</Description>
+          <Options moManualExpandCollapse="1" moAllowManualCollapseAndExpand="1"/>
+          <LastState/>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>{ Game   : TheForest.exe
+  Version: v0.64
+  Date   : 2017-07-25
+  Author : Vlad-00003
+
+  This group contain information about some Time and Light Intensity -
+  TimeOfDay - current rime of the day, here is some values:
+    0 - noon
+    90 - dusk
+    180 - midnight
+    270 - dawn
+  And don't even dare to freeze Time Of Day.
+  I take no responsibility of what could happend.
+  SunLight and MoonLight Intensity - don't forget to freeze them after changing.
+}
+[ENABLE]
+
+[DISABLE]
+
+</AssemblerScript>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>22</ID>
+              <Description>"TimeOfDay"</Description>
+              <VariableType>Float</VariableType>
+              <Address>pStats</Address>
+              <Offsets>
+                <Offset>488</Offset>
+                <Offset>120</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>19</ID>
+              <Description>"SunLight Intensity "</Description>
+              <VariableType>Float</VariableType>
+              <Address>pStats</Address>
+              <Offsets>
+                <Offset>43c</Offset>
+                <Offset>120</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>20</ID>
+              <Description>"MoonLight Intensity"</Description>
+              <VariableType>Float</VariableType>
+              <Address>pStats</Address>
+              <Offsets>
+                <Offset>440</Offset>
+                <Offset>120</Offset>
+              </Offsets>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>25</ID>
+      <Description>"Debug. Don't tuch that."</Description>
+      <Options moHideChildren="1"/>
+      <LastState Value="" RealAddress="00000000"/>
+      <Color>606060</Color>
+      <GroupHeader>1</GroupHeader>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>38</ID>
+          <Description>"monopipe refresh"</Description>
+          <LastState/>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>usemono()
+[ENABLE]
+//code from here to '[DISABLE]' will be used to enable the cheat
+
+
+ 
+ 
+[DISABLE]
+//code from here till the end of the code will be used to disable the cheat
+</AssemblerScript>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>53</ID>
+          <Description>"Inventory"</Description>
+          <Options moHideChildren="1" moAllowManualCollapseAndExpand="1"/>
+          <LastState Value="" RealAddress="00000000"/>
+          <GroupHeader>1</GroupHeader>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>52</ID>
+              <Description>"Скрип автоассемблера"</Description>
+              <LastState/>
+              <VariableType>Auto Assembler Script</VariableType>
+              <AssemblerScript>[ENABLE]
+
+globalalloc(mycode,4096)
+CREATETHREAD(mycode);
+
+alloc(AddItemFunc,4)
+
+AddItemFunc:
+dd "TheForest.Items.Inventory:PlayerInventory:AddItem"
+
+mycode:
+  push -02
+  push 00
+  push 00
+  //count:
+  push #1
+  // item id:
+  push #143
+  //playerinventory:
+  push [pInv]
+  //TheForest.Items.Inventory:PlayerInventory:AddItem:
+  call [AddItemFunc]
+  add esp, 18
+  mov eax, 12
+
+ret
+
+[DISABLE]
+
+{
+  //system stuff -  bool preventAutoEquip, bool fromCraftingCog,
+  //                WeaponStatUpgrade.Types activeBonus
+  push -02
+  push 00
+  push 00
+  //count:
+  push #5
+  // item id:
+  push #31
+  //playerinventory:
+  push A0439D20
+  //TheForest.Items.Inventory:PlayerInventory:AddItem:
+  call 422B5408
+  add esp, 18
+}
+</AssemblerScript>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>44</ID>
+              <Description>"_possessedItems"</Description>
+              <ShowAsHex>1</ShowAsHex>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pInv</Address>
+              <Offsets>
+                <Offset>28</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>48</ID>
+              <Description>"_itemDatabase"</Description>
+              <ShowAsHex>1</ShowAsHex>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pInv</Address>
+              <Offsets>
+                <Offset>20</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>49</ID>
+              <Description>"PlayerInventory"</Description>
+              <ShowAsHex>1</ShowAsHex>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pInv</Address>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols>
+    <SymbolEntry>
+      <Name>thaumaturge</Name>
+      <Address>0AB10000</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>mycode</Name>
+      <Address>0D750000</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>getitems</Name>
+      <Address>0D751000</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>Cheats.Static</Name>
+      <Address>1A7100B3</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>Cheats.Class</Name>
+      <Address>1A7100B7</Address>
+    </SymbolEntry>
+  </UserdefinedSymbols>
+</CheatTable>

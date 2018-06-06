@@ -1,0 +1,278 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="23">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>0</ID>
+      <Description>"test"</Description>
+      <Options moHideChildren="1"/>
+      <LastState Activated="1"/>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>{$lua}
+  if syntaxcheck then return end
+
+if readInteger(process or 0) == nil then openProcess('cheatengine-x86_64.exe') end
+if not TimerActionOnAddressCollection then
+  function TimerActionOnAddressCollection(id,interval,action,...)
+    _TimerAction = _TimerAction or {}
+    local tid, Pack, Unpack = _TimerAction, table.pack, table.unpack
+    if type(interval)~='number' and interval~=true and interval~=false then
+      interval, action = 100, interval
+    end
+    if type(id)=='string' and id:len()&gt;0 then -- valid id
+      if interval==true then -- check stat
+        return tid[id]
+      elseif interval==false then -- destroy if not nil
+        if tid[id]~=nil then
+          tid[id]:Destroy()
+          tid[id]=nil
+        end
+        return
+      elseif type(action)=='function' then
+        if not tid[id] then
+          local d,t = {},createTimer()
+          local act = function()
+            if d~=nil and d:alive() then
+              for addr,params in pairs(d) do
+                if readInteger(addr)==nil or true == action(addr,table.unpack(params)) then
+                   rawset(d,addr,nil)
+                end
+              end
+            end
+          end
+          local mt = {
+            timer = t,
+            ID = id,
+            interval = interval,
+            alive = function(me)return d~=nil and tid[d.ID]~=nil end,
+            Destroy = function(me)if me:alive() then me.timer.Destroy();me.timer=nil ;tid[me.ID]=nil;d=nil end end,
+          }
+          setmetatable(mt,{
+            __index = function(me,k)if me:alive() and me.timer~=nil then return me.timer[k]end end,
+          })
+          setmetatable(d,{
+            __index=mt,
+            __newindex = function(me,k,v)if me:alive() and me.timer~=nil then me.timer[k]=v end end,
+            __call = function(me,addr,...)
+              if me:alive() and addr~=nil and readInteger(addr)~=nil then
+                if type(addr)=='string' then addr = GetAddress(addr) end
+                if type(addr)=='number' then rawset(me,addr,Pack(...)) end
+              end
+            end,
+          })
+          t.Interval = interval
+          t.OnTimer = function(tm)
+            if d~=nil and d:alive() then
+              act()
+            else
+              tm.Destroy()
+            end
+          end
+          tid[id] = d
+        end
+        return tid[id]
+      end
+    end
+  end
+end
+
+TimerActionOnAddressCollection('Up',false) -- remove old definition
+TimerActionOnAddressCollection('Dn',false)
+
+local Up = TimerActionOnAddressCollection('Up',function(addr,keep) -- define action
+  if not keep and math.floor(addr/4) % 2 ~= 0 then return true end -- test to active remove invalid address
+  local n = readInteger(addr)
+  if n&lt;0x90 then writeInteger(addr,n+0x90) end
+end)
+
+local Dn = TimerActionOnAddressCollection('Dn',function(addr,keep)
+  if not keep and math.floor(addr/4) % 2 ~= 0 then return true end
+  local n = readInteger(addr)
+  if n&gt;0 then writeInteger(addr,n-1) end
+end)
+
+
+  local tcnt = 0
+  local tm = createTimer()
+  tm.Interval = 1000
+  tm.OnTimer = function(t)
+    tcnt = tcnt+1
+    if tcnt&gt;3 then
+      t.Destroy()
+    elseif tcnt==1 then
+      autoAssemble[[
+globalalloc(__,$4000)
+
+__:
+dq __
+__+10:
+dd 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16
+]]
+
+    elseif tcnt==2 then
+      local mvf = getMemoryViewForm()
+      mvf.Show()
+      local hxv = mvf.HexadecimalView
+      if readInteger'__' then
+        hxv.Address = GetAddress'__'
+      end
+    else
+-- add address to collection
+if Up and Dn and Up:alive() and Dn:alive() and readInteger'__' then
+  local b = GetAddress'__+10'
+  for i=0,15 do
+    Up(i*4+b)
+    Dn(i*4+b)
+  end
+end
+
+    end
+  end
+{$asm}
+
+
+[ENABLE]
+
+ 
+ 
+[DISABLE]
+
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>2</ID>
+          <Description>"Stop/Destroy"</Description>
+          <LastState/>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>{$lua}
+  if syntaxcheck then return end
+  TimerActionOnAddressCollection('Up',false)
+  TimerActionOnAddressCollection('Dn',false)
+{$asm}
+
+[ENABLE]
+
+ 
+ 
+[DISABLE]
+
+</AssemblerScript>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>1</ID>
+          <Description>"pause/resume"</Description>
+          <LastState/>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>{$lua}
+  if syntaxcheck then return end
+  local Up = TimerActionOnAddressCollection('Up',true)
+  local Dn = TimerActionOnAddressCollection('Dn',true)
+  if Up then Up.Enabled = not Up.Enabled end
+  if Dn then Dn.Enabled = not Dn.Enabled end
+{$asm}
+
+[ENABLE]
+
+ 
+ 
+[DISABLE]
+
+</AssemblerScript>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>3</ID>
+          <Description>"add an address to list"</Description>
+          <LastState/>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>{$lua}
+  if syntaxcheck then return end
+  ACNT = ACNT and (ACNT+1)%256 or 0
+  local Up = TimerActionOnAddressCollection('Up',true)
+  local Dn = TimerActionOnAddressCollection('Dn',true)
+  local addr = string.format('__+%X',0x50+ACNT*5)
+  if Up then Up(addr, true) end
+  if Dn then Dn(addr, true) end
+{$asm}
+
+[ENABLE]
+
+ 
+ 
+[DISABLE]
+
+</AssemblerScript>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols>
+    <SymbolEntry>
+      <Name>__</Name>
+      <Address>09540000</Address>
+    </SymbolEntry>
+  </UserdefinedSymbols>
+  <LuaScript>--
+
+  function TimerActionOnAddressCollection(id,interval,action,...)
+    _TimerAction = _TimerAction or {}
+    local tid, Pack, Unpack = _TimerAction, table.pack, table.unpack
+    if type(interval)~='number' and interval~=true and interval~=false then
+      interval, action = 100, interval
+    end
+    if type(id)=='string' and id:len()&gt;0 then -- valid id
+      if interval==true then -- check stat
+        return tid[id]
+      elseif interval==false then -- destroy if not nil
+        if tid[id]~=nil then
+          tid[id]:Destroy()
+          tid[id]=nil
+        end
+        return
+      elseif type(action)=='function' then
+        if not tid[id] then
+          local d,t = {},createTimer()
+          local act = function()
+            if d~=nil and d:alive() then
+              for addr,params in pairs(d) do
+                if readInteger(addr)==nil or true == action(addr,table.unpack(params)) then
+                   rawset(d,addr,nil)
+                end
+              end
+            end
+          end
+          local mt = {
+            timer = t,
+            ID = id,
+            interval = interval,
+            alive = function(me)return d~=nil and tid[d.ID]~=nil end,
+            Destroy = function(me)if me:alive() then me.timer.Destroy();me.timer=nil ;tid[me.ID]=nil;d=nil end end,
+          }
+          setmetatable(mt,{
+            __index = function(me,k)if me:alive() and me.timer~=nil then return me.timer[k]end end,
+          })
+          setmetatable(d,{
+            __index=mt,
+            __newindex = function(me,k,v)if me:alive() and me.timer~=nil then me.timer[k]=v end end,
+            __call = function(me,addr,...)
+              if me:alive() and addr~=nil and readInteger(addr)~=nil then
+                if type(addr)=='string' then addr = GetAddress(addr) end
+                if type(addr)=='number' then rawset(me,addr,Pack(...)) end
+              end
+            end,
+          })
+          t.Interval = interval
+          t.OnTimer = function(tm)
+            if d~=nil and d:alive() then
+              act()
+            else
+              tm.Destroy()
+            end
+          end
+          tid[id] = d
+        end
+        return tid[id]
+      end
+    end
+  end
+
+</LuaScript>
+</CheatTable>

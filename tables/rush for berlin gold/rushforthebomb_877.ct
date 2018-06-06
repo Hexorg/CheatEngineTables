@@ -1,0 +1,384 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="19">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>198</ID>
+      <Description>"Rush For The Bomb AOB script"</Description>
+      <Options moHideChildren="1"/>
+      <LastState/>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>[ENABLE]
+aobscanmodule(aobHealthUpdater,RushForTheBomb.exe,D8 AE 80 01 00 00 D9 5C 24 5C)
+aobscanmodule(aobMemberHealthUpdater,RushForTheBomb.exe,D9 86 80 01 00 00 D8 64 24 44 D8 5D)
+aobscanmodule(aobScoreReader,RushForTheBomb.exe,DB 84 82 A4 02 00 00 D9 1C 24 D9)
+aobscanmodule(aobResourceReader,RushForTheBomb.exe,D9 84 D1 24 02 00 00 80 CC 0C)
+aobscanmodule(aobReloadReader,RushForTheBomb.exe,8B 42 6C 89 46 6C 89 44 24 14)
+aobscanmodule(aobAmmoUpdater,RushForTheBomb.exe,D8 6E 20 D9 5C 24 04)
+
+alloc(newmem,4096)
+
+label(aobHealthUpdater_r)
+label(aobMemberHealthUpdater_r)
+registersymbol(aobHealthUpdater_r)
+registersymbol(aobMemberHealthUpdater_r)
+
+label(lblHealthUpdater)
+label(lblHealthUpdaterSkip)
+label(lblHealthUpdaterRet)
+label(lblHealthUpdaterNotPlayer)
+
+label(lblMemberHealthUpdater)
+label(lblMemberHealthUpdaterSkip)
+label(lblMemberHealthUpdaterRet)
+label(lblMemberHealthUpdaterNotPlayer)
+
+label(bEnableGodMode)
+label(bEnableDamageMod)
+label(fDamageMod)
+registersymbol(bEnableGodMode)
+registersymbol(bEnableDamageMod)
+registersymbol(fDamageMod)
+
+label(aobScoreReader_r)
+registersymbol(aobScoreReader_r)
+
+label(lblScoreReader)
+label(lblScoreReaderSkip)
+label(lblScoreReaderRet)
+
+label(bEnableMinScore)
+label(iMinScore)
+registersymbol(bEnableMinScore)
+registersymbol(iMinScore)
+
+label(aobResourceReader_r)
+registersymbol(aobResourceReader_r)
+
+label(lblResourceReader)
+label(lblResourceReaderSkip)
+label(lblResourceReaderRet)
+
+label(bEnableMinResources)
+label(fMinResources)
+registersymbol(bEnableMinResources)
+registersymbol(fMinResources)
+
+label(aobReloadReader_r)
+registersymbol(aobReloadReader_r)
+
+label(lblReloadReader)
+label(lblReloadReaderSkip)
+label(lblReloadReaderRet)
+
+label(bEnableReloadSpeedMod)
+label(fReloadSpeedMod)
+registersymbol(bEnableReloadSpeedMod)
+registersymbol(fReloadSpeedMod)
+
+label(fReloadSpeedTemp)
+registersymbol(fReloadSpeedTemp)
+
+label(aobAmmoUpdater_r)
+registersymbol(aobAmmoUpdater_r)
+
+label(lblAmmoUpdater)
+label(lblAmmoUpdaterSkip)
+label(lblAmmoUpdaterRet)
+
+label(bEnableInfiniteAmmo)
+registersymbol(bEnableInfiniteAmmo)
+
+newmem:
+bEnableMinScore:
+dd 1
+iMinScore:
+dd (int)15000
+bEnableMinResources:
+dd 1
+fMinResources:
+dd (float)2000.0
+bEnableGodMode:
+dd 1
+bEnableInfiniteAmmo:
+dd 1
+bEnableDamageMod:
+dd 1
+fDamageMod:
+dd (float)1.25
+bEnableReloadSpeedMod:
+dd 1
+fReloadSpeedMod:
+dd (float)0.25
+
+lblHealthUpdater:
+cmp dword ptr [esi+00000150],0
+jne short lblHealthUpdaterNotPlayer
+cmp dword ptr [bEnableGodMode],1
+jne short lblHealthUpdaterSkip
+fstp st(0)
+fldz
+lblHealthUpdaterSkip:
+db D8 AE 80 01 00 00
+jmp lblHealthUpdaterRet
+lblHealthUpdaterNotPlayer:
+cmp dword ptr [bEnableDamageMod],1
+jne short lblHealthUpdaterSkip
+fmul dword ptr [fDamageMod]
+jmp short lblHealthUpdaterSkip
+
+lblMemberHealthUpdater:
+cmp dword ptr [esi+00000150],0
+jne short lblMemberHealthUpdaterNotPlayer
+cmp dword ptr [bEnableGodMode],1
+jne short lblMemberHealthUpdaterSkip
+mov dword ptr [esp+44],0
+lblMemberHealthUpdaterSkip:
+db D9 86 80 01 00 00
+jmp lblMemberHealthUpdaterRet
+lblMemberHealthUpdaterNotPlayer:
+cmp dword ptr [bEnableDamageMod],1
+jne short lblMemberHealthUpdaterSkip
+fld dword ptr [esp+44]
+fmul dword ptr [fDamageMod]
+fstp dword ptr [esp+44]
+jmp short lblMemberHealthUpdaterSkip
+
+lblScoreReader:
+push ebx
+cmp dword ptr [bEnableMinScore],1
+jne short lblScoreReaderSkip
+mov ebx,[iMinScore]
+cmp dword ptr [edx+eax*4+000002A4],ebx
+jge short lblScoreReaderSkip
+mov dword ptr [edx+eax*4+000002A4],ebx
+lblScoreReaderSkip:
+pop ebx
+db DB 84 82 A4 02 00 00
+jmp lblScoreReaderRet
+
+lblResourceReader:
+push ebx
+mov ebx,[fMinResources]
+cmp dword ptr [ecx+edx*8+00000224],ebx
+jge short lblResourceReaderSkip
+mov dword ptr [ecx+edx*8+00000224],ebx
+lblResourceReaderSkip:
+pop ebx
+db D9 84 D1 24 02 00 00
+jmp lblResourceReaderRet
+
+lblReloadReader:
+cmp dword ptr [ecx+00000150],0
+jne short lblReloadReaderSkip
+fild dword ptr [edx+6C]
+fmul dword ptr [fReloadSpeedMod]
+fistp dword ptr [fReloadSpeedTemp]
+mov eax,[fReloadSpeedTemp]
+mov dword ptr [esi+6C],eax
+jmp lblReloadReaderRet
+lblReloadReaderSkip:
+db 8B 42 6C 89 46 6C
+jmp lblReloadReaderRet
+fReloadSpeedTemp:
+dd 0
+
+lblAmmoUpdater:
+cmp dword ptr [ecx+00000150],0
+jne short lblAmmoUpdaterSkip
+cmp dword ptr [bEnableInfiniteAmmo],1
+jne short lblAmmoUpdaterSkip
+fstp st(0)
+fldz
+lblAmmoUpdaterSkip:
+db D8 6E 20 D9 5C 24 04
+jmp lblAmmoUpdaterRet
+
+aobAmmoUpdater:
+aobAmmoUpdater_r:
+jmp lblAmmoUpdater
+nop
+nop
+lblAmmoUpdaterRet:
+
+aobReloadReader:
+aobReloadReader_r:
+jmp lblReloadReader
+nop
+lblReloadReaderRet:
+
+aobResourceReader:
+aobResourceReader_r:
+jmp lblResourceReader
+nop
+nop
+lblResourceReaderRet:
+
+aobScoreReader:
+aobScoreReader_r:
+jmp lblScoreReader
+nop
+nop
+lblScoreReaderRet:
+
+aobHealthUpdater:
+aobHealthUpdater_r:
+jmp lblHealthUpdater
+nop
+lblHealthUpdaterRet:
+
+aobMemberHealthUpdater:
+aobMemberHealthUpdater_r:
+jmp lblMemberHealthUpdater
+nop
+lblMemberHealthUpdaterRet:
+
+[DISABLE]
+aobHealthUpdater_r:
+db D8 AE 80 01 00 00
+
+aobMemberHealthUpdater_r:
+db D9 86 80 01 00 00
+
+unregistersymbol(aobHealthUpdater_r)
+unregistersymbol(aobMemberHealthUpdater_r)
+
+unregistersymbol(bEnableGodMode)
+unregistersymbol(bEnableDamageMod)
+unregistersymbol(fDamageMod)
+
+aobScoreReader_r:
+db DB 84 82 A4 02 00 00
+
+unregistersymbol(aobScoreReader_r)
+
+unregistersymbol(bEnableMinScore)
+unregistersymbol(iMinScore)
+
+aobResourceReader_r:
+db D9 84 D1 24 02 00 00
+
+unregistersymbol(aobResourceReader_r)
+
+unregistersymbol(bEnableMinResources)
+unregistersymbol(fMinResources)
+
+aobReloadReader_r:
+db 8B 42 6C 89 46 6C
+
+unregistersymbol(aobReloadReader_r)
+
+unregistersymbol(bEnableReloadSpeedMod)
+unregistersymbol(fReloadSpeedMod)
+
+unregistersymbol(fReloadSpeedTemp)
+
+aobAmmoUpdater_r:
+db D8 6E 20 D9 5C 24 04
+
+unregistersymbol(bEnableInfiniteAmmo)
+
+dealloc(newmem)
+
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>226</ID>
+          <Description>"bEnableMinScore"</Description>
+          <DropDownList ReadOnly="1" DescriptionOnly="1" DisplayValueAsItem="1">0:Disabled
+1:Enabled
+</DropDownList>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>bEnableMinScore</Address>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>227</ID>
+              <Description>"iMinScore"</Description>
+              <Color>FF0000</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>iMinScore</Address>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>228</ID>
+          <Description>"bEnableMinResources"</Description>
+          <DropDownList ReadOnly="1" DescriptionOnly="1" DisplayValueAsItem="1">0:Disabled
+1:Enabled
+</DropDownList>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>bEnableMinResources</Address>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>229</ID>
+              <Description>"fMinResources"</Description>
+              <Color>FF0000</Color>
+              <VariableType>Float</VariableType>
+              <Address>fMinResources</Address>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>222</ID>
+          <Description>"bEnableGodMode"</Description>
+          <DropDownList ReadOnly="1" DescriptionOnly="1" DisplayValueAsItem="1">0:Disabled
+1:Enabled
+</DropDownList>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>bEnableGodMode</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>249</ID>
+          <Description>"bEnableInfiniteAmmo"</Description>
+          <DropDownList ReadOnly="1" DescriptionOnly="1" DisplayValueAsItem="1">0:Disabled
+1:Enabled
+</DropDownList>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>bEnableInfiniteAmmo</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>224</ID>
+          <Description>"bEnableDamageMod"</Description>
+          <DropDownList ReadOnly="1" DescriptionOnly="1" DisplayValueAsItem="1">0:Disabled
+1:Enabled
+</DropDownList>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>bEnableDamageMod</Address>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>225</ID>
+              <Description>"fDamageMod"</Description>
+              <Color>FF0000</Color>
+              <VariableType>Float</VariableType>
+              <Address>fDamageMod</Address>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>244</ID>
+          <Description>"bEnableReloadSpeedMod"</Description>
+          <DropDownList ReadOnly="1" DescriptionOnly="1" DisplayValueAsItem="1">0:Disabled
+1:Enabled
+</DropDownList>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>bEnableReloadSpeedMod</Address>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>245</ID>
+              <Description>"fReloadSpeedMod"</Description>
+              <Color>FF0000</Color>
+              <VariableType>Float</VariableType>
+              <Address>fReloadSpeedMod</Address>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols/>
+</CheatTable>

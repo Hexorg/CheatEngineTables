@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="18">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>1</ID>
+      <Description>"Invincibility"</Description>
+      <LastState Activated="0"/>
+      <Color>80000008</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>[ENABLE]
+
+// The UObject::execSubtract_IntInt AOB-scan targets the following code:
+// 8B 45 0C               mov eax, [ebp+C]
+// 8B 4D FC               mov ecx, [ebp-4]
+// 2B 4D 08               sub ecx, [ebp+8]
+// 5E                     pop esi
+// ---------- injecting here ----------
+// 89 08                  mov [eax], ecx
+// 8B E5                  mov esp, ebp
+// 5D                     pop ebp
+// ---------- done injecting  ----------
+// C2 08 00               ret 8
+aobscanmodule(execSubtract_IntInt, Core.dll, 8B 45 0C 8B 4D FC 2B 4D 08 5E 89 08 8B E5 5D C2 08 00);
+registersymbol(_execSubtract_IntInt);
+label(_execSubtract_IntInt);
+
+alloc(newmem, 1024)
+
+label(execSubtract_IntInt_hook);
+label(execSubtract_IntInt_original);
+label(execSubtract_IntInt_epilog);
+label(execSubtract_IntInt_return);
+
+
+newmem:
+
+/*
+ * ============================  Actual hook code =============================
+ */
+
+execSubtract_IntInt_hook:
+    // Address of Dude's Health might be in EAX now. Need to do additional
+    // checks whether it is really the Health that is being decremented.
+
+    or eax, eax // Some (completely redundant and unneeded) safety check
+    jz execSubtract_IntInt_epilog
+    cmp [eax], 0 // Another safety check just for... safety
+    jbe execSubtract_IntInt_original
+    cmp [eax+1C4], 1 // Only Dude's Health has 1 at this offset
+    je execSubtract_IntInt_epilog
+
+execSubtract_IntInt_original:
+    mov [eax], ecx // Decrement the value by amount in ECX
+
+execSubtract_IntInt_epilog:
+    mov esp, ebp
+    pop ebp
+    jmp execSubtract_IntInt_return
+
+
+/*
+ * ==================================  Patch  ==================================
+ */
+
+execSubtract_IntInt+A:
+_execSubtract_IntInt:
+    jmp execSubtract_IntInt_hook
+execSubtract_IntInt_return:
+
+[DISABLE]
+
+_execSubtract_IntInt:
+    mov [eax], ecx
+    mov esp, ebp
+    pop ebp
+//  db 89 08 8B E5 5D
+
+unregistersymbol(_execSubtract_IntInt);
+dealloc(newmem);
+
+</AssemblerScript>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols/>
+  <Comments>==========================================
+ Game Title:      Postal 2 Complete
+ Game Version:    Steam-US-4445
+ Process Name:    Postal2.exe &amp; ParadiseLost.exe
+ Script Version:  2.0
+ CE Version:      6.4
+ Author:          Yuri Sakhno (George1)
+ Release Date:    23-May-2015
+ 
+ Features:
+   + Invincibility (a.k.a. God mode)
+ 
+ History:
+   23-May-15:  Release for Paradise Lost DLC
+   31-Dec-13:  Initial release; God Mode supported
+==========================================
+ How to use:
+   Activate the script by clicking on an empty box next to the script
+   in Cheat Engine's list.
+==========================================
+</Comments>
+</CheatTable>

@@ -1,0 +1,675 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="26">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>66</ID>
+      <Description>"[X] &lt;== Star Wars: EaW GOLD v1.120 Steam Script v3.0"</Description>
+      <Options moHideChildren="1" moDeactivateChildrenAsWell="1"/>
+      <LastState/>
+      <Color>FF0000</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>{
+===========================================
+ Game Title    : Star Wars - Empire at War
+ Game Version  : 1.120.644744 GOLD (Steam)
+ Game Sponsor  : Myself
+ Process Name  : StarWarsG.exe
+ Relevant Info : New Engine/32bits/RTS
+ Script Version: 3.0
+ CE Version    : 6.7
+ Release date  : 03-Sep-2017
+ Author        : Recifense
+ History:
+ 08-May-2014: First Release
+ 16-Dec-2015: Added quick production (s2.0)
+ 03-Sep-2015: Release for version 1.120.644744 (Steam GOLD)
+ Features:
+ - Minimum Resource
+ - God Mode
+ - Full Shield
+ - Quick Production
+ - Used Unit Capacity
+ - Some Pointers
+===========================================
+}
+
+//=========================================
+// Checking CE version
+{$lua}
+  if(getCEVersion() &lt; 6.7) then
+    ShowMessage('Sorry. CE version should be 6.7 or above')
+  end
+{$asm}
+
+//=========================================
+// Checking Selected Process
+{$lua}
+  if(process == nil) then
+    ShowMessage('No process was selected')
+  elseif (process ~= "StarWarsG.exe") then
+    ShowMessage('Error. Expected Process = StarWarsG.exe')
+  end
+{$asm}
+
+//=========================================
+// Definitions
+define(LUDO,"StarwarsG.exe")
+{
+define(FHPR,StarwarsG.exe+0000c43c) //nhp#
+define(GDMD,StarwarsG.exe+002c1ff8) //nhp
+define(GDM1,StarwarsG.exe+003013ec) //nhp
+define(MUSD,StarwarsG.exe+00443149) //nhp
+define(MOPP,StarwarsG.exe+003bd3eb) //=
+define(MOUC,StarwarsG.exe+00214089) //nhp
+}
+//=========================================
+// Constants used in the script (that can be changed)
+//define(ctMMON,#63000)  // Minimum Money
+//define(ctMATT,#10)     // Minimum Attributes
+
+//=========================================
+[ENABLE]
+//=========================================
+//LuaCall(CheckVersion())
+//=========================================
+// Check if script is compatible to this game version
+// If false the script will not be loaded
+
+AOBScanModule(FHPR,$process,f3 0f 2c 40 54 50 b9 ?? ?? ?? ?? 89 46 38 e8 ?? ?? ?? ?? 5e c3 cc)
+AOBScanModule(GDMD,$process,8b e9 f3 0f 10 45 38 f3 0f 11 44 24 0c f3 0f 5c 84 24 20 01 00 00)
+AOBScanModule(GDM1,$process,f3 0f 10 46 14 8b 44 24 1c f3 0f 5c 44 24 20 6a 00 50 8b ce f3 0f)
+AOBScanModule(MUSD,$process,f3 0f 11 83 c0 00 00 00 89 7d 28 8b 4e 2c 0f 95 c0 3b 0d ?? ?? ??)
+AOBScanModule(MOPP,$process,d9 5e 14 5e c3 56 8b f1 8b 46 18 50 b9 ?? ?? ?? ?? e8 ?? ?? ?? ??)
+AOBScanModule(MOUC,$process,8b 4c 24 10 39 48 08 0f 8e ?? ?? ?? ?? 8b 40 04 53 8b 1c 88 80 7b)
+
+//=========================================
+alloc(MyCode,4096,$process)
+//=========================================
+// Declaration section
+label(_FindHumanPlayer)
+label(_BackFHP)
+label(_GodMode)
+label(_BackGMD)
+label(_GodMode1)
+label(_BackGM1)
+label(_MonUnitShield)
+label(_BackMUS)
+label(_MonProdProg)
+label(_BackMPP)
+label(_MonUnitCapacity)
+label(_BackMUC)
+
+label(iEnableMPR)
+label(iEnableGMD)
+label(iEnableMUS)
+label(iEnableMUC)
+label(iEnableMPP)
+label(iPlayerID)
+label(fMinRes)
+label(pPlayer)
+label(pArmy)
+
+//=========================================
+// Registering Symbols
+registersymbol(MyCode)
+registersymbol(iEnableMPR)
+registersymbol(iEnableGMD)
+registersymbol(iEnableMUS)
+registersymbol(iEnableMUC)
+registersymbol(iEnableMPP)
+registersymbol(iPlayerID)
+registersymbol(fMinRes)
+registersymbol(pPlayer)
+registersymbol(pArmy)
+
+registersymbol(FHPR)
+registersymbol(GDMD)
+registersymbol(GDM1)
+registersymbol(MUSD)
+registersymbol(MOPP)
+registersymbol(MOUC)
+
+//=========================================
+MyCode:
+//========================================= 1.120 nhp
+// Main game screen
+_FindHumanPlayer:
+ push ecx
+
+ mov [pPlayer],eax
+
+ mov ecx,[eax+34]
+ mov [iPlayerID],ecx
+
+ cmp dword ptr [iEnableMPR],0
+ je _FindHP0                       // Jump if feature is disabled
+
+ mov ecx,[fMinRes]                 // Get minimum value
+ cmp ecx,[eax+54]
+ js _FindHP0
+
+ mov [eax+54],ecx
+
+_FindHP0:
+_ExitFHP:
+ pop ecx
+
+ cvttss2si eax,[eax+54]            // Original code (rd Gold)
+ jmp _BackFHP                      // Back to main code
+
+//========================================= 1.121 nhp
+// During Combat (ground)
+_GodMode:
+ cmp dword ptr [iEnableGMD],0
+ je _ExitGMD                       // Jump if feature is disabled
+
+ mov ebp,[iPlayerID]
+ cmp ebp,[ecx+34]
+ jne _ExitGMD
+
+ xor ebp,ebp
+ mov [esp+00000120],ebp
+
+_ExitGMD:
+ mov ebp,ecx                       // Original code
+ movss xmm0,[ebp+38]               // Original code (get HP)
+ jmp _BackGMD                      // Back to main code
+
+//========================================= 1.121 nhp
+// During Combat (space)
+_GodMode1:
+ cmp dword ptr [iEnableGMD],0
+ je _ExitGM1                       // Jump if feature is disabled
+
+ mov eax,[esi+08]                  // Get part owner (ship)
+ mov eax,[eax+34]                  // Get Owner ID
+ cmp eax,[iPlayerID]               // Is it a player�s unit?
+ jne _ExitGM1                      // Jump if false
+
+ xor eax,eax
+ mov [esp+20],eax
+
+_ExitGM1:
+ movss xmm0,[esi+14]               // Original code (get part HP)
+ jmp _BackGM1                      // Back to main code
+
+//========================================= 1.121 nhp
+// During combat
+_MonUnitShield:
+ pushfd
+ push ecx
+
+ cmp dword ptr [iEnableMUS],0
+ je _ExitMUS                       // Jump if feature is disabled
+
+ test esi,esi
+ jz _ExitMUS
+
+ mov ecx,[iPlayerID]               // Get player ID
+ cmp ecx,[esi+34]                  // Is it a player�s unit?
+ jne _ExitMUS                      // Jump if false
+
+ maxss xmm0,[ebx+000000C0]
+
+_ExitMUS:
+ pop ecx
+ popfd
+
+ movss [ebx+000000C0],xmm0         // Original code (upd shield)
+ jmp _BackMUS                      // Back to main code
+
+//========================================= 1.121 ok
+// At the strategic screen
+_MonProdProg:
+ mov [iEAX],eax
+
+ cmp dword ptr [iEnableMPP],0
+ je _ExitMPP                       // Jump if feature is disabled
+
+ mov eax,[esp]
+ cmp eax,[pPlayer]
+ jne _ExitMPP
+
+ cmp dword ptr [esi+10],#10
+ js _ExitMPP
+
+ mov dword ptr [esi+10],#10
+
+_ExitMPP:
+ mov eax,[iEAX]
+
+ fstp dword ptr [esi+14]           // Original code
+ pop esi                           // Original code
+ ret                               // Original code
+ jmp _BackMPP                      // Back to main code
+
+//========================================= 1.121 new
+// During combat
+_MonUnitCapacity:
+ cmp dword ptr [iEnableMUC],0
+ je _ExitMUC                       // Jump if feature is disabled
+
+ cmp edi,[iPlayerID]
+ jne _ExitMUC
+
+ mov dword ptr [eax+08],0
+
+_ExitMUC:
+ mov ecx,[esp+10]                  // Original code
+ cmp [eax+08],ecx                  // Original code (used cap)
+ jmp _BackMUC                      // Back to main code
+
+//=========================================
+align 10,'='
+//=========================================
+ db '===============================&gt;'
+ db 'CE6.7 Script by Recifense 170903'
+//=========================================
+// Variables
+iEnableMPR:
+ dd 0
+iEnableGMD:
+ dd 0
+iEnableMUS:
+ dd 0
+iEnableMUC:
+ dd 0
+iEnableMPP:
+ dd 0
+iPlayerID:
+ dd 0
+iEAX:
+ dd 0
+fMinRes:
+ dd (float)67000.0
+pPlayer:
+ dd 0
+pArmy:
+ dd 0
+
+//=========================================
+// Hacking Points
+FHPR:
+ jmp _FindHumanPlayer
+_BackFHP:
+
+GDMD:
+ jmp _GodMode
+ nop
+ nop
+_BackGMD:
+
+GDM1:
+ jmp _GodMode1
+_BackGM1:
+
+MUSD:
+ jmp _MonUnitShield
+ nop
+ nop
+ nop
+_BackMUS:
+
+MOPP:
+ jmp _MonProdProg
+_BackMPP:
+
+MOUC:
+ jmp _MonUnitCapacity
+ nop
+ nop
+_BackMUC:
+
+//=========================================
+// Script for Restoring Original Codes
+[DISABLE]
+FHPR:
+// cvttss2si eax,[eax+54]
+ db f3 0f 2c 40 54
+
+GDMD:
+// mov ebp,ecx
+// movss xmm0,[ebp+38]
+ db 8b e9 f3 0f 10 45 38
+
+GDM1:
+// movss xmm0,[esi+14]
+ db f3 0f 10 46 14
+
+MUSD:
+// movss [ebx+000000C0],xmm0
+ db f3 0f 11 83 c0 00 00 00
+
+MOPP:
+// fstp dword ptr [esi+14]
+// pop esi
+// ret
+ db d9 5e 14 5e c3
+
+MOUC:
+// mov ecx,[esp+10]
+// cmp [eax+08],ecx
+ db 8b 4c 24 10 39 48 08
+
+//=========================================
+// Unregistering Symbols
+unregistersymbol(MyCode)
+unregistersymbol(iEnableMPR)
+unregistersymbol(iEnableGMD)
+unregistersymbol(iEnableMUS)
+unregistersymbol(iEnableMUC)
+unregistersymbol(iEnableMPP)
+unregistersymbol(iPlayerID)
+unregistersymbol(fMinRes)
+unregistersymbol(pPlayer)
+unregistersymbol(pArmy)
+
+unregistersymbol(FHPR)
+unregistersymbol(GDMD)
+unregistersymbol(GDM1)
+unregistersymbol(MUSD)
+unregistersymbol(MOPP)
+unregistersymbol(MOUC)
+
+//=========================================
+dealloc(MyCode)
+//============= Scripts End ===============
+
+// ****************************************
+// NOTES
+// ****************************************
+{
+}
+
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>98</ID>
+          <Description>"[X] &lt;== God Mode ----------------------------------&gt; (HK: CTRL+Home / CTRL+End)"</Description>
+          <LastState/>
+          <Color>C08000</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[enable]
+define(test,LUDO)
+
+{$LUA}
+writeInteger("iEnableGMD",1)
+getAddressList().getMemoryRecordByID(98).Color=0x0008000
+{$ASM}
+
+[disable]
+{$LUA}
+writeInteger("iEnableGMD",0)
+getAddressList().getMemoryRecordByID(98).Color=0x0c08000
+{$ASM}
+
+</AssemblerScript>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Activate</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Deactivate</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>229</ID>
+          <Description>"[X] &lt;== Full Shield  ----------------------------------&gt; (HK: CTRL+Home / CTRL+End)"</Description>
+          <LastState/>
+          <Color>C08000</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[enable]
+define(test,LUDO)
+
+{$LUA}
+writeInteger("iEnableMUS",1)
+getAddressList().getMemoryRecordByID(229).Color=0x0008000
+{$ASM}
+
+[disable]
+{$LUA}
+writeInteger("iEnableMUS",0)
+getAddressList().getMemoryRecordByID(229).Color=0x0c08000
+{$ASM}
+
+</AssemblerScript>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Activate</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Deactivate</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>230</ID>
+          <Description>"[X] &lt;== Quick Production/Construction ------------&gt; (HK: CTRL+Page Up / CTRL+Page Down)"</Description>
+          <LastState/>
+          <Color>C08000</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[enable]
+define(test,LUDO)
+
+{$LUA}
+writeInteger("iEnableMPP",1)
+getAddressList().getMemoryRecordByID(230).Color=0x0008000
+{$ASM}
+
+[disable]
+{$LUA}
+writeInteger("iEnableMPP",0)
+getAddressList().getMemoryRecordByID(230).Color=0x0c08000
+{$ASM}
+
+</AssemblerScript>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Activate</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>33</Key>
+              </Keys>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Deactivate</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>34</Key>
+              </Keys>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>233</ID>
+          <Description>"[X] &lt;== No Unit Cap Used  --------------------------&gt; (HK: Ctrl+numeric 1 / Ctrl+numeric 0)"</Description>
+          <Options moHideChildren="1"/>
+          <LastState/>
+          <Color>C08000</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[enable]
+define(test,LUDO)
+
+{$LUA}
+writeInteger("iEnableMUC",1)
+getAddressList().getMemoryRecordByID(233).Color=0x0008000
+{$ASM}
+
+[disable]
+{$LUA}
+writeInteger("iEnableMUC",0)
+getAddressList().getMemoryRecordByID(233).Color=0x0c08000
+{$ASM}
+
+</AssemblerScript>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Activate</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>97</Key>
+              </Keys>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Deactivate</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>96</Key>
+              </Keys>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>232</ID>
+          <Description>"[X] &lt;== Minimum Resource  ------------------------&gt; (HK: CTRL+Insert / CTRL+Delete)"</Description>
+          <Options moHideChildren="1"/>
+          <LastState/>
+          <Color>C08000</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[enable]
+define(test,LUDO)
+
+{$LUA}
+writeInteger("iEnableMPR",1)
+getAddressList().getMemoryRecordByID(232).Color=0x0008000
+{$ASM}
+
+[disable]
+{$LUA}
+writeInteger("iEnableMPR",0)
+getAddressList().getMemoryRecordByID(232).Color=0x0c08000
+{$ASM}
+
+</AssemblerScript>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Activate</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>45</Key>
+              </Keys>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Deactivate</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>46</Key>
+              </Keys>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>64</ID>
+              <Description>"Minimum Resource Value ==&gt;"</Description>
+              <Color>0080FF</Color>
+              <VariableType>Float</VariableType>
+              <Address>fMinRes</Address>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>228</ID>
+      <Description>"[X] &lt;== Table/Script Information"</Description>
+      <Options moHideChildren="1"/>
+      <LastState/>
+      <Color>0000FF</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>[enable]
+define(test,LUDO)
+
+{$LUA}
+getMainForm().CommentButton.doClick()
+{$ASM}
+
+[disable]
+
+</AssemblerScript>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols>
+    <SymbolEntry>
+      <Name>Recifense</Name>
+      <Address>20170903</Address>
+    </SymbolEntry>
+  </UserdefinedSymbols>
+  <Comments>===========================================
+ Game Title    : Star Wars - Empire at War
+ Game Version  : 1.120.644744 GOLD (Steam)
+ Game Sponsor  : Myself
+ Process Name  : StarWarsG.exe
+ Relevant Info : New Engine/32bits/RTS
+ Script Version: 3.0
+ CE Version    : 6.7
+ Release date  : 03-Sep-2017
+ Author        : Recifense
+ History:
+ 08-May-2014: First Release
+ 16-Dec-2015: Added quick production (s2.0)
+ 03-Sep-2015: Release for version 1.120.644744 (Steam GOLD)
+ Features:
+ - Minimum Resource  [1]
+ - God Mode          [2]
+ - Full Shield       [3]
+ - Quick Production  [4]
+ - Used Unit Capacity[5]
+ - Some Pointers
+===========================================
+[1] For Human Player Only (default = 67000);
+[2] Player's units/buildings Only;
+[3] Player's units Only;
+[4] For Human Player Only;
+[5] For Human Player Only;
+===========================================
+[USAGE]
+ - Run CE 6.7 or greater;
+ - Run the GAME;
+ - Load game process "StarWarsG.exe" via CE;
+ - Load this Table;
+ - Activate the maint script  by clicking on its box [X];
+ - Now Activate the script of each cheat you want to use;
+ - Go back to the game and have fun.
+===========================================
+[HOTKEYS]
+- See each table entry;
+===========================================
+[ADVICE]
+When you can,save the game before starting using table/cheat. So you can always come back in case you don't like the result.
+===========================================
+[INFO]
+For Single Player matches/Campaign.
+===========================================
+[INFO]
+Tested on Win 10 64bits
+===========================================
+Cheers!
+</Comments>
+</CheatTable>

@@ -1,0 +1,522 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="14">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>19</ID>
+      <Description>"[X] &lt;== Torchlight II v1.12.5.7 Script"</Description>
+      <Options moHideChildren="1"/>
+      <Color>FF0000</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>{
+===========================================
+ Game Title    : Torchlight II
+ Game Version  : 1.12.5.7
+ Game Sponsor  : RELOADED (via internet)
+ Proces Name   : Torchlight2.exe
+ Script Version: 1.0
+ CE Version    : 6.2
+ Release date  : 06-Oct-2012
+ Author        : Recifense
+ History:
+ 24-Sep-12: First Release (1.11.5.3)
+ 06-Oct-12: Updated to version 1.12.5.7
+ Features:
+ - God Mode
+ - Unlimited Mana
+ - Minimum Gold
+ - Quick Level Up
+ - Pointers
+===========================================
+}
+
+//=========================================
+// Definitions
+define(LUDO,"Torchlight2.exe")
+
+//=========================================
+[ENABLE]
+//=========================================
+//LuaCall(CheckVersion())
+//=========================================
+// Check if script is compatible to this game version
+// If false the script will not be loaded
+
+assert(LUDO+00392cc7,8b b6 10 01 00 00) //_MH
+assert(LUDO+0012a4b2,d8 9e 58 05 00 00) //_GM
+assert(LUDO+00112dee,d9 96 7c 05 00 00) //_MM
+
+//=========================================
+alloc(MyCode,4096,LUDO)
+//=========================================
+// Declaration section
+label(_MonHero)
+label(_MonH00)
+label(_BackMH)
+label(_ExitMH)
+label(_GodMode)
+label(_GodM00)
+label(_BackGM)
+label(_ExitGM)
+label(_MonMana)
+label(_BackMM)
+label(_ExitMM)
+label(pHero)
+label(iEnableGM)
+label(iEnableMX)
+label(iEnableMG)
+label(iEnableMM)
+label(iMinGold)
+
+//=========================================
+// Registering Symbols
+registersymbol(MyCode)
+registersymbol(pHero)
+registersymbol(iEnableGM)
+registersymbol(iEnableMX)
+registersymbol(iEnableMG)
+registersymbol(iEnableMM)
+registersymbol(iMinGold)
+
+//=========================================
+MyCode:
+//=========================================
+_MonHero:
+ push ecx
+ mov [pHero],esi
+
+ cmp dword ptr [iEnableMX],0
+ je _MonH00                        // Jump if feature is disabled
+
+ mov ecx,[esi+0000058c]
+ cmp ecx,edi
+ jge _MonH00
+
+ lea ecx,[edi-1]
+ mov [esi+0000058c],ecx            // Update XP
+
+_MonH00:
+ cmp dword ptr [iEnableMG],0
+ je _ExitMH                        // Jump if feature is disabled
+
+ mov ecx,[iMinGold]
+ cmp ecx,[esi+00000588]
+ jle _ExitMH
+
+ mov [esi+00000588],ecx            // Update Gold
+
+_ExitMH:
+ pop ecx
+
+ mov esi,[esi+00000110]            // Original code (rds level)
+ jmp _BackMH                       // Back to main code
+
+//=========================================
+_GodMode:
+ push eax
+
+ cmp dword ptr [iEnableGM],0
+ je _ExitGM                        // Jump if feature is disabled
+
+ mov eax,[esi+00000704]
+ test eax,eax
+ jnz _GodM00
+
+ mov eax,esi
+
+_GodM00:
+ cmp eax,[pHero]
+ jne _ExitGM
+
+ fst dword ptr [esi+00000558]      // HP = max
+
+_ExitGM:
+ pop eax
+
+ fcomp dword ptr [esi+00000558]    // Original code (hp)
+ jmp _BackGM                       // Back to main code
+
+//=========================================
+_MonMana:
+ push eax
+
+ fst dword ptr [esi+0000057C]      // Original code (upds mana)
+
+ cmp esi,[pHero]
+ jne _ExitMM
+
+ cmp dword ptr [iEnableMM],0
+ je _ExitMM                        // Jump if feature is disabled
+
+ mov eax,[esp+08]
+ mov [esi+0000057C],eax
+
+_ExitMM:
+ pop eax
+ jmp _BackMM                       // Back to main code
+
+//=========================================
+ db '=======================================&gt;'
+ db 'CE6.2 Script by Recifense 100612'
+//=========================================
+// Variables
+iEnableGM:
+ dd 0
+iEnableMX:
+ dd 0
+iEnableMG:
+ dd 0
+iEnableMM:
+ dd 0
+pHero:
+ dd MyCode
+iMinGold:
+ dd #62000
+
+//=========================================
+// Hacking Points
+//LUDO+0038e9f7:
+//LUDO+0038f2d7:
+LUDO+00392cc7:
+ jmp _MonHero
+ nop
+_BackMH:
+
+//LUDO+0012a532:
+//LUDO+00129e32:
+LUDO+0012a4b2:
+ jmp _GodMode
+ nop
+_BackGM:
+
+//LUDO+001133ee:
+//LUDO+00112c0e:
+LUDO+00112dee:
+ jmp _MonMana
+ nop
+_BackMM:
+
+//=========================================
+// Script for Restoring Original Codes
+[DISABLE]
+//LUDO+0038e9f7:
+//LUDO+0038f2d7:
+LUDO+00392cc7:
+// mov esi,[esi+00000110]
+ db 8b b6 10 01 00 00
+
+//LUDO+0012a532:
+//LUDO+00129e32:
+LUDO+0012a4b2:
+// fcomp dword ptr [esi+00000558]
+ db d8 9e 58 05 00 00
+
+//LUDO+001133ee:
+//LUDO+00112c0e:
+LUDO+00112dee:
+// fst dword ptr [esi+0000057C]
+ db d9 96 7c 05 00 00
+
+//=========================================
+// Unregistering Symbols
+unregistersymbol(MyCode)
+unregistersymbol(pHero)
+unregistersymbol(iEnableGM)
+unregistersymbol(iEnableMX)
+unregistersymbol(iEnableMG)
+unregistersymbol(iEnableMM)
+unregistersymbol(iMinGold)
+
+//=========================================
+dealloc(MyCode)
+//============= Scripts End ===============
+
+// ****************************************
+// NOTES
+// ****************************************
+{
+}
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>8</ID>
+          <Description>"Enable/Disable Gode Mode ==&gt; (1/0)"</Description>
+          <Color>408000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableGM</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>10</ID>
+          <Description>"Enable/Disable Quick Level Up ==&gt; (1/0)"</Description>
+          <Color>408000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMX</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>45</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>46</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>11</ID>
+          <Description>"Enable/Disable Unlimited Mana ==&gt; (1/0)"</Description>
+          <Color>408000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMM</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>9</ID>
+          <Description>"Enable/Disable Minimum Gold ==&gt; (1/0)"</Description>
+          <Color>408000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMG</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>13</ID>
+              <Description>"iMinGold"</Description>
+              <Color>0080FF</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>iMinGold</Address>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>12</ID>
+          <Description>"=============== Hero Info ==============="</Description>
+          <ShowAsHex>1</ShowAsHex>
+          <Color>000080</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>pHero</Address>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>14</ID>
+              <Description>"Available Stat Points"</Description>
+              <Color>0000FF</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pHero</Address>
+              <Offsets>
+                <Offset>5A0</Offset>
+              </Offsets>
+              <Hotkeys>
+                <Hotkey>
+                  <Action>Set Value</Action>
+                  <Keys>
+                    <Key>17</Key>
+                    <Key>33</Key>
+                  </Keys>
+                  <Value>8</Value>
+                  <ID>0</ID>
+                </Hotkey>
+              </Hotkeys>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>15</ID>
+              <Description>"Available Skill Points"</Description>
+              <Color>0000FF</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pHero</Address>
+              <Offsets>
+                <Offset>5A4</Offset>
+              </Offsets>
+              <Hotkeys>
+                <Hotkey>
+                  <Action>Set Value</Action>
+                  <Keys>
+                    <Key>17</Key>
+                    <Key>34</Key>
+                  </Keys>
+                  <Value>5</Value>
+                  <ID>0</ID>
+                </Hotkey>
+              </Hotkeys>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>16</ID>
+              <Description>"Current Gold"</Description>
+              <Color>0000FF</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pHero</Address>
+              <Offsets>
+                <Offset>588</Offset>
+              </Offsets>
+              <Hotkeys>
+                <Hotkey>
+                  <Action>Set Value</Action>
+                  <Keys>
+                    <Key>17</Key>
+                    <Key>34</Key>
+                  </Keys>
+                  <Value>5</Value>
+                  <ID>0</ID>
+                </Hotkey>
+              </Hotkeys>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>17</ID>
+              <Description>"Current XP"</Description>
+              <Color>0000FF</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pHero</Address>
+              <Offsets>
+                <Offset>58C</Offset>
+              </Offsets>
+              <Hotkeys>
+                <Hotkey>
+                  <Action>Set Value</Action>
+                  <Keys>
+                    <Key>17</Key>
+                    <Key>34</Key>
+                  </Keys>
+                  <Value>5</Value>
+                  <ID>0</ID>
+                </Hotkey>
+              </Hotkeys>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>18</ID>
+              <Description>"Current Fame"</Description>
+              <Color>0000FF</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>pHero</Address>
+              <Offsets>
+                <Offset>590</Offset>
+              </Offsets>
+              <Hotkeys>
+                <Hotkey>
+                  <Action>Set Value</Action>
+                  <Keys>
+                    <Key>17</Key>
+                    <Key>34</Key>
+                  </Keys>
+                  <Value>5</Value>
+                  <ID>0</ID>
+                </Hotkey>
+              </Hotkeys>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols>
+    <SymbolEntry>
+      <Name>LUDO</Name>
+      <Address>Torchlight2.exe</Address>
+    </SymbolEntry>
+  </UserdefinedSymbols>
+  <Comments>===========================================
+ Game Title    : Torchlight II
+ Game Version  : 1.12.5.7
+ Game Sponsor  : RELOADED (via internet)
+ Proces Name   : Torchlight2.exe
+ Script Version: 1.0
+ CE Version    : 6.2
+ Release date  : 06-Oct-2012
+ Author        : Recifense
+ History:
+ 24-Sep-12: First Release (1.11.5.3)
+ 06-Oct-12: Updated to version 1.12.5.7
+ Features:
+ - God Mode       [1]
+ - Unlimited Mana [2]
+ - Minimum Gold   [3]
+ - Quick Level Up [4]
+ - Pointers       [5]
+===========================================
+[1] GM for Hero and Pet;
+[2] For Hero
+[3] For Hero (dafault = 62000)
+[4] One Level Up per kill for hero
+[5] Hero Info [*]
+===========================================
+[*1] Current Stat points
+[*2] Current Skill Points
+[*3] Current Gold
+[*4] Current XP
+[*5] Currrent Fame
+===========================================
+HOTKEYS:
+CTRL+home = Enable  cheats (GM, Mana and Gold)
+CTRL+end  = Disable cheats (GM, Mana and Gold)
+CTRL+PgUp = Make Stat Points   = 8
+CTRL+PgDn = Make Skeill Points = 5
+CTRL+Ins  = Enable  Quick Level UP Cheat
+CTRL+Del  = Disable Quick Level UP Cheat
+===========================================
+Cheers!
+</Comments>
+</CheatTable>

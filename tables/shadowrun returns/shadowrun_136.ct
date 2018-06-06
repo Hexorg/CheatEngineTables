@@ -1,0 +1,4352 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="16">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>275</ID>
+      <Description>"README: Double-click &lt;script&gt; to open ----------&gt;"</Description>
+      <Color>FF00FF</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>{
+-- jgoemat's Shadowrun table readme
+
+Enable the 'GLOBALS' script to expand and enable scripts when you can.  Before
+you can enable some scripts you will have to perform the action in the game:
+
+  SCRIPT: Ammo (Display) - you must be in combat with a weapon that uses ammo
+  SCRIPT: AP Use - someone must have used an action point in combat
+  SCRIPT: Damage - someone must have taken damage
+  SCRIPT: Ammo Use - someone must have fired a weapon
+  SCRIPT: Credits - you must have opened the menu
+  SCRIPT: Stats - you should be able to activate this anytime
+
+You can edit your credits, ammo and status in the values under the appropriate
+scripts.  Table entries that are blue are expanded when enabled.
+
+The easiest way to cheat is to hold LSHIFT (left shift key) down when performing
+actions, then your AP will be set to 10 instead of decreasing and you won't
+use ammo when firing a gun.
+
+You can also enable these cheats under the Cheats entry by setting their value
+to 1:
+
+bAlwaysFriendlyAP - like holding LSHIFT all the time for AP
+bUnlimitedAmmo - like holding LSHIFT all the time when firing a weapon
+bGodMode - friendly units don't take damage
+bOneHitKill - enemy units die when hit no matter the damage
+
+
+}
+[ENABLE]
+[DISABLE]
+</AssemblerScript>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>226</ID>
+      <Description>"GLOBALS"</Description>
+      <Options moHideChildren="1"/>
+      <Color>FF0000</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>GLOBALALLOC(globals,$100000)
+
+{
+0000: bNoEnemyAP
+0004: bAlwaysFriendlyAP
+0008: bShiftGivesFriendlyAP
+000C: bGodMode
+0010: bOneHitKill
+0014: bAmmo
+
+1000: pCredits (credits at +48)
+1004: pCreditsBase (pCredits at +18)
+1008: pHealthBaseBase (set when opening menu)
+1010: pAmmo
+1014: ammo - ebx, also might want to check 8 instructions earlier for a pointer to how much ammo is used at +90 (nevermind, that pointer is pAmmo+8)
+1018: ammo - edi, (another register on the stack I think)
+101C: pDisplayAmmo - ammo loaded for display
+1020: pStatsHealth
+
+}
+
+[ENABLE]
+globals+2000:
+label(globals_IsFriend)
+registersymbol(globals_IsFriend)
+{
+  // 0020: 120 is 0 for player
+  // 0024: 124 is 0 for player
+  // 0028: 128 is 0 for player
+  // 002C: 12C is 0 for player
+  // 0030: 134 is 0 for player
+  // 0034: 1B4 is 0 for player (invalid)
+  // 0038: 1F8 is 100 for  player
+  // 003C: 210 is 0 for player
+  // 0040: 230: 0001XXXX for player (always set) - maybe flag for active team?
+  // 0044: 230: 0100XXXX for enemy (always clear)
+}
+globals_IsFriend:
+  // globals_IsFriend(pAP)
+  // return: 0 for friend, number of failed friend tests (out of 7) if enemy
+  push ebp
+  mov ebp,esp
+  push esi
+  mov esi,[ebp+8] // esi is now argument
+  xor eax,eax
+
+  cmp [esi+120],1
+  adc eax,0
+
+  cmp [esi+124],1
+  adc eax,0
+
+  cmp [esi+128],1
+  adc eax,0
+
+  cmp [esi+12c],1
+  adc eax,0
+
+  cmp [esi+134],1
+  adc eax,0
+
+  cmp [esi+210],1
+  adc eax,0
+
+  label(skip_1f8)
+  cmp [esi+1f8],0100
+  jne skip_1f8
+  inc eax
+  skip_1f8:
+
+  label(fail)
+  label(done)
+  cmp eax,5 // if less than 5/7, not a player so return 7-eax, i.e. number of tests that came out non-player
+  jbe fail
+  xor eax,eax // return 0 for player
+  jmp done
+fail:
+  mov esi,eax
+  mov eax,7
+  sub eax,esi
+
+done:
+  pop esi
+  pop ebp
+  ret 0004
+
+[DISABLE]
+
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>224</ID>
+          <Description>"SCRIPT: AP Use"</Description>
+          <Color>80000008</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>{ Game   : Shadowrun.exe
+  Version: 
+  Date   : 2014-05-04
+  Author : Jason
+
+  This stores the new AP value after being used.
+}
+
+[ENABLE]
+
+aobscan(INJECT_APUSE,89 88 98 00 00 00 C9) // should be unique
+alloc(newmem,$1000)
+
+label(code)
+label(isEnemy)
+label(isFriend)
+label(done)
+label(return)
+
+newmem:
+
+code:
+  pushad
+
+  mov edi,eax // save pointer in edi
+  push eax
+  call globals_IsFriend
+  test eax,eax
+  mov eax,edi // restore pointer in eax
+  jnz isEnemy
+
+isFriend:
+  label(giveFriendlyAP)
+  label(skipGiveFriendlyAP)
+  cmp dword ptr [globals+0004],1 // bAlwaysFriendlyAP
+  je giveFriendlyAP
+
+  // no longer require flag, if you hold LSHIFT, you get 10 AP instead of lowering
+  // cmp dword ptr [globals+0008],1 // bShiftGivesFriendlyAP
+  // jne skipGiveFriendlyAP
+
+  // check for left shift pressed to give ap
+  push 000000A0 // VK_LSHIFT http://msdn.microsoft.com/en-us/library/windows/desktop/dd375731(v=vs.85).aspx
+  call GetAsyncKeyState
+  test eax,8000
+  jz skipGiveFriendlyAP
+
+giveFriendlyAP:
+  popad
+  mov ecx,[eax+00000098]
+  cmp ecx,#10
+  ja done
+  mov ecx,#10
+  jmp done
+
+skipGiveFriendlyAP:
+  popad
+  jmp done
+
+isEnemy:
+  label(skip_bNoEnemyAP)
+  cmp dword ptr [globals+0000],1 // bNoEnemyAP
+  jne skip_bNoEnemyAP
+  popad
+  xor ecx,ecx
+  jmp done
+skip_bNoEnemyAP:
+  popad
+  jmp done
+
+done:
+  mov [eax+00000098],ecx
+  jmp return
+
+INJECT_APUSE:
+  jmp code
+  nop
+return:
+registersymbol(INJECT_APUSE)
+
+[DISABLE]
+
+INJECT_APUSE:
+  db 89 88 98 00 00 00
+
+unregistersymbol(INJECT_APUSE)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: 1D0520C2
+
+1D0520A8: C3               - ret 
+1D0520A9: 00 00            - add [eax],al
+1D0520AB: 00 00            - add [eax],al
+1D0520AD: 00 00            - add [eax],al
+1D0520AF: 00 55 8B         - add [ebp-75],dl
+1D0520B2: EC               - in al,dx
+1D0520B3: 83 EC 08         - sub esp,08
+1D0520B6: 8B 45 08         - mov eax,[ebp+08]
+1D0520B9: 8B 88 98000000   - mov ecx,[eax+00000098]
+1D0520BF: 03 4D 0C         - add ecx,[ebp+0C]
+// ---------- INJECTING HERE ----------
+1D0520C2: 89 88 98000000   - mov [eax+00000098],ecx
+// ---------- DONE INJECTING  ----------
+1D0520C8: C9               - leave 
+1D0520C9: C3               - ret 
+1D0520CA: 00 00            - add [eax],al
+1D0520CC: 00 00            - add [eax],al
+1D0520CE: 00 00            - add [eax],al
+1D0520D0: 55               - push ebp
+1D0520D1: 8B EC            - mov ebp,esp
+1D0520D3: 56               - push esi
+1D0520D4: 83 EC 04         - sub esp,04
+1D0520D7: 83 7D 10 00      - cmp dword ptr [ebp+10],00
+}
+</AssemblerScript>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>247</ID>
+          <Description>"SCRIPT: Ammo (Display) -----&gt;"</Description>
+          <Color>FF0000</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>{ Game   : Shadowrun.exe
+  Version: 
+  Date   : 2014-05-07
+  Author : Jason
+
+  This is called to display ammo, when leaving the menu and when switching
+  characters during a battle
+}
+
+[ENABLE]
+
+aobscan(INJECT_AMMO_DISPLAY,8B 48 2C 51 DB 04 24) // should be unique
+alloc(newmem,$1000)
+
+label(code)
+label(return)
+
+newmem:
+
+code:
+  mov [globals+101c],eax
+
+  // original code
+  mov ecx,[eax+2C]
+  push ecx
+  fild dword ptr [esp]
+  jmp return
+
+INJECT_AMMO_DISPLAY:
+  jmp code
+  nop
+  nop
+return:
+registersymbol(INJECT_AMMO_DISPLAY)
+
+[DISABLE]
+
+INJECT_AMMO_DISPLAY:
+  db 8B 48 2C 51 DB 04 24
+
+unregistersymbol(INJECT_AMMO_DISPLAY)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: 1B02BDC3
+
+1B02BDA4: 8B C8           - mov ecx,eax
+1B02BDA6: 8B 85 98FEFFFF  - mov eax,[ebp-00000168]
+1B02BDAC: 83 EC 08        - sub esp,08
+1B02BDAF: 51              - push ecx
+1B02BDB0: 50              - push eax
+1B02BDB1: 39 00           - cmp [eax],eax
+1B02BDB3: E8 902460EC     - call 0762E248
+1B02BDB8: 83 C4 10        - add esp,10
+1B02BDBB: 8B 85 A0FEFFFF  - mov eax,[ebp-00000160]
+1B02BDC1: 39 00           - cmp [eax],eax
+// ---------- INJECTING HERE ----------
+1B02BDC3: 8B 48 2C        - mov ecx,[eax+2C] // current ammo
+1B02BDC6: 51              - push ecx
+1B02BDC7: DB 04 24        - fild dword ptr [esp]
+// ---------- DONE INJECTING  ----------
+1B02BDCA: D9 1C 24        - fstp dword ptr [esp]
+1B02BDCD: D9 04 24        - fld dword ptr [esp]
+1B02BDD0: 83 C4 04        - add esp,04
+1B02BDD3: 8B 40 08        - mov eax,[eax+08]
+1B02BDD6: 8B C8           - mov ecx,eax
+1B02BDD8: 39 09           - cmp [ecx],ecx
+1B02BDDA: 8B 80 90000000  - mov eax,[eax+00000090] // ammo used by a shot
+1B02BDE0: 50              - push eax
+1B02BDE1: DB 04 24        - fild dword ptr [esp]
+1B02BDE4: D9 1C 24        - fstp dword ptr [esp]
+}
+</AssemblerScript>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>276</ID>
+              <Description>"Ammo"</Description>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>globals+101c</Address>
+              <Offsets>
+                <Offset>2C</Offset>
+              </Offsets>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>232</ID>
+          <Description>"SCRIPT: Credits"</Description>
+          <Options moHideChildren="1"/>
+          <Color>FF0000</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>{ Game   : Shadowrun.exe
+  Version: 
+  Date   : 2014-05-04
+  Author : Jason
+
+  This is what loads your credits count, when opening up the character
+  screen and when visiting a shop.
+}
+
+[ENABLE]
+
+aobscan(INJECT_FindCredits,8B 47 18 8B C8 39 09 8B 40 48 EB 17) // should be unique
+alloc(newmem,$1000)
+
+label(code)
+label(return)
+
+newmem:
+
+code:
+  mov eax,[edi+18] // original code
+  mov ecx,eax // original code
+
+  mov [globals+1000],eax
+  mov [globals+1004],edi
+  jmp return
+
+INJECT_FindCredits-7:
+  jmp code
+return:
+registersymbol(INJECT_FindCredits)
+
+[DISABLE]
+
+INJECT_FindCredits:
+  db 8B 47 18 8B C8
+
+unregistersymbol(INJECT_FindCredits)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: 1D0DC7CC 
+
+1D0DC7B5: 85 C0            - test eax,eax
+1D0DC7B7: 7E 05            - jle 1D0DC7BE
+1D0DC7B9: 8B 47 2C         - mov eax,[edi+2C]
+1D0DC7BC: EB 2A            - jmp 1D0DC7E8
+1D0DC7BE: 8B 47 18         - mov eax,[edi+18]
+1D0DC7C1: 85 C0            - test eax,eax
+1D0DC7C3: 74 0C            - je 1D0DC7D1
+// ---------- INJECTING HERE ----------
+1D0DC7C5: 8B 47 18         - mov eax,[edi+18]
+1D0DC7C8: 8B C8            - mov ecx,eax
+// ---------- DONE INJECTING  ----------
+1D0DC7CA: 39 09            - cmp [ecx],ecx
+1D0DC7CC: 8B 40 48         - mov eax,[eax+48]
+1D0DC7CF: EB 17            - jmp 1D0DC7E8
+1D0DC7D1: 83 EC 08         - sub esp,08
+1D0DC7D4: 68 5885F128      - push 28F18558
+1D0DC7D9: 68 98C1010F      - push 0F01C198
+1D0DC7DE: E8 91EF60EA      - call 076EB774
+1D0DC7E3: 83 C4 10         - add esp,10
+1D0DC7E6: 33 C0            - xor eax,eax
+1D0DC7E8: 8D 65 FC         - lea esp,[ebp-04]
+1D0DC7EB: 5F               - pop edi
+1D0DC7EC: C9               - leave 
+1D0DC7ED: C3               - ret 
+}
+</AssemblerScript>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>233</ID>
+              <Description>"Credits"</Description>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>globals+1000</Address>
+              <Offsets>
+                <Offset>48</Offset>
+              </Offsets>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>223</ID>
+          <Description>"SCRIPT: Damage"</Description>
+          <Color>80000008</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>{ Game   : Shadowrun.exe
+  Version: 
+  Date   : 2014-05-04
+  Author : Jason
+
+  This is where the new HP is stored after taking damage
+}
+
+[ENABLE]
+
+aobscan(INJECT_DAMAGE,89 86 9C 00 00 00 39 36 83 EC) // should be unique
+alloc(newmem,$1000)
+
+label(code)
+label(isFriend)
+label(loadHealth)
+label(done)
+label(return)
+
+newmem:
+
+code:
+  push eax
+  push esi
+  call globals_IsFriend
+  test eax,eax
+  pop eax
+  jz isFriend
+
+  // enemy, check for 1hk
+  cmp dword ptr [globals+0010],1
+  jne done
+  xor eax,eax
+  jmp done
+
+isFriend:
+  cmp dword ptr [globals+000C],1
+  je loadHealth
+
+  // check for left shift pressed to give ap
+  pushad
+  push 000000A0 // VK_LSHIFT http://msdn.microsoft.com/en-us/library/windows/desktop/dd375731(v=vs.85).aspx
+  call GetAsyncKeyState
+  test eax,8000
+  popad
+  jnz loadHealth
+  jmp done
+
+loadHealth:
+  mov eax,[esi+0000009C] //  no damage, load existing health
+  jmp return
+
+done:
+  mov [esi+0000009C],eax // original code
+  jmp return
+
+INJECT_DAMAGE:
+  jmp code
+  nop
+return:
+registersymbol(INJECT_DAMAGE)
+
+[DISABLE]
+
+INJECT_DAMAGE:
+  db 89 86 9C 00 00 00
+
+unregistersymbol(INJECT_DAMAGE)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: 1D0C7A8B
+
+1D0C7A6F: 89 4C 24 0C       - mov [esp+0C],ecx
+1D0C7A73: 50                - push eax
+1D0C7A74: 53                - push ebx
+1D0C7A75: E8 8212BAF6       - call 13C68CFC
+1D0C7A7A: 83 C4 20          - add esp,20
+1D0C7A7D: 8B CF             - mov ecx,edi
+1D0C7A7F: F7 D9             - neg ecx
+1D0C7A81: 39 36             - cmp [esi],esi
+1D0C7A83: 8B 86 9C000000    - mov eax,[esi+0000009C]
+1D0C7A89: 03 C1             - add eax,ecx
+// ---------- INJECTING HERE ----------
+1D0C7A8B: 89 86 9C000000    - mov [esi+0000009C],eax
+// ---------- DONE INJECTING  ----------
+1D0C7A91: 39 36             - cmp [esi],esi
+1D0C7A93: 83 EC 0C          - sub esp,0C
+1D0C7A96: 68 C8872F0D       - push 0D2F87C8
+1D0C7A9B: E8 B06760EA       - call 076CE250
+1D0C7AA0: 83 C4 10          - add esp,10
+1D0C7AA3: 89 85 D8FEFFFF    - mov [ebp-00000128],eax
+1D0C7AA9: 0FB6 86 B7010000  - movzx eax,byte ptr [esi+000001B7]
+1D0C7AB0: 85 C0             - test eax,eax
+1D0C7AB2: 74 2F             - je 1D0C7AE3
+1D0C7AB4: 83 EC 0C          - sub esp,0C
+}
+</AssemblerScript>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>246</ID>
+          <Description>"SCRIPT: Ammo Use"</Description>
+          <Color>80000008</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>{ Game   : Shadowrun.exe
+  Version: 
+  Date   : 2014-05-07
+  Author : Jason
+
+  This is where ammo is subtracted, change ammo to 999 if flag is set or if
+  LSHIFT is held down.
+
+  Ammo struct (pushed on stack as EBP+18)
+      0008: Pointer-&gt;Structure
+            0090: Total Ammo
+            00C8: Something tested twice and placed on stack
+      002C: Current ammo
+
+  EDI is [EBP+0C]
+  EBX is [EBP+14] - +58 is ammo used when firing
+}
+
+[ENABLE]
+
+aobscan(INJECT_AMMO_USE,89 46 2C 39 1B) // should be unique
+alloc(newmem,$1000)
+
+label(code)
+label(doNotUseAmmo)
+label(done)
+label(return)
+
+newmem:
+
+code:
+  mov [globals+1010],esi
+  mov [globals+1014],ebx
+  mov [globals+1018],edi
+  cmp dword ptr [globals+0014],1
+  je doNotUseAmmo
+
+  pushad
+  // check for left shift pressed to prevent ammo being used
+  push 000000A0 // VK_LSHIFT http://msdn.microsoft.com/en-us/library/windows/desktop/dd375731(v=vs.85).aspx
+  call GetAsyncKeyState
+  test eax,8000
+  popad
+  jnz doNotUseAmmo
+  jmp done
+
+doNotUseAmmo:
+  mov eax,[esi+2C]
+  jmp done
+
+done:
+  mov [esi+2C],eax
+  cmp [ebx],ebx
+  jmp return
+
+INJECT_AMMO_USE:
+  jmp code
+return:
+registersymbol(INJECT_AMMO_USE)
+
+[DISABLE]
+
+INJECT_AMMO_USE:
+  db 89 46 2C 39 1B
+
+unregistersymbol(INJECT_AMMO_USE)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: 1B07B758
+
+1B07B73E: 8B C8             - mov ecx,eax
+1B07B740: 39 09             - cmp [ecx],ecx
+1B07B742: 8B 80 90000000    - mov eax,[eax+00000090]
+1B07B748: 85 C0             - test eax,eax
+1B07B74A: 7E 0F             - jle 1B07B75B
+1B07B74C: 39 1B             - cmp [ebx],ebx
+1B07B74E: 8B 4B 58          - mov ecx,[ebx+58]
+1B07B751: 39 36             - cmp [esi],esi
+1B07B753: 8B 46 2C          - mov eax,[esi+2C]
+1B07B756: 2B C1             - sub eax,ecx
+// ---------- INJECTING HERE ----------
+1B07B758: 89 46 2C          - mov [esi+2C],eax
+1B07B75B: 39 1B             - cmp [ebx],ebx
+// ---------- DONE INJECTING  ----------
+1B07B75D: 0FB6 43 54        - movzx eax,byte ptr [ebx+54]
+1B07B761: 85 C0             - test eax,eax
+1B07B763: 74 40             - je 1B07B7A5
+1B07B765: 8B 87 C4000000    - mov eax,[edi+000000C4]
+1B07B76B: 8B C8             - mov ecx,eax
+1B07B76D: 39 09             - cmp [ecx],ecx
+1B07B76F: 0FB6 80 1C010000  - movzx eax,byte ptr [eax+0000011C]
+1B07B776: 85 C0             - test eax,eax
+1B07B778: 74 1C             - je 1B07B796
+1B07B77A: 8B 46 08          - mov eax,[esi+08]
+}
+</AssemblerScript>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>254</ID>
+          <Description>"SCRIPT: Stats (DO NOT FREEZE) -----&gt;"</Description>
+          <Options moHideChildren="1"/>
+          <Color>FF0000</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>{ Game   : Shadowrun.exe
+  Version: 
+  Date   : 2014-05-07
+  Author : Jason
+
+  This is part of getting skills.  It is executed when planning combat
+  and when viewing characters.
+
+  Player structure at [EBP+8] loaded into ECX (pPlayer)
+
+      0058: Name (size at 8, unicode string at c)
+      005c: Id? (Story/Paco for friend, ElfMale for me, Core/HumanMale for one, Gangers/OrkMale, Gangers/ElfFemale)
+      0060: Model? npc_humanmale, pc_elfmale_o???, backer_human, generic_stat
+      006C: Pointer-&gt;Stats (possibly C4 in length)
+          000C: Body
+          0010: Quickness
+          0014: Strength
+          0018: Charisma
+          001C: Intelligence (shows red?  can't go over 9 as elf or class?)
+          0020: Willpower (shows red 11?  can't go over 11 as elf or class?)
+          0024: Essence/Magic  (not displayed, hidden value?)
+          0028: Magic (never shows above 6)
+          002C: 56?  4 for paco, 3/4 for enemies
+          0030: Max Health
+          0034: Max AP
+          0038: 0
+          003C: 0
+          0040: 150?
+          0044: 150?
+          0048: 160?
+          004C: Max Health also?  Maybe unmodified?
+          0050: 100?
+          0054: 10?
+          0058: 6 (essence/magic?) (not displayed, hidden value?)
+          005C: (float)6 (essence)
+      0074: Pointer-&gt;Skills
+      0098: Current AP
+      009C: Current Health
+      00E4: Pointer-&gt;???
+          0100: Available Karma
+          0118: Health
+          011C: AP pool
+}
+
+[ENABLE]
+
+aobscan(INJECT_SKILL,10 8B 4D 08 8B 49 74) // should be unique
+alloc(newmem,$1000)
+
+label(code)
+label(return)
+
+newmem:
+
+code:
+  mov ecx,[ebp+08]
+  mov [globals+1020],ecx
+  mov ecx,[ecx+74]
+  jmp return
+
+INJECT_SKILL+01:
+  jmp code
+  nop
+return:
+registersymbol(INJECT_SKILL)
+
+[DISABLE]
+
+INJECT_SKILL+01:
+  db 8B 4D 08 8B 49 74
+
+unregistersymbol(INJECT_SKILL)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: 1A3FB26B
+
+1A3FB24B: E8 60010000       - call 1A3FB3B0
+1A3FB250: 83 C4 10          - add esp,10
+1A3FB253: 8B D8             - mov ebx,eax
+1A3FB255: 85 DB             - test ebx,ebx
+1A3FB257: 0F84 48000000     - je 1A3FB2A5
+1A3FB25D: 83 EC 0C          - sub esp,0C
+1A3FB260: 53                - push ebx
+1A3FB261: 39 1B             - cmp [ebx],ebx
+1A3FB263: E8 A849FCFF       - call 1A3BFC10
+1A3FB268: 83 C4 10          - add esp,10
+// ---------- INJECTING HERE ----------
+1A3FB26B: 8B 4D 08          - mov ecx,[ebp+08]  // load pHealth from stack
+1A3FB26E: 8B 49 74          - mov ecx,[ecx+74]  // load pStats
+// ---------- DONE INJECTING  ----------
+1A3FB271: 83 EC 04          - sub esp,04
+1A3FB274: 6A 00             - push 00
+1A3FB276: 51                - push ecx
+1A3FB277: 50                - push eax
+1A3FB278: 39 00             - cmp [eax],eax
+1A3FB27A: E8 B949FCFF       - call 1A3BFC38
+1A3FB27F: 83 C4 10          - add esp,10
+1A3FB282: 8B 08             - mov ecx,[eax]
+1A3FB284: 0FB6 51 1A        - movzx edx,byte ptr [ecx+1A]
+1A3FB288: 85 D2             - test edx,edx
+}
+</AssemblerScript>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>255</ID>
+              <Description>"pPlayer"</Description>
+              <ShowAsHex>1</ShowAsHex>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>globals+1020</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>256</ID>
+              <Description>"Name"</Description>
+              <ShowAsHex>1</ShowAsHex>
+              <Color>80000008</Color>
+              <VariableType>String</VariableType>
+              <Length>11</Length>
+              <Unicode>1</Unicode>
+              <ZeroTerminate>1</ZeroTerminate>
+              <Address>globals+1020</Address>
+              <Offsets>
+                <Offset>C</Offset>
+                <Offset>58</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>257</ID>
+              <Description>"Health"</Description>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>globals+1020</Address>
+              <Offsets>
+                <Offset>9C</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>261</ID>
+              <Description>"Action Points"</Description>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>globals+1020</Address>
+              <Offsets>
+                <Offset>98</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>259</ID>
+              <Description>"Stats -----&gt;"</Description>
+              <Options moHideChildren="1"/>
+              <Color>FF0000</Color>
+              <GroupHeader>1</GroupHeader>
+              <CheatEntries>
+                <CheatEntry>
+                  <ID>274</ID>
+                  <Description>"Available Karma (cannot edit in spend screen)"</Description>
+                  <Color>80000008</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>globals+1020</Address>
+                  <Offsets>
+                    <Offset>100</Offset>
+                    <Offset>E4</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>258</ID>
+                  <Description>"Max Health"</Description>
+                  <Color>80000008</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>globals+1020</Address>
+                  <Offsets>
+                    <Offset>30</Offset>
+                    <Offset>6C</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>260</ID>
+                  <Description>"Action Pool"</Description>
+                  <Color>80000008</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>globals+1020</Address>
+                  <Offsets>
+                    <Offset>34</Offset>
+                    <Offset>6C</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>262</ID>
+                  <Description>"Strength"</Description>
+                  <Color>80000008</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>globals+1020</Address>
+                  <Offsets>
+                    <Offset>14</Offset>
+                    <Offset>6C</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>267</ID>
+                  <Description>"Quickness"</Description>
+                  <Color>80000008</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>globals+1020</Address>
+                  <Offsets>
+                    <Offset>10</Offset>
+                    <Offset>6C</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>266</ID>
+                  <Description>"Intelligence"</Description>
+                  <Color>80000008</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>globals+1020</Address>
+                  <Offsets>
+                    <Offset>1C</Offset>
+                    <Offset>6C</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>265</ID>
+                  <Description>"Willpower"</Description>
+                  <Color>80000008</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>globals+1020</Address>
+                  <Offsets>
+                    <Offset>20</Offset>
+                    <Offset>6C</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>264</ID>
+                  <Description>"Charisma"</Description>
+                  <Color>80000008</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>globals+1020</Address>
+                  <Offsets>
+                    <Offset>18</Offset>
+                    <Offset>6C</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>263</ID>
+                  <Description>"Body"</Description>
+                  <Color>80000008</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>globals+1020</Address>
+                  <Offsets>
+                    <Offset>C</Offset>
+                    <Offset>6C</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>268</ID>
+                  <Description>"Magic (Never shows above 6)"</Description>
+                  <Color>80000008</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>globals+1020</Address>
+                  <Offsets>
+                    <Offset>28</Offset>
+                    <Offset>6C</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>270</ID>
+                  <Description>"Magic (alt)"</Description>
+                  <Color>80000008</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>globals+1020</Address>
+                  <Offsets>
+                    <Offset>24</Offset>
+                    <Offset>6C</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>269</ID>
+                  <Description>"Essence"</Description>
+                  <Color>80000008</Color>
+                  <VariableType>Float</VariableType>
+                  <Address>globals+1020</Address>
+                  <Offsets>
+                    <Offset>5C</Offset>
+                    <Offset>6C</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>271</ID>
+                  <Description>"Essence (alt)"</Description>
+                  <Color>80000008</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>globals+1020</Address>
+                  <Offsets>
+                    <Offset>58</Offset>
+                    <Offset>6C</Offset>
+                  </Offsets>
+                </CheatEntry>
+              </CheatEntries>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>227</ID>
+          <Description>"Cheats -----&gt;"</Description>
+          <Options moHideChildren="1"/>
+          <Color>FF0000</Color>
+          <GroupHeader>1</GroupHeader>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>230</ID>
+              <Description>"bAlwaysFriendlyAP"</Description>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>globals+0004</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>242</ID>
+              <Description>"bUnlimitedAmmo"</Description>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>globals+0014</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>241</ID>
+              <Description>"bGodMode"</Description>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>globals+000C</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>240</ID>
+              <Description>"bOneHitKill"</Description>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>globals+0010</Address>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>272</ID>
+      <Description>"Test Scripts"</Description>
+      <Options moHideChildren="1"/>
+      <Color>C0C0C0</Color>
+      <GroupHeader>1</GroupHeader>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>239</ID>
+          <Description>"TEST: Ammo (7 injections)"</Description>
+          <Color>80000008</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>{ Game   : Shadowrun.exe
+  Version: 
+  Date   : 2014-05-07
+  Author : Jason
+
+
+  Structure:
+    002C: Ammo
+
+  TEST_AMMO1, TEST_AMMO2, TEST_AMMO3, TEST_AMMO4 - all read ammo, possibly for
+      display.  This occurs when switching characters and after firing a shot.
+
+  TEST_AMMO_USE1, TEST_AMMO_USE2, TEST_AMMO_USE3 - read ammo, read ammo and
+      write new ammo after firing a shot
+}
+
+[ENABLE]
+
+aobscan(TEST_AMMO1,8B 48 2C 51 DB 04 24) // should be unique
+alloc(newmem,$1000)
+
+label(code)
+label(return)
+
+newmem:
+
+code:
+  mov ecx,[eax+2C]
+  push ecx
+  fild dword ptr [esp]
+  jmp return
+
+TEST_AMMO1:
+  jmp code
+  nop
+  nop
+return:
+registersymbol(TEST_AMMO1)
+
+aobscan(TEST_AMMO2,8B 40 2C 3B D8) // should be unique
+alloc(newmem2,$1000)
+
+label(code2)
+label(return2)
+
+newmem2:
+
+code2:
+  mov eax,[eax+2C]
+  cmp ebx,eax
+  jmp return2
+
+TEST_AMMO2:
+  jmp code2
+return2:
+registersymbol(TEST_AMMO2)
+
+aobscan(TEST_AMMO3,8B 41 2C 8B 49 08) // should be unique
+alloc(newmem5,$1000)
+
+label(code5)
+label(return5)
+
+newmem5:
+
+code5:
+  mov eax,[ecx+2C]
+  mov ecx,[ecx+08]
+  jmp return5
+
+TEST_AMMO3:
+  jmp code5
+  nop
+return5:
+registersymbol(TEST_AMMO3)
+
+aobscan(TEST_AMMO4,8B 49 2C 3B C1 7E 31) // should be unique
+alloc(newmem9,$1000)
+
+label(code9)
+label(return9)
+
+newmem9:
+
+code9:
+  mov ecx,[ecx+2C]
+  cmp eax,ecx
+  jmp return9
+
+TEST_AMMO4:
+  jmp code9
+return9:
+registersymbol(TEST_AMMO4)
+
+aobscan(TEST_AMMO_USE1,8B 41 2C 8B 49 18 8B) // should be unique
+alloc(newmem14,$1000)
+
+label(code14)
+label(return14)
+
+newmem14:
+
+code14:
+  mov eax,[ecx+2C]
+  mov ecx,[ecx+18]
+  jmp return14
+
+TEST_AMMO_USE1:
+  jmp code14
+  nop
+return14:
+registersymbol(TEST_AMMO_USE1)
+
+aobscan(TEST_AMMO_USE2,8B 46 2C 2B C1 89 46) // should be unique
+alloc(newmem20,$1000)
+
+label(code20)
+label(return20)
+
+newmem20:
+
+code20:
+  mov eax,[esi+2C]
+  sub eax,ecx
+  jmp return20
+
+TEST_AMMO_USE2:
+  jmp code20
+return20:
+registersymbol(TEST_AMMO_USE2)
+
+aobscan(TEST_AMMO_USE3,89 46 2C 39 1B) // should be unique
+alloc(newmem27,$1000)
+
+label(code27)
+label(return27)
+
+newmem27:
+
+code27:
+  mov [esi+2C],eax
+  cmp [ebx],ebx
+  jmp return27
+
+TEST_AMMO_USE3:
+  jmp code27
+return27:
+registersymbol(TEST_AMMO_USE3)
+
+[DISABLE]
+
+TEST_AMMO1:
+  db 8B 48 2C 51 DB 04 24
+
+unregistersymbol(TEST_AMMO1)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: 1B02BDC3
+
+1B02BDA4: 8B C8           - mov ecx,eax
+1B02BDA6: 8B 85 98FEFFFF  - mov eax,[ebp-00000168]
+1B02BDAC: 83 EC 08        - sub esp,08
+1B02BDAF: 51              - push ecx
+1B02BDB0: 50              - push eax
+1B02BDB1: 39 00           - cmp [eax],eax
+1B02BDB3: E8 902460EC     - call 0762E248
+1B02BDB8: 83 C4 10        - add esp,10
+1B02BDBB: 8B 85 A0FEFFFF  - mov eax,[ebp-00000160]
+1B02BDC1: 39 00           - cmp [eax],eax
+// ---------- INJECTING HERE ----------
+1B02BDC3: 8B 48 2C        - mov ecx,[eax+2C]
+1B02BDC6: 51              - push ecx
+1B02BDC7: DB 04 24        - fild dword ptr [esp]
+// ---------- DONE INJECTING  ----------
+1B02BDCA: D9 1C 24        - fstp dword ptr [esp]
+1B02BDCD: D9 04 24        - fld dword ptr [esp]
+1B02BDD0: 83 C4 04        - add esp,04
+1B02BDD3: 8B 40 08        - mov eax,[eax+08]
+1B02BDD6: 8B C8           - mov ecx,eax
+1B02BDD8: 39 09           - cmp [ecx],ecx
+1B02BDDA: 8B 80 90000000  - mov eax,[eax+00000090]
+1B02BDE0: 50              - push eax
+1B02BDE1: DB 04 24        - fild dword ptr [esp]
+1B02BDE4: D9 1C 24        - fstp dword ptr [esp]
+}
+TEST_AMMO2:
+  db 8B 40 2C 3B D8
+
+unregistersymbol(TEST_AMMO2)
+dealloc(newmem2)
+
+{
+// ORIGINAL CODE - INJECTION POINT: 1B02BE35
+
+1B02BE18: 50              - push eax
+1B02BE19: 39 00           - cmp [eax],eax
+1B02BE1B: E8 B853FFFF     - call 1B0211D8
+1B02BE20: 83 C4 10        - add esp,10
+1B02BE23: 8B 85 A0FEFFFF  - mov eax,[ebp-00000160]
+1B02BE29: 8B 48 18        - mov ecx,[eax+18]
+1B02BE2C: 8B D1           - mov edx,ecx
+1B02BE2E: 39 12           - cmp [edx],edx
+1B02BE30: 8B 59 58        - mov ebx,[ecx+58]
+1B02BE33: 39 00           - cmp [eax],eax
+// ---------- INJECTING HERE ----------
+1B02BE35: 8B 40 2C        - mov eax,[eax+2C]
+1B02BE38: 3B D8           - cmp ebx,eax
+// ---------- DONE INJECTING  ----------
+1B02BE3A: 0F8E 34040000   - jng 1B02C274
+1B02BE40: 8B 47 7C        - mov eax,[edi+7C]
+1B02BE43: B9 A0A3E50C     - mov ecx,0CE5A3A0
+1B02BE48: 8B 11           - mov edx,[ecx]
+1B02BE4A: 89 95 10FFFFFF  - mov [ebp-000000F0],edx
+1B02BE50: 8B 51 04        - mov edx,[ecx+04]
+1B02BE53: 89 95 14FFFFFF  - mov [ebp-000000EC],edx
+1B02BE59: 8B 51 08        - mov edx,[ecx+08]
+1B02BE5C: 89 95 18FFFFFF  - mov [ebp-000000E8],edx
+1B02BE62: 8B 49 0C        - mov ecx,[ecx+0C]
+}
+TEST_AMMO3:
+  db 8B 41 2C 8B 49 08
+
+unregistersymbol(TEST_AMMO3)
+dealloc(newmem5)
+
+{
+// ORIGINAL CODE - INJECTION POINT: 1B02C45B
+
+1B02C43D: DEE9            - fsubp st(1),st(0)
+1B02C43F: 83 EC 08        - sub esp,08
+1B02C442: 83 EC 04        - sub esp,04
+1B02C445: D9 1C 24        - fstp dword ptr [esp]
+1B02C448: 50              - push eax
+1B02C449: 39 00           - cmp [eax],eax
+1B02C44B: E8 884DFFFF     - call 1B0211D8
+1B02C450: 83 C4 10        - add esp,10
+1B02C453: 8B 8D A0FEFFFF  - mov ecx,[ebp-00000160]
+1B02C459: 39 09           - cmp [ecx],ecx
+// ---------- INJECTING HERE ----------
+1B02C45B: 8B 41 2C        - mov eax,[ecx+2C]
+1B02C45E: 8B 49 08        - mov ecx,[ecx+08]
+// ---------- DONE INJECTING  ----------
+1B02C461: 8B D1           - mov edx,ecx
+1B02C463: 39 12           - cmp [edx],edx
+1B02C465: 8B 89 90000000  - mov ecx,[ecx+00000090]
+1B02C46B: 3B C1           - cmp eax,ecx
+1B02C46D: 0F8D 75010000   - jnl 1B02C5E8
+1B02C473: 8B 47 60        - mov eax,[edi+60]
+1B02C476: 83 EC 0C        - sub esp,0C
+1B02C479: 50              - push eax
+1B02C47A: 39 00           - cmp [eax],eax
+1B02C47C: E8 2F4C5FEC     - call 076210B0
+}
+TEST_AMMO4:
+  db 8B 49 2C 3B C1
+
+unregistersymbol(TEST_AMMO4)
+dealloc(newmem9)
+
+{
+// ORIGINAL CODE - INJECTION POINT: 1B02C8FF
+
+1B02C8E2: 50              - push eax
+1B02C8E3: 39 00           - cmp [eax],eax
+1B02C8E5: E8 5E1960EC     - call 0762E248
+1B02C8EA: 83 C4 10        - add esp,10
+1B02C8ED: 8B 8D A0FEFFFF  - mov ecx,[ebp-00000160]
+1B02C8F3: 8B 41 18        - mov eax,[ecx+18]
+1B02C8F6: 8B D0           - mov edx,eax
+1B02C8F8: 39 12           - cmp [edx],edx
+1B02C8FA: 8B 40 58        - mov eax,[eax+58]
+1B02C8FD: 39 09           - cmp [ecx],ecx
+// ---------- INJECTING HERE ----------
+1B02C8FF: 8B 49 2C        - mov ecx,[ecx+2C]
+1B02C902: 3B C1           - cmp eax,ecx
+// ---------- DONE INJECTING  ----------
+1B02C904: 7E 31           - jle 1B02C937
+1B02C906: 8B 87 38010000  - mov eax,[edi+00000138]
+1B02C90C: 83 EC 08        - sub esp,08
+1B02C90F: FF B5 A0FEFFFF  - push [ebp-00000160]
+1B02C915: 50              - push eax
+1B02C916: E8 69020000     - call 1B02CB84
+1B02C91B: 83 C4 10        - add esp,10
+1B02C91E: 3D 01000000     - cmp eax,00000001
+1B02C923: 7D 12           - jnl 1B02C937
+1B02C925: 8B 87 38010000  - mov eax,[edi+00000138]
+}
+TEST_AMMO_USE1:
+  db 8B 41 2C 8B 49 18
+
+unregistersymbol(TEST_AMMO_USE1)
+dealloc(newmem14)
+
+{
+// ORIGINAL CODE - INJECTION POINT: 1B07ADB8
+
+1B07AD99: 8B EC                   - mov ebp,esp
+1B07AD9B: 83 EC 08                - sub esp,08
+1B07AD9E: 8B 45 08                - mov eax,[ebp+08]
+1B07ADA1: 8B 40 08                - mov eax,[eax+08]
+1B07ADA4: 8B C8                   - mov ecx,eax
+1B07ADA6: 39 09                   - cmp [ecx],ecx
+1B07ADA8: 8B 80 90000000          - mov eax,[eax+00000090]
+1B07ADAE: 3D 01000000             - cmp eax,00000001
+1B07ADB3: 7C 14                   - jnge 1B07ADC9
+1B07ADB5: 8B 4D 08                - mov ecx,[ebp+08]
+// ---------- INJECTING HERE ----------
+1B07ADB8: 8B 41 2C                - mov eax,[ecx+2C]
+1B07ADBB: 8B 49 18                - mov ecx,[ecx+18]
+// ---------- DONE INJECTING  ----------
+1B07ADBE: 8B D1                   - mov edx,ecx
+1B07ADC0: 39 12                   - cmp [edx],edx
+1B07ADC2: 8B 49 58                - mov ecx,[ecx+58]
+1B07ADC5: 3B C1                   - cmp eax,ecx
+1B07ADC7: 7C 07                   - jnge 1B07ADD0
+1B07ADC9: B8 01000000             - mov eax,00000001
+1B07ADCE: EB 02                   - jmp 1B07ADD2
+1B07ADD0: 33 C0                   - xor eax,eax
+1B07ADD2: C9                      - leave 
+1B07ADD3: C3                      - ret 
+}
+TEST_AMMO_USE2:
+  db 8B 46 2C 2B C1
+
+unregistersymbol(TEST_AMMO_USE2)
+dealloc(newmem20)
+
+{
+// ORIGINAL CODE - INJECTION POINT: 1B07B753
+
+1B07B738: 83 C4 10          - add esp,10
+1B07B73B: 8B 46 08          - mov eax,[esi+08]
+1B07B73E: 8B C8             - mov ecx,eax
+1B07B740: 39 09             - cmp [ecx],ecx
+1B07B742: 8B 80 90000000    - mov eax,[eax+00000090]
+1B07B748: 85 C0             - test eax,eax
+1B07B74A: 7E 0F             - jle 1B07B75B
+1B07B74C: 39 1B             - cmp [ebx],ebx
+1B07B74E: 8B 4B 58          - mov ecx,[ebx+58]
+1B07B751: 39 36             - cmp [esi],esi
+// ---------- INJECTING HERE ----------
+1B07B753: 8B 46 2C          - mov eax,[esi+2C]
+1B07B756: 2B C1             - sub eax,ecx
+// ---------- DONE INJECTING  ----------
+1B07B758: 89 46 2C          - mov [esi+2C],eax
+1B07B75B: 39 1B             - cmp [ebx],ebx
+1B07B75D: 0FB6 43 54        - movzx eax,byte ptr [ebx+54]
+1B07B761: 85 C0             - test eax,eax
+1B07B763: 74 40             - je 1B07B7A5
+1B07B765: 8B 87 C4000000    - mov eax,[edi+000000C4]
+1B07B76B: 8B C8             - mov ecx,eax
+1B07B76D: 39 09             - cmp [ecx],ecx
+1B07B76F: 0FB6 80 1C010000  - movzx eax,byte ptr [eax+0000011C]
+1B07B776: 85 C0             - test eax,eax
+}
+TEST_AMMO_USE3:
+  db 89 46 2C 39 1B
+
+unregistersymbol(TEST_AMMO_USE3)
+dealloc(newmem27)
+
+{
+// ORIGINAL CODE - INJECTION POINT: 1B07B758
+
+1B07B73E: 8B C8             - mov ecx,eax
+1B07B740: 39 09             - cmp [ecx],ecx
+1B07B742: 8B 80 90000000    - mov eax,[eax+00000090]
+1B07B748: 85 C0             - test eax,eax
+1B07B74A: 7E 0F             - jle 1B07B75B
+1B07B74C: 39 1B             - cmp [ebx],ebx
+1B07B74E: 8B 4B 58          - mov ecx,[ebx+58]
+1B07B751: 39 36             - cmp [esi],esi
+1B07B753: 8B 46 2C          - mov eax,[esi+2C]
+1B07B756: 2B C1             - sub eax,ecx
+// ---------- INJECTING HERE ----------
+1B07B758: 89 46 2C          - mov [esi+2C],eax
+1B07B75B: 39 1B             - cmp [ebx],ebx
+// ---------- DONE INJECTING  ----------
+1B07B75D: 0FB6 43 54        - movzx eax,byte ptr [ebx+54]
+1B07B761: 85 C0             - test eax,eax
+1B07B763: 74 40             - je 1B07B7A5
+1B07B765: 8B 87 C4000000    - mov eax,[edi+000000C4]
+1B07B76B: 8B C8             - mov ecx,eax
+1B07B76D: 39 09             - cmp [ecx],ecx
+1B07B76F: 0FB6 80 1C010000  - movzx eax,byte ptr [eax+0000011C]
+1B07B776: 85 C0             - test eax,eax
+1B07B778: 74 1C             - je 1B07B796
+1B07B77A: 8B 46 08          - mov eax,[esi+08]
+}
+</AssemblerScript>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>252</ID>
+          <Description>"TEST: Skill - close combat"</Description>
+          <Color>80000008</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>{ Game   : Shadowrun.exe
+  Version: 
+  Date   : 2014-05-07
+  Author : Jason
+
+  This script does blah blah blah
+}
+
+[ENABLE]
+
+aobscan(TEST_SKILL_Close_Combat,8B 40 10 C9 C3 00 00 55 8B EC 83 EC 08 8B 4D) // should be unique
+alloc(newmem,$1000)
+
+label(code)
+label(return)
+
+newmem:
+
+code:
+  mov eax,[eax+10]
+  leave 
+  ret 
+  jmp return
+
+TEST_SKILL_Close_Combat:
+  jmp code
+return:
+registersymbol(TEST_SKILL_Close_Combat)
+
+[DISABLE]
+
+TEST_SKILL_Close_Combat:
+  db 8B 40 10 C9 C3
+
+unregistersymbol(TEST_SKILL_Close_Combat)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: 1A3BFE69
+
+1A3BFE54: EB 00             - jmp 1A3BFE56
+1A3BFE56: 8B 45 E8          - mov eax,[ebp-18]
+1A3BFE59: EB 00             - jmp 1A3BFE5B
+1A3BFE5B: C9                - leave 
+1A3BFE5C: C3                - ret 
+1A3BFE5D: 00 00             - add [eax],al
+1A3BFE5F: 00 55 8B          - add [ebp-75],dl
+1A3BFE62: EC                - in al,dx
+1A3BFE63: 83 EC 08          - sub esp,08
+1A3BFE66: 8B 45 08          - mov eax,[ebp+08]
+// ---------- INJECTING HERE ----------
+1A3BFE69: 8B 40 10          - mov eax,[eax+10] // load close combat skill
+1A3BFE6C: C9                - leave 
+1A3BFE6D: C3                - ret 
+// ---------- DONE INJECTING  ----------
+1A3BFE6E: 00 00             - add [eax],al
+1A3BFE70: 55                - push ebp
+1A3BFE71: 8B EC             - mov ebp,esp
+1A3BFE73: 83 EC 08          - sub esp,08
+1A3BFE76: 8B 4D 0C          - mov ecx,[ebp+0C]
+1A3BFE79: 8B 45 08          - mov eax,[ebp+08]
+1A3BFE7C: 89 48 10          - mov [eax+10],ecx // set close combat skill
+1A3BFE7F: C9                - leave 
+1A3BFE80: C3                - ret 
+1A3BFE81: 00 00             - add [eax],al
+}
+</AssemblerScript>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>253</ID>
+          <Description>"TEST: Skill Pointer"</Description>
+          <Color>80000008</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>{ Game   : Shadowrun.exe
+  Version: 
+  Date   : 2014-05-07
+  Author : Jason
+
+  This loads the skill pointer from the pHealth struct, 31 times when
+  switching characters in the menu anyway.  Also when switching characters
+  or entering combat mode.  Probably more times too...
+}
+
+[ENABLE]
+
+aobscan(TEST_SkillPointer,10 8B 4D 08 8B 49 74 83 EC 04) // should be unique
+alloc(newmem,$1000)
+
+label(code)
+label(return)
+
+newmem:
+
+code:
+  mov ecx,[ecx+74]
+  sub esp,04
+  jmp return
+
+TEST_SkillPointer+04:
+  jmp code
+  nop
+return:
+registersymbol(TEST_SkillPointer)
+
+[DISABLE]
+
+TEST_SkillPointer+04:
+  db 8B 49 74 83 EC 04
+
+unregistersymbol(TEST_SkillPointer)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: 1A3FB26E
+
+1A3FB250: 83 C4 10          - add esp,10
+1A3FB253: 8B D8             - mov ebx,eax
+1A3FB255: 85 DB             - test ebx,ebx
+1A3FB257: 0F84 48000000     - je 1A3FB2A5
+1A3FB25D: 83 EC 0C          - sub esp,0C
+1A3FB260: 53                - push ebx
+1A3FB261: 39 1B             - cmp [ebx],ebx
+1A3FB263: E8 A849FCFF       - call 1A3BFC10
+1A3FB268: 83 C4 10          - add esp,10
+1A3FB26B: 8B 4D 08          - mov ecx,[ebp+08]
+// ---------- INJECTING HERE ----------
+1A3FB26E: 8B 49 74          - mov ecx,[ecx+74]
+1A3FB271: 83 EC 04          - sub esp,04
+// ---------- DONE INJECTING  ----------
+1A3FB274: 6A 00             - push 00
+1A3FB276: 51                - push ecx
+1A3FB277: 50                - push eax
+1A3FB278: 39 00             - cmp [eax],eax
+1A3FB27A: E8 B949FCFF       - call 1A3BFC38
+1A3FB27F: 83 C4 10          - add esp,10
+1A3FB282: 8B 08             - mov ecx,[eax]
+1A3FB284: 0FB6 51 1A        - movzx edx,byte ptr [ecx+1A]
+1A3FB288: 85 D2             - test edx,edx
+1A3FB28A: 0F85 FE000000     - jne 1A3FB38E
+}
+</AssemblerScript>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>2</ID>
+          <Description>"SCRIPT: AP"</Description>
+          <Color>80000008</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>{ Game   : Shadowrun.exe
+  Version: 
+  Date   : 2014-05-03
+  Author : Jason
+
+  INJECT_AP1, INJECT_AP2 - both execute loading AP when moving the cursor around
+
+  HOLD LCONTROL and LSHIFT down (left control and shift) while moving the
+  mouse to get at least 5 AP
+
+  It looks like:
+     08: Pointer - different for each entity, (AP at +34?   max ap?)
+     60: Different pointer for player and enemies
+         08: String length
+         0C: string (pc_elvfmale_06a_platpunk for me, generic_static_blank for 4 enemies)
+     98: AP (int)
+     9C: Health?
+}
+
+[ENABLE]
+
+aobscan(INJECT_AP1,8B 80 98 00 00 00 85 C0 7E) // should be unique
+alloc(newmem,$1000)
+
+label(code)
+label(skip)
+label(return)
+
+newmem:
+
+code:
+  pushad
+
+  push 000000A0 // VK_LSHIFT http://msdn.microsoft.com/en-us/library/windows/desktop/dd375731(v=vs.85).aspx
+  call GetAsyncKeyState
+  test eax,ffffffff
+  // jnz fast_speed
+  jz skip
+
+  push 000000A2 // VK_LCONTROL http://msdn.microsoft.com/en-us/library/windows/desktop/dd375731(v=vs.85).aspx
+  call GetAsyncKeyState
+  test eax,ffffffff
+  jz skip
+
+  popad // need to get at saved EAX value
+  pushad // we'll pop again later
+  mov ebx,#5
+  cmp dword ptr [eax+98],ebx
+  ja skip
+  mov dword ptr [eax+98],ebx
+
+skip:
+  popad
+  mov eax,[eax+00000098]
+  jmp return
+
+INJECT_AP1:
+  jmp code
+  nop
+return:
+registersymbol(INJECT_AP1)
+
+aobscan(INJECT_AP2,8B 80 98 00 00 00 C9 C3 00 00 68) // should be unique
+alloc(newmem2,$1000)
+
+label(code2)
+label(return2)
+
+newmem2:
+
+code2:
+  mov eax,[eax+00000098]
+  jmp return2
+
+INJECT_AP2:
+  jmp code2
+  nop
+return2:
+registersymbol(INJECT_AP2)
+
+[DISABLE]
+
+INJECT_AP1:
+  db 8B 80 98 00 00 00
+
+unregistersymbol(INJECT_AP1)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: 1A5BC251
+
+1A5BC23C: 8B 78 24        - mov edi,[eax+24]
+1A5BC23F: 8B C7           - mov eax,edi
+1A5BC241: 8D 65 FC        - lea esp,[ebp-04]
+1A5BC244: 5F              - pop edi
+1A5BC245: C9              - leave 
+1A5BC246: C3              - ret 
+1A5BC247: 00 55 8B        - add [ebp-75],dl
+1A5BC24A: EC              - in al,dx
+1A5BC24B: 83 EC 08        - sub esp,08
+1A5BC24E: 8B 45 08        - mov eax,[ebp+08]
+// ---------- INJECTING HERE ----------
+1A5BC251: 8B 80 98000000  - mov eax,[eax+00000098]
+// ---------- DONE INJECTING  ----------
+1A5BC257: 85 C0           - test eax,eax
+1A5BC259: 7E 18           - jle 1A5BC273
+1A5BC25B: 83 EC 08        - sub esp,08
+1A5BC25E: 6A 06           - push 06
+1A5BC260: FF 75 08        - push [ebp+08]
+1A5BC263: E8 10E80400     - call 1A60AA78
+1A5BC268: 83 C4 10        - add esp,10
+1A5BC26B: 85 C0           - test eax,eax
+1A5BC26D: 74 04           - je 1A5BC273
+1A5BC26F: 33 C0           - xor eax,eax
+}
+INJECT_AP2:
+  db 8B 80 98 00 00 00
+
+unregistersymbol(INJECT_AP2)
+dealloc(newmem2)
+
+{
+// ORIGINAL CODE - INJECTION POINT: 1A5BC276
+
+1A5BC25B: 83 EC 08        - sub esp,08
+1A5BC25E: 6A 06           - push 06
+1A5BC260: FF 75 08        - push [ebp+08]
+1A5BC263: E8 10E80400     - call 1A60AA78
+1A5BC268: 83 C4 10        - add esp,10
+1A5BC26B: 85 C0           - test eax,eax
+1A5BC26D: 74 04           - je 1A5BC273
+1A5BC26F: 33 C0           - xor eax,eax
+1A5BC271: EB 09           - jmp 1A5BC27C
+1A5BC273: 8B 45 08        - mov eax,[ebp+08]
+// ---------- INJECTING HERE ----------
+1A5BC276: 8B 80 98000000  - mov eax,[eax+00000098]
+// ---------- DONE INJECTING  ----------
+1A5BC27C: C9              - leave 
+1A5BC27D: C3              - ret 
+1A5BC27E: 00 00           - add [eax],al
+1A5BC280: 68 087A3E0F     - push 0F3E7A08
+1A5BC285: E9 9E3DB9EC     - jmp 07150028
+1A5BC28A: 00 00           - add [eax],al
+1A5BC28C: 00 00           - add [eax],al
+1A5BC28E: 00 00           - add [eax],al
+1A5BC290: 55              - push ebp
+1A5BC291: 8B EC           - mov ebp,esp
+}
+</AssemblerScript>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>5</ID>
+          <Description>"TEST: AP"</Description>
+          <Color>80000008</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>{ Game   : Shadowrun.exe
+  Version: 
+  Date   : 2014-05-03
+  Author : Jason
+
+  INJECT_AP1, INJECT_AP2 - both execute loading AP when moving the cursor around
+
+  It looks like:
+     08: Pointer - different for each entity, (AP at +34?   max ap?)
+     60: Different pointer for player and enemies
+         08: String length
+         0C: string (pc_elvfmale_06a_platpunk for me, generic_static_blank for 4 enemies)
+     98: AP (int)
+     9C: Health?
+
+}
+
+[ENABLE]
+
+aobscan(INJECT_AP1,8B 80 98 00 00 00 85 C0 7E) // should be unique
+alloc(newmem,$1000)
+
+label(code)
+label(return)
+
+newmem:
+
+code:
+  mov eax,[eax+00000098]
+  jmp return
+
+INJECT_AP1:
+  jmp code
+  nop
+return:
+registersymbol(INJECT_AP1)
+
+aobscan(INJECT_AP2,8B 80 98 00 00 00 C9 C3 00 00 68) // should be unique
+alloc(newmem2,$1000)
+
+label(code2)
+label(return2)
+
+newmem2:
+
+code2:
+  mov eax,[eax+00000098]
+  jmp return2
+
+INJECT_AP2:
+  jmp code2
+  nop
+return2:
+registersymbol(INJECT_AP2)
+
+[DISABLE]
+
+INJECT_AP1:
+  db 8B 80 98 00 00 00
+
+unregistersymbol(INJECT_AP1)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: 1A5BC251
+
+1A5BC23C: 8B 78 24        - mov edi,[eax+24]
+1A5BC23F: 8B C7           - mov eax,edi
+1A5BC241: 8D 65 FC        - lea esp,[ebp-04]
+1A5BC244: 5F              - pop edi
+1A5BC245: C9              - leave 
+1A5BC246: C3              - ret 
+1A5BC247: 00 55 8B        - add [ebp-75],dl
+1A5BC24A: EC              - in al,dx
+1A5BC24B: 83 EC 08        - sub esp,08
+1A5BC24E: 8B 45 08        - mov eax,[ebp+08]
+// ---------- INJECTING HERE ----------
+1A5BC251: 8B 80 98000000  - mov eax,[eax+00000098]
+// ---------- DONE INJECTING  ----------
+1A5BC257: 85 C0           - test eax,eax
+1A5BC259: 7E 18           - jle 1A5BC273
+1A5BC25B: 83 EC 08        - sub esp,08
+1A5BC25E: 6A 06           - push 06
+1A5BC260: FF 75 08        - push [ebp+08]
+1A5BC263: E8 10E80400     - call 1A60AA78
+1A5BC268: 83 C4 10        - add esp,10
+1A5BC26B: 85 C0           - test eax,eax
+1A5BC26D: 74 04           - je 1A5BC273
+1A5BC26F: 33 C0           - xor eax,eax
+}
+INJECT_AP2:
+  db 8B 80 98 00 00 00
+
+unregistersymbol(INJECT_AP2)
+dealloc(newmem2)
+
+{
+// ORIGINAL CODE - INJECTION POINT: 1A5BC276
+
+1A5BC25B: 83 EC 08        - sub esp,08
+1A5BC25E: 6A 06           - push 06
+1A5BC260: FF 75 08        - push [ebp+08]
+1A5BC263: E8 10E80400     - call 1A60AA78
+1A5BC268: 83 C4 10        - add esp,10
+1A5BC26B: 85 C0           - test eax,eax
+1A5BC26D: 74 04           - je 1A5BC273
+1A5BC26F: 33 C0           - xor eax,eax
+1A5BC271: EB 09           - jmp 1A5BC27C
+1A5BC273: 8B 45 08        - mov eax,[ebp+08]
+// ---------- INJECTING HERE ----------
+1A5BC276: 8B 80 98000000  - mov eax,[eax+00000098]
+// ---------- DONE INJECTING  ----------
+1A5BC27C: C9              - leave 
+1A5BC27D: C3              - ret 
+1A5BC27E: 00 00           - add [eax],al
+1A5BC280: 68 087A3E0F     - push 0F3E7A08
+1A5BC285: E9 9E3DB9EC     - jmp 07150028
+1A5BC28A: 00 00           - add [eax],al
+1A5BC28C: 00 00           - add [eax],al
+1A5BC28E: 00 00           - add [eax],al
+1A5BC290: 55              - push ebp
+1A5BC291: 8B EC           - mov ebp,esp
+}
+</AssemblerScript>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>3</ID>
+          <Description>"TEST: AP USE"</Description>
+          <Color>80000008</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>{ Game   : Shadowrun.exe
+  Version: 
+  Date   : 2014-05-03
+  Author : Jason
+
+  INJECT_APUSE1 - reads AP when being used
+  INJECT_APUSE2 - stores modified (lowered) AP after being used
+}
+
+[ENABLE]
+
+aobscan(INJECT_APUSE1,8B 88 98 00 00 00 03 4D) // should be unique
+alloc(newmem,$1000)
+
+label(code)
+label(return)
+
+newmem:
+
+code:
+  mov ecx,[eax+00000098]
+  jmp return
+
+INJECT_APUSE1:
+  jmp code
+  nop
+return:
+registersymbol(INJECT_APUSE1)
+
+aobscan(INJECT_APUSE2,89 88 98 00 00 00 C9) // should be unique
+alloc(newmem2,$1000)
+
+label(code2)
+label(return2)
+
+newmem2:
+
+code2:
+  mov [eax+00000098],ecx
+  jmp return2
+
+INJECT_APUSE2:
+  jmp code2
+  nop
+return2:
+registersymbol(INJECT_APUSE2)
+
+[DISABLE]
+
+INJECT_APUSE1:
+  db 8B 88 98 00 00 00
+
+unregistersymbol(INJECT_APUSE1)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: 0F7F41C1
+
+0F7F41AE: 8D 65 FC                - lea esp,[ebp-04]
+0F7F41B1: 5F                      - pop edi
+0F7F41B2: C9                      - leave 
+0F7F41B3: C3                      - ret 
+0F7F41B4: 00 00                   - add [eax],al
+0F7F41B6: 00 00                   - add [eax],al
+0F7F41B8: 55                      - push ebp
+0F7F41B9: 8B EC                   - mov ebp,esp
+0F7F41BB: 83 EC 08                - sub esp,08
+0F7F41BE: 8B 45 08                - mov eax,[ebp+08]
+// ---------- INJECTING HERE ----------
+0F7F41C1: 8B 88 98000000          - mov ecx,[eax+00000098]
+// ---------- DONE INJECTING  ----------
+0F7F41C7: 03 4D 0C                - add ecx,[ebp+0C]
+0F7F41CA: 89 88 98000000          - mov [eax+00000098],ecx
+0F7F41D0: C9                      - leave 
+0F7F41D1: C3                      - ret 
+0F7F41D2: 00 00                   - add [eax],al
+0F7F41D4: 00 00                   - add [eax],al
+0F7F41D6: 00 00                   - add [eax],al
+0F7F41D8: 55                      - push ebp
+0F7F41D9: 8B EC                   - mov ebp,esp
+0F7F41DB: 56                      - push esi
+}
+INJECT_APUSE2:
+  db 89 88 98 00 00 00
+
+unregistersymbol(INJECT_APUSE2)
+dealloc(newmem2)
+
+{
+// ORIGINAL CODE - INJECTION POINT: 0F7F41CA 
+
+0F7F41B2: C9                      - leave 
+0F7F41B3: C3                      - ret 
+0F7F41B4: 00 00                   - add [eax],al
+0F7F41B6: 00 00                   - add [eax],al
+0F7F41B8: 55                      - push ebp
+0F7F41B9: 8B EC                   - mov ebp,esp
+0F7F41BB: 83 EC 08                - sub esp,08
+0F7F41BE: 8B 45 08                - mov eax,[ebp+08]
+0F7F41C1: 8B 88 98000000          - mov ecx,[eax+00000098]
+0F7F41C7: 03 4D 0C                - add ecx,[ebp+0C]
+// ---------- INJECTING HERE ----------
+0F7F41CA: 89 88 98000000          - mov [eax+00000098],ecx
+// ---------- DONE INJECTING  ----------
+0F7F41D0: C9                      - leave 
+0F7F41D1: C3                      - ret 
+0F7F41D2: 00 00                   - add [eax],al
+0F7F41D4: 00 00                   - add [eax],al
+0F7F41D6: 00 00                   - add [eax],al
+0F7F41D8: 55                      - push ebp
+0F7F41D9: 8B EC                   - mov ebp,esp
+0F7F41DB: 56                      - push esi
+0F7F41DC: 83 EC 04                - sub esp,04
+0F7F41DF: 83 7D 10 00             - cmp dword ptr [ebp+10],00
+}
+</AssemblerScript>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>4</ID>
+          <Description>"TEST: AP USE (OLD)"</Description>
+          <Color>80000008</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>{ Game   : Shadowrun.exe
+  Version: 
+  Date   : 2014-05-03
+  Author : Jason
+
+  INJECT_APUSE1 - reads AP when being used
+  INJECT_APUSE2 - stores modified (lowered) AP after being used
+}
+
+[ENABLE]
+
+aobscan(INJECT_APUSE1,8B 88 98 00 00 00 03 4D) // should be unique
+alloc(newmem,$1000)
+
+label(code)
+label(return)
+
+newmem:
+
+code:
+  mov ecx,[eax+00000098]
+  jmp return
+
+INJECT_APUSE1:
+  jmp code
+  nop
+return:
+registersymbol(INJECT_APUSE1)
+
+aobscan(INJECT_APUSE2,89 88 98 00 00 00 C9) // should be unique
+alloc(newmem2,$1000)
+
+label(code2)
+label(return2)
+
+newmem2:
+
+code2:
+  mov [eax+00000098],ecx
+  jmp return2
+
+INJECT_APUSE2:
+  jmp code2
+  nop
+return2:
+registersymbol(INJECT_APUSE2)
+
+[DISABLE]
+
+INJECT_APUSE1:
+  db 8B 88 98 00 00 00
+
+unregistersymbol(INJECT_APUSE1)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: 0F7F41C1
+
+0F7F41AE: 8D 65 FC                - lea esp,[ebp-04]
+0F7F41B1: 5F                      - pop edi
+0F7F41B2: C9                      - leave 
+0F7F41B3: C3                      - ret 
+0F7F41B4: 00 00                   - add [eax],al
+0F7F41B6: 00 00                   - add [eax],al
+0F7F41B8: 55                      - push ebp
+0F7F41B9: 8B EC                   - mov ebp,esp
+0F7F41BB: 83 EC 08                - sub esp,08
+0F7F41BE: 8B 45 08                - mov eax,[ebp+08]
+// ---------- INJECTING HERE ----------
+0F7F41C1: 8B 88 98000000          - mov ecx,[eax+00000098]
+// ---------- DONE INJECTING  ----------
+0F7F41C7: 03 4D 0C                - add ecx,[ebp+0C]
+0F7F41CA: 89 88 98000000          - mov [eax+00000098],ecx
+0F7F41D0: C9                      - leave 
+0F7F41D1: C3                      - ret 
+0F7F41D2: 00 00                   - add [eax],al
+0F7F41D4: 00 00                   - add [eax],al
+0F7F41D6: 00 00                   - add [eax],al
+0F7F41D8: 55                      - push ebp
+0F7F41D9: 8B EC                   - mov ebp,esp
+0F7F41DB: 56                      - push esi
+}
+INJECT_APUSE2:
+  db 89 88 98 00 00 00
+
+unregistersymbol(INJECT_APUSE2)
+dealloc(newmem2)
+
+{
+// ORIGINAL CODE - INJECTION POINT: 0F7F41CA 
+
+0F7F41B2: C9                      - leave 
+0F7F41B3: C3                      - ret 
+0F7F41B4: 00 00                   - add [eax],al
+0F7F41B6: 00 00                   - add [eax],al
+0F7F41B8: 55                      - push ebp
+0F7F41B9: 8B EC                   - mov ebp,esp
+0F7F41BB: 83 EC 08                - sub esp,08
+0F7F41BE: 8B 45 08                - mov eax,[ebp+08]
+0F7F41C1: 8B 88 98000000          - mov ecx,[eax+00000098]
+0F7F41C7: 03 4D 0C                - add ecx,[ebp+0C]
+// ---------- INJECTING HERE ----------
+0F7F41CA: 89 88 98000000          - mov [eax+00000098],ecx
+// ---------- DONE INJECTING  ----------
+0F7F41D0: C9                      - leave 
+0F7F41D1: C3                      - ret 
+0F7F41D2: 00 00                   - add [eax],al
+0F7F41D4: 00 00                   - add [eax],al
+0F7F41D6: 00 00                   - add [eax],al
+0F7F41D8: 55                      - push ebp
+0F7F41D9: 8B EC                   - mov ebp,esp
+0F7F41DB: 56                      - push esi
+0F7F41DC: 83 EC 04                - sub esp,04
+0F7F41DF: 83 7D 10 00             - cmp dword ptr [ebp+10],00
+}
+</AssemblerScript>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>222</ID>
+          <Description>"SCRIPT: Hover Health (Enemy)"</Description>
+          <Color>80000008</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>{ Game   : Shadowrun.exe
+  Version: 
+  Date   : 2014-05-04
+  Author : Jason
+
+  Here is where health is loaded when hovering over an enemy.  Doesn't seem
+  to trigger on friendlies because their health isn't shown.
+}
+
+[ENABLE]
+
+aobscanmodule(INJECT_HOVER_HP,Shadowrun.exe,ERROR: Could not find unique AOB, tried code "8B 83 9C 00 00 00") // should be unique
+alloc(newmem,$1000)
+
+label(code)
+label(return)
+
+newmem:
+
+code:
+  mov eax,[ebx+0000009C]
+  jmp return
+
+INJECT_HOVER_HP+4D664DE0:
+  jmp code
+  nop
+return:
+registersymbol(INJECT_HOVER_HP)
+
+[DISABLE]
+
+INJECT_HOVER_HP+4D664DE0:
+  db 8B 83 9C 00 00 00
+
+unregistersymbol(INJECT_HOVER_HP)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: 13C53F31 
+
+13C53F06: C7 45 C4 00000000 - mov [ebp-3C],00000000
+13C53F0D: C7 45 C8 00000000 - mov [ebp-38],00000000
+13C53F14: C7 45 CC 00000000 - mov [ebp-34],00000000
+13C53F1B: C7 45 D0 00000000 - mov [ebp-30],00000000
+13C53F22: 0FB6 45 10        - movzx eax,byte ptr [ebp+10]
+13C53F26: 85 C0             - test eax,eax
+13C53F28: 75 12             - jne 13C53F3C
+13C53F2A: 83 FE 0B          - cmp esi,0B
+13C53F2D: 75 0D             - jne 13C53F3C
+13C53F2F: 39 1B             - cmp [ebx],ebx
+// ---------- INJECTING HERE ----------
+13C53F31: 8B 83 9C000000    - mov eax,[ebx+0000009C] // load health when hovering
+// ---------- DONE INJECTING  ----------
+13C53F37: E9 19020000       - jmp 13C54155
+13C53F3C: 83 FE 08          - cmp esi,08
+13C53F3F: 0F85 55000000     - jne 13C53F9A
+13C53F45: 8B 03             - mov eax,[ebx]
+13C53F47: 8B 40 10          - mov eax,[eax+10]
+13C53F4A: 3D C062060F       - cmp eax,0F0662C0
+13C53F4F: 0F85 45000000     - jne 13C53F9A
+13C53F55: 89 5D BC          - mov [ebp-44],ebx
+13C53F58: 85 DB             - test ebx,ebx
+13C53F5A: 74 25             - je 13C53F81
+}
+</AssemblerScript>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>207</ID>
+          <Description>"UtilCopyData"</Description>
+          <Options moHideChildren="1"/>
+          <Color>C0C0C0</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>GLOBALALLOC(UtilCopyData,$10000) //64k
+
+{ You MUST call pushad, pushfd, then push an address, 0 if you don't care,
+  then push the address of a memory area to use with config (TEST below).
+  The second property in teh struct below (memory area to store addresses)
+  is the most important, it contains a list of addresses and locations for
+  the stored data.  So use the memory viewer to check on how many addresses
+  you're picking up, or you can just use the structure dissector with addresses
+  like these: [TEST+1004], [TEST+100C], [TEST+1014], [TEST+101C], etc.
+
+globalalloc(TEST,$100000) // 1mb
+TEST:
+  dd TEST+3000 // address to start storing addresses
+  dd TEST+1000 // memory area to store addresses, make sure there is enough room by dividing total memory by total size and multiplying by 4, set to 0 to not store
+  dd d0000 // total memory size to use, our allocated size minus the start data offset
+  dd 100 // bytes of stack to store
+  dd 200 // bytes of data to store at pushed address
+  dd 0 // flag to store FXSave data or not
+  dd 0 // initialized?  first call will fill remaining data, so reserve 100 bytes
+  dd 0 // initialization data will be stored here and on to TEST+100, so don't use it!  first is size of individual record first is size of individual record
+
+// second option, memory area to store addresses, will store 8 bytes for each,
+//        first 4 are the passed address, second 4 are a pointer to the stored
+//        data.  This example has 500 bytes of stack, 800 bytes of address,
+//        200 bytes for FXSave data, plus the standard 100 bytes for header
+//        giving a total size of 1000 (hex), which means the first values
+//        will be stored at TEST+2000, the second at TEST+3000, the third at
+//        TEST+4000, etc.  There is room for E0 of them in e0000 bytes specified
+//        so make sure TEST+1000 has enough room for E0*8 or 700 bytes
+
+// this is code that will do the copying, the stack will be as the ESP looked
+// from the pushad command
+
+//-----------------------------------------------------------------------------
+//- Test UtilCopyData
+  pushad
+  pushfd
+  push eax // unique value to copy values on, eax already has good memory
+  push TEST
+  call UtilCopyData // handles removing parameters from stack
+  popfd
+  popad
+//-----------------------------------------------------------------------------
+
+
+
+// result format:
+0000: Unique Value (argument on the stack)
+0004: Count (how many times this value has been copied)
+0008: PTR-&gt;Stack
+000C: PTR-&gt;Stack_EBP (EBP, if in range)
+0010: PTR-&gt;Memory
+0014: PTR-&gt;FXSave
+0018: PTR-&gt;XMM (to 009C)
+001C: PTR-&gt;FPU (to 00BC)
+001C-0098: RESERVED
+009C: XMM0 as single float
+..
+00B8: XMM7 as single float
+00BC: ST(0) as a single float
+..
+00D8: ST(7) as a single float
+00DC: Flags
+00E0: Registers: EDI, ESI, EBP, ESP, EBX, EDX, ECX, EAX
+0100: Original Stack
+....: Memory
+....: FXSAVE
+
+
+}
+
+{================================================================================
+ = 1) In MemoryBrowser, right-click and set display type to 4 byte hex and
+ =    change so you see 3, 6, 9 or 12 columns.  Goto address "AddressList",
+ =	      Column 0: Address
+ =        Column 1: TickCount
+ =        Column 2: Count of this address
+ = 2) Import AddressList structure if you haven't
+ =    address to multiples of 256 past StackData, i.e. address would be
+ =    simply "StackData" for the first address, or "StackData+500" for the
+ =    sixth address.  First 4 bytes are flags, next 32 are registers (edi, esi,
+ =    ebp, esp, ebx, edx, ecx, eax), then 220 bytes of stack
+ ================================================================================
+}
+//-----------------------------------------------------------------------------
+// Enable sets everything up when cheat is checked
+//-----------------------------------------------------------------------------
+[ENABLE]
+
+define(C_Address,0)
+define(C_AddressList,4)
+define(C_TotalSizeToUse,8)
+define(C_StackSize,c)
+define(C_MemSize,10)
+define(C_FXSaveFlag,14)
+define(C_Initialized,18)
+define(C_TotalSize,1c) // calculated on init
+define(C_MaxOffset,20) // initialized to mem size - total size
+{
+  stack: EBP+this is original stack
+  0000: return
+  0004: PTR-&gt;Config
+  0008: UniqueValue
+  000C: flags
+  0010: EDI
+  0014: ESI
+  0018: EBP
+  001C: ESP
+  0020: EBX
+  0024: EDX
+  0028: ECX
+  002C: EAX
+  0030: original stack
+}
+
+// values I care about (added 28) for three new pushes at the start
+define(_ReturnValue,ebp+24)
+define(_Config,ebp+2c)
+define(_UniqueValue,ebp+30)
+define(_Flags,ebp+34)
+define(_EBP,ebp+40)
+define(_ESP,ebp+44)
+define(_FoundPointer,ebp-4)
+define(_FoundIndex,ebp-8)
+
+label(UtilCopyData_Enabled)
+label(UtilCopyData_Count)
+registersymbol(UtilCopyData_Enabled)
+registersymbol(UtilCopyData_Count)
+
+UtilCopyData:
+  label(AlreadyInitialized)
+  label(Exit)
+
+  push 00000000 // will be ebp+24
+  pushfd
+  pushad
+
+  inc [UtilCopyData_Count]
+
+  cld // clear direction flag so we always move going upwards
+
+  mov ebp, esp // is already stored in pushad from caller, no need to store again
+  sub esp, 20 // local variables
+
+  // enabled?
+  cmp [UtilCopyData_Enabled], 00000001
+  jne Exit
+
+  // initialized?
+  mov esi, [_Config]
+  cmp [esi+C_Initialized], 1
+  je AlreadyInitialized
+
+  // need to initialize, calculate total size, 100 for header, stack size, mem size, FXSAVE
+  mov eax, 00000100 // header
+  add eax, [esi+C_StackSize] // stack size
+  add eax, [esi+C_MemSize]
+  cmp [esi+C_FXSaveFlag], 1
+  label(INOFX)
+  jne INOFX
+  add eax,200 // 512 bytes for fxsave
+INOFX:
+  mov [esi+C_TotalSize], eax // save total size
+
+  // clear storage memory
+  xor eax, eax // zero to store
+  mov edi, [esi+C_Address]
+  mov ecx, [esi+C_TotalSizeToUse]
+  shr ecx, 2 // storing dwords, so divide count by 4
+  rep stosd
+
+  // calc max offset to not reach past memory limit
+  mov eax, [esi+C_TotalSizeToUse]
+  sub eax, [esi+C_TotalSize]
+  mov [esi+C_MaxOffset], eax
+
+  mov [esi+C_Initialized], 1 // say we already initialized it
+
+AlreadyInitialized:
+  // if 0, shorthand way to exit without storing anything and keep rest of calling code identical
+  mov eax, [_UniqueValue]
+  test eax, eax
+  jz Exit
+
+  mov edi, [esi+C_Address] // start of data
+  mov edx, 0 // offset into data
+  mov ecx, 0 // index (for storing info later)
+
+  // make sure we're not past the end
+  label(Continue)
+  label(Found)
+Continue:
+  cmp edx, [esi+C_MaxOffset]
+  ja Exit
+  mov ebx, [edi+edx]
+
+  cmp ebx, eax // is address found?
+  je Found
+
+  test ebx, ebx // is it zero, empty?
+  jz Found
+
+  inc ecx
+  add edx, [esi+C_TotalSize] // move on to next one
+  jmp Continue
+
+Found:
+  lea edi, [edi+edx]
+  mov [_FoundPointer], edi // store as local variable for later use
+  mov [_ReturnValue], edi // store as return value
+  mov [_FoundIndex], ecx // store as local variable for later use
+
+  mov [edi], eax // 0000: Unique Value (argument from stack)
+  inc [edi+4] // 0004: Count (how many times this value has been copied)
+  mov ebx, edi
+  add ebx, 100
+  mov [edi+8], ebx // 0008: PTR-&gt;Stack
+
+  // store PTR-&gt;Stack and PTR-&gt;Stack_EBP
+  xor edx, edx // default will store 0, meaning EBP is outside our saved stack
+  mov ecx, [_EBP] // from pushad earlier
+  sub ecx, [_ESP]
+  cmp ecx, [esi+C_StackSize] // does old EBP point into stack data we are saving?
+  label(EBPNotInStackData)
+  ja EBPNotInStackData
+  mov edx, ecx
+  add edx, ebx // ebx is still PTR-&gt;Stack
+EBPNotInStackData:
+  mov [edi+C], edx // 000C: PTR-&gt;Stack (EBP)
+
+  // save stack data, edi and esi will need to be reloaded, ESI is [_Config], EDI is [_FoundPointer]
+  add edi, 000000dc // now points to flags
+  mov ecx, [esi+C_StackSize]
+  add ecx, 24 // 24 extra bytes for pushad/pushfd
+  lea esi, [_Flags] // address of flags from pushad/pushfd of caller
+  shr ecx, 2
+  rep movsd
+
+  // save memory data
+  label(NoMemory)
+  mov ecx, [_Config]
+  mov ecx, [ecx+C_MemSize]
+  test ecx, ecx
+  jz NoMemory
+
+  mov edx, [_FoundPointer]
+  mov [edx+10], edi
+  mov esi, [_UniqueValue]
+  shr ecx, 2
+  rep movsd
+NoMemory:
+
+  // ok, now store UniqueValue/Address if specified
+  mov esi, [_Config]
+  mov eax, [esi+C_MemSize]
+  mov edi, [esi+C_AddressList]
+  test edi, edi
+  label(NoAddressList)
+  jz NoAddressList
+  // yes we should store
+  mov eax, [_FoundIndex]
+  lea ebx, [edi+eax*8] // 8 bytes per address
+  mov eax, [_UniqueValue]
+  mov [ebx], eax // store passed unique value
+  mov eax, [_FoundPointer]
+  mov [ebx+4], eax // store address where we stored stuff
+
+NoAddressList:
+//-----------------------------------------------------------------------------
+// Now handle floating point data
+//-----------------------------------------------------------------------------
+// http://asm.inightmare.org/opcodelst/index.php?op=FXSAVE
+// http://www.website.masmforum.com/tutorials/fptute/fpuchap4.htm
+
+  label(NoFXSAVE)
+  mov esi, [_Config]
+  cmp [esi+C_FXSaveFlag], 1
+  jne NoFXSAVE
+  mov edi,[_FoundPointer] // start of saved data for the passed address
+  mov edx,edi
+  add edi,[esi+C_TotalSize] // now at end of ALL including FXSAVE
+  sub edi,200 // now where FXSAVE should go, but...
+  and edi,FFFFFFF0 // MUST be 16-byte aligned or will error.  no extra room, might over-write end of memory or stack
+  mov [edx+14],edi // Ptr-&gt;FXSave
+  fxsave [edi]
+  lea esi,[edi+20] // ST0 starts at +20, each register is 10 bytes of data, but takes up 16 bytes
+
+  label(fpuloop)
+  lea edi,[edx+bc] // start storing floats at start of data + BC
+  mov [edx+1c],edi // structure pointer to FPU float values
+  mov ecx,8 // ST0-ST7
+fpuloop:
+  mov eax,[esi+8]  // sign+exponent
+  shl eax,10       // shift top bits to the end
+  and eax,c0000000 // only top 2 bits (sign and top exponent bit)
+  mov [edi],eax    // store top 2 bits (bits 30 and 31)
+
+  mov eax,[esi+8]  // sign+exponent
+  and eax,0000007f // bottom 7 bits of exponent
+  shl eax,17       // shift to bits 23-29
+  or [edi],eax     // merge with sign and top bit
+
+  mov eax,[esi+4]  // most-significant bits of mantissa
+  and eax,7fffff00 // 23 bits, REAL4 has most-significant bit assumed on, REAL10 does not
+  shr eax,8        // move bits to the end
+  or [edi],eax     // merge with existing result
+  add edi,4
+  add esi,10
+  loop fpuloop
+
+  mov ecx,8 // XMM0-XMM7
+  label(xmmloop)
+  lea edi,[edx+9c]
+  mov [edx+18],edi // store pointer to XMM registers
+  mov esi,[edx+14] // address of FXSAVE data
+  add esi,a0       // first XMM register
+xmmloop:
+  movsd
+  add esi,c // 16 bytes for each xmm register
+  loop xmmloop
+
+NoFXSAVE:
+{
+// result format:
+0000: Unique Value (argument on the stack)
+0004: Count (how many times this value has been copied)
+0008: PTR-&gt;Stack
+000C: PTR-&gt;Stack_EBP (EBP, if in range of copied stack data)
+0010: PTR-&gt;Memory
+0014: PTR-&gt;FXSave
+0018: PTR-&gt;XMM (to 009C)
+001C: PTR-&gt;FPU (to 00BC)
+001C-0098: RESERVED
+009C: XMM0 as single float
+..
+00B8: XMM7 as single float
+00BC: ST(0) as a single float
+..
+00D8: ST(7) as a single float
+00DC: Flags
+00E0: Registers: EDI, ESI, EBP, ESP, EBX, EDX, ECX, EAX
+0100: Original Stack
+....: Memory
+....: FXSAVE
+}
+
+
+Exit:
+  add esp, 20 // local variables gone
+
+  popad
+  popfd
+  pop eax // return value
+
+  ret 8
+
+UtilCopyData+fff8: // end of our memory
+UtilCopyData_Count:
+  dd 0
+UtilCopyData_Enabled:
+  dd 1
+
+
+
+//-----------------------------------------------------------------------------
+// disable will just set flag to 0
+//-----------------------------------------------------------------------------
+[DISABLE]
+UtilCopyData_Enabled:
+  dd 0
+
+</AssemblerScript>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>209</ID>
+              <Description>"UtilCopyData_Count"</Description>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>UtilCopyData_Count</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>210</ID>
+              <Description>"UtilCopyData_Enabled"</Description>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>UtilCopyData_Enabled</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>216</ID>
+              <Description>"TEST: AP"</Description>
+              <Color>80000008</Color>
+              <VariableType>Auto Assembler Script</VariableType>
+              <AssemblerScript>{ Game   : Shadowrun.exe
+  Version:
+  Date   : 2014-05-03
+  Author : Jason
+
+  INJECT_AP1, INJECT_AP2 - both execute loading AP when moving the cursor around
+
+  HOLD LCONTROL and LSHIFT down (left control and shift) while moving the
+  mouse to get at least 5 AP
+
+  EBX is a pointer, same one for friends, same one for enemies
+      0014, 0020, 0028, 002c, 0030, 004c, 0050, 0054, 0094, 00A0, 00A4, 00B4
+            are all null for enemies, pointer for player
+
+  (string pointers have length at 0008, unicode bytes at 000C)
+  Memory (EAX)
+     08: Pointer - different for each entity, (AP at +34?   max ap?)
+     58: String - Name (i.e. Verno for me, Paco for friend, Stevie J, Krund, Thistle for baddies
+     5C: String - Body? Story/Paco for friend, ElfMale for me, Core/HumanMale for one, Gangers/OrkMale, Gangers/ElfFemale
+     60: String - Model? npc_humanmale, pc_elfmale_o???, backer_human, generic_stat
+     98: AP (int)
+     9C: Health
+     C0: Pointer - 30 is null for non-player non-friends, 003C is null for non-player, 0044 is null for non-player
+     C4: Pointer - 0010 is same pointer for player and friend, 0014 is same pointer for player and friend
+                 0010: "Player.xml", "Guard - Seek And Destroy AttitudeCautious.xml"
+                 0014: "Player", "Guard - Seek And Destroy"
+                      Maybe this is who controls and we can reliably go off 'Player'?
+     DC: String - Faction?  ("shadowrunners" for me and friend, "gangers" for bad guys, 'hellhound')
+     E0: Pointer - same for friend team, same for enemies (0100 bytes) - might be valuable
+XXXXXE8: 0 for enemies, pointer for friend team (AP USE ONLY?, opposite this last time, pointer for player and friend, pointer for enemy)
+XXXXXF8: 0 for enemies, pointer for friend team (NOT TRUE, opposite this last time, pointer for player and friend, pointer for enemy)
+XXXXXFC: 0 for enemies, pointer for friend team (NOT TRUE, sometimes 0 for friend and player), last time opposite, 0 for player and friend, pointer for enemies
+XXXXX108: pointer for friend, 0 for player and enemies (AP USE ONLY?, 0 for friend and pointer for 1 enemy once)
+     120: 0 for player, pointer for enemies
+     124: 0 for player, pointer for enemies
+     128: 0 for player, pointer for enemies
+     12C: 0 for player, pointer for enemies
+     134: 0 for player, pointer for enemies
+     1B4: 0 for player, 1 for enemies
+     1F8: 0100 for player, 0 for enemies
+     210: 0 for player, 0100 for enemies
+     230: Seems to be flag bytes, 00010000 for player/friend, 01000000 for enemies, but I think player was 00010100 once
+
+
+
+
+     [ESP+14], [ESP+18], and [ESP+1C] seem to all be 0 when switching characters
+     [ESP+20], [ESP+24], and [ESP+28] seem to all be 0 for the previous character selected
+     ECX and EDX can be null (0) for non-player team
+     ESI seems to be pointer (EAX) for player team, but 2(ap?) for others
+}
+
+[ENABLE]
+
+globalalloc(TEST_AP,$100000) // 1mb
+TEST_AP:
+  dd TEST_AP+3000 // address to start storing data
+  dd TEST_AP+1000 // memory area to store addresses, make sure there is enough room by dividing total memory by total size and multiplying by 4, set to 0 to not store
+  dd d0000 // total memory size to use, our allocated size minus the start data offset
+  dd 200 // bytes of stack to store
+  dd 300 // bytes of data to store at pushed address
+  dd 1 // flag to store FXSave data or not
+  dd 0 // initialized?  first call will fill remaining data, so reserve 100 bytes
+  dd 0 // initialization data will be stored here and on to TEST+100, so don't use it!  first is size of individual record
+  dd 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+  dd 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+  dd 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+  dd 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+TEST_AP+1000: // zero address area to start
+  dd 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+  dd 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+  dd 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+  dd 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+
+aobscan(INJECT_AP1,8B 80 98 00 00 00 85 C0 7E) // should be unique
+alloc(newmem,$1000)
+
+label(code)
+label(skip)
+label(return)
+
+newmem:
+
+code:
+//-----------------------------------------------------------------------------
+// Here is the code you will inject, push registers, push flags, push stack,
+// push memory address, and finally push pointer to structure with settings,
+// then call UtilCopyData.  Afterwards pop flags and registers and you are
+// back where you started
+//
+label(skiputilcopydata)
+  push 00000000 // room for our count, will make stack offsets off by 4
+  pushad
+  pushfd
+
+  cmp eax,esi // test1: values should be the same
+  jne skiputilcopydata
+
+  test ecx,ecx // test2: non-null ecx and edx
+  jz skiputilcopydata
+  test edx,edx
+  jz skiputilcopydata
+
+  xor ecx,ecx // will have count
+//  cmp dword ptr [eax+e8],1
+//  adc ecx,0
+//  cmp dword ptr [eax+f8],1
+//  adc ecx,0
+//  cmp dword ptr [eax+fc],1
+//  adc ecx,0
+  cmp dword ptr [eax+120],1
+  adc ecx,0
+  cmp dword ptr [eax+124],1
+  adc ecx,0
+  cmp dword ptr [eax+128],1
+  adc ecx,0
+  cmp dword ptr [eax+12c],1
+  adc ecx,0
+  cmp dword ptr [eax+134],1
+  adc ecx,0
+  mov [esp+24],ecx
+
+  push eax
+  push TEST_AP
+  call UtilCopyData
+
+skiputilcopydata:
+  popfd
+  popad
+  add esp,4 // our count
+//-----------------------------------------------------------------------------
+
+skip:
+  mov eax,[eax+00000098]
+  jmp return
+
+INJECT_AP1:
+  jmp code
+  nop
+return:
+registersymbol(INJECT_AP1)
+
+
+[DISABLE]
+
+INJECT_AP1:
+  db 8B 80 98 00 00 00
+
+unregistersymbol(INJECT_AP1)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: 1A5BC251
+
+1A5BC23C: 8B 78 24        - mov edi,[eax+24]
+1A5BC23F: 8B C7           - mov eax,edi
+1A5BC241: 8D 65 FC        - lea esp,[ebp-04]
+1A5BC244: 5F              - pop edi
+1A5BC245: C9              - leave
+1A5BC246: C3              - ret
+1A5BC247: 00 55 8B        - add [ebp-75],dl
+1A5BC24A: EC              - in al,dx
+1A5BC24B: 83 EC 08        - sub esp,08
+1A5BC24E: 8B 45 08        - mov eax,[ebp+08]
+// ---------- INJECTING HERE ----------
+1A5BC251: 8B 80 98000000  - mov eax,[eax+00000098]
+// ---------- DONE INJECTING  ----------
+1A5BC257: 85 C0           - test eax,eax
+1A5BC259: 7E 18           - jle 1A5BC273
+1A5BC25B: 83 EC 08        - sub esp,08
+1A5BC25E: 6A 06           - push 06
+1A5BC260: FF 75 08        - push [ebp+08]
+1A5BC263: E8 10E80400     - call 1A60AA78
+1A5BC268: 83 C4 10        - add esp,10
+1A5BC26B: 85 C0           - test eax,eax
+1A5BC26D: 74 04           - je 1A5BC273
+1A5BC26F: 33 C0           - xor eax,eax
+}
+
+</AssemblerScript>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>234</ID>
+              <Description>"TEST: AP Use"</Description>
+              <Color>80000008</Color>
+              <VariableType>Auto Assembler Script</VariableType>
+              <AssemblerScript>{ Game   : Shadowrun.exe
+  Version: 
+  Date   : 2014-05-04
+  Author : Jason
+
+  This stores the new AP value after being used.
+}
+
+globalalloc(TEST_APUSE,$100000) // 1mb
+TEST_APUSE:
+  dd TEST_APUSE+3000 // address to start storing data
+  dd TEST_APUSE+1000 // memory area to store addresses, make sure there is enough room by dividing total memory by total size and multiplying by 4, set to 0 to not store
+  dd d0000 // total memory size to use, our allocated size minus the start data offset
+  dd 200 // bytes of stack to store
+  dd 300 // bytes of data to store at pushed address
+  dd 1 // flag to store FXSave data or not
+  dd 0 // initialized?  first call will fill remaining data, so reserve 100 bytes
+  dd 0 // initialization data will be stored here and on to TEST+100, so don't use it!  first is size of individual record
+  dd 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+  dd 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+  dd 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+  dd 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+TEST_APUSE+1000: // zero address area to start
+  dd 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+  dd 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+  dd 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+  dd 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+
+[ENABLE]
+
+aobscan(INJECT_APUSE,89 88 98 00 00 00 C9) // should be unique
+alloc(newmem,$1000)
+
+label(code)
+label(isEnemy)
+label(isFriend)
+label(done)
+label(return)
+
+newmem:
+
+code:
+//-----------------------------------------------------------------------------
+  pushad
+  pushfd
+
+  push eax // to use pointer later
+  push eax // argument
+  push TEST_APUSE
+  call UtilCopyData
+
+  label(ucd_notfound)
+  pop esi
+  test eax,eax
+  jz ucd_notfound
+  // 0020: 120 is 0 for player
+  // 0024: 124 is 0 for player
+  // 0028: 128 is 0 for player
+  // 002C: 12C is 0 for player
+  // 0030: 134 is 0 for player
+  // XXXX: 1B4 is 0 for player (invalid)
+  // 0038: 1F8 is 100 for  player
+  // 003C: 210 is 0 for player
+  // XXXX: 230: 0001XXXX for player (always set) - maybe flag for active team?
+  // XXXX: 230: 0100XXXX for enemy (always clear)
+  // 0034: globals_IsFriend result
+
+  cmp dword ptr [esi+120],1
+  adc [eax+20],0
+
+  cmp dword ptr [esi+124],1
+  adc [eax+24],0
+
+  cmp dword ptr [esi+128],1
+  adc [eax+28],0
+
+  cmp dword ptr [esi+12c],1
+  adc [eax+2c],0
+
+  cmp dword ptr [esi+134],1
+  adc [eax+30],0
+
+  cmp dword ptr [esi+1b4],1 // DOESN'T WORK
+  adc [eax+34],0
+
+{  label(s38)
+  cmp dword ptr [esi+1f8],0100
+  jne s38
+  inc dword ptr [eax+38]
+  s38:}
+  mov ebx,eax
+  push esi
+  call globals_IsFriend
+  mov [ebx+38],eax
+  mov eax,ebx
+
+  cmp dword ptr [esi+210],1
+  adc [eax+3c],0
+
+
+{  label(s230_1) // DOESN'T WORK - set for all - maybe if on active team?
+  mov ebx,[esi+230]
+  and ebx,FFFF0000
+  cmp ebx,00010000
+  jne s230_1
+  inc dword ptr [eax+40]
+  s230_1:
+
+  label(s230_2) // DOESN'T WORK, clear for all
+  mov ebx,[esi+230]
+  and ebx,FFFF0000
+  cmp ebx,01000000
+  jne s230_2
+  inc dword ptr [eax+44]
+  s230_2:}
+
+
+ucd_notfound:
+
+  popfd
+  popad
+//-----------------------------------------------------------------------------
+  pushad
+
+  xor ecx,ecx
+  cmp dword ptr [eax+120],1
+  adc ecx,0
+  cmp dword ptr [eax+124],1
+  adc ecx,0
+  cmp dword ptr [eax+128],1
+  adc ecx,0
+  cmp dword ptr [eax+12c],1
+  adc ecx,0
+  cmp dword ptr [eax+134],1
+  adc ecx,0
+  cmp ecx,4 // should be 5 for player and friend, 0 for enemy
+  jae isFriend
+  cmp ecx,1
+  jbe isEnemy
+  // not sure what it is, just do default
+  popad
+  jmp done
+
+isFriend:
+  label(giveFriendlyAP)
+  label(skipGiveFriendlyAP)
+  cmp dword ptr [globals+0004],1 // bAlwaysFriendlyAP
+  je giveFriendlyAP
+  cmp dword ptr [globals+0008],1 // bShiftGivesFriendlyAP
+  jne skipGiveFriendlyAP
+
+  // check for left shift pressed to give ap
+  push 000000A0 // VK_LSHIFT http://msdn.microsoft.com/en-us/library/windows/desktop/dd375731(v=vs.85).aspx
+  call GetAsyncKeyState
+  test eax,8000
+  jz skipGiveFriendlyAP
+
+giveFriendlyAP:
+  popad
+  mov ecx,[eax+00000098]
+  cmp ecx,#10
+  ja done
+  mov ecx,#10
+  jmp done
+
+skipGiveFriendlyAP:
+  popad
+  jmp done
+
+isEnemy:
+  label(skip_bNoEnemyAP)
+  cmp dword ptr [globals+0000],1 // bNoEnemyAP
+  jne skip_bNoEnemyAP
+  popad
+  xor ecx,ecx
+  jmp done
+skip_bNoEnemyAP:
+  popad
+  jmp done
+
+done:
+  mov [eax+00000098],ecx
+  jmp return
+
+INJECT_APUSE:
+  jmp code
+  nop
+return:
+registersymbol(INJECT_APUSE)
+
+[DISABLE]
+
+INJECT_APUSE:
+  db 89 88 98 00 00 00
+
+unregistersymbol(INJECT_APUSE)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: 1D0520C2
+
+1D0520A8: C3               - ret 
+1D0520A9: 00 00            - add [eax],al
+1D0520AB: 00 00            - add [eax],al
+1D0520AD: 00 00            - add [eax],al
+1D0520AF: 00 55 8B         - add [ebp-75],dl
+1D0520B2: EC               - in al,dx
+1D0520B3: 83 EC 08         - sub esp,08
+1D0520B6: 8B 45 08         - mov eax,[ebp+08]
+1D0520B9: 8B 88 98000000   - mov ecx,[eax+00000098]
+1D0520BF: 03 4D 0C         - add ecx,[ebp+0C]
+// ---------- INJECTING HERE ----------
+1D0520C2: 89 88 98000000   - mov [eax+00000098],ecx
+// ---------- DONE INJECTING  ----------
+1D0520C8: C9               - leave 
+1D0520C9: C3               - ret 
+1D0520CA: 00 00            - add [eax],al
+1D0520CC: 00 00            - add [eax],al
+1D0520CE: 00 00            - add [eax],al
+1D0520D0: 55               - push ebp
+1D0520D1: 8B EC            - mov ebp,esp
+1D0520D3: 56               - push esi
+1D0520D4: 83 EC 04         - sub esp,04
+1D0520D7: 83 7D 10 00      - cmp dword ptr [ebp+10],00
+}
+</AssemblerScript>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>215</ID>
+              <Description>"TEST: Sample"</Description>
+              <Color>80000008</Color>
+              <VariableType>Auto Assembler Script</VariableType>
+              <AssemblerScript>{ Game   : &lt;NONE&gt;
+  Version:
+  Date   : 2014-05-03
+  Author : Jason
+
+  This sample code used to test the floating point section of UtilCopyData.
+  Enabling or disabling it will create a thread to run the code and call
+  UtilCopyData and you can use the structure dissector to see what it is
+  like.
+}
+
+[ENABLE]
+
+globalalloc(TEST_SAMPLE,$100000) // 1mb
+TEST_SAMPLE:
+  dd TEST_SAMPLE+3000 // address to start storing data
+  dd TEST_SAMPLE+1000 // memory area to store addresses, make sure there is enough room by dividing total memory by total size and multiplying by 4, set to 0 to not store
+  dd d0000 // total memory size to use, our allocated size minus the start data offset
+  dd 100 // bytes of stack to store
+  dd 300 // bytes of data to store at pushed address
+  dd 1 // flag to store FXSave data or not
+  dd 0 // initialized?  first call will fill remaining data, so reserve 100 bytes
+  dd 0 // initialization data will be stored here and on to TEST+100, so don't use it!  first is size of individual record
+  dd 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+  dd 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+  dd 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+  dd 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+
+alloc(newmem,$1000)
+
+label(code)
+
+newmem:
+  dd (float)100
+  dd (float)111
+  dd (float)122
+  dd (float)133
+  dd (float)144
+  dd (float)155
+  dd (float)166
+  dd (float)177
+
+code:
+  pushad
+
+  fld [newmem+1c] // 177 will go in ST(7)
+  fld [newmem+18] // 166 will go in ST(6)
+  fld [newmem+14] // 155 will go in ST(5)
+  fld [newmem+10] // 144 will go in ST(4)
+  fld [newmem+0c] // 133 will go in ST(3)
+  fld [newmem+08] // 122 will go in ST(2)
+  fld [newmem+04] // 111 will go in ST(1)
+  fld [newmem+00] // 100 will go in ST(0)
+
+  movss xmm0,[newmem+00] // 100 will go in xmm0
+  movss xmm1,[newmem+04] // 111 will go in xmm1
+  movss xmm2,[newmem+08] // 122 will go in xmm2
+  movss xmm3,[newmem+0c] // 133 will go in xmm3
+  movss xmm4,[newmem+10] // 144 will go in xmm4
+  movss xmm5,[newmem+14] // 155 will go in xmm5
+  movss xmm6,[newmem+18] // 166 will go in xmm6
+  movss xmm7,[newmem+1c] // 177 will go in xmm7
+
+  mov eax,11111111
+  mov ebx,22222222
+  mov ecx,33333333
+  mov edx,44444444
+  mov esi,55555555
+  mov edi,66666666
+  mov ebp,77777777
+
+  // so we have something to look at on the stack
+  sub esp,80 // room
+  push eax
+  push ebx
+  push ecx
+  push edx
+  push esi
+  push edi
+  push ebp
+  pushfd
+  sub esp,80 // room
+  stc // set carry flag
+
+//-----------------------------------------------------------------------------
+// Here is the code you will inject, push registers, push flags, push stack,
+// push memory address, and finally push pointer to structure with settings,
+// then call UtilCopyData.  Afterwards pop flags and registers and you are
+// back where you started
+//
+  pushad
+  pushfd
+
+  push newmem // memory is what we have here, data and code
+  push TEST_SAMPLE //
+  call UtilCopyData
+
+  popfd
+  popad
+//-----------------------------------------------------------------------------
+
+  add esp,120 // 80+80 we subtracted and 7 registers + flags we pushed
+  popad
+  ret
+
+CREATETHREAD(code)
+
+[DISABLE]
+
+
+</AssemblerScript>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>41</ID>
+              <Description>"TEST: ManaUse"</Description>
+              <Color>80000008</Color>
+              <VariableType>Auto Assembler Script</VariableType>
+              <AssemblerScript>{ Game   : Reckoning.exe
+  Version: 
+  Date   : 2014-04-19
+  Author : Jason
+
+  This is what changes mana when you use it
+}
+
+[ENABLE]
+
+aobscanmodule(INJECT_ManaUse,Reckoning.exe,89 8D 84 00 00 00 EB) // should be unique
+
+globalalloc(TEST_MANAUSE,$100000) // 1mb
+TEST:
+  dd TEST_MANAUSE+3000 // address to start storing data
+  dd TEST_MANAUSE+1000 // memory area to store addresses, make sure there is enough room by dividing total memory by total size and multiplying by 4, set to 0 to not store
+  dd d0000 // total memory size to use, our allocated size minus the start data offset
+  dd 300 // bytes of stack to store
+  dd 400 // bytes of data to store at pushed address
+  dd 0 // flag to store FXSave data or not
+  dd 0 // initialized?  first call will fill remaining data, so reserve 100 bytes
+  dd 0 // initialization data will be stored here and on to TEST+100, so don't use it!  first is size of individual record
+  dd 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+  dd 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+  dd 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+  dd 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+
+
+alloc(newmem,$1000)
+
+label(code)
+label(return)
+
+newmem:
+
+code:
+
+//-----------------------------------------------------------------------------
+  pushad
+  pushfd
+  push ebp
+  push TEST
+  call UtilCopyData
+  popfd
+  popad
+//-----------------------------------------------------------------------------
+
+  mov [ebp+00000084],ecx
+  jmp return
+
+INJECT_ManaUse:
+  jmp code
+  nop
+return:
+registersymbol(INJECT_ManaUse)
+
+[DISABLE]
+
+INJECT_ManaUse:
+  db 89 8D 84 00 00 00
+
+unregistersymbol(INJECT_ManaUse)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: "Reckoning.exe"+39AFC1
+
+"Reckoning.exe"+39AFA9: 5E                      - pop esi
+"Reckoning.exe"+39AFAA: 5D                      - pop ebp
+"Reckoning.exe"+39AFAB: 83 C4 0C                - add esp,0C
+"Reckoning.exe"+39AFAE: C2 0400                 - ret 0004
+"Reckoning.exe"+39AFB1: 8B 8D 84000000          - mov ecx,[ebp+00000084]
+"Reckoning.exe"+39AFB7: 8B D0                   - mov edx,eax
+"Reckoning.exe"+39AFB9: F7 DA                   - neg edx
+"Reckoning.exe"+39AFBB: 3B CA                   - cmp ecx,edx
+"Reckoning.exe"+39AFBD: 76 0A                   - jna Reckoning.exe+39AFC9
+"Reckoning.exe"+39AFBF: 03 C8                   - add ecx,eax
+// ---------- INJECTING HERE ----------
+"Reckoning.exe"+39AFC1: 89 8D 84000000          - mov [ebp+00000084],ecx
+// ---------- DONE INJECTING  ----------
+"Reckoning.exe"+39AFC7: EB 0A                   - jmp Reckoning.exe+39AFD3
+"Reckoning.exe"+39AFC9: C7 85 84000000 00000000 - mov [ebp+00000084],00000000
+"Reckoning.exe"+39AFD3: 8B 45 7C                - mov eax,[ebp+7C]
+"Reckoning.exe"+39AFD6: 33 C9                   - xor ecx,ecx
+"Reckoning.exe"+39AFD8: 85 C0                   - test eax,eax
+"Reckoning.exe"+39AFDA: 0F9C C1                 - setl cl
+"Reckoning.exe"+39AFDD: 49                      - dec ecx
+"Reckoning.exe"+39AFDE: 23 C8                   - and ecx,eax
+"Reckoning.exe"+39AFE0: 39 8D 84000000          - cmp [ebp+00000084],ecx
+"Reckoning.exe"+39AFE6: 73 10                   - jae Reckoning.exe+39AFF8
+}
+</AssemblerScript>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>214</ID>
+              <Description>"TEST: Backpack Size"</Description>
+              <Color>80000008</Color>
+              <VariableType>Auto Assembler Script</VariableType>
+              <AssemblerScript>{ Game   : Reckoning.exe
+  Version: Steam
+  Date   : 2014-04-20
+  Author : Jason
+
+  This code accesses A LOT of addresses, including one that is the maximum
+  number of items you can carry :)
+}
+
+[ENABLE]
+
+aobscanmodule(INJECT_TEST_BACKPACKSIZE,Reckoning.exe,8B 51 0C 8B F9) // should be unique
+
+globalalloc(TEST_BP,$100000) // 1mb
+TEST_BP:
+  dd TEST_BP+3000 // address to start storing data
+  dd TEST_BP+1000 // memory area to store addresses, make sure there is enough room by dividing total memory by total size and multiplying by 4, set to 0 to not store
+  dd d0000 // total memory size to use, our allocated size minus the start data offset
+  dd 300 // bytes of stack to store
+  dd 400 // bytes of data to store at pushed address
+  dd 0 // flag to store FXSave data or not
+  dd 0 // initialized?  first call will fill remaining data, so reserve 100 bytes
+  dd 0 // initialization data will be stored here and on to TEST+100, so don't use it!  first is size of individual record
+  dd 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+  dd 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+  dd 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+  dd 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+
+alloc(newmem,$1000)
+
+label(code)
+label(skip)
+label(doIt)
+label(return)
+
+newmem:
+  label(matchSize)
+  registersymbol(matchSize)
+  matchSize:
+    dd #500
+
+  label(pBackpackBase)
+  registersymbol(pBackpackBase)
+  pBackpackBase:
+    dd 0
+
+
+code:
+
+//-----------------------------------------------------------------------------
+  pushad
+  pushfd
+  mov eax,[matchSize]
+  test eax,eax
+  jz doIt
+  cmp eax,[ecx+0C]
+  jne skip
+doIt:
+
+  // test1: [ESP+14] should return to 473F17
+  mov eax,[ESP+38] // add 24 for pushad (20) and pushfd (04)
+  cmp eax,00473F17
+  jne skip
+
+  // tes2: [ESP+2C] should be 0
+  mov eax,[ESP+50] // add 24 for pushad (20) and pushfd (04)
+  test eax,eax
+  jnz skip
+
+  // [esp+4C] seems to be 1000 (3E8) for backpack, 0 1 or pointer for others
+  mov eax,[esp+70]
+  cmp eax,#1000
+  jne skip
+  // only 2 left, backpack (500) and something that is 300, don't know what, [ESP+44] solves it
+
+  // [esp+44] seems to be 40 for backpack 16 for others
+  mov eax,[esp+68]
+  cmp eax,#40
+  jne skip
+
+  // eax looks to be 3 for backpack, 9 for others
+  // [esp+34] seems to be 5 for backpack, 2 for others
+  // [esp+48] seems to be 3 for backpack, 0 1 or 5 for others
+
+  mov [pBackpackBase],ecx
+  push ecx
+  push TEST_BP
+  call UtilCopyData
+skip:
+  popfd
+  popad
+//-----------------------------------------------------------------------------
+
+  mov edx,[ecx+0C]
+  mov edi,ecx
+  jmp return
+
+INJECT_TEST_BACKPACKSIZE:
+  jmp code
+return:
+registersymbol(INJECT_TEST_BACKPACKSIZE)
+
+[DISABLE]
+
+INJECT_TEST_BACKPACKSIZE:
+  db 8B 51 0C 8B F9
+
+unregistersymbol(INJECT_TEST_BACKPACKSIZE)
+unregistersymbol(matchSize)
+unregistersymbol(pBackpackBase)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: "Reckoning.exe"+4F651B
+
+"Reckoning.exe"+4F6501: 8B 55 0C           - mov edx,[ebp+0C]
+"Reckoning.exe"+4F6504: 8B CA              - mov ecx,edx
+"Reckoning.exe"+4F6506: C1 E9 03           - shr ecx,03
+"Reckoning.exe"+4F6509: 33 CA              - xor ecx,edx
+"Reckoning.exe"+4F650B: C1 E9 05           - shr ecx,05
+"Reckoning.exe"+4F650E: 33 CA              - xor ecx,edx
+"Reckoning.exe"+4F6510: 23 48 10           - and ecx,[eax+10]
+"Reckoning.exe"+4F6513: C1 E1 04           - shl ecx,04
+"Reckoning.exe"+4F6516: 03 CE              - add ecx,esi
+"Reckoning.exe"+4F6518: 8B 41 08           - mov eax,[ecx+08]
+// ---------- INJECTING HERE ----------
+"Reckoning.exe"+4F651B: 8B 51 0C           - mov edx,[ecx+0C]
+"Reckoning.exe"+4F651E: 8B F9              - mov edi,ecx
+// ---------- DONE INJECTING  ----------
+"Reckoning.exe"+4F6520: 2B FE              - sub edi,esi
+"Reckoning.exe"+4F6522: C1 FF 04           - sar edi,04
+"Reckoning.exe"+4F6525: 8D 3C BD 04000000  - lea edi,[edi*4+00000004]
+"Reckoning.exe"+4F652C: 8B DE              - mov ebx,esi
+"Reckoning.exe"+4F652E: 2B DF              - sub ebx,edi
+"Reckoning.exe"+4F6530: 8B 3B              - mov edi,[ebx]
+"Reckoning.exe"+4F6532: 8B 19              - mov ebx,[ecx]
+"Reckoning.exe"+4F6534: 3B 5D 08           - cmp ebx,[ebp+08]
+"Reckoning.exe"+4F6537: 75 08              - jne Reckoning.exe+4F6541
+"Reckoning.exe"+4F6539: 8B 49 04           - mov ecx,[ecx+04]
+
+
+For backpack, [ESP+14] is 473F17
+Reckoning.exe+73EE0 - 8B 44 24 1C           - mov eax,[esp+1C]
+Reckoning.exe+73EE4 - 8B 54 24 34           - mov edx,[esp+34]
+Reckoning.exe+73EE8 - C1 EB 08              - shr ebx,08
+Reckoning.exe+73EEB - 83 C1 04              - add ecx,04
+Reckoning.exe+73EEE - 81 E3 FFFF0100        - and ebx,0001FFFF : [00000000]
+Reckoning.exe+73EF4 - 8D 1C D8              - lea ebx,[eax+ebx*8]
+Reckoning.exe+73EF7 - 8B 03                 - mov eax,[ebx]
+Reckoning.exe+73EF9 - 89 4C 24 10           - mov [esp+10],ecx
+Reckoning.exe+73EFD - 8B 4B 04              - mov ecx,[ebx+04]
+Reckoning.exe+73F00 - 8B 5A 0C              - mov ebx,[edx+0C]
+Reckoning.exe+73F03 - 51                    - push ecx
+Reckoning.exe+73F04 - 89 44 24 7C           - mov [esp+7C],eax
+Reckoning.exe+73F08 - 50                    - push eax
+Reckoning.exe+73F09 - 8B C3                 - mov eax,ebx
+Reckoning.exe+73F0B - 89 8C 24 84000000     - mov [esp+00000084],ecx
+Reckoning.exe+73F12 - E8 D9254800           - call Reckoning.exe+4F64F0
+Reckoning.exe+73F17 - 89 44 24 28           - mov [esp+28],eax-----------------------return with backpack size
+Reckoning.exe+73F1B - 89 54 24 2C           - mov [esp+2C],edx
+Reckoning.exe+73F1F - A8 0F                 - test al,0F
+Reckoning.exe+73F21 - 74 1F                 - je Reckoning.exe+73F42
+Reckoning.exe+73F23 - 8B 4B 0C              - mov ecx,[ebx+0C]
+Reckoning.exe+73F26 - 89 0F                 - mov [edi],ecx
+Reckoning.exe+73F28 - 8B 4C 24 34           - mov ecx,[esp+34]
+Reckoning.exe+73F2C - 8B 49 0C              - mov ecx,[ecx+0C]
+Reckoning.exe+73F2F - 89 4F 04              - mov [edi+04],ecx
+Reckoning.exe+73F32 - 89 47 08              - mov [edi+08],eax
+Reckoning.exe+73F35 - 89 57 0C              - mov [edi+0C],edx
+Reckoning.exe+73F38 - 89 06                 - mov [esi],eax
+Reckoning.exe+73F3A - 89 56 04              - mov [esi+04],edx
+Reckoning.exe+73F3D - E9 4BE9FFFF           - jmp Reckoning.exe+7288D
+Reckoning.exe+73F42 - C7 47 04 00000000     - mov [edi+04],00000000
+Reckoning.exe+73F49 - 8B 43 08              - mov eax,[ebx+08]
+Reckoning.exe+73F4C - 85 C0                 - test eax,eax
+Reckoning.exe+73F4E - 74 15                 - je Reckoning.exe+73F65
+Reckoning.exe+73F50 - 8B 7D 08              - mov edi,[ebp+08]
+Reckoning.exe+73F53 - 57                    - push edi
+Reckoning.exe+73F54 - B9 01000000           - mov ecx,00000001
+Reckoning.exe+73F59 - E8 32A14800           - call Reckoning.exe+4FE090
+Reckoning.exe+73F5E - 83 C4 04              - add esp,04
+Reckoning.exe+73F61 - A8 0F                 - test al,0F
+Reckoning.exe+73F63 - 75 0B                 - jne Reckoning.exe+73F70
+
+}
+</AssemblerScript>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>12</ID>
+              <Description>"TEST: UpgradePoints"</Description>
+              <Color>80000008</Color>
+              <VariableType>Auto Assembler Script</VariableType>
+              <AssemblerScript>{ Game   : Reckoning.exe
+  Version: Steam
+  Date   : 2014-04-19
+  Author : Jason
+
+  When upgrading skills and abilities, this reads the skill points remaining.
+  DANGEROUS!  It seems to also be called for other things, I don't know what.
+  When backing out of the levelling up process it is called several times for
+  instance.  The cheat should only be enabled when looking at the skill
+  and ability level up screens.
+
+  Also used to load XP.
+}
+
+[ENABLE]
+
+aobscanmodule(INJECT_READ_SKILL_POINTS_REMAINING,Reckoning.exe,8B 50 18 89 53 18) // should be unique
+
+globalalloc(TEST_UP,$100000) // 1mb
+TEST_UP:
+  dd TEST_UP+3000 // address to start storing data
+  dd TEST_UP+1000 // memory area to store addresses, make sure there is enough room by dividing total memory by total size and multiplying by 4, set to 0 to not store
+  dd d0000 // total memory size to use, our allocated size minus the start data offset
+  dd 400 // bytes of stack to store
+  dd 300 // bytes of data to store at pushed address
+  dd 0 // flag to store FXSave data or not
+  dd 0 // initialized?  first call will fill remaining data, so reserve 100 bytes
+  dd 0 // initialization data will be stored here and on to TEST+100, so don't use it!  first is size of individual record
+  dd 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+  dd 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+  dd 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+  dd 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+
+alloc(newmem,$1000)
+
+label(code)
+label(doIt)
+label(skip)
+label(return)
+
+newmem:
+  label(matchUP)
+  registersymbol(matchUP)
+  matchUP:
+    dd #1
+
+  label(pUPBase)
+  registersymbol(pUPBase)
+  pUPBase:
+    dd 0
+
+code:
+//-----------------------------------------------------------------------------
+  pushad
+  pushfd
+  mov ebx,[matchUP]
+  test ebx,ebx
+  jz doIt
+  cmp ebx,[eax+18]
+  jne skip
+
+doIt:
+  // test 1: [esp+c8] is pointer
+  mov ebx,[esp+ec] // +24 for pushad/pushfd
+  cmp ebx,400000
+  jb skip
+
+  // test 2: [esp+f4] is pointer
+  mov ebx,[esp+118]
+  cmp ebx,400000
+  jb skip
+
+  // test 3: [eax+4] is pointer
+  cmp dword ptr [eax+4],400000
+  jb skip
+
+  // test 4: [eax+14] is C0000000 (-2.0)
+  cmp dword ptr [eax+14],c0000000
+  jne skip
+
+  mov [pUPBase],eax
+  push eax
+  push TEST_UP
+  call UtilCopyData
+
+
+skip:
+  popfd
+  popad
+//-----------------------------------------------------------------------------
+
+  mov edx,[eax+18]
+  mov [ebx+18],edx
+  jmp return
+
+INJECT_READ_SKILL_POINTS_REMAINING:
+  jmp code
+  nop
+return:
+registersymbol(INJECT_READ_SKILL_POINTS_REMAINING)
+
+[DISABLE]
+
+INJECT_READ_SKILL_POINTS_REMAINING:
+  db 8B 50 18 89 53 18
+
+unregistersymbol(INJECT_READ_SKILL_POINTS_REMAINING)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: "Reckoning.exe"+8C76E
+
+"Reckoning.exe"+8C754: 85 C9           - test ecx,ecx
+"Reckoning.exe"+8C756: 75 16           - jne Reckoning.exe+8C76E
+"Reckoning.exe"+8C758: 8D 70 08        - lea esi,[eax+08]
+"Reckoning.exe"+8C75B: 8D 43 08        - lea eax,[ebx+08]
+"Reckoning.exe"+8C75E: E8 1D3E4500     - call Reckoning.exe+4E0580
+"Reckoning.exe"+8C763: 5F              - pop edi
+"Reckoning.exe"+8C764: 5E              - pop esi
+"Reckoning.exe"+8C765: B8 01000000     - mov eax,00000001
+"Reckoning.exe"+8C76A: 5B              - pop ebx
+"Reckoning.exe"+8C76B: C2 0400         - ret 0004
+// ---------- INJECTING HERE ----------
+"Reckoning.exe"+8C76E: 8B 50 18        - mov edx,[eax+18]
+"Reckoning.exe"+8C771: 89 53 18        - mov [ebx+18],edx
+// ---------- DONE INJECTING  ----------
+"Reckoning.exe"+8C774: 8B 40 1C        - mov eax,[eax+1C]
+"Reckoning.exe"+8C777: 5F              - pop edi
+"Reckoning.exe"+8C778: 89 43 1C        - mov [ebx+1C],eax
+"Reckoning.exe"+8C77B: 5E              - pop esi
+"Reckoning.exe"+8C77C: B8 01000000     - mov eax,00000001
+"Reckoning.exe"+8C781: 5B              - pop ebx
+"Reckoning.exe"+8C782: C2 0400         - ret 0004
+"Reckoning.exe"+8C785: CC              - int 3 
+"Reckoning.exe"+8C786: CC              - int 3 
+"Reckoning.exe"+8C787: CC              - int 3 
+}
+</AssemblerScript>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>237</ID>
+          <Description>"TEST: pHealth_Base (open menu set 0)"</Description>
+          <Options moHideChildren="1"/>
+          <Color>FF0000</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>{ Game   : Shadowrun.exe
+  Version: 
+  Date   : 2014-05-07
+  Author : Jason
+
+  Offset 138 seems to point to the player's AP/Health structure when it is
+  their turn, NULL otherwise.  This code sets it to null when opening the
+  menu at the top left of the screen.
+
+  TEST_pHealth_Base_Base
+}
+
+[ENABLE]
+
+aobscan(TEST_pHealth_Base,C7 87 38 01 00 00 00 00 00 00 8B 47) // should be unique
+alloc(newmem,$1000)
+
+label(code)
+label(return)
+
+newmem:
+
+code:
+  mov [globals+1008],edi
+  mov [edi+00000138],00000000
+  jmp return
+
+TEST_pHealth_Base:
+  jmp code
+  nop
+  nop
+  nop
+  nop
+  nop
+return:
+registersymbol(TEST_pHealth_Base)
+
+[DISABLE]
+
+TEST_pHealth_Base:
+  db C7 87 38 01 00 00 00 00 00 00
+
+unregistersymbol(TEST_pHealth_Base)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: 076A4E85
+
+076A4E70: C9                      - leave 
+076A4E71: C3                      - ret 
+076A4E72: 00 00                   - add [eax],al
+076A4E74: 00 00                   - add [eax],al
+076A4E76: 00 00                   - add [eax],al
+076A4E78: 55                      - push ebp
+076A4E79: 8B EC                   - mov ebp,esp
+076A4E7B: 57                      - push edi
+076A4E7C: 81 EC 84000000          - sub esp,00000084
+076A4E82: 8B 7D 08                - mov edi,[ebp+08]
+// ---------- INJECTING HERE ----------
+076A4E85: C7 87 38010000 00000000 - mov [edi+00000138],00000000
+// ---------- DONE INJECTING  ----------
+076A4E8F: 8B 47 28                - mov eax,[edi+28]
+076A4E92: 8B C8                   - mov ecx,eax
+076A4E94: 39 09                   - cmp [ecx],ecx
+076A4E96: 83 EC 0C                - sub esp,0C
+076A4E99: 50                      - push eax
+076A4E9A: E8 79020000             - call 076A5118
+076A4E9F: 83 C4 10                - add esp,10
+076A4EA2: 8B 47 28                - mov eax,[edi+28]
+076A4EA5: 89 45 BC                - mov [ebp-44],eax
+076A4EA8: 39 00                   - cmp [eax],eax
+}
+</AssemblerScript>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>238</ID>
+              <Description>"pHealthBaseBase"</Description>
+              <ShowAsHex>1</ShowAsHex>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>globals+1008</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>243</ID>
+              <Description>"pHealthBase"</Description>
+              <ShowAsHex>1</ShowAsHex>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>globals+1008</Address>
+              <Offsets>
+                <Offset>138</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>244</ID>
+              <Description>"pHealth"</Description>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>globals+1008</Address>
+              <Offsets>
+                <Offset>9C</Offset>
+                <Offset>138</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>245</ID>
+              <Description>"pAP"</Description>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>globals+1008</Address>
+              <Offsets>
+                <Offset>98</Offset>
+                <Offset>138</Offset>
+              </Offsets>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>0</ID>
+          <Description>"SCRIPT: 100 Karma"</Description>
+          <Color>80000008</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>{ Game   : Shadowrun.exe
+  Version: 
+  Date   : 2014-05-03
+  Author : Jason
+
+  Karma pointers for levelling up.  There are 2 different karma values that
+  seem to be independent when levelling up.  KARMA2 is the one that looks
+  to be used.
+}
+
+[ENABLE]
+
+aobscan(INJECT_KARMA1,8B 88 00 01 00 00 2B 4D C0 39 12 89 88 00 01 00 00 33 FF EB 2E) // should be unique
+alloc(newmem,$1000)
+
+label(code)
+label(return)
+
+newmem:
+
+code:
+  mov ecx,#100
+  mov dword ptr [eax+100],ecx
+  mov ecx,[eax+00000100]
+  jmp return
+
+INJECT_KARMA1:
+  jmp code
+  nop
+return:
+registersymbol(INJECT_KARMA1)
+
+aobscan(INJECT_KARMA2,8B 86 E4 00 00 00 3B C1) // should be unique
+alloc(newmem2,$1000)
+
+label(code2)
+label(return2)
+
+newmem2:
+
+code2:
+  mov eax,#100
+  mov dword ptr [esi+e4],eax
+  mov eax,[esi+000000E4]
+  jmp return2
+
+INJECT_KARMA2:
+  jmp code2
+  nop
+return2:
+registersymbol(INJECT_KARMA2)
+
+[DISABLE]
+
+INJECT_KARMA1:
+  db 8B 88 00 01 00 00
+
+unregistersymbol(INJECT_KARMA1)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: 1A5FB63E
+
+1A5FB61C: 8B 4D E4        - mov ecx,[ebp-1C]
+1A5FB61F: 89 4C 24 0C     - mov [esp+0C],ecx
+1A5FB623: 50              - push eax
+1A5FB624: 39 00           - cmp [eax],eax
+1A5FB626: E8 9D6801ED     - call 07611EC8
+1A5FB62B: 83 C4 20        - add esp,20
+1A5FB62E: 8B 86 B4000000  - mov eax,[esi+000000B4]
+1A5FB634: 8B 80 E4000000  - mov eax,[eax+000000E4]
+1A5FB63A: 8B D0           - mov edx,eax
+1A5FB63C: 39 00           - cmp [eax],eax
+// ---------- INJECTING HERE ----------
+1A5FB63E: 8B 88 00010000  - mov ecx,[eax+00000100]
+// ---------- DONE INJECTING  ----------
+1A5FB644: 2B 4D C0        - sub ecx,[ebp-40]
+1A5FB647: 39 12           - cmp [edx],edx
+1A5FB649: 89 88 00010000  - mov [eax+00000100],ecx
+1A5FB64F: 33 FF           - xor edi,edi
+1A5FB651: EB 2E           - jmp 1A5FB681
+1A5FB653: 8D 64 24 00     - lea esp,[esp+00]
+1A5FB657: 90              - nop 
+1A5FB658: 8B 86 AC000000  - mov eax,[esi+000000AC]
+1A5FB65E: 39 00           - cmp [eax],eax
+1A5FB660: 8B 40 08        - mov eax,[eax+08]
+}
+INJECT_KARMA2:
+  db 8B 86 E4 00 00 00
+
+unregistersymbol(INJECT_KARMA2)
+dealloc(newmem2)
+
+{
+// ORIGINAL CODE - INJECTION POINT: 1A5FB328
+
+1A5FB310: 55              - push ebp
+1A5FB311: 8B EC           - mov ebp,esp
+1A5FB313: 53              - push ebx
+1A5FB314: 57              - push edi
+1A5FB315: 56              - push esi
+1A5FB316: 83 EC 3C        - sub esp,3C
+1A5FB319: 8B 75 08        - mov esi,[ebp+08]
+1A5FB31C: 8B 45 0C        - mov eax,[ebp+0C]
+1A5FB31F: 8B 88 88000000  - mov ecx,[eax+00000088]
+1A5FB325: 89 4D C0        - mov [ebp-40],ecx
+// ---------- INJECTING HERE ----------
+1A5FB328: 8B 86 E4000000  - mov eax,[esi+000000E4]
+// ---------- DONE INJECTING  ----------
+1A5FB32E: 3B C1           - cmp eax,ecx
+1A5FB330: 0F8C 19030000   - jl 1A5FB64F
+1A5FB336: 8B 4D 0C        - mov ecx,[ebp+0C]
+1A5FB339: 8B C1           - mov eax,ecx
+1A5FB33B: 05 64000000     - add eax,00000064
+1A5FB340: 8B 40 10        - mov eax,[eax+10]
+1A5FB343: 8B D1           - mov edx,ecx
+1A5FB345: 83 C2 64        - add edx,64
+1A5FB348: 8B 52 20        - mov edx,[edx+20]
+1A5FB34B: 03 C2           - add eax,edx
+}
+</AssemblerScript>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>251</ID>
+          <Description>"SCRIPT: Stats"</Description>
+          <Color>80000008</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>{ Game   : Shadowrun.exe
+  Version: 
+  Date   : 2014-05-07
+  Author : Jason
+
+  Here it seems to load the current health for the selected unit.  This
+  happens when leaving the menu and twice when selecting the player, as well as
+  when it becomes your turn during a battle.  This is probably any time you
+  enter the state when you can perform an action.
+
+  EAX: pHealth, also AP
+       006C: Pointer-&gt;Stats (possibly C4 in length)
+             000C: Body
+             0010: Quickness
+             0014: Strength
+             0018: Charisma
+             001C: Intelligence (shows red?  can't go over 9 as elf or class?)
+             0020: Willpower (shows red 11?  can't go over 11 as elf or class?)
+             0024: Essence/Magic  (not displayed, hidden value?)
+             0028: Magic (never shows above 6)
+             002C: 56?  4 for paco, 3/4 for enemies
+             0030: Max Health
+             0034: Max AP
+             0038: 0
+             003C: 0
+             0040: 150?
+             0044: 150?
+             0048: 160?
+             004C: Max Health also?  Maybe unmodified?
+             0050: 100?
+             0054: 10?
+             0058: 6 (essence/magic?) (not displayed, hidden value?)
+             005C: (float)6 (essence)
+
+
+
+       0098: Current AP
+       009C: Current Health
+
+  EDI:
+}
+
+[ENABLE]
+
+aobscan(INJECT_HP_ON_SELECT,44 8B C8 39 09 8B 80 9C 00 00 00) // should be unique
+alloc(newmem,$1000)
+
+label(code)
+label(return)
+
+newmem:
+
+code:
+  mov [globals+1020],eax
+  mov eax,[eax+0000009C]
+  jmp return
+
+INJECT_HP_ON_SELECT+05:
+  jmp code
+  nop
+return:
+registersymbol(INJECT_HP_ON_SELECT)
+
+[DISABLE]
+
+INJECT_HP_ON_SELECT+05:
+  db 8B 80 9C 00 00 00
+
+unregistersymbol(INJECT_HP_ON_SELECT)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: 1A3D930C
+
+1A3D92EC: 83 C4 10          - add esp,10
+1A3D92EF: 8B F0             - mov esi,eax
+1A3D92F1: 85 F6             - test esi,esi
+1A3D92F3: 0F84 0B020000     - je 1A3D9504
+1A3D92F9: 0FB6 47 65        - movzx eax,byte ptr [edi+65] // 0
+1A3D92FD: 85 C0             - test eax,eax
+1A3D92FF: 0F85 FF010000     - jne 1A3D9504
+1A3D9305: 8B 47 44          - mov eax,[edi+44] // load pHealth
+1A3D9308: 8B C8             - mov ecx,eax
+1A3D930A: 39 09             - cmp [ecx],ecx
+// ---------- INJECTING HERE ----------
+1A3D930C: 8B 80 9C000000    - mov eax,[eax+0000009C]
+// ---------- DONE INJECTING  ----------
+1A3D9312: 50                - push eax
+1A3D9313: DB 04 24          - fild dword ptr [esp]
+1A3D9316: D9 1C 24          - fstp dword ptr [esp]
+1A3D9319: D9 04 24          - fld dword ptr [esp]
+1A3D931C: 83 C4 04          - add esp,04
+1A3D931F: 56                - push esi
+1A3D9320: DB 04 24          - fild dword ptr [esp]
+1A3D9323: D9 1C 24          - fstp dword ptr [esp]
+1A3D9326: D9 04 24          - fld dword ptr [esp]
+1A3D9329: 83 C4 04          - add esp,04
+
+
+
+FULL:
+1A3D9280 - 55                    - push ebp
+1A3D9281 - 8B EC                 - mov ebp,esp
+1A3D9283 - 57                    - push edi
+1A3D9284 - 56                    - push esi
+1A3D9285 - 81 EC 80000000        - sub esp,00000080
+1A3D928B - 8B 7D 08              - mov edi,[ebp+08]
+1A3D928E - D9EE                  - fldz
+1A3D9290 - D9 5D E8              - fstp dword ptr [ebp-18]
+1A3D9293 - C7 45 88 00000000     - mov [ebp-78],00000000
+1A3D929A - C7 45 8C 00000000     - mov [ebp-74],00000000
+1A3D92A1 - C7 45 90 00000000     - mov [ebp-70],00000000
+1A3D92A8 - C7 45 94 00000000     - mov [ebp-6C],00000000
+1A3D92AF - C7 45 98 00000000     - mov [ebp-68],00000000
+1A3D92B6 - C7 45 9C 00000000     - mov [ebp-64],00000000
+1A3D92BD - C7 45 A0 00000000     - mov [ebp-60],00000000
+1A3D92C4 - C7 45 A4 00000000     - mov [ebp-5C],00000000
+1A3D92CB - C7 45 A8 00000000     - mov [ebp-58],00000000
+1A3D92D2 - C7 45 AC 00000000     - mov [ebp-54],00000000
+1A3D92D9 - C7 45 B0 00000000     - mov [ebp-50],00000000
+1A3D92E0 - 8B 47 44              - mov eax,[edi+44] // load pHealth into eax
+1A3D92E3 - 83 EC 0C              - sub esp,0C
+1A3D92E6 - 50                    - push eax // push pHealth
+1A3D92E7 - E8 2C020000           - call 1A3D9518 // call? - see below
+1A3D92EC - 83 C4 10              - add esp,10
+1A3D92EF - 8B F0                 - mov esi,eax // loads max health
+1A3D92F1 - 85 F6                 - test esi,esi
+1A3D92F3 - 0F84 0B020000         - je 1A3D9504
+1A3D92F9 - 0FB6 47 65            - movzx eax,byte ptr [edi+65]
+1A3D92FD - 85 C0                 - test eax,eax
+1A3D92FF - 0F85 FF010000         - jne 1A3D9504
+1A3D9305 - 8B 47 44              - mov eax,[edi+44]
+1A3D9308 - 8B C8                 - mov ecx,eax
+1A3D930A - 39 09                 - cmp [ecx],ecx
+1A3D930C - 8B 80 9C000000        - mov eax,[eax+0000009C]
+1A3D9312 - 50                    - push eax
+1A3D9313 - DB 04 24              - fild dword ptr [esp]
+1A3D9316 - D9 1C 24              - fstp dword ptr [esp]
+1A3D9319 - D9 04 24              - fld dword ptr [esp]
+1A3D931C - 83 C4 04              - add esp,04
+1A3D931F - 56                    - push esi
+1A3D9320 - DB 04 24              - fild dword ptr [esp]
+1A3D9323 - D9 1C 24              - fstp dword ptr [esp]
+1A3D9326 - D9 04 24              - fld dword ptr [esp]
+1A3D9329 - 83 C4 04              - add esp,04
+1A3D932C - DEF9                  - fdivp st(1),st(0)
+1A3D932E - D9EE                  - fldz
+1A3D9330 - D9E8                  - fld1
+1A3D9332 - 83 EC 04              - sub esp,04
+1A3D9335 - 83 EC 04              - sub esp,04
+1A3D9338 - D9 1C 24              - fstp dword ptr [esp]
+1A3D933B - 83 EC 04              - sub esp,04
+1A3D933E - D9 1C 24              - fstp dword ptr [esp]
+1A3D9341 - 83 EC 04              - sub esp,04
+1A3D9344 - D9 1C 24              - fstp dword ptr [esp]
+1A3D9347 - E8 847724ED           - call 07620AD0
+1A3D934C - 83 C4 10              - add esp,10
+1A3D934F - D9 5D E8              - fstp dword ptr [ebp-18]
+1A3D9352 - 8B 47 14              - mov eax,[edi+14]
+1A3D9355 - 83 EC 0C              - sub esp,0C
+1A3D9358 - 50                    - push eax
+1A3D9359 - 39 00                 - cmp [eax],eax
+1A3D935B - E8 789124ED           - call 076224D8
+1A3D9360 - 83 C4 10              - add esp,10
+1A3D9363 - 8D 4D 88              - lea ecx,[ebp-78]
+1A3D9366 - 83 EC 08              - sub esp,08
+1A3D9369 - 50                    - push eax
+1A3D936A - 51                    - push ecx
+1A3D936B - 39 00                 - cmp [eax],eax
+
+1A3D9518 - 55                    - push ebp
+1A3D9519 - 8B EC                 - mov ebp,esp
+1A3D951B - 83 EC 08              - sub esp,08
+1A3D951E - 8B 45 08              - mov eax,[ebp+08] // pHealth
+1A3D9521 - 8B 48 6C              - mov ecx,[eax+6C] // offset 6C into pHealth
+1A3D9524 - 8B D1                 - mov edx,ecx
+1A3D9526 - 39 12                 - cmp [edx],edx
+1A3D9528 - 8B 49 30              - mov ecx,[ecx+30] // load
+1A3D952B - 89 4D FC              - mov [ebp-04],ecx
+1A3D952E - 83 EC 0C              - sub esp,0C
+1A3D9531 - 50                    - push eax
+1A3D9532 - E8 19000000           - call 1A3D9550
+1A3D9537 - 83 C4 10              - add esp,10
+1A3D953A - 8B C8                 - mov ecx,eax
+1A3D953C - 8B 45 FC              - mov eax,[ebp-04]
+1A3D953F - 03 C1                 - add eax,ecx
+1A3D9541 - C9                    - leave
+1A3D9542 - C3                    - ret
+
+
+}
+</AssemblerScript>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>249</ID>
+          <Description>"pAmmoDisplay-&gt;Ammo"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>globals+101c</Address>
+          <Offsets>
+            <Offset>2C</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>235</ID>
+          <Description>"ptr-&gt;CreditsBase (pCredits at +18)"</Description>
+          <ShowAsHex>1</ShowAsHex>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>globals+1004</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>248</ID>
+          <Description>"pAmmoDisplay"</Description>
+          <ShowAsHex>1</ShowAsHex>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>globals+101c</Address>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols>
+    <SymbolEntry>
+      <Name>INJECT_KARMA1</Name>
+      <Address>1A5FB63E</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>INJECT_KARMA2</Name>
+      <Address>1A5FB328</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>INJECT_AP2</Name>
+      <Address>1A5BC276</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>globals</Name>
+      <Address>1C2B0000</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>pSkillPointBase</Name>
+      <Address>0AF31108</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>pAbilityPointBase</Name>
+      <Address>0AF3110C</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>bNoManaUse</Name>
+      <Address>08B51000</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>bNoCooldown</Name>
+      <Address>08B51004</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>bUpgradePoints</Name>
+      <Address>08B51008</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>bHealth</Name>
+      <Address>08B5100C</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>bDurability</Name>
+      <Address>08B51010</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>bNoItemUse</Name>
+      <Address>08B51014</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>bGodMode</Name>
+      <Address>08B51018</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>pManaUseBase</Name>
+      <Address>08B51100</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>pCooldownBase</Name>
+      <Address>08B51104</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>pUpgradePointBase</Name>
+      <Address>08B51108</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>pHealthBase</Name>
+      <Address>08B5110C</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>pDurabilityBase</Name>
+      <Address>08B51110</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>pItemUseBase</Name>
+      <Address>08B51114</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>pHealthReadBase</Name>
+      <Address>08B51118</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>pGoldBase</Name>
+      <Address>08B5111C</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>pReservedManaBase</Name>
+      <Address>08B51120</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>pBackpackBase</Name>
+      <Address>08B51124</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>pManaReserveBase</Name>
+      <Address>08B51128</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>pItemUse2Base</Name>
+      <Address>08B5112C</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>pDamageBase</Name>
+      <Address>08B51130</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>iDamageMultiplier</Name>
+      <Address>08B51200</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>INJECT_ManaUse</Name>
+      <Address>0079AFC1</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>INJECT_COOLDOWN</Name>
+      <Address>00894EB0</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>INJECT_READ_SKILL_POINTS_REMAINING</Name>
+      <Address>0048C76E</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>INJECT_DURABILITY_LOWER_SUBTRACT</Name>
+      <Address>008BEE0B</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>INJECT_HEALTH_DISPLAY</Name>
+      <Address>00A3DF4E</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>INJECT_GOLD</Name>
+      <Address>00B03E6C</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>INJECT_BACKPACKSIZE</Name>
+      <Address>008F651B</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>INJECT_MANA_RESERVE</Name>
+      <Address>004B7C90</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>INJECT_ITEM_USE2</Name>
+      <Address>008C387B</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>INJECT_DAMAGE2</Name>
+      <Address>007A1971</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>CHEAT_FLAGS</Name>
+      <Address>02630000</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>test</Name>
+      <Address>1A930000</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>testtest</Name>
+      <Address>08390000</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>FTL_MAIN</Name>
+      <Address>04420000</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>FLAG_OneSecondWeapons</Name>
+      <Address>028C000C</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>STATIC_MEMORY</Name>
+      <Address>02670000</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>VISITED</Name>
+      <Address>0DDE0000</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>VISITED_MARKFLAG</Name>
+      <Address>0DDE0F00</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>VISITED_ADDRESS</Name>
+      <Address>0DDE0F04</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>STATIC_MAIN</Name>
+      <Address>004044FA</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>STATIC_ENERGY</Name>
+      <Address>004E4B2C</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>UtilCopyData</Name>
+      <Address>150D0000</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>FLAG_Oxygen</Name>
+      <Address>04420000</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>FLAG_HealthOnTooltip</Name>
+      <Address>04420004</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>FLAG_NoEnemyFire</Name>
+      <Address>04420008</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>FLAG_FastWeapons</Name>
+      <Address>0442000C</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>FLAG_GodCrew</Name>
+      <Address>04420010</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>FLAG_OneHitCrewKill</Name>
+      <Address>04420014</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>FLAG_CrewSkills</Name>
+      <Address>04420018</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>FLAG_PowerlessEnemy</Name>
+      <Address>0442001C</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>FLAG_PlayerSystems</Name>
+      <Address>04420020</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>FLAG_Fireproof</Name>
+      <Address>04420024</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>FLAG_NoHullBreach</Name>
+      <Address>04420028</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>ADDR_Tooltip</Name>
+      <Address>04420F00</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>ADDR_Damage</Name>
+      <Address>04420F04</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>ADDR_HoverCrew</Name>
+      <Address>04420F08</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>KEYSTATES</Name>
+      <Address>04421F00</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>CheckKeyPress</Name>
+      <Address>0442302F</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>INJECT_LAB_BONUS_PERCENT</Name>
+      <Address>008122DA</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>TEST_MANAUSE</Name>
+      <Address>09BB0000</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>TEST_BP</Name>
+      <Address>24670000</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>TEST_UP</Name>
+      <Address>23F70000</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>matchUP</Name>
+      <Address>0A150000</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>pUPBase</Name>
+      <Address>0A150004</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>TEST_SAMPLE</Name>
+      <Address>1C140000</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>FXSAVETEST</Name>
+      <Address>00630000</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>TEST_AP</Name>
+      <Address>15BD0000</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>INJECT_AP1</Name>
+      <Address>13C6A8D1</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>INJECT_FindCredits</Name>
+      <Address>1B036065</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>TEST_APUSE</Name>
+      <Address>1A470000</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>INJECT_APUSE</Name>
+      <Address>1B03B58A</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>TEST_pHealth_Base_Base</Name>
+      <Address>076A4E85</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>INJECT_AMMO_DISPLAY</Name>
+      <Address>1B02BDC3</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>UtilCopyData_Enabled</Name>
+      <Address>150DFFFC</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>UtilCopyData_Count</Name>
+      <Address>150DFFF8</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>INJECT_SKILL</Name>
+      <Address>1A3FB26A</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>INJECT_DAMAGE</Name>
+      <Address>1A4625B3</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>INJECT_AMMO_USE</Name>
+      <Address>1B07B758</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>globals_IsFriend</Name>
+      <Address>1C2B2000</Address>
+    </SymbolEntry>
+  </UserdefinedSymbols>
+  <Comments>Enable the 'GLOBALS' script to expand and enable scripts when you can.  Before
+you can enable some scripts you will have to perform the action in the game:
+  SCRIPT: Ammo (Display) - you must be in combat with a weapon that uses ammo
+  SCRIPT: AP Use - someone must have used an action point in combat
+  SCRIPT: Damage - someone must have taken damage
+  SCRIPT: Ammo Use - someone must have fired a weapon
+  SCRIPT: Credits - you must have opened the menu
+  SCRIPT: Stats - you should be able to activate this anytime
+You can edit your credits, ammo and status in the values under the appropriate
+scripts.  Table entries that are blue are expanded when enabled.
+The easiest way to cheat is to hold LSHIFT (left shift key) down when performing
+actions, then your AP will be set to 10 instead of decreasing and you won't
+use ammo when firing a gun.
+You can also enable these cheats under the Cheats entry by setting their value
+to 1:
+bAlwaysFriendlyAP - like holding LSHIFT all the time for AP
+bUnlimitedAmmo - like holding LSHIFT all the time when firing a weapon
+bGodMode - friendly units don't take damage
+bOneHitKill - enemy units die when hit no matter the damage
+</Comments>
+</CheatTable>

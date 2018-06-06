@@ -1,0 +1,402 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="14">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>0</ID>
+      <Description>"[X]&lt;== X3 - AP v3.0.0 Script"</Description>
+      <Options moHideChildren="1"/>
+      <Color>FF0000</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>{
+===========================================
+ Game Title    : X3 - Albion Prelude
+ Game Version  : 3.0.0
+ Game Sponsor  : Myself
+ Proces Name   : X3AP.exe
+ Script Version: 1.0
+ CE Version    : 6.2
+ Release date  : 16-May-2013
+ Author        : Recifense
+ History:
+ 26-Dez-12: Release for version 2.5.2
+ 16-May-13: Release for version 3.0.0
+ Features:
+ - God Mode (including shields)
+ - Unlimited Laserpower
+===========================================
+}
+
+//=========================================
+// Definitions
+define(LUDO,"X3AP.EXE")
+define(MHPT,X3AP.EXE+00060e73)
+define(GDMD,X3AP.EXE+0004d795)
+define(MSLR,X3AP.EXE+000451ae)
+define(MPSP,X3AP.EXE+00048847)
+define(MSSD,X3AP.EXE+00048977)
+define(MSS1,X3AP.EXE+00048937)
+
+//=========================================
+[ENABLE]
+//=========================================
+// Check if script is compatible to this game version
+// If false the script will not be loaded
+
+assert(MHPT,8b 8c 24 e4 03 00 00 5f 5e c7 42 64 00 00 00 00 b8 01 00 00 00)
+assert(GDMD,29 8e ec 00 00 00 ?? ?? c7 86 ec 00 00 00 00 00 00 00 ?? ?? 85)
+assert(MSLR,01 90 34 01 00 00 68 18 04 00 00 e8 ?? ?? ?? ?? 8b 4d b0 83 c4)
+assert(MPSP,0f b7 41 48 53 55 8b 6c 24 20 56 33 f6 33 db 66 3d 07 00 57 89)
+assert(MSSD,29 47 04 03 dd 33 ed 89 5c 24 14 89 6c 24 10 c7 44 24 18 01 00)
+assert(MSS1,03 d8 89 71 04 89 6c 24 10 89 5c 24 14 e9 ?? ?? ?? ?? 0f bf 47)
+
+//=========================================
+alloc(MyCode,4096,LUDO)
+//=========================================
+// Declaration section
+label(_MonHumanPilot)
+label(_BackMHP)
+label(_ExitMHP)
+label(_GodMode)
+label(_BackGMD)
+label(_ExitGMD)
+label(_MonShipLaser)
+label(_BackMSL)
+label(_ExitMSL)
+label(_MonPlayerShip)
+label(_BackMPS)
+label(_MonShipShield)
+label(_BackMSS)
+label(_ExitMSS)
+label(_MonShipShield1)
+label(_BackMS1)
+label(_ExitMS1)
+label(pPilot)
+label(pShip)
+label(pShields)
+label(pLaser)
+label(pShipS)
+label(pShield)
+label(iEnableGMD)
+label(iEnableMSL)
+
+//=========================================
+// Registering Symbols
+registersymbol(MyCode)
+registersymbol(pPilot)
+registersymbol(pShip)
+registersymbol(pShields)
+registersymbol(pShield)
+registersymbol(pLaser)
+registersymbol(iEnableGMD)
+registersymbol(iEnableMSL)
+
+//=========================================
+MyCode:
+//========================================= ok
+// This code monitors the playerÂ´s pilot and current ship
+// Most of the info for debugging
+_MonHumanPilot:
+ mov [pPilot],edx                  // Save ptr for debugging
+ mov ecx,[edx+38]                  // Get ptr to Ship
+ mov [pShip],ecx                   // Save ptr for further use
+ or ecx,ecx                        // Valid pointer?
+ jz _ExitMHP                       // Jump if false
+
+ mov ecx,[ecx+50]                  // Get ptr to Laser
+ mov [pLaser],ecx                  // Save ptr for debugging (otherinfo)
+ or ecx,ecx                        // Valid pointer?
+ jz _ExitMHP                       // Jump if false
+
+ mov ecx,[ecx]                     // Get ptr to Shields
+ mov [pShields],ecx                // Save ptr for debugging
+
+_ExitMHP:
+ mov ecx,[esp+000003E4]            // Original code (OK)
+ jmp _BackMHP                      // Back to main code
+
+//=========================================
+// God Mode for player's ship
+_GodMode:
+ cmp dword ptr [iEnableGMD],0
+ je _ExitGMD                       // Jump if feature is disabled
+
+ cmp esi,[pShip]                   // Get ptr to other info
+ jne _ExitGMD                      // Jump if true
+
+ xor ecx,ecx                       // make value2decrease = 0
+
+_ExitGMD:
+ sub [esi+000000EC],ecx            // Original code
+ jmp _BackGMD                      // Back to main code
+
+//=========================================
+// Unlimited laser power for player's ship
+_MonShipLaser:
+ cmp dword ptr [iEnableMSL],0
+ je _ExitMSL                       // Jump if feature is disabled
+
+ cmp eax,[pLaser]                  // PlayerÂ´s ship's laser?
+ jne _ExitMSL                      // Jump if false
+
+ xor edx,edx                       // make value2decrease = 0
+
+_ExitMSL:
+ add [eax+00000134],edx            // Original code
+ jmp _BackMSL                      // Back to main code
+
+//=========================================
+// This code identifies the ship for _MonShield and
+// _MonShield1 scripts
+_MonPlayerShip:
+ mov [pShipS],ecx                  // Save ptr for further use
+
+ movzx eax,word ptr [ecx+48]       // Original code
+ push ebx                          // Original code
+ jmp _BackMPS                      // Back to main code
+
+//=========================================
+// When under attack
+_MonShipShield:
+ push ecx
+
+ cmp dword ptr [iEnableGMD],0
+ je _ExitMSS                       // Jump if feature is disabled
+
+ mov ecx,[pShipS]                  // Get ship structure
+ cmp ecx,[pShip]                   // Is it the player's ship?
+ jne _ExitMSS                      // Jump if true
+
+ xor eax,eax                       // make value2decrease = 0
+
+ mov [pShield],edi                 // Save ptr for debugging
+
+_ExitMSS:
+ pop ecx
+
+ sub [edi+04],eax                  // Original code
+ add ebx,ebp                       // Original code
+ jmp _BackMSS                      // Back to main code
+
+//=========================================
+// When under attack
+_MonShipShield1:
+ push esi
+ push ecx
+
+ cmp dword ptr [iEnableGMD],0
+ je _ExitMS1                       // Jump if feature is disabled
+
+ mov ecx,[pShipS]                  // Get ship structure
+ cmp ecx,[pShip]                   // Is it the player's ship?
+ jne _ExitMS1                      // Jump if true
+
+ mov esi,03e80000                  // 64K * 1000 = 100%
+
+_ExitMS1:
+ pop  ecx
+
+ add ebx,eax                       // Original code
+ mov [ecx+04],esi                  // Original code
+ pop esi
+ jmp _BackMS1                      // Back to main code
+
+//=========================================
+ db '==================================&gt;'
+ db 'CE6.2 Script by Recifense 051613'
+//=========================================
+// Variables
+iEnableGMD:
+ dd 0
+iEnableMSL:
+ dd 0
+pPilot:
+ dd 0
+pShip:
+ dd MyCode
+pShipS:
+ dd MyCode
+pShields:
+ dd 0
+pShield:
+ dd 0
+pLaser:
+ dd MyCode
+
+//=========================================
+// Hacking Points
+MHPT:
+ jmp _MonHumanPilot
+ nop
+ nop
+_BackMHP:
+
+GDMD:
+ jmp _GodMode
+ nop
+_BackGMD:
+
+MSLR:
+ jmp _MonShipLaser
+ nop
+_BackMSL:
+
+MPSP:
+ jmp _MonPlayerShip
+_BackMPS:
+
+MSSD:
+ jmp _MonShipShield
+_BackMSS:
+
+MSS1:
+ jmp _MonShipShield1
+_BackMS1:
+
+//=========================================
+// Script for Restoring Original Codes
+[DISABLE]
+MHPT:
+// mov ecx,[esp+000003E4]
+ db 8b 8c 24 e4 03 00 00
+
+GDMD:
+// sub [esi+000000EC],ecx
+ db 29 8e ec 00 00 00
+
+MSLR:
+// add [eax+00000134],edx
+ db 01 90 34 01 00 00
+
+MPSP:
+// movzx eax,word ptr [ecx+48]
+// push ebx
+ db 0f b7 41 48 53
+
+MSSD:
+// sub [edi+04],eax
+// add ebx,ebp
+ db 29 47 04 03 dd
+
+MSS1:
+// add ebx,eax
+// mov [ecx+04],esi
+ db 03 d8 89 71 04
+
+//=========================================
+// Unregistering Symbols
+unregistersymbol(MyCode)
+unregistersymbol(pPilot)
+unregistersymbol(pShip)
+unregistersymbol(pShields)
+unregistersymbol(pShield)
+unregistersymbol(pLaser)
+unregistersymbol(iEnableGMD)
+unregistersymbol(iEnableMSL)
+
+//=========================================
+dealloc(MyCode)
+//============= Scripts End ===============
+
+// ****************************************
+// NOTES
+// ****************************************
+{
+Credits = integer (not aligned)	(no fast or hyper scan)
+}
+
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>1</ID>
+          <Description>"Enable/Disable God Mode ==&gt; (1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableGMD</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>2</ID>
+          <Description>"Enable/Disable Unlimited Laserpower ==&gt; (1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMSL</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>17</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols>
+    <SymbolEntry>
+      <Name>iEnableGM</Name>
+      <Address>07620140</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>iEnableML</Name>
+      <Address>07620144</Address>
+    </SymbolEntry>
+  </UserdefinedSymbols>
+  <Comments>===========================================
+ Game Title    : X3 - Albion Prelude
+ Game Version  : 3.0.0
+ Game Sponsor  : Myself
+ Proces Name   : X3AP.exe
+ Script Version: 1.0
+ CE Version    : 6.2
+ Release date  : 16-May-2013
+ Author        : Recifense
+ History:
+ 26-Dez-12: Release for version 2.5.2
+ 16-May-13: Release for version 3.0.0
+ Features:
+ - God Mode (including shields)
+ - Laserpower
+===========================================
+1) GOD MODE: It includes unlimited shield power for player's ship;
+2) LASERPOWER: Unlimited laser power for the player's ship;
+[TIP] Money is very easy to find (just follow these steps when buying or selling something). 
+a) Unckeck the "Fast Scan" mode option;
+b) Use FIRST SCAN to look for a 4 Bytes value;
+c) Make the value change and use NEXT SCAN to look for the new value;
+d) Repeat a) and b) until you find the maximum of 2 addresses;
+e) Change the money to 999000000 in both addresses;
+That's it.
+</Comments>
+</CheatTable>

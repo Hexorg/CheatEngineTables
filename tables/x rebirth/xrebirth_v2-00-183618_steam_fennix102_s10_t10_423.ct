@@ -1,0 +1,500 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="16">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>73</ID>
+      <Description>"[X] &lt;== X Rebirth v2.00-183618 Steam Script 1.0"</Description>
+      <Options moHideChildren="1"/>
+      <Color>FF0000</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>{
+===========================================
+ Game Title    : X-REBIRTH
+ Game Version  : 2.00 (183618)
+ Game Sponsor  : Fennix102
+ Proces Name   : XRebirth.exe
+ Script Version: 1.0
+ CE Version    : 6.3
+ Release date  : 22-May-2014
+ Author        : Recifense
+ History:
+ 04-Dec-13: First Release (version 1.1.0) RLD
+ 22-Dec-13: Release for version 1.2.0 BAT
+ 01-Jan-14: Release for version 1.21 Steam
+ 07-Jan-14: Release for version 1.22 Steam
+ 02-Mar-14: Release for version 1.25 Steam
+ 06-Apr-14: Release for version 1.25-180886 Steam
+ 15-Apr-14: Release for version 1.30-182331 Steam
+ 06-May-14: Release for version 1.31-182688 Steam
+ 22-May-14: Release for version 2.00-183618 Steam
+ Features:
+ - Minimum Money
+ - God Mode
+ - Minimum DP Points
+ - Some Pointers
+===========================================
+}
+
+//=========================================
+// Definitions
+define(LUDO,"XRebirth.exe")
+define(MHPR,XRebirth.exe+0000a680) //========
+define(MPSP,XRebirth.exe+0008c76f) //========
+define(MSSD,XRebirth.exe+000ea3a6) //========
+define(MSME,XRebirth.exe+000d7d32) //=====#==
+
+//=========================================
+// Constants used in the script (that can be changed)
+define(ctMMMY,#630000000)   // Minimum Money
+
+//=========================================
+[ENABLE]
+//=========================================
+//LuaCall(CheckVersion())
+//=========================================
+// Check if script is compatible to this game version
+// If false the script will not be loaded
+
+assert(MHPR,8b 41 10 8b 51 14 c3 cc cc cc cc cc cc cc cc cc 8b 41 18 8b 51 1c)
+assert(MPSP,8b 8f dc 02 00 00 d8 71 44 5f 5e 8b e5 5d c2 08 00 0f 57 c0 f3 0f)
+assert(MSSD,f2 0f 10 44 24 08 d9 59 ec f2 0f 11 41 f4 c2 0c 00 cc cc cc cc cc)
+assert(MSME,8b 09 29 4a 14 8b 4c 24 0c 5f 5e 64 89 0d 00 00 00 00 83 c4 10 c2)
+
+//=========================================
+alloc(MyCode,4096,LUDO)
+//=========================================
+// Declaration section
+label(_MonHumanPlayer)
+label(_BackMHP)
+label(_ExitMHP)
+label(_MonPlayerShip)
+label(_MonPS00)
+label(_BackMPS)
+label(_ExitMPS)
+label(_MonShipShield)
+label(_MonSS00)
+label(_BackMSS)
+label(_ExitMSS)
+label(_MonShipMissile)
+label(_BackMSM)
+label(_ExitMSM)
+label(iEnableMMM)
+label(iEnableMSD)
+label(iEnableGMD)
+label(iEnableMSM)
+label(iMinMoney)
+label(pPlayer)
+label(pShipHull)
+label(pShipShield)
+
+//=========================================
+// Registering Symbols
+registersymbol(MyCode)
+registersymbol(iEnableMMM)
+registersymbol(iEnableMSD)
+registersymbol(iEnableGMD)
+registersymbol(iEnableMSM)
+registersymbol(iMinMoney)
+registersymbol(pPlayer)
+registersymbol(pShipHull)
+registersymbol(pShipShield)
+
+//=========================================
+MyCode:
+//=========================================
+// When Money is Visible
+_MonHumanPlayer:
+ mov [pPlayer],ecx
+
+ cmp dword ptr [iEnableMMM],0
+ je _ExitMHP                       // Jump if feature is disabled
+
+ mov eax,[ecx+14]
+ test eax,eax
+ jnz _ExitMHP
+
+ mov eax,[iMinMoney]
+ cmp eax,[ecx+10]
+ js _ExitMHP
+
+ mov [ecx+10],eax
+
+_ExitMHP:
+ mov eax,[ecx+10]                  // Original code (rds Money L)
+ mov edx,[ecx+14]                  // Original code (rds Money H)
+ jmp _BackMHP                      // Back to main code
+
+//=========================================
+// Called all the time
+// EDI = pHull
+_MonPlayerShip:
+ push eax
+
+ mov eax,[edi+2c]
+ test eax,eax
+ jnz _ExitMPS
+
+ mov ecx,[edi+000002DC]            // Get pShield
+
+ mov [pShipHull],edi
+ mov [pShipShield],ecx
+
+ cmp dword ptr [iEnableMSD],0
+ je _MonPS00                       // Jump if feature is disabled
+
+ mov eax,[ecx+44]
+ mov [ecx+68],eax
+
+_MonPS00:
+ cmp dword ptr [iEnableGMD],0
+ je _ExitMPS                       // Jump if feature is disabled
+
+ mov eax,[edi+0000029c]
+ mov [edi+000002b0],eax
+
+_ExitMPS:
+ pop eax
+
+ mov ecx,[edi+000002DC]            // Original code (rds pShield)
+ jmp _BackMPS                      // Back to main code
+
+//=========================================
+// Called when shield or turbo bust is used
+// EDI = pShield
+_MonShipShield:
+ push eax
+
+ cmp edi,[pShipShield]
+ jne _MonSS00
+
+ cmp dword ptr [iEnableMSD],0
+ je _ExitMSS                       // Jump if feature is disabled
+
+ fstp st(0)
+ fld dword ptr [edi+44]
+ jmp _ExitMSS
+
+_MonSS00:
+ cmp ebp,[pShipHull]
+ jne _ExitMSS
+
+ cmp dword ptr [iEnableGMD],0
+ je _ExitMSS                       // Jump if feature is disabled
+
+ fstp st(0)
+ fld dword ptr [ebp+0000029c]
+
+_ExitMSS:
+ pop eax
+
+ movsd xmm0,[esp+08]               // Original code
+ jmp _BackMSS                      // Back to main code
+
+//=========================================
+// Called when missile is shot
+_MonShipMissile:
+ mov edi,[ebp+1c]
+ cmp edi,[pShipHull]
+ jne _ExitMSM
+
+ cmp dword ptr [iEnableMSM],0
+ je _ExitMSM                       // Jump if feature is disabled
+
+ xor edi,edi
+ mov [ecx],edi
+
+_ExitMSM:
+ mov ecx,[ecx]                     // Original code
+ sub [edx+14],ecx                  // Original code (upd missile)
+ jmp _BackMSM                      // Back to main code
+
+//=========================================
+ db '====================================&gt;'
+ db 'CE6.3 Script by Recifense 052214'
+//=========================================
+// Variables
+iEnableMMM:
+ dd 0
+iEnableMSD:
+ dd 0
+iEnableGMD:
+ dd 0
+iEnableMSM:
+ dd 0
+iMinMoney:
+ dd ctMMMY
+pPlayer:
+ dd 0
+pShipHull:
+ dd MyCode
+pShipShield:
+ dd MyCode
+
+//=========================================
+// Hacking Points
+MHPR:
+ jmp _MonHumanPlayer
+ nop
+_BackMHP:
+
+MPSP:
+ jmp _MonPlayerShip
+ nop
+_BackMPS:
+
+MSSD:
+ jmp _MonShipShield
+ nop
+_BackMSS:
+
+MSME:
+ jmp _MonShipMissile
+_BackMSM:
+
+//=========================================
+// Script for Restoring Original Codes
+[DISABLE]
+MHPR:
+// mov eax,[ecx+10]
+// mov edx,[ecx+14]
+ db 8b 41 10 8b 51 14
+
+MPSP:
+// mov ecx,[edi+000002DC]
+ db 8b 8f dc 02 00 00
+
+MSSD:
+// movsd xmm0,[esp+08]
+ db f2 0f 10 44 24 08
+
+MSME:
+// mov ecx,[ecx]
+// sub [edx+14],ecx
+ db 8b 09 29 4a 14
+
+//=========================================
+// Unregistering Symbols
+unregistersymbol(MyCode)
+unregistersymbol(iEnableMMM)
+unregistersymbol(iEnableMSD)
+unregistersymbol(iEnableGMD)
+unregistersymbol(iEnableMSM)
+unregistersymbol(iMinMoney)
+unregistersymbol(pShipHull)
+unregistersymbol(pShipShield)
+
+//=========================================
+dealloc(MyCode)
+//============= Scripts End ===============
+
+// ****************************************
+// NOTES
+// ****************************************
+{
+1.31
+define(MHPR,XRebirth.exe+0000a7f0) //=======
+define(MPSP,XRebirth.exe+000896cf) //=======
+define(MSSD,XRebirth.exe+000e2bf6) //=======
+define(MSME,XRebirth.exe+000d1c02) //=====#=
+1.30
+define(MHPR,XRebirth.exe+0000a8a0) //======
+define(MPSP,XRebirth.exe+00089acf) //======
+define(MSSD,XRebirth.exe+000e3076) //======
+define(MSME,XRebirth.exe+000d2152) //=====#
+1.25
+define(MHPR,XRebirth.exe+000039d0) //=====
+define(MPSP,XRebirth.exe+0007fe1f) //=====
+define(MSSD,XRebirth.exe+000d7546) //=====
+define(MSME,XRebirth.exe+000c8398) //=====
+v1.22
+define(MHPR,XRebirth.exe+00003690) //===
+define(MPSP,XRebirth.exe+0007e9ef) //===
+define(MSSD,XRebirth.exe+000d61c6) //===
+define(MSME,XRebirth.exe+000c7118) //===
+v1.21
+define(MHPR,XRebirth.exe+000036b0) //==
+define(MPSP,XRebirth.exe+0007e42f) //==
+define(MSSD,XRebirth.exe+000d5da6) //==
+define(MSME,XRebirth.exe+000c6b48) //==
+v1.20
+define(MHPR,XRebirth.exe+00003720) //=
+define(MPSP,XRebirth.exe+0007d8bf) //=
+define(MSSD,XRebirth.exe+000d50e6) //=
+define(MSME,XRebirth.exe+000c5fe8) //=
+v1.10:
+define(MHPR,XRebirth.exe+00003640)
+define(MPSP,XRebirth.exe+0007ce8f)
+define(MSSD,XRebirth.exe+000d47e6)
+define(MSME,XRebirth.exe+000c5578)
+}
+
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>15</ID>
+          <Description>"Enable/Disable Minimum Money =&gt; (1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMMM</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>16</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>16</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>47</ID>
+          <Description>"Enable/Disable Unlimited Shield =&gt; (1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMSD</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>16</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>16</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>48</ID>
+          <Description>"Enable/Disable God Mode =&gt; (1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableGMD</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>16</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>16</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>59</ID>
+          <Description>"Enable/Disable Unlimited Missiles =&gt; (1/0)"</Description>
+          <Color>008000</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMSM</Address>
+          <Hotkeys>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>16</Key>
+                <Key>36</Key>
+              </Keys>
+              <Value>1</Value>
+              <ID>0</ID>
+            </Hotkey>
+            <Hotkey>
+              <Action>Set Value</Action>
+              <Keys>
+                <Key>16</Key>
+                <Key>35</Key>
+              </Keys>
+              <Value>0</Value>
+              <ID>1</ID>
+            </Hotkey>
+          </Hotkeys>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols>
+    <SymbolEntry>
+      <Name>pPlayer</Name>
+      <Address>07BD0164</Address>
+    </SymbolEntry>
+  </UserdefinedSymbols>
+  <Comments>===========================================
+ Game Title    : X-REBIRTH
+ Game Version  : 2.00 (183618)
+ Game Sponsor  : Fennix102
+ Proces Name   : XRebirth.exe
+ Script Version: 1.0
+ CE Version    : 6.3
+ Release date  : 22-May-2014
+ Author        : Recifense
+ History:
+ 04-Dec-13: First Release (version 1.1.0) RLD
+ 22-Dec-13: Release for version 1.2.0 BAT
+ 01-Jan-14: Release for version 1.21 Steam
+ 07-Jan-14: Release for version 1.22 Steam
+ 02-Mar-14: Release for version 1.25 Steam
+ 06-Apr-14: Release for version 1.25-180886 Steam
+ 15-Apr-14: Release for version 1.30-182331 Steam
+ 06-May-14: Release for version 1.31-182688 Steam
+ 22-May-14: Release for version 2.00-183618 Steam
+ Features:
+ - Minimum Money      [1]
+ - Unlimited Shield   [2]
+ - God Mode           [3]
+ - Unlimited Missile  [4]
+ - Some Pointers
+===========================================
+[1] Just look at the player's info or make the money change;
+[2] For player's current controlled ship;
+[3] For player's current controlled ship;
+[4] For player's current controlled ship;
+===========================================
+[USAGE]
+1) Run CE63;
+2) Run Game;
+3) Load the game process in CE;
+4) Change the value to 1 of each cheat you want to use;
+5) Game On;
+===========================================
+[HOTKEYS]
+SHIFT+Home  = Enable  all cheats;
+SHIFT+End   = Disable all cheats;
+===========================================
+[ADVICE]
+When you can,save the game before starting using table/cheat. So you can always come back in case you don't like the result.
+===========================================
+[INFO]
+Tested on Win 7 64bits
+===========================================
+Cheers!
+</Comments>
+</CheatTable>

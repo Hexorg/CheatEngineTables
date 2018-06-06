@@ -1,0 +1,1341 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="18">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>101</ID>
+      <Description>"P1 Health"</Description>
+      <LastState Value="??" Activated="0" RealAddress="00000000"/>
+      <Color>80000008</Color>
+      <VariableType>Float</VariableType>
+      <Address>MKKE.exe+A89D7C+1c</Address>
+      <Offsets>
+        <Offset>78C0</Offset>
+      </Offsets>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>100</ID>
+      <Description>"P2 Health"</Description>
+      <LastState Value="??" Activated="0" RealAddress="00000000"/>
+      <Color>80000008</Color>
+      <VariableType>Float</VariableType>
+      <Address>MKKE.exe+A89D7C+c8c+1c</Address>
+      <Offsets>
+        <Offset>78C0</Offset>
+      </Offsets>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>38</ID>
+      <Description>"Character replacement"</Description>
+      <Options moHideChildren="1"/>
+      <LastState Activated="0"/>
+      <Color>80000008</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>//how to fix this for future versions:
+//1-find a function that references "g_main_model"
+//2-look at the stace for the earliest reference to "char_YourChar"
+//3-poke around the first function that used that "char_YourChar"
+[ENABLE]
+alloc(NewMem,1024)
+aobscan(CharacterSwapHook,89 9e * * 00 00 89 45 f8 8B * * 00 00 00)
+//aobscan(LadderImageHook,8B F1 33 DB 89 5C 24 14 ** ** ** ** ** 8D 4C 24 28)
+aobscan(LadderImageHook,50 8D 4D D4 89 5D F0)
+
+registersymbol(CharacterSwapHook)
+registersymbol(LadderImageHook)
+
+//code locations
+label(CharacterSwap)
+label(CharacterSwap_Exit)
+label(CharacterSwap_ReturnHere)
+label(CharacterSwap_HandlingP2)
+
+label(LadderImageFix)
+label(LadderImageFix_Exit)
+label(LadderImageFix_ReturnHere)
+
+//variables
+label(DummyPicture)
+label(ReplacementCharacter)
+label(ReplacementCharacter2)
+registersymbol(ReplacementCharacter)
+registersymbol(ReplacementCharacter2)
+
+
+
+CharacterSwapHook-7:
+jmp CharacterSwap
+nop
+nop
+CharacterSwap_ReturnHere:
+
+LadderImageHook-5:
+jmp LadderImageFix
+LadderImageFix_ReturnHere:
+
+NewMem:
+LadderImageFix:
+  push #18                //ui_ps_vs_jpegs.BD_ is 18 char long
+  push DWORD [EBP+8]
+  push DummyPicture
+  call msvcrt.strncmp
+  add esp,C
+  test eax,eax
+  jnz LadderImageFix_Exit //jump when the image to load in not an "ui_ps_vs_jpegs.BD_***
+    push DummyPicture
+    push DWORD [EBP+8]
+    call msvcrt.strcpy    //tell the game to load a dummy picture to avoid trying to load
+    add esp,8             //a non existent one (like ui_ps_vs_jpegs.BD_GORO.jpeg)
+  LadderImageFix_Exit:
+  MOV EAX,DWORD [EBP+8]  //original code
+  xor ebx,ebx            //original code
+jmp LadderImageFix_ReturnHere
+DummyPicture:
+db 'ui_ps_vs_jpegs.BD_DLC.jpeg',0
+
+CharacterSwap:
+  lea eax,[eax+esi+00000964]               //original code
+  cmp dword [esp+38],0                     //are we setting up p1, main character?
+  push eax                                 //save eax
+  jne short CharacterSwap_HandlingP2       //jump if not
+    cmp byte [ReplacementCharacter],20     //ReplacementCharacter starts with a space-&gt;no replacement
+    je short CharacterSwap_Exit
+      push ReplacementCharacter
+      push eax
+      call msvcrt.strcpy                   //copy the ReplacementCharacter string over the one we were
+      add esp,8                            //supposed to use
+      jmp short CharacterSwap_Exit
+  CharacterSwap_HandlingP2:
+    cmp byte [ReplacementCharacter2],20    //ReplacementCharacter2 starts with a space-&gt;no replacement
+    je short CharacterSwap_Exit
+      push ReplacementCharacter2
+      push eax
+      call msvcrt.strcpy
+      add esp,8
+      jmp short CharacterSwap_Exit
+  CharacterSwap_Exit:
+  pop eax                                  //restore eax
+jmp CharacterSwap_ReturnHere
+
+ReplacementCharacter:
+db 'char_goro',0
+db 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 //leave that padding
+ReplacementCharacter2:
+db 'CHAR_Kitana',0
+ 
+ 
+[DISABLE]
+dealloc(NewMem)
+unregistersymbol(CharacterSwapHook)
+unregistersymbol(LadderImageHook)
+unregistersymbol(ReplacementCharacter)
+unregistersymbol(ReplacementCharacter2)
+
+CharacterSwapHook-7:
+lea eax,[eax+esi+00000964]
+
+LadderImageHook-5:
+MOV EAX,DWORD [EBP+8]
+xor ebx,ebx
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>39</ID>
+          <Description>"P1 Replacement character (must match package.xxx names)"</Description>
+          <LastState Activated="0" RealAddress="00000000"/>
+          <Color>80000008</Color>
+          <VariableType>String</VariableType>
+          <Length>20</Length>
+          <Unicode>0</Unicode>
+          <ZeroTerminate>1</ZeroTerminate>
+          <Address>ReplacementCharacter</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>40</ID>
+          <Description>"P2 Replacement character (space=no replacement)"</Description>
+          <LastState Activated="0" RealAddress="00000000"/>
+          <Color>80000008</Color>
+          <VariableType>String</VariableType>
+          <Length>15</Length>
+          <Unicode>0</Unicode>
+          <ZeroTerminate>1</ZeroTerminate>
+          <Address>ReplacementCharacter2</Address>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>82</ID>
+      <Description>"Stage replacement"</Description>
+      <Options moHideChildren="1"/>
+      <LastState Activated="0"/>
+      <Color>80000008</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>[ENABLE]
+alloc(NewMem,1024)
+aobscanmodule(StageSwapHook,mkke.exe,6A 01 * * * * * 51 83 C0 3C 6A 07 89 45 F0)
+registersymbol(StageSwapHook)
+
+//code locations
+label(StageSwap)
+label(StageSwap_Exit)
+label(StageSwap_ReturnHere)
+
+//variables
+label(ReplacementStage)
+registersymbol(ReplacementStage)
+
+
+
+StageSwapHook+2:
+jmp StageSwap
+StageSwap_ReturnHere:
+
+NewMem:
+StageSwap:
+  //here [eax]+3c=stage name
+  push eax                 //backup eax
+  lea eax,[eax+3C]
+  push ReplacementStage
+  push eax
+  call msvcrt.strcpy       //copy the ReplacementStage string over the stage name
+  add esp,8
+  StageSwap_Exit:
+  pop eax                  //restore eax backup
+  push 1                   //original code
+  lea ecx,[ebp-10]         //original code
+jmp StageSwap_ReturnHere
+
+ReplacementStage:
+db 'BGND_DeadPool',0
+
+ 
+ 
+[DISABLE]
+dealloc(NewMem)
+unregistersymbol(StageSwapHook)
+unregistersymbol(ReplacementStage)
+
+StageSwapHook+2:
+push 1
+lea ecx,[ebp-10]
+
+{ stage loader for future reference, called several times at load time
+008FB900  /$ 55             PUSH EBP
+008FB901  |. 8BEC           MOV EBP,ESP
+008FB903  |. 6A FF          PUSH -1
+008FB905  |. 68 28F0C100    PUSH MKKE.00C1F028
+008FB90A  |. 64:A1 00000000 MOV EAX,DWORD PTR FS:[0]
+008FB910  |. 50             PUSH EAX
+008FB911  |. 83EC 28        SUB ESP,28
+008FB914  |. 53             PUSH EBX
+008FB915  |. 56             PUSH ESI
+008FB916  |. 57             PUSH EDI
+008FB917  |. A1 008FDF00    MOV EAX,DWORD PTR DS:[DF8F00]
+008FB91C  |. 33C5           XOR EAX,EBP
+008FB91E  |. 50             PUSH EAX
+008FB91F  |. 8D45 F4        LEA EAX,[LOCAL.3]
+008FB922  |. 64:A3 00000000 MOV DWORD PTR FS:[0],EAX
+008FB928  |. A1 5866ED00    MOV EAX,DWORD PTR DS:[ED6658]
+008FB92D  |. 83F8 04        CMP EAX,4                                ;  Switch (cases 1..4)
+008FB930  |. 0F87 4A020000  JA MKKE.008FBB80
+008FB936  |. FF2485 98BB8F0&gt;JMP DWORD PTR DS:[EAX*4+8FBB98]
+008FB93D  |&gt; A1 8C9BE800    MOV EAX,DWORD PTR DS:[E89B8C]            ;  Case 1 of switch 008FB92D
+008FB942  |. 6A 01          PUSH 1                                   ; /Arg4 = 00000001
+008FB944  |. 6A 01          PUSH 1    &lt;-hook point here              ; |Arg3 = 00000001
+008FB946  |. 8D4D F0        LEA ECX,[LOCAL.4]                        ; |
+008FB949  |. 51             PUSH ECX                                 ; |Arg2
+008FB94A  |. 83C0 3C        ADD EAX,3C                               ; |
+008FB94D  |. 6A 07          PUSH 7                                   ; |Arg1 = 00000007
+008FB94F  |. 8945 F0        MOV [LOCAL.4],EAX                        ; |
+008FB952  |. E8 4934B9FF    CALL MKKE.0048EDA0                       ; \MKKE.0048EDA0
+008FB957  |. 83C4 10        ADD ESP,10
+008FB95A  |. C705 5866ED00 &gt;MOV DWORD PTR DS:[ED6658],2
+008FB964  |&gt; 33C0           XOR EAX,EAX
+008FB966  |. 8B4D F4        MOV ECX,[LOCAL.3]
+008FB969  |. 64:890D 000000&gt;MOV DWORD PTR FS:[0],ECX
+008FB970  |. 59             POP ECX
+008FB971  |. 5F             POP EDI
+008FB972  |. 5E             POP ESI
+008FB973  |. 5B             POP EBX
+008FB974  |. 8BE5           MOV ESP,EBP
+008FB976  |. 5D             POP EBP
+008FB977  |. C3             RETN
+008FB978  |&gt; 6A 07          PUSH 7                                   ; /Arg1 = 00000007; Case 2 of switch 008FB92D
+008FB97A  |. E8 4127B9FF    CALL MKKE.0048E0C0                       ; \MKKE.0048E0C0
+008FB97F  |. 8BF0           MOV ESI,EAX
+008FB981  |. 33FF           XOR EDI,EDI
+}
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>83</ID>
+          <Description>"Replacement stage (must match package.xxx names)"</Description>
+          <LastState Activated="0" RealAddress="00000000"/>
+          <Color>80000008</Color>
+          <VariableType>String</VariableType>
+          <Length>15</Length>
+          <Unicode>0</Unicode>
+          <ZeroTerminate>1</ZeroTerminate>
+          <Address>ReplacementStage</Address>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>45</ID>
+      <Description>"Regen speed hack"</Description>
+      <Options moHideChildren="1"/>
+      <LastState Activated="0"/>
+      <Color>80000008</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>[ENABLE]
+aobscanmodule(RegenSpeedHook,MKKE.exe,7B * F6 41 68 01 75 28)
+registersymbol(RegenSpeedHook)
+
+alloc(newmem,2048)
+//code location
+label(RegenSpeedHack)
+label(RegenSpeedHack_OriginalCode)
+label(RegenSpeedHack_returnhere)
+
+//variables
+label(Zero)
+label(RegenSpeedFactor)
+registersymbol(RegenSpeedFactor)
+
+/*
+MKKE.exe+67EB4C - 7B 55                 - jnp MKKE.exe+67EBA3
+MKKE.exe+67EB4E - F6 41 68 01           - test byte ptr [ecx+68],01
+MKKE.exe+67EB52 - 75 28                 - jne MKKE.exe+67EB7C
+MKKE.exe+67EB54 - F3 0F10 8E C0780000   - movss xmm1,[esi+000078C0] &lt;-hook point
+MKKE.exe+67EB5C - F3 0F58 C8            - addss xmm1,xmm0
+MKKE.exe+67EB60 - F3 0F11 8E C0780000   - movss [esi+000078C0],xmm1
+*/
+
+RegenSpeedHook+8:
+jmp RegenSpeedHack
+nop
+nop
+nop
+RegenSpeedHack_returnhere:
+
+
+newmem:
+RegenSpeedHack:
+  comiss xmm0,dword [Zero]                //if added HP is &lt; 0 we're getting damaged, else we're being healed
+  jb RegenSpeedHack_OriginalCode          //jump if xmm0=added health&lt;0
+    movss xmm1,dword [RegenSpeedFactor]   //load RegenSpeedFactor
+    mulss xmm0,xmm1                       //multiply added health by RegenSpeedFactor
+  RegenSpeedHack_OriginalCode:
+  movss xmm1,[esi+000078C0]               //original code (loads current health)
+jmp RegenSpeedHack_returnhere
+
+Zero:
+dd (float)0.0
+
+RegenSpeedFactor:
+dd (float)2.0
+
+ 
+[DISABLE]
+//code from here till the end of the code will be used to disable the cheat
+dealloc(newmem)
+RegenSpeedHook+8:
+movss xmm1,[esi+000078C0]
+//Alt: db F3 0F 10 8E C0 78 00 00
+
+unregistersymbol(RegenSpeedHook)
+unregistersymbol(RegenSpeedFactor)
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>46</ID>
+          <Description>"Regen speed factor"</Description>
+          <LastState Value="??" Activated="0" RealAddress="00000000"/>
+          <Color>80000008</Color>
+          <VariableType>Float</VariableType>
+          <Address>RegenSpeedFactor</Address>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>75</ID>
+      <Description>"Auto input Kombat Kode"</Description>
+      <Options moHideChildren="1"/>
+      <LastState Activated="0"/>
+      <Color>80000008</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>[ENABLE]
+aobscanmodule(AutoKombatKode,MKKE.exe,0B 77 60 8B CB C1 E6 04 0B 77 5C)
+registersymbol(AutoKombatKode)
+label(KombatKode)
+registersymbol(KombatKode)
+
+
+AutoKombatKode+B:
+mov esi,0
+nop
+
+AutoKombatKode+B+1:
+KombatKode: //&lt;- this will be over the 0 of the "mov esi, 0" above
+
+ 
+[DISABLE]
+unregistersymbol(AutoKombatKode)
+unregistersymbol(KombatKode)
+
+AutoKombatKode+B:
+SHL ESI,4
+OR ESI,DWORD [EDI+58]
+PUSH ESI
+
+
+
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>76</ID>
+          <Description>"Player 1,digit 1"</Description>
+          <LastState Value="??" Activated="0" RealAddress="00000000"/>
+          <Color>80000008</Color>
+          <VariableType>Binary</VariableType>
+          <BitStart>0</BitStart>
+          <BitLength>4</BitLength>
+          <ShowAsBinary>0</ShowAsBinary>
+          <Address>KombatKode</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>79</ID>
+          <Description>"Player 2,digit 1"</Description>
+          <LastState Value="??" Activated="0" RealAddress="00000000"/>
+          <Color>80000008</Color>
+          <VariableType>Binary</VariableType>
+          <BitStart>4</BitStart>
+          <BitLength>4</BitLength>
+          <ShowAsBinary>0</ShowAsBinary>
+          <Address>KombatKode+1</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>77</ID>
+          <Description>"Player 1,digit 2"</Description>
+          <LastState Value="??" Activated="0" RealAddress="00000000"/>
+          <Color>80000008</Color>
+          <VariableType>Binary</VariableType>
+          <BitStart>4</BitStart>
+          <BitLength>4</BitLength>
+          <ShowAsBinary>0</ShowAsBinary>
+          <Address>KombatKode</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>80</ID>
+          <Description>"Player 2,digit 2"</Description>
+          <LastState Value="??" Activated="0" RealAddress="00000000"/>
+          <Color>80000008</Color>
+          <VariableType>Binary</VariableType>
+          <BitStart>0</BitStart>
+          <BitLength>4</BitLength>
+          <ShowAsBinary>0</ShowAsBinary>
+          <Address>KombatKode+2</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>78</ID>
+          <Description>"Player 1,digit 3"</Description>
+          <LastState Value="??" Activated="0" RealAddress="00000000"/>
+          <Color>80000008</Color>
+          <VariableType>Binary</VariableType>
+          <BitStart>0</BitStart>
+          <BitLength>4</BitLength>
+          <ShowAsBinary>0</ShowAsBinary>
+          <Address>KombatKode+1</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>81</ID>
+          <Description>"Player 2,digit 3"</Description>
+          <LastState Value="??" Activated="0" RealAddress="00000000"/>
+          <Color>80000008</Color>
+          <VariableType>Binary</VariableType>
+          <BitStart>4</BitStart>
+          <BitLength>4</BitLength>
+          <ShowAsBinary>0</ShowAsBinary>
+          <Address>KombatKode+2</Address>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>52</ID>
+      <Description>"P1 Size"</Description>
+      <LastState Value="" Activated="0" RealAddress="00000000"/>
+      <Color>80000008</Color>
+      <GroupHeader>1</GroupHeader>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>62</ID>
+          <Description>"Global size factor"</Description>
+          <LastState Value="??" Activated="0" RealAddress="00000000"/>
+          <Color>80000008</Color>
+          <VariableType>Float</VariableType>
+          <Address>MKKE.exe+A89D7C+1c</Address>
+          <Offsets>
+            <Offset>118</Offset>
+            <Offset>8</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>63</ID>
+          <Description>"X size factor"</Description>
+          <LastState Value="??" Activated="0" RealAddress="00000000"/>
+          <Color>80000008</Color>
+          <VariableType>Float</VariableType>
+          <Address>MKKE.exe+A89D7C+1c</Address>
+          <Offsets>
+            <Offset>11C</Offset>
+            <Offset>8</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>65</ID>
+          <Description>"Y size factor"</Description>
+          <LastState Value="??" Activated="0" RealAddress="00000000"/>
+          <Color>80000008</Color>
+          <VariableType>Float</VariableType>
+          <Address>MKKE.exe+A89D7C+1c</Address>
+          <Offsets>
+            <Offset>120</Offset>
+            <Offset>8</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>64</ID>
+          <Description>"Z size factor"</Description>
+          <LastState Value="??" Activated="0" RealAddress="00000000"/>
+          <Color>80000008</Color>
+          <VariableType>Float</VariableType>
+          <Address>MKKE.exe+A89D7C+1c</Address>
+          <Offsets>
+            <Offset>124</Offset>
+            <Offset>8</Offset>
+          </Offsets>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>69</ID>
+      <Description>"P2 Size"</Description>
+      <LastState Value="" Activated="0" RealAddress="00000000"/>
+      <Color>80000008</Color>
+      <GroupHeader>1</GroupHeader>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>89</ID>
+          <Description>"Global size factor"</Description>
+          <LastState Value="??" Activated="0" RealAddress="00000000"/>
+          <Color>80000008</Color>
+          <VariableType>Float</VariableType>
+          <Address>MKKE.exe+A89D7C+c8c+1c</Address>
+          <Offsets>
+            <Offset>118</Offset>
+            <Offset>8</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>72</ID>
+          <Description>"X size factor"</Description>
+          <LastState Value="??" Activated="0" RealAddress="00000000"/>
+          <Color>80000008</Color>
+          <VariableType>Float</VariableType>
+          <Address>MKKE.exe+A89D7C+c8c+1c</Address>
+          <Offsets>
+            <Offset>11C</Offset>
+            <Offset>8</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>73</ID>
+          <Description>"Y size factor"</Description>
+          <LastState Value="??" Activated="0" RealAddress="00000000"/>
+          <Color>80000008</Color>
+          <VariableType>Float</VariableType>
+          <Address>MKKE.exe+A89D7C+c8c+1c</Address>
+          <Offsets>
+            <Offset>120</Offset>
+            <Offset>8</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>74</ID>
+          <Description>"Z size factor"</Description>
+          <LastState Value="??" Activated="0" RealAddress="00000000"/>
+          <Color>80000008</Color>
+          <VariableType>Float</VariableType>
+          <Address>MKKE.exe+A89D7C+c8c+1c</Address>
+          <Offsets>
+            <Offset>124</Offset>
+            <Offset>8</Offset>
+          </Offsets>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>125</ID>
+      <Description>"Modding-related hacks"</Description>
+      <Options moHideChildren="1"/>
+      <LastState Value="" Activated="0" RealAddress="00000000"/>
+      <Color>0080FF</Color>
+      <GroupHeader>1</GroupHeader>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>128</ID>
+          <Description>"Log FNV1 hashes"</Description>
+          <LastState Activated="0"/>
+          <Color>80000008</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[ENABLE]
+aobscanmodule(FNV1Hasher_aob,mkke.exe,85 D2 76 14 8B 89 90 00 00 00)
+registersymbol(FNV1Hasher_aob)
+
+alloc(code,2048)
+//places
+label(LogHash)
+label(LogHash_Return)
+//data
+label(FileName)
+label(LogFormat)
+label(LogLine)
+label(DummyVariable)
+
+
+
+FNV1Hasher_aob-5:
+jmp LogHash
+LogHash_Return:
+
+code:
+LogHash:
+  pushad                    //save all registers
+  push dword [esp+2c]        //the hashed string
+  push esi                  //the hash
+  push LogFormat
+  push LogLine
+  call msvcrt.sprintf
+  mov ebx,eax //store the length of LogLine in ebx
+  add esp,10 //pop all sprintf's arguments ie
+  //open logfile
+  push 0
+  push 80 //FILE_ATTRIBUTE_NORMAL
+  push 4  //OPEN_ALWAYS
+  push 0
+  push 3 //FILE_SHARE_READ | FILE_SHARE_WRITE -&gt; allow other programs to read and write
+  push C //GENERIC_READ | GENERIC_WRITE
+  push FileName
+  call CreateFileA
+  //move to its end
+  push eax //save the file handle
+  push 2 //FILE_END
+  push 0
+  push 0
+  push eax
+  call SetFilePointer
+  mov eax,dword [esp] //restore the file handle
+  //log the new line
+  push 0
+  push DummyVariable //lpNumberOfBytesWritten
+  push ebx
+  push LogLine
+  push eax
+  call WriteFile
+  //close the file
+  //pop eax //restore the file handle
+  //push eax
+  call CloseHandle
+  popad
+
+  //original code
+  MOV EDX,DWORD [ECX+24]
+  XOR EAX,EAX
+jmp LogHash_Return
+
+
+DummyVariable:
+dd 0
+FileName:
+db 'FNV1Log.txt',00
+LogFormat:
+db '%.8X = %s',0d,0a,00
+LogLine:
+
+[DISABLE]
+FNV1Hasher_aob-5:
+MOV EDX,DWORD [ECX+24]
+XOR EAX,EAX
+
+
+unregistersymbol(FNV1Hasher_aob)
+dealloc(code)
+</AssemblerScript>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>146</ID>
+          <Description>"Allow loading ini from unpacked coalesced.ini (MUST BE HARDCODED)"</Description>
+          <LastState Activated="0"/>
+          <Color>80000008</Color>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[ENABLE]
+aobscan(AllowPlaintextIni,39 5D 0C 75 23 8B 45 E0 39 5D E4) //there are 2 instances of this signature, luckily we're interested in the first one
+registersymbol(AllowPlaintextIni)
+
+AllowPlaintextIni-9:
+mov dword [ecx+40],ebx
+nop
+nop
+nop
+nop
+nop
+nop
+
+ 
+ 
+[DISABLE]
+unregistersymbol(AllowPlaintextIni)
+AllowPlaintextIni-9:
+cmp dword [ecx+40],ebx
+db 0F 85 B0 00 00 00 //jne MKKE.exe+304177
+
+
+{full function
+00526B00  /$ 55             PUSH EBP
+00526B01  |. 8BEC           MOV EBP,ESP
+00526B03  |. 6A FF          PUSH -1
+00526B05  |. 68 90EEBF00    PUSH MKKE.00BFEE90
+00526B0A  |. 64:A1 00000000 MOV EAX,DWORD PTR FS:[0]
+00526B10  |. 50             PUSH EAX
+00526B11  |. 83EC 68        SUB ESP,68
+00526B14  |. 53             PUSH EBX
+00526B15  |. 56             PUSH ESI
+00526B16  |. 57             PUSH EDI
+00526B17  |. A1 008FDF00    MOV EAX,DWORD PTR DS:[DF8F00]
+00526B1C  |. 33C5           XOR EAX,EBP
+00526B1E  |. 50             PUSH EAX
+00526B1F  |. 8D45 F4        LEA EAX,[LOCAL.3]
+00526B22  |. 64:A3 00000000 MOV DWORD PTR FS:[0],EAX
+00526B28  |. 8BF1           MOV ESI,ECX
+00526B2A  |. 8975 F0        MOV [LOCAL.4],ESI
+00526B2D  |. 8B45 08        MOV EAX,[ARG.1]
+00526B30  |. 50             PUSH EAX                                                  ; /Arg1
+00526B31  |. 8D4D E0        LEA ECX,[LOCAL.8]                                         ; |
+00526B34  |. E8 87B1EDFF    CALL MKKE.00401CC0                                        ; \MKKE.00401CC0
+00526B39  |. 8B45 E0        MOV EAX,[LOCAL.8]
+00526B3C  |. 33DB           XOR EBX,EBX
+00526B3E  |. 895D FC        MOV [LOCAL.1],EBX
+00526B41  |. 395D E4        CMP [LOCAL.7],EBX
+00526B44  |. 75 05          JNZ SHORT MKKE.00526B4B
+00526B46  |. B8 FCA3C500    MOV EAX,MKKE.00C5A3FC
+00526B4B  |&gt; 50             PUSH EAX                                                  ; /Arg1
+00526B4C  |. 8D4D D4        LEA ECX,[LOCAL.11]                                        ; |
+00526B4F  |. E8 6CB1EDFF    CALL MKKE.00401CC0                                        ; \MKKE.00401CC0
+00526B54  |. 8D4D D4        LEA ECX,[LOCAL.11]
+00526B57  |. 51             PUSH ECX                                                  ; /Arg2
+00526B58  |. 8D55 08        LEA EDX,[ARG.1]                                           ; |
+00526B5B  |. 83C6 04        ADD ESI,4                                                 ; |
+00526B5E  |. 52             PUSH EDX                                                  ; |Arg1
+00526B5F  |. 8BCE           MOV ECX,ESI                                               ; |
+00526B61  |. C645 FC 01     MOV BYTE PTR SS:[EBP-4],1                                 ; |
+00526B65  |. E8 E67FFFFF    CALL MKKE.0051EB50                                        ; \MKKE.0051EB50
+00526B6A  |. 8B45 08        MOV EAX,[ARG.1]
+00526B6D  |. 83F8 FF        CMP EAX,-1
+00526B70  |. 74 10          JE SHORT MKKE.00526B82
+00526B72  |. 8B0E           MOV ECX,DWORD PTR DS:[ESI]
+00526B74  |. 6BC0 5C        IMUL EAX,EAX,5C
+00526B77  |. 03C1           ADD EAX,ECX
+00526B79  |. 3BC3           CMP EAX,EBX
+00526B7B  |. 74 05          JE SHORT MKKE.00526B82
+00526B7D  |. 8D78 0C        LEA EDI,DWORD PTR DS:[EAX+C]
+00526B80  |. EB 02          JMP SHORT MKKE.00526B84
+00526B82  |&gt; 33FF           XOR EDI,EDI
+00526B84  |&gt; 8B45 D4        MOV EAX,[LOCAL.11]
+00526B87  |. 885D FC        MOV BYTE PTR SS:[EBP-4],BL
+00526B8A  |. 3BC3           CMP EAX,EBX
+00526B8C  |. 74 0E          JE SHORT MKKE.00526B9C
+00526B8E  |. 8B0D C8EFE300  MOV ECX,DWORD PTR DS:[E3EFC8]                             ;  MKKE.00E0ABE0
+00526B94  |. 8B11           MOV EDX,DWORD PTR DS:[ECX]
+00526B96  |. 50             PUSH EAX
+00526B97  |. 8B42 10        MOV EAX,DWORD PTR DS:[EDX+10]
+00526B9A  |. FFD0           CALL EAX
+00526B9C  |&gt; 3BFB           CMP EDI,EBX
+00526B9E  |. 0F85 BC000000  JNZ MKKE.00526C60
+00526BA4  |. 8B4D F0        MOV ECX,[LOCAL.4]
+00526BA7     3959 40        CMP DWORD PTR DS:[ECX+40],EBX
+00526BAA  |. 0F85 B0000000  JNZ MKKE.00526C60
+00526BB0     395D 0C        CMP DWORD PTR SS:[EBP+C],EBX   &lt;-AllowPlaintextIni symbol
+00526BB3     75 23          JNZ SHORT MKKE.00526BD8
+00526BB5     8B45 E0        MOV EAX,DWORD PTR SS:[EBP-20]
+00526BB8     395D E4        CMP DWORD PTR SS:[EBP-1C],EBX
+00526BBB     75 05          JNZ SHORT MKKE.00526BC2
+00526BBD  |. B8 FCA3C500    MOV EAX,MKKE.00C5A3FC
+00526BC2  |&gt; 8B0D 3C98DE00  MOV ECX,DWORD PTR DS:[DE983C]                             ;  MKKE.00DE1090
+00526BC8  |. 8B11           MOV EDX,DWORD PTR DS:[ECX]
+00526BCA  |. 50             PUSH EAX
+00526BCB  |. 8B42 10        MOV EAX,DWORD PTR DS:[EDX+10]
+00526BCE  |. FFD0           CALL EAX
+00526BD0  |. 85C0           TEST EAX,EAX
+00526BD2  |. 0F8C 88000000  JL MKKE.00526C60
+00526BD8  |&gt; 8B45 E0        MOV EAX,[LOCAL.8]
+00526BDB  |. 395D E4        CMP [LOCAL.7],EBX
+00526BDE  |. 75 05          JNZ SHORT MKKE.00526BE5
+00526BE0  |. B8 FCA3C500    MOV EAX,MKKE.00C5A3FC
+00526BE5  |&gt; 50             PUSH EAX                                                  ; /Arg1
+00526BE6  |. 8D4D D4        LEA ECX,[LOCAL.11]                                        ; |
+00526BE9  |. E8 D2B0EDFF    CALL MKKE.00401CC0                                        ; \MKKE.00401CC0
+00526BEE  |. 8D4D 8C        LEA ECX,[LOCAL.29]
+00526BF1  |. C645 FC 02     MOV BYTE PTR SS:[EBP-4],2
+00526BF5  |. E8 762FFFFF    CALL MKKE.00519B70
+00526BFA  |. 895D C0        MOV [LOCAL.16],EBX
+00526BFD  |. 895D C4        MOV [LOCAL.15],EBX
+00526C00  |. 895D C8        MOV [LOCAL.14],EBX
+00526C03  |. 895D CC        MOV [LOCAL.13],EBX
+00526C06  |. 895D D0        MOV [LOCAL.12],EBX
+00526C09  |. 8D4D D4        LEA ECX,[LOCAL.11]
+00526C0C  |. 894D EC        MOV [LOCAL.5],ECX
+00526C0F  |. 8D45 EC        LEA EAX,[LOCAL.5]
+00526C12  |. 50             PUSH EAX                                                  ; /Arg2
+00526C13  |. 8D4D 08        LEA ECX,[ARG.1]                                           ; |
+00526C16  |. 8D55 8C        LEA EDX,[LOCAL.29]                                        ; |
+00526C19  |. 51             PUSH ECX                                                  ; |Arg1
+00526C1A  |. 8BCE           MOV ECX,ESI                                               ; |
+00526C1C  |. C645 FC 03     MOV BYTE PTR SS:[EBP-4],3                                 ; |
+00526C20  |. 8955 F0        MOV [LOCAL.4],EDX                                         ; |
+00526C23  |. E8 88F6FFFF    CALL MKKE.005262B0                                        ; \MKKE.005262B0
+00526C28  |. 8B55 08        MOV EDX,[ARG.1]
+00526C2B  |. 8B36           MOV ESI,DWORD PTR DS:[ESI]
+00526C2D  |. 6BD2 5C        IMUL EDX,EDX,5C
+00526C30  |. 8D4D 8C        LEA ECX,[LOCAL.29]
+00526C33  |. 8D7C32 0C      LEA EDI,DWORD PTR DS:[EDX+ESI+C]
+00526C37  |. C645 FC 02     MOV BYTE PTR SS:[EBP-4],2
+00526C3B  |. E8 F0C8FFFF    CALL MKKE.00523530
+00526C40  |. 8D4D D4        LEA ECX,[LOCAL.11]
+00526C43  |. 885D FC        MOV BYTE PTR SS:[EBP-4],BL
+00526C46  |. E8 65310800    CALL MKKE.005A9DB0
+00526C4B  |. 8B45 E0        MOV EAX,[LOCAL.8]
+00526C4E  |. 395D E4        CMP [LOCAL.7],EBX
+00526C51  |. 75 05          JNZ SHORT MKKE.00526C58
+00526C53  |. B8 FCA3C500    MOV EAX,MKKE.00C5A3FC
+00526C58  |&gt; 50             PUSH EAX                                                  ; /Arg1
+00526C59  |. 8BCF           MOV ECX,EDI                                               ; |
+00526C5B  |. E8 50DDFFFF    CALL MKKE.005249B0                                        ; \MKKE.005249B0
+00526C60  |&gt; 8B45 E0        MOV EAX,[LOCAL.8]
+00526C63  |. C745 FC FFFFFF&gt;MOV [LOCAL.1],-1
+00526C6A  |. 3BC3           CMP EAX,EBX
+00526C6C  |. 74 0E          JE SHORT MKKE.00526C7C
+00526C6E  |. 8B0D C8EFE300  MOV ECX,DWORD PTR DS:[E3EFC8]                             ;  MKKE.00E0ABE0
+00526C74  |. 8B11           MOV EDX,DWORD PTR DS:[ECX]
+00526C76  |. 50             PUSH EAX
+00526C77  |. 8B42 10        MOV EAX,DWORD PTR DS:[EDX+10]
+00526C7A  |. FFD0           CALL EAX
+00526C7C  |&gt; 8BC7           MOV EAX,EDI
+00526C7E  |. 8B4D F4        MOV ECX,[LOCAL.3]
+00526C81  |. 64:890D 000000&gt;MOV DWORD PTR FS:[0],ECX
+00526C88  |. 59             POP ECX
+00526C89  |. 5F             POP EDI
+00526C8A  |. 5E             POP ESI
+00526C8B  |. 5B             POP EBX
+00526C8C  |. 8BE5           MOV ESP,EBP
+00526C8E  |. 5D             POP EBP
+00526C8F  \. C2 0800        RETN 8
+}
+</AssemblerScript>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>145</ID>
+      <Description>"Hacking leftovers"</Description>
+      <Options moHideChildren="1"/>
+      <LastState Value="" Activated="0" RealAddress="00000000"/>
+      <Color>0080FF</Color>
+      <GroupHeader>1</GroupHeader>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>105</ID>
+          <Description>"Hacks for version older than august 2014"</Description>
+          <Options moHideChildren="1"/>
+          <LastState Value="" Activated="0" RealAddress="00000000"/>
+          <Color>0080FF</Color>
+          <GroupHeader>1</GroupHeader>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>36</ID>
+              <Description>"P1 Health"</Description>
+              <LastState Value="??" Activated="0" RealAddress="00000000"/>
+              <Color>80000008</Color>
+              <VariableType>Float</VariableType>
+              <Address>"MKKE.exe"+00AD1C18</Address>
+              <Offsets>
+                <Offset>78C0</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>70</ID>
+              <Description>"P2 Health"</Description>
+              <LastState Value="??" Activated="0" RealAddress="00000000"/>
+              <Color>80000008</Color>
+              <VariableType>Float</VariableType>
+              <Address>MKKE.exe+AD28A4</Address>
+              <Offsets>
+                <Offset>78C0</Offset>
+              </Offsets>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>104</ID>
+              <Description>"Allow loading ini from unpacked coalesced.ini (MUST BE HARDCODED)"</Description>
+              <LastState Activated="0"/>
+              <Color>80000008</Color>
+              <VariableType>Auto Assembler Script</VariableType>
+              <AssemblerScript>[ENABLE]
+aobscan(AllowPlaintextIni,39 5D 40 0F 85 B6 00 00 00 8B 6C 24 14 39 9C 24 88 00 00 00)
+registersymbol(AllowPlaintextIni)
+
+AllowPlaintextIni:
+mov dword [ebp+40],ebx
+nop
+nop
+nop
+nop
+nop
+nop
+
+ 
+ 
+[DISABLE]
+unregistersymbol(AllowPlaintextIni)
+AllowPlaintextIni:
+cmp dword [ebp+40],ebx
+db 0F 85 B6 00 00 00 //jne MKKE.exe+304177
+</AssemblerScript>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>121</ID>
+              <Description>"Stage replacement"</Description>
+              <Options moHideChildren="1"/>
+              <LastState Activated="0"/>
+              <Color>80000008</Color>
+              <VariableType>Auto Assembler Script</VariableType>
+              <AssemblerScript>[ENABLE]
+alloc(NewMem,1024)
+aobscan(StageSwapHook,8B BC 24 94 00 00 00 57 68 ** ** ** ** 6A 10 E8)
+registersymbol(StageSwapHook)
+
+//code locations
+label(StageSwap)
+label(StageSwap_Exit)
+label(StageSwap_ReturnHere)
+
+//variables
+label(ReplacementStage)
+registersymbol(ReplacementStage)
+
+
+
+StageSwapHook-15:
+jmp StageSwap
+nop
+StageSwap_ReturnHere:
+
+NewMem:
+StageSwap:
+  mov eax,dword [esp+4]    //eax=address of stage name. It is safe to overwite eax since
+                           //the next eax operation in the game code overwrites it.
+  test eax,eax             //see if eax=0
+  je short StageSwap_Exit  //exit if eax=0
+  push ReplacementStage
+  push eax
+  call msvcrt.strcpy       //copy the ReplacementStage string over the stage name
+  add esp,8
+  StageSwap_Exit:
+  sub esp,8c               //original code
+jmp StageSwap_ReturnHere
+
+ReplacementStage:
+db 'BGND_DeadPool',0
+
+ 
+ 
+[DISABLE]
+dealloc(NewMem)
+unregistersymbol(StageSwapHook)
+unregistersymbol(ReplacementStage)
+
+StageSwapHook-15:
+sub esp,8c
+</AssemblerScript>
+              <CheatEntries>
+                <CheatEntry>
+                  <ID>122</ID>
+                  <Description>"Replacement stage (must match package.xxx names)"</Description>
+                  <LastState Activated="0" RealAddress="00000000"/>
+                  <Color>80000008</Color>
+                  <VariableType>String</VariableType>
+                  <Length>15</Length>
+                  <Unicode>0</Unicode>
+                  <ZeroTerminate>1</ZeroTerminate>
+                  <Address>ReplacementStage</Address>
+                </CheatEntry>
+              </CheatEntries>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>118</ID>
+              <Description>"Character replacement"</Description>
+              <Options moHideChildren="1"/>
+              <LastState Activated="0"/>
+              <Color>80000008</Color>
+              <VariableType>Auto Assembler Script</VariableType>
+              <AssemblerScript>[ENABLE]
+alloc(NewMem,1024)
+aobscan(CharacterSwapHook,8D 9C 30 64 09 00 00 89 AE 3C 0B 00 00 8B 83 94 00 00 00)
+aobscan(LadderImageHook,8B F1 33 DB 89 5C 24 14 ** ** ** ** ** 8D 4C 24 28)
+//aobscan(StrcpyImport,FF 25 * * * * CC CC CC CC CC CC CC CC CC CC CC CC 57)
+registersymbol(CharacterSwapHook)
+registersymbol(LadderImageHook)
+
+//code locations
+label(CharacterSwap)
+label(CharacterSwap_Exit)
+label(CharacterSwap_ReturnHere)
+label(CharacterSwap_HandlingP2)
+
+label(LadderImageFix)
+label(LadderImageFix_Exit)
+label(LadderImageFix_ReturnHere)
+
+//variables
+label(DummyPicture)
+label(ReplacementCharacter)
+label(ReplacementCharacter2)
+registersymbol(ReplacementCharacter)
+registersymbol(ReplacementCharacter2)
+
+
+
+CharacterSwapHook:
+jmp CharacterSwap
+nop
+nop
+CharacterSwap_ReturnHere:
+
+LadderImageHook+8:
+jmp LadderImageFix
+LadderImageFix_ReturnHere:
+
+NewMem:
+LadderImageFix:
+  MOV EBP,DWORD [ESP+4C]  //original code
+  push #18                //ui_ps_vs_jpegs.BD_ is 18 char long
+  push ebp
+  push DummyPicture
+  call msvcrt.strncmp
+  add esp,C
+  test eax,eax
+  jnz LadderImageFix_Exit //jump when the image to load in not an "ui_ps_vs_jpegs.BD_***
+    push DummyPicture
+    push ebp
+    call msvcrt.strcpy    //tell the game to load a dummy picture to avoid trying to load
+    add esp,8             //a non existent one (like ui_ps_vs_jpegs.BD_GORO.jpeg)
+  LadderImageFix_Exit:
+  push ebp                //original code
+jmp LadderImageFix_ReturnHere
+DummyPicture:
+db 'ui_ps_vs_jpegs.BD_DLC.jpeg',0
+
+CharacterSwap:
+  lea ebx,[eax+esi+00000964]
+  cmp dword [esp+34],0                     //are we setting up p1, main character?
+  jne short CharacterSwap_HandlingP2       //jump if not
+    cmp byte [ReplacementCharacter],20     //ReplacementCharacter starts with a space-&gt;no replacement
+    je short CharacterSwap_Exit
+      push ReplacementCharacter
+      push ebx
+      call msvcrt.strcpy                   //copy the ReplacementCharacter string over the one we were
+      add esp,8                            //supposed to use
+      jmp short CharacterSwap_Exit
+  CharacterSwap_HandlingP2:
+    cmp byte [ReplacementCharacter2],20    //ReplacementCharacter2 starts with a space-&gt;no replacement
+    je short CharacterSwap_Exit
+      push ReplacementCharacter2
+      push ebx
+      call msvcrt.strcpy
+      add esp,8
+      jmp short CharacterSwap_Exit
+  CharacterSwap_Exit:
+jmp CharacterSwap_ReturnHere
+
+ReplacementCharacter:
+db 'char_goro',0
+db 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 //leave that padding
+ReplacementCharacter2:
+db 'CHAR_Kitana',0
+ 
+ 
+[DISABLE]
+dealloc(NewMem)
+unregistersymbol(CharacterSwapHook)
+unregistersymbol(LadderImageHook)
+unregistersymbol(ReplacementCharacter)
+unregistersymbol(ReplacementCharacter2)
+
+CharacterSwapHook:
+lea ebx,[eax+esi+00000964]
+
+LadderImageHook+8:
+MOV EBP,DWORD [ESP+4C]
+push ebp
+</AssemblerScript>
+              <CheatEntries>
+                <CheatEntry>
+                  <ID>119</ID>
+                  <Description>"P1 Replacement character (must match package.xxx names)"</Description>
+                  <LastState Activated="0" RealAddress="00000000"/>
+                  <Color>80000008</Color>
+                  <VariableType>String</VariableType>
+                  <Length>20</Length>
+                  <Unicode>0</Unicode>
+                  <ZeroTerminate>1</ZeroTerminate>
+                  <Address>ReplacementCharacter</Address>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>120</ID>
+                  <Description>"P2 Replacement character (space=no replacement)"</Description>
+                  <LastState Activated="0" RealAddress="00000000"/>
+                  <Color>80000008</Color>
+                  <VariableType>String</VariableType>
+                  <Length>15</Length>
+                  <Unicode>0</Unicode>
+                  <ZeroTerminate>1</ZeroTerminate>
+                  <Address>ReplacementCharacter2</Address>
+                </CheatEntry>
+              </CheatEntries>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>136</ID>
+              <Description>"Auto input Kombat Kode"</Description>
+              <Options moHideChildren="1"/>
+              <LastState Activated="0"/>
+              <Color>80000008</Color>
+              <VariableType>Auto Assembler Script</VariableType>
+              <AssemblerScript>[ENABLE]
+aobscanmodule(AutoKombatKode,MKKE.exe,0B 77 60 8B CB C1 E6 04 0B 77 5C)
+registersymbol(AutoKombatKode)
+label(KombatKode)
+registersymbol(KombatKode)
+
+
+AutoKombatKode+B:
+mov esi,0
+nop
+
+AutoKombatKode+B+1:
+KombatKode: //&lt;- this will be over the 0 of the "mov esi, 0" above
+
+ 
+[DISABLE]
+unregistersymbol(AutoKombatKode)
+unregistersymbol(KombatKode)
+
+AutoKombatKode+B:
+SHL ESI,4
+OR ESI,DWORD [EDI+58]
+PUSH ESI
+
+
+
+</AssemblerScript>
+              <CheatEntries>
+                <CheatEntry>
+                  <ID>137</ID>
+                  <Description>"Player 1,digit 1"</Description>
+                  <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                  <Color>80000008</Color>
+                  <VariableType>Binary</VariableType>
+                  <BitStart>0</BitStart>
+                  <BitLength>4</BitLength>
+                  <ShowAsBinary>0</ShowAsBinary>
+                  <Address>KombatKode</Address>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>138</ID>
+                  <Description>"Player 2,digit 1"</Description>
+                  <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                  <Color>80000008</Color>
+                  <VariableType>Binary</VariableType>
+                  <BitStart>4</BitStart>
+                  <BitLength>4</BitLength>
+                  <ShowAsBinary>0</ShowAsBinary>
+                  <Address>KombatKode+1</Address>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>139</ID>
+                  <Description>"Player 1,digit 2"</Description>
+                  <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                  <Color>80000008</Color>
+                  <VariableType>Binary</VariableType>
+                  <BitStart>4</BitStart>
+                  <BitLength>4</BitLength>
+                  <ShowAsBinary>0</ShowAsBinary>
+                  <Address>KombatKode</Address>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>140</ID>
+                  <Description>"Player 2,digit 2"</Description>
+                  <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                  <Color>80000008</Color>
+                  <VariableType>Binary</VariableType>
+                  <BitStart>0</BitStart>
+                  <BitLength>4</BitLength>
+                  <ShowAsBinary>0</ShowAsBinary>
+                  <Address>KombatKode+2</Address>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>141</ID>
+                  <Description>"Player 1,digit 3"</Description>
+                  <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                  <Color>80000008</Color>
+                  <VariableType>Binary</VariableType>
+                  <BitStart>0</BitStart>
+                  <BitLength>4</BitLength>
+                  <ShowAsBinary>0</ShowAsBinary>
+                  <Address>KombatKode+1</Address>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>142</ID>
+                  <Description>"Player 2,digit 3"</Description>
+                  <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                  <Color>80000008</Color>
+                  <VariableType>Binary</VariableType>
+                  <BitStart>4</BitStart>
+                  <BitLength>4</BitLength>
+                  <ShowAsBinary>0</ShowAsBinary>
+                  <Address>KombatKode+2</Address>
+                </CheatEntry>
+              </CheatEntries>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>108</ID>
+              <Description>"P1 Size"</Description>
+              <LastState Value="" Activated="0" RealAddress="00000000"/>
+              <Color>80000008</Color>
+              <GroupHeader>1</GroupHeader>
+              <CheatEntries>
+                <CheatEntry>
+                  <ID>109</ID>
+                  <Description>"Global size factor"</Description>
+                  <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                  <Color>80000008</Color>
+                  <VariableType>Float</VariableType>
+                  <Address>"MKKE.exe"+00AD1C18</Address>
+                  <Offsets>
+                    <Offset>118</Offset>
+                    <Offset>8</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>110</ID>
+                  <Description>"X size factor"</Description>
+                  <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                  <Color>80000008</Color>
+                  <VariableType>Float</VariableType>
+                  <Address>"MKKE.exe"+00AD1C18</Address>
+                  <Offsets>
+                    <Offset>11C</Offset>
+                    <Offset>8</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>111</ID>
+                  <Description>"Y size factor"</Description>
+                  <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                  <Color>80000008</Color>
+                  <VariableType>Float</VariableType>
+                  <Address>"MKKE.exe"+00AD1C18</Address>
+                  <Offsets>
+                    <Offset>120</Offset>
+                    <Offset>8</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>112</ID>
+                  <Description>"Z size factor"</Description>
+                  <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                  <Color>80000008</Color>
+                  <VariableType>Float</VariableType>
+                  <Address>"MKKE.exe"+00AD1C18</Address>
+                  <Offsets>
+                    <Offset>124</Offset>
+                    <Offset>8</Offset>
+                  </Offsets>
+                </CheatEntry>
+              </CheatEntries>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>113</ID>
+              <Description>"P2 Size"</Description>
+              <LastState Value="" Activated="0" RealAddress="00000000"/>
+              <Color>80000008</Color>
+              <GroupHeader>1</GroupHeader>
+              <CheatEntries>
+                <CheatEntry>
+                  <ID>114</ID>
+                  <Description>"Global size factor"</Description>
+                  <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                  <Color>80000008</Color>
+                  <VariableType>Float</VariableType>
+                  <Address>MKKE.exe+AD28A4</Address>
+                  <Offsets>
+                    <Offset>118</Offset>
+                    <Offset>8</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>115</ID>
+                  <Description>"X size factor"</Description>
+                  <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                  <Color>80000008</Color>
+                  <VariableType>Float</VariableType>
+                  <Address>MKKE.exe+AD28A4</Address>
+                  <Offsets>
+                    <Offset>11C</Offset>
+                    <Offset>8</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>116</ID>
+                  <Description>"Y size factor"</Description>
+                  <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                  <Color>80000008</Color>
+                  <VariableType>Float</VariableType>
+                  <Address>MKKE.exe+AD28A4</Address>
+                  <Offsets>
+                    <Offset>120</Offset>
+                    <Offset>8</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>117</ID>
+                  <Description>"Z size factor"</Description>
+                  <LastState Value="??" Activated="0" RealAddress="00000000"/>
+                  <Color>80000008</Color>
+                  <VariableType>Float</VariableType>
+                  <Address>MKKE.exe+AD28A4</Address>
+                  <Offsets>
+                    <Offset>124</Offset>
+                    <Offset>8</Offset>
+                  </Offsets>
+                </CheatEntry>
+              </CheatEntries>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols/>
+  <Comments>***Coalesced.ini format
+first 4 bytes: decompressed size
+rest: zlib compressed chunk
+Apply a binary not to the result to have a human-readable file, then manually split it.
+</Comments>
+</CheatTable>

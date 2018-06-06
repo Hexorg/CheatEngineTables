@@ -1,0 +1,307 @@
+<?xml version="1.0"?>
+<CheatTable CheatEngineTableVersion="11">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>20</ID>
+      <Description>"[X] &lt;== SC2 v1.230 Script"</Description>
+      <Options moHideChildren="1"/>
+      <Color>80000008</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>{
+===========================================
+ Game Title    : Supreme Commander 2
+ Game Version  : 1.230
+ Script Version: 1.0
+ CE Version    : 6.1
+ Release date  : 14-Sep-2011
+ Author        : Recifense
+ Features:
+ - God Mode
+ - Minimum Resources
+ - Minimum Research Points
+===========================================
+}
+
+[ENABLE]
+//=========================================
+// Check if script is compatible to this game version
+// If false the script will not be loaded
+
+assert(SupremeCommander2.exe+40cca3,8b 90 74 02 00 00)
+assert(SupremeCommander2.exe+35dfec,f3 0f 11 96 8c 00 00 00)
+
+//=========================================
+alloc(MyCode,1024)
+//=========================================
+// Declaration section
+label(_MonPlayer)
+label(_MonP0)
+label(_MonP1)
+label(_BackMP)
+label(_ExitMP)
+label(_GodMode)
+label(_BackGM)
+label(_ExitGM)
+label(pUnit)
+label(pPlayer)
+label(iPlayerID)
+label(iEnableGM)
+label(iEnableMR)
+label(iEnableRP)
+label(fMinRes)
+
+//=========================================
+// Registering Symbols
+registersymbol(MyCode)
+registersymbol(pUnit)
+registersymbol(pPlayer)
+registersymbol(iPlayerID)
+registersymbol(iEnableGM)
+registersymbol(iEnableMR)
+registersymbol(iEnableRP)
+registersymbol(fMinRes)
+
+//=========================================
+MyCode:
+//=========================================
+_MonPlayer:
+ mov edx,[eax+00000274]              // Original code
+
+ cmp dword ptr [eax+00000178],'Huma'
+ jne _ExitMP                         // Jump if it is not the player
+
+ mov [pPlayer],eax
+
+ mov ebx,[eax+08]
+ mov [iPlayerID],ebx
+
+ cmp dword ptr [iEnableMR],0
+ je _MonP1                           // Jump if feature is disabled
+
+ mov ebx,[fMinRes]
+ cmp ebx,[edx+38]                    // Energy
+ jle _MonP0
+
+ mov [edx+38],ebx
+
+_MonP0:
+ cmp ebx,[edx+3C]                    // Mass
+ jle _MonP1
+
+ mov [edx+3C],ebx
+
+_MonP1:
+ cmp dword ptr [iEnableRP],0
+ je _ExitMP                          // Jump if feature is disabled
+
+ mov ebx,(float)20.0
+ cmp ebx,[edx+40]                    // Research Points
+ jle _ExitMP
+
+ mov [edx+40],ebx
+
+_ExitMP:
+ jmp _BackMP                         // Back to main code
+
+//=========================================
+// God Mode and Instant Building
+_GodMode:
+ push eax
+
+ mov [pUnit],esi                     // Save ptr for debugging
+
+ cmp dword ptr [iEnableGM],0
+ je _ExitGM                          // Jump if feature is disabled
+
+ mov eax,[esi+000001a8]
+ cmp eax,[pPlayer]
+ jne _ExitGM
+
+ movss xmm2,[esi+00000090]           // Get Max HP
+
+_ExitGM:
+ pop eax
+
+ movss [esi+0000008C],xmm2           // Original code
+ jmp _BackGM                         // Back to main code
+
+//=========================================
+ db '================&gt;'
+ db 'CE6.1 Script by Recifense 091411'
+//=========================================
+// Variables
+iEnableGM:
+ dd 1
+iEnableMR:
+ dd 1
+iEnableRP:
+ dd 1
+pUnit:
+ dd 0
+pPlayer:
+ dd MyCode
+iPlayerID:
+ dd #99
+fMinRes:
+ dd (float)10000.0
+
+//=========================================
+// Hacking Points
+SupremeCommander2.exe+40cca3:
+ jmp _MonPlayer
+ nop
+_BackMP:
+
+SupremeCommander2.exe+35dfec:
+ jmp _GodMode
+ nop
+ nop
+ nop
+_BackGM:
+
+//=========================================
+// Script for Restoring Original Codes
+[DISABLE]
+SupremeCommander2.exe+40cca3:
+// mov edx,[eax+00000274]
+ db 8b 90 74 02 00 00
+
+SupremeCommander2.exe+35dfec:
+// movss [esi+0000008C],xmm2
+ db f3 0f 11 96 8c 00 00 00
+
+//=========================================
+// Unregistering Symbols
+unregistersymbol(MyCode)
+unregistersymbol(pUnit)
+unregistersymbol(pPlayer)
+unregistersymbol(iPlayerID)
+unregistersymbol(iEnableGM)
+unregistersymbol(iEnableMR)
+unregistersymbol(iEnableRP)
+unregistersymbol(fMinRes)
+
+//=========================================
+dealloc(MyCode)
+//============= Scripts End ===============
+
+// ****************************************
+// NOTES
+// ****************************************
+{
+Supreme Commander 2:
+
+struct PLAYER:
+0000 = 01377124
+0008 = iIndex
+0010 = aPlayerArmy (ARMY_4, ARMY_2, ...)
+0178 = aType (Human, Easy, ...)
+0268 = 103bb800
+0274 = pResources
+
+struct RESOURCES:
+0000 = 103bb800
+0004 = iIndex
+0038 = fcEnergy
+003c = fcMass
+0040 = fcResearch
+
+struct UNIT:
+0000 xxxx = 0137014c (real base)
+0008 0000 = 013701d4 (GM Base)
+0084 007c = f1
+0088 0080 = f1
+008c 0084 = f1
+0090 0088 = f0
+0094 008c = fcHP
+0098 0090 = fmHP
+009C 0094 = f0
+01b0 01a8 = pPlayer
+0374 036c = aName (only for hero)
+}
+
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>21</ID>
+          <Description>"Enable/Disable God Mode"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableGM</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>22</ID>
+          <Description>"Enable/Disable Minimum Research Points"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableRP</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>26</ID>
+          <Description>"Enable/Disable Minimum Resources"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>iEnableMR</Address>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>23</ID>
+              <Description>"Minimum Resource Value"</Description>
+              <Color>80000008</Color>
+              <VariableType>Float</VariableType>
+              <Address>fMinRes</Address>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols>
+    <SymbolEntry>
+      <Name>MyCode</Name>
+      <Address>033E0000</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>pUnit</Name>
+      <Address>033E00EC</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>pPlayer</Name>
+      <Address>033E00F0</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>iPlayerID</Name>
+      <Address>033E00F4</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>iEnableGM</Name>
+      <Address>033E00E0</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>iEnableMR</Name>
+      <Address>033E00E4</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>iEnableRP</Name>
+      <Address>033E00E8</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>fMinRes</Name>
+      <Address>033E00F8</Address>
+    </SymbolEntry>
+  </UserdefinedSymbols>
+  <Comments>===========================================
+ Game Title    : Supreme Commander 2
+ Game Version  : 1.230
+ Script Version: 1.0
+ CE Version    : 6.1
+ Release date  : 14-Sep-2011
+ Author        : Recifense
+ Features:
+ - God Mode (*)
+ - Minimum Resources
+ - Minimum Research Points
+===========================================
+
+(*) A side effect is quick construction/production
+ </Comments>
+</CheatTable>

@@ -1,0 +1,228 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="18">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>1</ID>
+      <Description>"CreateThread x32"</Description>
+      <LastState Activated="0"/>
+      <Color>80000008</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>[ENABLE]
+
+alloc( TextBlock, 256 )
+registersymbol( TextBlock )
+alloc( KeyHandlerThread, 2048 )
+registersymbol( KeyHandlerThread )
+CreateThread( KeyHandlerThread )
+alloc( KeyHandlerOff, 4 )
+registersymbol( KeyHandlerOff )
+label( ExitKeyHandler )
+
+label( szCaption )
+label( szText )
+label( ToggleText )
+
+TextBlock:
+szCaption:
+db 'Message',0
+szText:
+db 'This should pop-up on key press!',0
+
+KeyHandlerThread+500:
+KeyHandlerOff:
+dd 0
+
+KeyHandlerThread:
+push 0a
+call kernel32.Sleep
+
+cmp [KeyHandlerOff],1
+je ExitKeyHandler
+
+push 6F // NUM_DIVIDE
+call GetAsyncKeyState
+test ax,ax
+jne ToggleText
+
+jmp KeyHandlerThread
+
+ToggleText:
+push 0 // MB_OK
+push szCaption
+push szText
+push 0 // hWnd
+call MessageBoxA
+push C8
+call kernel32.Sleep
+jmp KeyHandlerThread
+
+ExitKeyHandler:
+mov [KeyHandlerOff],2
+ret
+
+[DISABLE]
+
+{$lua}
+
+if( syntaxcheck == false ) then --actual execution
+  local starttime = getTickCount()
+
+if readInteger( "KeyHandlerOff" ) == 0 then --could be 2 already
+  writeInteger( "KeyHandlerOff", 1 ) --tell the thread to kill itself
+end
+
+while( getTickCount() &lt; starttime + 1000 ) and ( readInteger( "KeyHandlerOff" ) ~=2 ) do --wait till it has finished
+  sleep( 20 )
+end
+
+if( getTickCount() &gt; starttime + 1000 ) then --could happen when the window is shown
+  showMessage( 'Disabling the thread failed!' )
+  error( 'Thread disabling failed!' )
+end
+  sleep( 1 )
+end
+
+{$asm}
+
+dealloc( KeyHandlerOff )
+dealloc( KeyHandlerThread )
+dealloc( TextBlock )
+unregistersymbol( KeyHandlerOff )
+unregistersymbol( KeyHandlerThread )
+</AssemblerScript>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>0</ID>
+      <Description>"CreateThread x64"</Description>
+      <LastState Activated="0"/>
+      <Color>80000008</Color>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>[ENABLE]
+
+alloc( TextBlock, 256 )
+registersymbol( TextBlock )
+alloc( KeyHandlerThread, 1024 )
+registersymbol( KeyHandlerThread )
+CreateThread( KeyHandlerThread )
+alloc( KeyHandlerOff, 4 )
+registersymbol( KeyHandlerOff )
+label( ExitKeyHandler )
+label( KeyHandlerThread_loop )
+
+label( szCaption )
+label( szText )
+label( ToggleText )
+
+TextBlock:
+szCaption:
+db 'Message',0
+szText:
+db 'This should pop-up on key press!',0
+
+KeyHandlerThread+500:
+KeyHandlerOff:
+dd 0
+
+KeyHandlerThread:
+sub rsp,28
+
+KeyHandlerThread_loop:
+mov rcx,A
+call Sleep
+
+cmp [KeyHandlerOff],1
+je ExitKeyHandler
+
+  mov rcx,6F // NUM_DIVIDE
+  call GetAsyncKeyState
+  test ax,ax
+  jne short ToggleText
+
+      jmp short KeyHandlerThread_loop
+
+  ToggleText:
+  xor r9d,r9d // MB_OK
+  mov r8,szCaption
+  mov rdx,szText
+  xor rcx,rcx // hWnd
+  call MessageBoxA
+  mov rcx,C8
+  call Sleep
+  jmp KeyHandlerThread_loop
+
+ExitKeyHandler:
+add rsp,28
+mov [KeyHandlerOff],2
+ret
+
+[DISABLE]
+
+{$lua}
+
+if( syntaxcheck == false ) then --actual execution
+  local starttime = getTickCount()
+
+if readInteger( "KeyHandlerOff" ) == 0 then --could be 2 already
+  writeInteger( "KeyHandlerOff", 1 ) --tell the thread to kill itself
+end
+
+while( getTickCount() &lt; starttime + 1000 ) and ( readInteger( "KeyHandlerOff" ) ~=2 ) do --wait till it has finished
+  sleep( 20 )
+end
+
+if( getTickCount() &gt; starttime + 1000 ) then --could happen when the window is shown
+  showMessage( 'Disabling the thread failed!' )
+  error( 'Thread disabling failed!' )
+end
+  sleep( 1 )
+end
+
+{$asm}
+
+dealloc( KeyHandlerOff )
+dealloc( KeyHandlerThread )
+dealloc( TextBlock )
+unregistersymbol( KeyHandlerOff )
+unregistersymbol( KeyHandlerThread )
+</AssemblerScript>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols>
+    <SymbolEntry>
+      <Name>Toggler</Name>
+      <Address>08D80500</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>pRefill</Name>
+      <Address>02713B80</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>pRefil1</Name>
+      <Address>019E8A1C</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>dwRefillPlayerHealth</Name>
+      <Address>019DA330</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>pMenu</Name>
+      <Address>04DFDD5C</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>pBase</Name>
+      <Address>0198F5A0</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>pContext</Name>
+      <Address>096F0500</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>dwContextHook</Name>
+      <Address>01AFA710</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>DisableDisabler</Name>
+      <Address>01448453</Address>
+    </SymbolEntry>
+  </UserdefinedSymbols>
+</CheatTable>
